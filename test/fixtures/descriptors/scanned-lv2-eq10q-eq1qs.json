@@ -1,0 +1,272 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://eq10q.sourceforge.net/eq/eq1qs",
+    "uri": "http://eq10q.sourceforge.net/eq/eq1qs",
+    "name": "EQ1Q Stereo",
+    "vendor": "Pere Ràfols Soler",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "bypass",
+      "name": "Bypass",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#bypass"
+      }
+    },
+    {
+      "id": "input_gain",
+      "name": "Input Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -20.0,
+        "max": 20.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#input_gain"
+      }
+    },
+    {
+      "id": "output_gain",
+      "name": "Output Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -20.0,
+        "max": 20.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#output_gain"
+      }
+    },
+    {
+      "id": "filter1_gain",
+      "name": "Filter 1 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -20.0,
+        "max": 20.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#filter1_gain"
+      }
+    },
+    {
+      "id": "filter1_freq",
+      "name": "Filter 1 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20.0,
+        "max": 20000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 1000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#filter1_freq"
+      }
+    },
+    {
+      "id": "filter1_q",
+      "name": "Filter 1 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 16.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 2.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#filter1_q"
+      }
+    },
+    {
+      "id": "filter1_type",
+      "name": "Filter 1 Type",
+      "kind": "travel",
+      "travel": {
+        "min": 1.0,
+        "max": 12.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 11.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#filter1_type"
+      }
+    },
+    {
+      "id": "filter1_enable",
+      "name": "Filter 1 Enable",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 5.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#filter1_enable"
+      }
+    },
+    {
+      "id": "in_1_vu_ctl",
+      "name": "In 1 Vu CTL",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear"
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#in_1_vu_ctl"
+      }
+    },
+    {
+      "id": "in_2_vu_ctl",
+      "name": "In 2 Vu CTL",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear"
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#in_2_vu_ctl"
+      }
+    },
+    {
+      "id": "out_2_vu_ctl",
+      "name": "Out 1 VU CTL",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear"
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#out_2_vu_ctl"
+      }
+    },
+    {
+      "id": "out_2_vu_ctl",
+      "name": "Out 2 VU CTL",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear"
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#out_2_vu_ctl"
+      }
+    },
+    {
+      "id": "midsidemode",
+      "name": "Mid Side Mode",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "sapistaEQv2.lv2/eq1qs.ttl#midsidemode"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "input1",
+      "name": "Input1",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "input2",
+      "name": "Input2",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "output1",
+      "name": "Output1",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "output2",
+      "name": "Output2",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/urid#map"
+      ],
+      "optional": [
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": false
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#EQPlugin"
+    }
+  },
+  "source": {
+    "from": "sapistaEQv2.lv2/eq1qs.so#lv2_descriptor"
+  }
+}

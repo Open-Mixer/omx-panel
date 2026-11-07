@@ -92,7 +92,19 @@ answers `{ description, refusals }` and never throws. The override layers go ove
 `applyOverride` (the caller passes it), the layout runs over the effective descriptor, and the skin applies last. The description is
 the family, the `params` (each control's contract facts read from its `travel`: kind, unit and its token, scale, step, ends, default,
 a choice's labels; `log` over a floor at or below zero is served linear), the sections, the controls, the roles, the displays and the
-pages. A refusal is `{ code, args }`: `PANEL_NO_CONTROLS`, `PANEL_FAMILY_NOT_BACKED`, `PANEL_LAYOUT_INVALID`, a bar group's
+pages.
+
+The facts are the ones the console's own derivation served for the same descriptor, so a session's params fingerprint holds across
+the switch:
+
+- every symbol the description serves (`params`, `controls`, `roles`, `easy`, a `visibleWhen`'s param) is the name a host sets the
+  parameter by, `servedSymbolOf`: an LV2 control's symbol, a CLAP parameter's id in decimal (`0`, `2147418112`). The layout's own
+  key of a CLAP control, `p<id>`, which a declared panel names, stays inside the layout; the pages slot the id itself;
+- a default rides only inside the ends; one outside them (a TTL that writes 440 on a 0..0.5 travel) is the floor;
+- a choice is a stepped number over its values' span. It carries one label per integer of the span only when every value is an
+  integer (a sparse one, FFT sizes 128..16384, labels each integer between, up to a 16-bit span); a choice whose values lie
+  between integers (0, 0.5, 1) is served unlabelled, its default rounded to an integer inside the ends;
+- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `PANEL_NO_CONTROLS`, `PANEL_FAMILY_NOT_BACKED`, `PANEL_LAYOUT_INVALID`, a bar group's
 `PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `PANEL_ROLE_DROPPED`, `PANEL_SKIN_DROPPED`. The description is `null` only where no panel can be
 made (no control, an invalid layout); a family the controls do not back is `none` with its refusal.
 
@@ -120,8 +132,10 @@ The controls' meanings alone name no family for such a plugin: a plugin declares
 
 ### The band inference
 
-A control with no `meaning` is read by `tools/meaning-infer.mjs` (only for a candidate `eq`): its symbol, name and unit give a band
-role (frequency, gain, Q or width, type, on) and the band it belongs to, as the console's heuristic did. Every role it yields carries
+A control with no `meaning` (or `unknown`, the word a scan writes when neither format states one) is read by `tools/meaning-infer.mjs` (only for a candidate `eq`): its symbol, name and unit give a band
+role (frequency, gain, Q or width, type, on) and the band it belongs to, as the console's heuristic did. A Q whose travel reaches
+zero and comes up at zero is no band's Q, so the width beside it is: LSP's equalizers carry a `q_N` at 0 beside the `w_N` width in
+octaves the band runs on. Every role it yields carries
 `inferred: true`, with the contract token it reads the control in (`hz`, `db` or `coef` for a gain whose range stays above zero,
 `oct` or `none`). A band whose shape no parameter selects carries `shape` on its `band_freq` role; a `band_type` role carries
 `shapes`, one word per choice value from 0 (`off`, `bell`, `lowshelf`, `highshelf`, `highpass`, `lowpass`, `notch`, or `-`), read

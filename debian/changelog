@@ -1,12 +1,18 @@
-omx-panel (0.11.1) UNRELEASED; urgency=medium
+omx-panel (0.11.1) unstable; urgency=medium
 
+  * describe serves what the console's own derivation served for a scanned
+    descriptor: a CLAP parameter under its id in decimal, the band roles of
+    an equalizer whose scan writes the meaning unknown (and the octave width
+    as the Q beside a Q at zero), a gain read as a linear factor as coef, a
+    default only inside the ends, and a choice's labels only when every
+    value is an integer.
   * The renderer answers input with the one gesture vocabulary: a pointer,
     wheel, encoder detent or key gives the control, its value in the
     control's own unit, and the gesture's begin and end
     (omx_panel_view_input). It reads schema/gestures.json and keeps no
     timing or threshold of its own; omx-panel-render --input runs a script.
 
- -- Pau Aliagas <linuxnow@gmail.com>  Sat, 07 Nov 2026 13:00:00 +0100
+ -- Pau Aliagas <linuxnow@gmail.com>  Sat, 07 Nov 2026 14:00:00 +0100
 
 omx-panel (0.11.0) unstable; urgency=medium
 

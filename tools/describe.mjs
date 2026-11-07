@@ -12,7 +12,10 @@
  *   does not export it from its package entry), before the layout;
  * - the PARAMS are the effective descriptor's controls as contract facts: kind, unit and its token, scale, step, ends,
  *   default and the labels of a choice (`log` over a floor at or below zero is served linear, the same rule as omx-contract's
- *   `contract.override.scale-floor`);
+ *   `contract.override.scale-floor`; a default outside the ends is the floor; a choice is a stepped number, labelled only
+ *   when every value is an integer; a gain the band inference reads as a linear factor, its unit unstated, is `coef`);
+ * - every SYMBOL the description serves is the name a host sets the parameter by (`servedSymbolOf`): an LV2 control's symbol,
+ *   a CLAP parameter's id in decimal. The layout's own key of a CLAP control, `p<id>`, stays inside the layout;
  * - the FAMILY is the one general rule of §3.1.1: a candidate from the plugin's own LV2 class or CLAP feature (a fixed
  *   table, no list of plugins), kept only when the controls back every required role of the family, from descriptor
  *   words or from the meaning inference (tools/meaning-infer.mjs, each role `inferred`); else `none`. A declared panel's
@@ -75,26 +78,45 @@ const valuesOfMask = (mask) => {
   return Array.from({ length: 64 }, (_, v) => v).filter((v) => ((m >> BigInt(v)) & 1n) === 1n);
 };
 
-/** One control as the contract facts the description serves (§3.1 `params`). */
-export function servedParamOf(c) {
-  const symbol = keyOf(c);
+/**
+ * The name a host sets a control's parameter by, and the one every symbol of the description is: the control's symbol, else
+ * its id as text (a CLAP parameter's id in decimal, the key the console's sessions and parameter doors hold it under).
+ */
+export const servedSymbolOf = (c) => c.symbol ?? (typeof c.id === 'string' || Number.isInteger(c.id) ? String(c.id) : keyOf(c));
+
+/** The widest span of integers a choice is labelled over: one label each, a 16-bit index. */
+const LABEL_SPAN = 1 << 16;
+
+/**
+ * One control as the contract facts the description serves (§3.1 `params`). `factor`: the band inference reads it as a gain
+ * in a linear factor, so a unit the descriptor leaves unstated is `coef`.
+ */
+export function servedParamOf(c, { factor = false } = {}) {
+  const symbol = servedSymbolOf(c);
   const name = c.label ?? c.name ?? symbol;
   if (c.kind === 'trigger') return { kind: 'trigger', symbol, name, min: 0, max: 1 };
   if (c.kind === 'toggle') return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min: 0, max: 1, default: c.default === true ? 1 : 0 };
   if (c.kind === 'choice') {
     const values = c.values ?? c.ids.map((_, i) => i);
     const min = Math.min(...values), max = Math.max(...values);
-    const at = Math.max(0, c.ids.indexOf(c.default));
+    const at = c.ids.indexOf(c.default);
     const labels = c.labels ?? c.ids;
-    const enumLabels = Number.isInteger(min) && Number.isInteger(max) && max - min < 256 ? Array.from({ length: max - min + 1 }, (_, k) => labels[values.indexOf(min + k)] ?? String(min + k)) : undefined;
-    return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min, max, default: values[at] ?? min, ...(enumLabels ? { enumLabels } : {}) };
+    // one label per integer of the span, only when every value is one: a value between two integers has no slot of a
+    // stepped number, so its label would be lost and another put in its place. A sparse choice (FFT sizes 128..16384) takes
+    // a label per integer between, as the console's derivation served it; past a 16-bit span no list is made
+    const enumLabels = values.every(Number.isInteger) && max - min < LABEL_SPAN ? Array.from({ length: max - min + 1 }, (_, k) => labels[values.indexOf(min + k)] ?? String(min + k)) : undefined;
+    // a stepped number's default is an integer inside its ends, as a stepped travel's is
+    const fallback = at >= 0 ? values[at] : min;
+    return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min, max, default: Math.min(max, Math.max(min, Math.round(fallback))), ...(enumLabels ? { enumLabels } : {}) };
   }
   const t = c.travel;
-  const token = unitToken(t.unit);
+  const stated = t.unit && t.unit !== 'unknown';
+  const token = factor && !stated ? 'coef' : unitToken(t.unit);
   const stepped = t.scale === 'stepped' || (t.step ?? 0) >= 1;
   // log over a floor at or below zero is served linear (contract.override.scale-floor)
   const scale = stepped ? 'stepped' : t.scale === 'log' && t.min > 0 ? 'log' : 'linear';
-  const at = t.default ?? t.min;
+  // the default rides only inside the ends; one outside them (a TTL's typo, 440 on a 0..0.5 travel) is the floor
+  const at = typeof t.default === 'number' && t.default >= t.min && t.default <= t.max ? t.default : t.min;
   return {
     kind: 'number', symbol, name, unit: token ?? 'none',
     ...(token === undefined && t.unit && t.unit !== 'unknown' ? { unitText: t.unit } : {}),
@@ -176,21 +198,25 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     refusals.push(refuse(code, { plugin, message: e.message }));
     return { description: null, refusals };
   }
-  for (const u of layout.unpublished) refusals.push(refuse(DESCRIBE_CODES.roleDropped, { plugin, entry: u.role, symbol: u.symbol, reason: u.why }));
+  // the layout keys a control by keyOf; the description serves the name a host sets it by
+  const servedOf = new Map(effective.controls.map((c) => [keyOf(c), servedSymbolOf(c)]));
+  const served = (key) => servedOf.get(key) ?? key;
+  for (const u of layout.unpublished) refusals.push(refuse(DESCRIBE_CODES.roleDropped, { plugin, entry: u.role, symbol: served(u.symbol), reason: u.why }));
 
-  const params = effective.controls.map(servedParamOf);
-  const visibleWhen = (c) => (c.visibleWhen ? { param: c.visibleWhen.symbol, values: valuesOfMask(c.mask) } : null);
+  const factors = new Set(layout.roles.filter((r) => r.role === 'band_gain' && r.inferred && (r.token ?? r.unit) === 'coef').map((r) => r.symbol));
+  const params = effective.controls.map((c) => servedParamOf(c, { factor: factors.has(keyOf(c)) }));
+  const visibleWhen = (c) => (c.visibleWhen ? { param: served(c.visibleWhen.symbol), values: valuesOfMask(c.mask) } : null);
   let description = {
     family: layout.family,
     fingerprint: panelFingerprint(layout),
     // the Easy controls, a view of the panel (the descriptor's own list, else the roles', tools/easy.mjs)
-    easy: layout.easy,
+    easy: layout.easy.map(served),
     params,
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
-    controls: layout.controls.map((c) => ({ symbol: c.symbol, section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
+    controls: layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
     roles: layout.roles.map((r) => {
-      const { role, index, symbol } = r;
-      return { role, index, symbol, unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
+      const { role, index } = r;
+      return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
     }),
     displays: layout.displays.map((d) => ({ kind: d.kind, section: d.sectionKey, source: d.source, meterIds: d.meters, curveIndex: d.curve, floor: d.floor, labelKey: d.labelKey ?? '', label: d.label, basis: d.basis ?? 'modelled' })),
   };
@@ -200,14 +226,14 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin, field: d.field, entry: d.entry, reason: d.reason }));
   }
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
-  description = { ...description, pages: pagesOfDescription(description, effective, layout, { perPage, remote }) };
+  description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
   return { description, refusals };
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */
-function pagesOfDescription(description, effective, layout, { perPage, remote }) {
-  const idOf = new Map(effective.controls.map((c) => [keyOf(c), c.id]));
-  const groupOf = new Map(layout.controls.map((c) => [c.symbol, c[GROUP]]));
+function pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) {
+  const idOf = new Map(effective.controls.map((c) => [servedSymbolOf(c), c.id]));
+  const groupOf = new Map(layout.controls.map((c) => [servedOf.get(c.symbol) ?? c.symbol, c[GROUP]]));
   const default_ = (symbol) => description.params.find((p) => p.symbol === symbol)?.default ?? 0;
   const numeric = (c) => description.params.find((p) => p.symbol === c.symbol)?.kind === 'number';
   const controls = description.controls.filter(numeric).map((c) => {

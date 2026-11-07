@@ -7,7 +7,11 @@
  * descriptor's controls in, a verdict out. A heuristic over names is a derivation, never stored, so it is not an
  * override; every role it yields carries `inferred: true`, and a surface draws the mark.
  *
- * Only a control with no `meaning` is read. A control the descriptor gives a meaning stands as the descriptor says.
+ * Only a control with no `meaning` is read; `unknown`, the word a scan writes for a control whose meaning neither format states,
+ * is no meaning. A control the descriptor gives a meaning stands as the descriptor says.
+ *
+ * A Q control whose travel reaches zero and whose default is zero is no band's Q (a band's Q is above zero): it plays no role, so a width
+ * beside it is the band's Q, as LSP's equalizers carry a `q_N` at 0 beside the `w_N` width in octaves the band runs on.
  *
  * The verdict is one of:
  *   { outcome: 'inferred', roles }                  the band roles, `{ role, index, symbol, unit, inferred: true,
@@ -33,9 +37,15 @@ const hay = (c) => `${symbolOf(c)} ${nameOf(c)}`.replace(/_/g, ' ').toLowerCase(
 /** A gain or level control that trims the whole plugin, not one band. */
 const isGlobalGain = (h) => /(gain|level)/.test(h) && /\b(in|out|input|output|make ?up|master|global|dry|wet)\b/.test(h);
 
+/** A meaning the descriptor states: `unknown` (a scan's word for none) is none. */
+export const statesMeaning = (c) => typeof c.meaning === 'string' && c.meaning !== '' && c.meaning !== 'unknown';
+
+/** A Q no band runs on: not in octaves, its travel reaching down to zero and coming up there. */
+const degenerateQ = (c) => unitOf(c) !== 'oct' && typeof c.travel?.min === 'number' && c.travel.min <= 0 && typeof c.travel?.default === 'number' && c.travel.default <= 0;
+
 /** The band role a control plays, from its metadata alone; null for a control that is not a band control. */
 function roleOf(c) {
-  if (c.hidden || c.readonly || c.meaning) return null;
+  if (c.hidden || c.readonly || statesMeaning(c)) return null;
   const h = hay(c);
   const sym = symbolOf(c).toLowerCase();
   const unit = unitOf(c);
@@ -47,7 +57,7 @@ function roleOf(c) {
   if (choice && /(filter\s*type|\btype\b|\bmode\b|^ft\b|^fm\b)/.test(h)) return 'type';
   if (c.kind === 'travel') {
     if (unit === 'db' || /\b(gain|boost|cut|level)\b/.test(h) || /^g[ _]?\d+$/.test(sym) || /^boost[lh]$/.test(sym)) return 'gain';
-    if (/\bq\b|quality|bandwidth|resonance|\bwidth\b|^q[ _]?\d+$|^bw\d*$/.test(h) || unit === 'oct') return 'q';
+    if (/\bq\b|quality|bandwidth|resonance|\bwidth\b|^q[ _]?\d+$|^bw\d*$/.test(h) || unit === 'oct') return degenerateQ(c) ? null : 'q';
   }
   if (c.kind === 'toggle' || choice || /\b(active|enable|on|section|sec|bypass)\b|highpass|lowpass/.test(h)) return 'enable';
   return null;
