@@ -96,6 +96,12 @@ members and a `plot`, a `bar` has `bars`. `memberOf(descriptorControl)` builds a
 travel. The events are pointer `down`, `move` and `up` (with `id`, `ptype`: `touch`, `mouse`, `pen` or `fader`, and `fine`),
 `wheel` and `detent` (`n`, `coarse`, `encoder`), and `key`.
 
+## The renderer
+
+The native renderer (`renderer/`) maps pointers, wheels, detents and keys onto these words in C and answers each call with
+the control, its value and the gesture's begin and end (`docs/renderer.md`, "Input"). It reads this declaration and holds
+none of its numbers. Its scripts are the fixtures' (`renderer/test/input.test.mjs`).
+
 ## The parity check
 
 On each surface the value of a scripted gesture is within one declared step of the reference in the control's own unit
