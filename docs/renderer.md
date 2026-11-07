@@ -94,8 +94,48 @@ control's integer value: its come-up value (`visibleWhen.default`) until the hos
 `omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
 leaves with none takes no space, so the panel is drawn exactly as one without them.
 
-Still to come: input (a pointer press, drag and release on a control, a scroll, answered with the control
-and the new fraction, and a gesture's begin and end), and redrawing only what changed.
+## Input
+
+The renderer answers input with the one gesture vocabulary (`docs/panel-gestures.md`, one-panel spec 7.8). An event
+(`omx_panel_event_t`: a pointer press, move or release, a wheel notch, an encoder detent, a key) goes to
+`omx_panel_view_input`, which writes the controls it changed (their fraction along the travel and their value in the
+control's own unit) and answers the gesture it touched: its word (`drag`, `fine`, `step`, `second`, `reset`, `more`,
+`select`, `toggle`, `paint`), its id (one id is one undo entry), where it began and ended, how long its value text stays
+clear of the finger, and the refusal by name when the event was refused.
+
+```c
+omx_panel_view_set_surface(view, width, height, scale);          // the box the panel is laid out in
+omx_panel_view_set_travel(view, i, &(omx_panel_travel_t){...});  // the control's unit; the layout carries none
+omx_panel_view_set_handle(view, f, g, q, target, plot);          // a curve handle bound by roles
+omx_panel_event_t e = { .t_ms = 0, .kind = OMX_PANEL_EVENT_DOWN, .pointer = 1, .x = 40, .y = 90 };
+omx_panel_change_t changed[8];
+omx_panel_answer_t a;
+size_t n = omx_panel_view_input(view, &e, changed, 8, &a);       // n controls changed; a.word, a.gesture, a.begin_ms, a.end_ms
+```
+
+The renderer keeps no timing, threshold or table cell of its own: it reads `schema/gestures.json` (given in
+`omx_panel_sources_t.gestures_json`; `omx_panel_view_create_from_files` finds it at `<data dir>/../schema/gestures.json`,
+which is the source tree's, `dist/`'s and an install's layout, else `<data dir>/gestures.json`). A view with none draws
+as before and refuses every input by name (`OMX_PANEL_REFUSED_NO_TABLE`). A surface's own timings go through
+`omx_panel_view_set_timing`: the safety hold may be lengthened and is refused below the declared floor, and so is any
+name or time the declaration does not have.
+
+Positions are the layout's logical px. A control takes presses on its cell; a fader and the bars of a bar group on their
+track (a bar's column is the cell's width), and a drag over a fader's whole travel is the cap's travel
+(`omx_panel_view_target_rect` gives both). A section's bar group is one target: a drag that leaves the pressed bar's
+column paints. The renderer draws no curve handle, so the surface places one (`omx_panel_view_set_handle`: the three
+controls its roles bind, its target and the plot's size). A control that is read-only (a meter, a display, a curve, or one
+the host marks) takes no gesture, and a control belongs to the pointer that pressed it, or to a stepper through the
+claim after a step; a later press is refused. The host's read-back (`omx_panel_view_set_value`) replaces the value a
+gesture drew.
+
+`omx-panel-render --input <script.json>` runs a script of events through a view and prints what the renderer answered
+(the header of `renderer/src/cli.c` has the script's words). `renderer/test/input.test.mjs` runs the scripted gestures
+of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
+holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
+begin and end equal; each guard has its sabotage arm there.
+
+Still to come: redrawing only what changed.
 
 `renderer/build/omx-panel-render` is the library's front door for tests and tools: it draws a description
 with a state file (the title, each control's reading and the governing values, `integers`) into a raw buffer or a PNG.
@@ -153,7 +193,7 @@ the cell must cover the same extent within 2 px. Block by block, the image must 
 within 20 in a channel for 97 in 100 blocks.
 
 Next: `clap.gui` (embedded when the host gives a parent, floating otherwise; X11 first, Wayland when there
-is a desktop to prove it on), input events, and redrawing only what changed.
+is a desktop to prove it on), and redrawing only what changed.
 
 ## Dependencies
 
