@@ -11,6 +11,15 @@ omx-panel (0.11.1) unstable; urgency=medium
     control's own unit, and the gesture's begin and end
     (omx_panel_view_input). It reads schema/gestures.json and keeps no
     timing or threshold of its own; omx-panel-render --input runs a script.
+  * describe --pages --per-page N gives a surface that is not node the
+    one cut of the controls into pages: the Easy controls first, a remote's
+    pages as given, a group kept whole at every width. The user's Easy list
+    wins over the derived one.
+  * schema/gestures.json declares the gestures of every surface once (the
+    table, the words and the timings) and is installed with the package.
+  * The MOD GUI draws a display's static curve, with a mark at each
+    declared band origin, through omx-dsp's TypeScript twin when it is
+    installed; without it the frame and its caption are drawn alone.
 
  -- Pau Aliagas <linuxnow@gmail.com>  Sat, 07 Nov 2026 14:00:00 +0100
 
