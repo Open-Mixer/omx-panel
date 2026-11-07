@@ -1,0 +1,814 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://lsp-plug.in/plugins/lv2/compressor_mono",
+    "uri": "http://lsp-plug.in/plugins/lv2/compressor_mono",
+    "name": "LSP Compressor Mono",
+    "vendor": "LSP LV2",
+    "version": "0.36",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "showpmx",
+      "name": "Show pre-mix overlay",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#showpmx"
+      }
+    },
+    {
+      "id": "in2lk",
+      "name": "Input to Link mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#in2lk"
+      }
+    },
+    {
+      "id": "lk2in",
+      "name": "Link to Input mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#lk2in"
+      }
+    },
+    {
+      "id": "lk2sc",
+      "name": "Link to Sidechain mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#lk2sc"
+      }
+    },
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "enabled",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#enabled"
+      }
+    },
+    {
+      "id": "g_in",
+      "name": "Input gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#g_in"
+      }
+    },
+    {
+      "id": "g_out",
+      "name": "Output gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#g_out"
+      }
+    },
+    {
+      "id": "showmx",
+      "name": "Show mix overlay",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#showmx"
+      }
+    },
+    {
+      "id": "showsc",
+      "name": "Show sidechain overlay",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#showsc"
+      }
+    },
+    {
+      "id": "pause",
+      "name": "Pause graph analysis",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#pause"
+      }
+    },
+    {
+      "id": "clear",
+      "name": "Clear graph analysis",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#clear"
+      }
+    },
+    {
+      "id": "sct",
+      "name": "Sidechain type",
+      "kind": "choice",
+      "ids": [
+        "feedforward",
+        "feedback",
+        "link"
+      ],
+      "labels": [
+        "Feed-forward",
+        "Feed-back",
+        "Link"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "default": "feedforward",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#sct"
+      }
+    },
+    {
+      "id": "scm",
+      "name": "Sidechain mode",
+      "kind": "choice",
+      "ids": [
+        "peak",
+        "rMS",
+        "lPF",
+        "sMA"
+      ],
+      "labels": [
+        "Peak",
+        "RMS",
+        "LPF",
+        "SMA"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "rMS",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#scm"
+      }
+    },
+    {
+      "id": "sla",
+      "name": "Sidechain lookahead",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 20.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#sla"
+      }
+    },
+    {
+      "id": "scl",
+      "name": "Sidechain listen",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#scl"
+      }
+    },
+    {
+      "id": "scr",
+      "name": "Sidechain reactivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 250.0,
+        "unit": "ms",
+        "scale": "log",
+        "default": 10.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#scr"
+      }
+    },
+    {
+      "id": "scp",
+      "name": "Sidechain preamp",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#scp"
+      }
+    },
+    {
+      "id": "shpm",
+      "name": "High-pass filter mode",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#shpm"
+      }
+    },
+    {
+      "id": "shpf",
+      "name": "High-pass filter frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 20000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 10.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#shpf"
+      }
+    },
+    {
+      "id": "slpm",
+      "name": "Low-pass filter mode",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#slpm"
+      }
+    },
+    {
+      "id": "slpf",
+      "name": "Low-pass filter frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 20000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 20000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#slpf"
+      }
+    },
+    {
+      "id": "cm",
+      "name": "Compression mode",
+      "kind": "choice",
+      "ids": [
+        "down",
+        "up",
+        "boot"
+      ],
+      "labels": [
+        "Down",
+        "Up",
+        "Boot"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "default": "down",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#cm"
+      }
+    },
+    {
+      "id": "al",
+      "name": "Attack threshold",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0010000000474974513,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.2511900067329407
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#al"
+      }
+    },
+    {
+      "id": "at",
+      "name": "Attack time",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 2000.0,
+        "unit": "ms",
+        "scale": "log",
+        "default": 20.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#at"
+      }
+    },
+    {
+      "id": "rrl",
+      "name": "Release threshold",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#rrl"
+      }
+    },
+    {
+      "id": "rt",
+      "name": "Release time",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 5000.0,
+        "unit": "ms",
+        "scale": "log",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#rt"
+      }
+    },
+    {
+      "id": "hold",
+      "name": "Hold time",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#hold"
+      }
+    },
+    {
+      "id": "cr",
+      "name": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#cr"
+      }
+    },
+    {
+      "id": "kn",
+      "name": "Knee",
+      "kind": "travel",
+      "travel": {
+        "min": 0.06310000270605087,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.5011799931526184
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#kn"
+      }
+    },
+    {
+      "id": "bth",
+      "name": "Boost threshold",
+      "kind": "travel",
+      "travel": {
+        "min": 9.999999974752427e-07,
+        "max": 0.0010000000474974513,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.00025099999038502574
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#bth"
+      }
+    },
+    {
+      "id": "bsa",
+      "name": "Boost signal amount",
+      "kind": "travel",
+      "travel": {
+        "min": 0.00025099999038502574,
+        "max": 3981.072998046875,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.9952600002288818
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#bsa"
+      }
+    },
+    {
+      "id": "mk",
+      "name": "Makeup gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0010000000474974513,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#mk"
+      }
+    },
+    {
+      "id": "cdr",
+      "name": "Dry gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#cdr"
+      }
+    },
+    {
+      "id": "cwt",
+      "name": "Wet gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#cwt"
+      }
+    },
+    {
+      "id": "cdw",
+      "name": "Dry/Wet balance",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#cdw"
+      }
+    },
+    {
+      "id": "rl",
+      "name": "Release level",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 20.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#rl"
+      }
+    },
+    {
+      "id": "slv",
+      "name": "Sidechain level visibility",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#slv"
+      }
+    },
+    {
+      "id": "elv",
+      "name": "Envelope level visibility",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#elv"
+      }
+    },
+    {
+      "id": "grv",
+      "name": "Gain reduction visibility",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#grv"
+      }
+    },
+    {
+      "id": "ilv",
+      "name": "Input level visibility",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#ilv"
+      }
+    },
+    {
+      "id": "olv",
+      "name": "Output level visibility",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#olv"
+      }
+    },
+    {
+      "id": "slm",
+      "name": "Sidechain level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#slm"
+      }
+    },
+    {
+      "id": "clm",
+      "name": "Curve level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#clm"
+      }
+    },
+    {
+      "id": "elm",
+      "name": "Envelope level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#elm"
+      }
+    },
+    {
+      "id": "rlm",
+      "name": "Reduction level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 3981.072998046875,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#rlm"
+      }
+    },
+    {
+      "id": "ilm",
+      "name": "Input level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#ilm"
+      }
+    },
+    {
+      "id": "olm",
+      "name": "Output level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/compressor_mono.ttl#olm"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "in",
+      "name": "Input",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out",
+      "name": "Output",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "tempo": true,
+    "transport": true,
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/urid#map"
+      ],
+      "optional": [
+        "http://harrisonconsoles.com/lv2/inlinedisplay#queue_draw",
+        "http://lv2plug.in/ns/ext/options#options",
+        "http://lv2plug.in/ns/ext/state#mapPath",
+        "http://lv2plug.in/ns/ext/worker#schedule",
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#CompressorPlugin",
+      "lv2:latency": "out_latency",
+      "patch:writable": [
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/compressor_mono/ports#link",
+          "label": "Side-chain shared memory link",
+          "range": "String"
+        }
+      ]
+    }
+  },
+  "source": {
+    "from": "lsp-plugins.lv2/lsp-plugins-lv2.so#lv2_descriptor"
+  }
+}

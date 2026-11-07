@@ -1,0 +1,226 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://drobilla.net/plugins/mda/Leslie",
+    "uri": "http://drobilla.net/plugins/mda/Leslie",
+    "name": "MDA Leslie",
+    "vendor": "David Robillard",
+    "version": "2.0",
+    "doc": "No overdrive or speaker cabinet simulation is added - you may want to combine this plug-in with Combo. For a much thicker sound try combining two Leslie plug-ins in series!",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "mode",
+      "name": "Mode",
+      "kind": "choice",
+      "ids": [
+        "stop",
+        "slow",
+        "fast"
+      ],
+      "labels": [
+        "Stop",
+        "Slow",
+        "Fast"
+      ],
+      "values": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "default": "slow",
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#mode"
+      }
+    },
+    {
+      "id": "lo_width",
+      "name": "Lo Width",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.5
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#lo_width"
+      }
+    },
+    {
+      "id": "lo_throb",
+      "name": "Lo Throb",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.6000000238418579
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#lo_throb"
+      }
+    },
+    {
+      "id": "hi_width",
+      "name": "Hi Width",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.699999988079071
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#hi_width"
+      }
+    },
+    {
+      "id": "hi_depth",
+      "name": "Hi Depth",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.6000000238418579
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#hi_depth"
+      }
+    },
+    {
+      "id": "hi_throb",
+      "name": "Hi Throb",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.699999988079071
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#hi_throb"
+      }
+    },
+    {
+      "id": "x_over",
+      "name": "X-Over",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.47999998927116394
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#x_over"
+      }
+    },
+    {
+      "id": "output",
+      "name": "Output",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.5
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#output"
+      }
+    },
+    {
+      "id": "speed",
+      "name": "Speed",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.5
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "mda.lv2/Leslie.ttl#speed"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "left_in",
+      "name": "Left In",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "right_in",
+      "name": "Right In",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "left_out",
+      "name": "Left Out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "right_out",
+      "name": "Right Out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": false
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#SimulatorPlugin"
+    }
+  },
+  "source": {
+    "from": "mda.lv2/Leslie.so#lv2_descriptor"
+  }
+}

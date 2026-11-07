@@ -1,0 +1,4033 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://lsp-plug.in/plugins/lv2/para_equalizer_x16_mono",
+    "uri": "http://lsp-plug.in/plugins/lv2/para_equalizer_x16_mono",
+    "name": "LSP Parametric Equalizer x16 Mono",
+    "vendor": "LSP LV2",
+    "version": "0.36",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "enabled",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#enabled"
+      }
+    },
+    {
+      "id": "g_in",
+      "name": "Input gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_in"
+      }
+    },
+    {
+      "id": "g_out",
+      "name": "Output gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_out"
+      }
+    },
+    {
+      "id": "mode",
+      "name": "Equalizer mode",
+      "kind": "choice",
+      "ids": [
+        "iIR",
+        "fIR",
+        "fFT",
+        "sPM"
+      ],
+      "labels": [
+        "IIR",
+        "FIR",
+        "FFT",
+        "SPM"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "iIR",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#mode"
+      }
+    },
+    {
+      "id": "react",
+      "name": "FFT reactivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "ms",
+        "scale": "log",
+        "default": 0.20000000298023224
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#react"
+      }
+    },
+    {
+      "id": "shift",
+      "name": "Shift gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#shift"
+      }
+    },
+    {
+      "id": "zoom",
+      "name": "Graph zoom",
+      "kind": "travel",
+      "travel": {
+        "min": 0.007942999713122845,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.015850000083446503
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#zoom"
+      }
+    },
+    {
+      "id": "fsel",
+      "name": "Filter select",
+      "kind": "choice",
+      "ids": [
+        "filters07",
+        "filters815"
+      ],
+      "labels": [
+        "Filters 0-7",
+        "Filters 8-15"
+      ],
+      "values": [
+        0.0,
+        1.0
+      ],
+      "default": "filters07",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fsel"
+      }
+    },
+    {
+      "id": "quant",
+      "name": "Quantize note frequencies when editing",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#quant"
+      }
+    },
+    {
+      "id": "insp_id",
+      "name": "Inspected filter identifier",
+      "kind": "travel",
+      "travel": {
+        "min": -1.0,
+        "max": 15.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": -1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#insp_id"
+      }
+    },
+    {
+      "id": "insp_r",
+      "name": "Inspect frequency range",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 5.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#insp_r"
+      }
+    },
+    {
+      "id": "insp_on",
+      "name": "Automatically inspect filter when editing",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#insp_on"
+      }
+    },
+    {
+      "id": "ife",
+      "name": "Input FFT graph enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ife"
+      }
+    },
+    {
+      "id": "ofe",
+      "name": "Output FFT graph enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ofe"
+      }
+    },
+    {
+      "id": "rfe",
+      "name": "Return FFT graph enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#rfe"
+      }
+    },
+    {
+      "id": "frqs",
+      "name": "Frequency shift",
+      "kind": "travel",
+      "travel": {
+        "min": -120.0,
+        "max": 120.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#frqs"
+      }
+    },
+    {
+      "id": "im",
+      "name": "Input signal meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#im"
+      }
+    },
+    {
+      "id": "sm",
+      "name": "Output signal meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#sm"
+      }
+    },
+    {
+      "id": "ft_0",
+      "name": "Filter type 0",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_0"
+      }
+    },
+    {
+      "id": "fm_0",
+      "name": "Filter mode 0",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_0"
+      }
+    },
+    {
+      "id": "s_0",
+      "name": "Filter slope 0",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_0"
+      }
+    },
+    {
+      "id": "xs_0",
+      "name": "Filter solo 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_0"
+      }
+    },
+    {
+      "id": "xm_0",
+      "name": "Filter mute 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_0"
+      }
+    },
+    {
+      "id": "f_0",
+      "name": "Frequency 0",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 16.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_0"
+      }
+    },
+    {
+      "id": "w_0",
+      "name": "Filter Width 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_0"
+      }
+    },
+    {
+      "id": "g_0",
+      "name": "Gain 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_0"
+      }
+    },
+    {
+      "id": "q_0",
+      "name": "Quality factor 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_0"
+      }
+    },
+    {
+      "id": "hue_0",
+      "name": "Hue 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_0"
+      }
+    },
+    {
+      "id": "fv_0",
+      "name": "Filter visibility 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_0"
+      }
+    },
+    {
+      "id": "ft_1",
+      "name": "Filter type 1",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_1"
+      }
+    },
+    {
+      "id": "fm_1",
+      "name": "Filter mode 1",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_1"
+      }
+    },
+    {
+      "id": "s_1",
+      "name": "Filter slope 1",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_1"
+      }
+    },
+    {
+      "id": "xs_1",
+      "name": "Filter solo 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_1"
+      }
+    },
+    {
+      "id": "xm_1",
+      "name": "Filter mute 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_1"
+      }
+    },
+    {
+      "id": "f_1",
+      "name": "Frequency 1",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 25.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_1"
+      }
+    },
+    {
+      "id": "w_1",
+      "name": "Filter Width 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_1"
+      }
+    },
+    {
+      "id": "g_1",
+      "name": "Gain 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_1"
+      }
+    },
+    {
+      "id": "q_1",
+      "name": "Quality factor 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_1"
+      }
+    },
+    {
+      "id": "hue_1",
+      "name": "Hue 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0625
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_1"
+      }
+    },
+    {
+      "id": "fv_1",
+      "name": "Filter visibility 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_1"
+      }
+    },
+    {
+      "id": "ft_2",
+      "name": "Filter type 2",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_2"
+      }
+    },
+    {
+      "id": "fm_2",
+      "name": "Filter mode 2",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_2"
+      }
+    },
+    {
+      "id": "s_2",
+      "name": "Filter slope 2",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_2"
+      }
+    },
+    {
+      "id": "xs_2",
+      "name": "Filter solo 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_2"
+      }
+    },
+    {
+      "id": "xm_2",
+      "name": "Filter mute 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_2"
+      }
+    },
+    {
+      "id": "f_2",
+      "name": "Frequency 2",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 40.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_2"
+      }
+    },
+    {
+      "id": "w_2",
+      "name": "Filter Width 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_2"
+      }
+    },
+    {
+      "id": "g_2",
+      "name": "Gain 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_2"
+      }
+    },
+    {
+      "id": "q_2",
+      "name": "Quality factor 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_2"
+      }
+    },
+    {
+      "id": "hue_2",
+      "name": "Hue 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.125
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_2"
+      }
+    },
+    {
+      "id": "fv_2",
+      "name": "Filter visibility 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_2"
+      }
+    },
+    {
+      "id": "ft_3",
+      "name": "Filter type 3",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_3"
+      }
+    },
+    {
+      "id": "fm_3",
+      "name": "Filter mode 3",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_3"
+      }
+    },
+    {
+      "id": "s_3",
+      "name": "Filter slope 3",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_3"
+      }
+    },
+    {
+      "id": "xs_3",
+      "name": "Filter solo 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_3"
+      }
+    },
+    {
+      "id": "xm_3",
+      "name": "Filter mute 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_3"
+      }
+    },
+    {
+      "id": "f_3",
+      "name": "Frequency 3",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 63.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_3"
+      }
+    },
+    {
+      "id": "w_3",
+      "name": "Filter Width 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_3"
+      }
+    },
+    {
+      "id": "g_3",
+      "name": "Gain 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_3"
+      }
+    },
+    {
+      "id": "q_3",
+      "name": "Quality factor 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_3"
+      }
+    },
+    {
+      "id": "hue_3",
+      "name": "Hue 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.1875
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_3"
+      }
+    },
+    {
+      "id": "fv_3",
+      "name": "Filter visibility 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_3"
+      }
+    },
+    {
+      "id": "ft_4",
+      "name": "Filter type 4",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_4"
+      }
+    },
+    {
+      "id": "fm_4",
+      "name": "Filter mode 4",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_4"
+      }
+    },
+    {
+      "id": "s_4",
+      "name": "Filter slope 4",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_4"
+      }
+    },
+    {
+      "id": "xs_4",
+      "name": "Filter solo 4",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_4"
+      }
+    },
+    {
+      "id": "xm_4",
+      "name": "Filter mute 4",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_4"
+      }
+    },
+    {
+      "id": "f_4",
+      "name": "Frequency 4",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_4"
+      }
+    },
+    {
+      "id": "w_4",
+      "name": "Filter Width 4",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_4"
+      }
+    },
+    {
+      "id": "g_4",
+      "name": "Gain 4",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_4"
+      }
+    },
+    {
+      "id": "q_4",
+      "name": "Quality factor 4",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_4"
+      }
+    },
+    {
+      "id": "hue_4",
+      "name": "Hue 4",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.25
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_4"
+      }
+    },
+    {
+      "id": "fv_4",
+      "name": "Filter visibility 4",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_4"
+      }
+    },
+    {
+      "id": "ft_5",
+      "name": "Filter type 5",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_5"
+      }
+    },
+    {
+      "id": "fm_5",
+      "name": "Filter mode 5",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_5"
+      }
+    },
+    {
+      "id": "s_5",
+      "name": "Filter slope 5",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_5"
+      }
+    },
+    {
+      "id": "xs_5",
+      "name": "Filter solo 5",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_5"
+      }
+    },
+    {
+      "id": "xm_5",
+      "name": "Filter mute 5",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_5"
+      }
+    },
+    {
+      "id": "f_5",
+      "name": "Frequency 5",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 160.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_5"
+      }
+    },
+    {
+      "id": "w_5",
+      "name": "Filter Width 5",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_5"
+      }
+    },
+    {
+      "id": "g_5",
+      "name": "Gain 5",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_5"
+      }
+    },
+    {
+      "id": "q_5",
+      "name": "Quality factor 5",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_5"
+      }
+    },
+    {
+      "id": "hue_5",
+      "name": "Hue 5",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.3125
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_5"
+      }
+    },
+    {
+      "id": "fv_5",
+      "name": "Filter visibility 5",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_5"
+      }
+    },
+    {
+      "id": "ft_6",
+      "name": "Filter type 6",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_6"
+      }
+    },
+    {
+      "id": "fm_6",
+      "name": "Filter mode 6",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_6"
+      }
+    },
+    {
+      "id": "s_6",
+      "name": "Filter slope 6",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_6"
+      }
+    },
+    {
+      "id": "xs_6",
+      "name": "Filter solo 6",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_6"
+      }
+    },
+    {
+      "id": "xm_6",
+      "name": "Filter mute 6",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_6"
+      }
+    },
+    {
+      "id": "f_6",
+      "name": "Frequency 6",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 250.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_6"
+      }
+    },
+    {
+      "id": "w_6",
+      "name": "Filter Width 6",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_6"
+      }
+    },
+    {
+      "id": "g_6",
+      "name": "Gain 6",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_6"
+      }
+    },
+    {
+      "id": "q_6",
+      "name": "Quality factor 6",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_6"
+      }
+    },
+    {
+      "id": "hue_6",
+      "name": "Hue 6",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.375
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_6"
+      }
+    },
+    {
+      "id": "fv_6",
+      "name": "Filter visibility 6",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_6"
+      }
+    },
+    {
+      "id": "ft_7",
+      "name": "Filter type 7",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_7"
+      }
+    },
+    {
+      "id": "fm_7",
+      "name": "Filter mode 7",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_7"
+      }
+    },
+    {
+      "id": "s_7",
+      "name": "Filter slope 7",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_7"
+      }
+    },
+    {
+      "id": "xs_7",
+      "name": "Filter solo 7",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_7"
+      }
+    },
+    {
+      "id": "xm_7",
+      "name": "Filter mute 7",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_7"
+      }
+    },
+    {
+      "id": "f_7",
+      "name": "Frequency 7",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 400.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_7"
+      }
+    },
+    {
+      "id": "w_7",
+      "name": "Filter Width 7",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_7"
+      }
+    },
+    {
+      "id": "g_7",
+      "name": "Gain 7",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_7"
+      }
+    },
+    {
+      "id": "q_7",
+      "name": "Quality factor 7",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_7"
+      }
+    },
+    {
+      "id": "hue_7",
+      "name": "Hue 7",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.4375
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_7"
+      }
+    },
+    {
+      "id": "fv_7",
+      "name": "Filter visibility 7",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_7"
+      }
+    },
+    {
+      "id": "ft_8",
+      "name": "Filter type 8",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_8"
+      }
+    },
+    {
+      "id": "fm_8",
+      "name": "Filter mode 8",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_8"
+      }
+    },
+    {
+      "id": "s_8",
+      "name": "Filter slope 8",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_8"
+      }
+    },
+    {
+      "id": "xs_8",
+      "name": "Filter solo 8",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_8"
+      }
+    },
+    {
+      "id": "xm_8",
+      "name": "Filter mute 8",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_8"
+      }
+    },
+    {
+      "id": "f_8",
+      "name": "Frequency 8",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 630.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_8"
+      }
+    },
+    {
+      "id": "w_8",
+      "name": "Filter Width 8",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_8"
+      }
+    },
+    {
+      "id": "g_8",
+      "name": "Gain 8",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_8"
+      }
+    },
+    {
+      "id": "q_8",
+      "name": "Quality factor 8",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_8"
+      }
+    },
+    {
+      "id": "hue_8",
+      "name": "Hue 8",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.5
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_8"
+      }
+    },
+    {
+      "id": "fv_8",
+      "name": "Filter visibility 8",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_8"
+      }
+    },
+    {
+      "id": "ft_9",
+      "name": "Filter type 9",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_9"
+      }
+    },
+    {
+      "id": "fm_9",
+      "name": "Filter mode 9",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_9"
+      }
+    },
+    {
+      "id": "s_9",
+      "name": "Filter slope 9",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_9"
+      }
+    },
+    {
+      "id": "xs_9",
+      "name": "Filter solo 9",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_9"
+      }
+    },
+    {
+      "id": "xm_9",
+      "name": "Filter mute 9",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_9"
+      }
+    },
+    {
+      "id": "f_9",
+      "name": "Frequency 9",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 1000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_9"
+      }
+    },
+    {
+      "id": "w_9",
+      "name": "Filter Width 9",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_9"
+      }
+    },
+    {
+      "id": "g_9",
+      "name": "Gain 9",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_9"
+      }
+    },
+    {
+      "id": "q_9",
+      "name": "Quality factor 9",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_9"
+      }
+    },
+    {
+      "id": "hue_9",
+      "name": "Hue 9",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.5625
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_9"
+      }
+    },
+    {
+      "id": "fv_9",
+      "name": "Filter visibility 9",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_9"
+      }
+    },
+    {
+      "id": "ft_10",
+      "name": "Filter type 10",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_10"
+      }
+    },
+    {
+      "id": "fm_10",
+      "name": "Filter mode 10",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_10"
+      }
+    },
+    {
+      "id": "s_10",
+      "name": "Filter slope 10",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_10"
+      }
+    },
+    {
+      "id": "xs_10",
+      "name": "Filter solo 10",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_10"
+      }
+    },
+    {
+      "id": "xm_10",
+      "name": "Filter mute 10",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_10"
+      }
+    },
+    {
+      "id": "f_10",
+      "name": "Frequency 10",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 1600.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_10"
+      }
+    },
+    {
+      "id": "w_10",
+      "name": "Filter Width 10",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_10"
+      }
+    },
+    {
+      "id": "g_10",
+      "name": "Gain 10",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_10"
+      }
+    },
+    {
+      "id": "q_10",
+      "name": "Quality factor 10",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_10"
+      }
+    },
+    {
+      "id": "hue_10",
+      "name": "Hue 10",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.625
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_10"
+      }
+    },
+    {
+      "id": "fv_10",
+      "name": "Filter visibility 10",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_10"
+      }
+    },
+    {
+      "id": "ft_11",
+      "name": "Filter type 11",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_11"
+      }
+    },
+    {
+      "id": "fm_11",
+      "name": "Filter mode 11",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_11"
+      }
+    },
+    {
+      "id": "s_11",
+      "name": "Filter slope 11",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_11"
+      }
+    },
+    {
+      "id": "xs_11",
+      "name": "Filter solo 11",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_11"
+      }
+    },
+    {
+      "id": "xm_11",
+      "name": "Filter mute 11",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_11"
+      }
+    },
+    {
+      "id": "f_11",
+      "name": "Frequency 11",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 2500.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_11"
+      }
+    },
+    {
+      "id": "w_11",
+      "name": "Filter Width 11",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_11"
+      }
+    },
+    {
+      "id": "g_11",
+      "name": "Gain 11",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_11"
+      }
+    },
+    {
+      "id": "q_11",
+      "name": "Quality factor 11",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_11"
+      }
+    },
+    {
+      "id": "hue_11",
+      "name": "Hue 11",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.6875
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_11"
+      }
+    },
+    {
+      "id": "fv_11",
+      "name": "Filter visibility 11",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_11"
+      }
+    },
+    {
+      "id": "ft_12",
+      "name": "Filter type 12",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_12"
+      }
+    },
+    {
+      "id": "fm_12",
+      "name": "Filter mode 12",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_12"
+      }
+    },
+    {
+      "id": "s_12",
+      "name": "Filter slope 12",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_12"
+      }
+    },
+    {
+      "id": "xs_12",
+      "name": "Filter solo 12",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_12"
+      }
+    },
+    {
+      "id": "xm_12",
+      "name": "Filter mute 12",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_12"
+      }
+    },
+    {
+      "id": "f_12",
+      "name": "Frequency 12",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 4000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_12"
+      }
+    },
+    {
+      "id": "w_12",
+      "name": "Filter Width 12",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_12"
+      }
+    },
+    {
+      "id": "g_12",
+      "name": "Gain 12",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_12"
+      }
+    },
+    {
+      "id": "q_12",
+      "name": "Quality factor 12",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_12"
+      }
+    },
+    {
+      "id": "hue_12",
+      "name": "Hue 12",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.75
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_12"
+      }
+    },
+    {
+      "id": "fv_12",
+      "name": "Filter visibility 12",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_12"
+      }
+    },
+    {
+      "id": "ft_13",
+      "name": "Filter type 13",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_13"
+      }
+    },
+    {
+      "id": "fm_13",
+      "name": "Filter mode 13",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_13"
+      }
+    },
+    {
+      "id": "s_13",
+      "name": "Filter slope 13",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_13"
+      }
+    },
+    {
+      "id": "xs_13",
+      "name": "Filter solo 13",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_13"
+      }
+    },
+    {
+      "id": "xm_13",
+      "name": "Filter mute 13",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_13"
+      }
+    },
+    {
+      "id": "f_13",
+      "name": "Frequency 13",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 6300.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_13"
+      }
+    },
+    {
+      "id": "w_13",
+      "name": "Filter Width 13",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_13"
+      }
+    },
+    {
+      "id": "g_13",
+      "name": "Gain 13",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_13"
+      }
+    },
+    {
+      "id": "q_13",
+      "name": "Quality factor 13",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_13"
+      }
+    },
+    {
+      "id": "hue_13",
+      "name": "Hue 13",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.8125
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_13"
+      }
+    },
+    {
+      "id": "fv_13",
+      "name": "Filter visibility 13",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_13"
+      }
+    },
+    {
+      "id": "ft_14",
+      "name": "Filter type 14",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_14"
+      }
+    },
+    {
+      "id": "fm_14",
+      "name": "Filter mode 14",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_14"
+      }
+    },
+    {
+      "id": "s_14",
+      "name": "Filter slope 14",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_14"
+      }
+    },
+    {
+      "id": "xs_14",
+      "name": "Filter solo 14",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_14"
+      }
+    },
+    {
+      "id": "xm_14",
+      "name": "Filter mute 14",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_14"
+      }
+    },
+    {
+      "id": "f_14",
+      "name": "Frequency 14",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 10000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_14"
+      }
+    },
+    {
+      "id": "w_14",
+      "name": "Filter Width 14",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_14"
+      }
+    },
+    {
+      "id": "g_14",
+      "name": "Gain 14",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_14"
+      }
+    },
+    {
+      "id": "q_14",
+      "name": "Quality factor 14",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_14"
+      }
+    },
+    {
+      "id": "hue_14",
+      "name": "Hue 14",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.875
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_14"
+      }
+    },
+    {
+      "id": "fv_14",
+      "name": "Filter visibility 14",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_14"
+      }
+    },
+    {
+      "id": "ft_15",
+      "name": "Filter type 15",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "bell",
+        "hipass",
+        "hishelf",
+        "lopass",
+        "loshelf",
+        "notch",
+        "resonance",
+        "allpass",
+        "bandpass",
+        "ladderpass",
+        "ladderrej"
+      ],
+      "labels": [
+        "Off",
+        "Bell",
+        "Hi-pass",
+        "Hi-shelf",
+        "Lo-pass",
+        "Lo-shelf",
+        "Notch",
+        "Resonance",
+        "Allpass",
+        "Bandpass",
+        "Ladder-pass",
+        "Ladder-rej"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        8.0,
+        9.0,
+        10.0,
+        11.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#ft_15"
+      }
+    },
+    {
+      "id": "fm_15",
+      "name": "Filter mode 15",
+      "kind": "choice",
+      "ids": [
+        "rLCBT",
+        "rLCMT",
+        "bWCBT",
+        "bWCMT",
+        "lRXBT",
+        "lRXMT",
+        "aPODR"
+      ],
+      "labels": [
+        "RLC (BT)",
+        "RLC (MT)",
+        "BWC (BT)",
+        "BWC (MT)",
+        "LRX (BT)",
+        "LRX (MT)",
+        "APO (DR)"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "rLCBT",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fm_15"
+      }
+    },
+    {
+      "id": "s_15",
+      "name": "Filter slope 15",
+      "kind": "choice",
+      "ids": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "labels": [
+        "x1",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "x1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#s_15"
+      }
+    },
+    {
+      "id": "xs_15",
+      "name": "Filter solo 15",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xs_15"
+      }
+    },
+    {
+      "id": "xm_15",
+      "name": "Filter mute 15",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#xm_15"
+      }
+    },
+    {
+      "id": "f_15",
+      "name": "Frequency 15",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 16000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#f_15"
+      }
+    },
+    {
+      "id": "w_15",
+      "name": "Filter Width 15",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 12.0,
+        "unit": "oct",
+        "scale": "linear",
+        "default": 4.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#w_15"
+      }
+    },
+    {
+      "id": "g_15",
+      "name": "Gain 15",
+      "kind": "travel",
+      "travel": {
+        "min": 0.015850000083446503,
+        "max": 63.09574890136719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#g_15"
+      }
+    },
+    {
+      "id": "q_15",
+      "name": "Quality factor 15",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#q_15"
+      }
+    },
+    {
+      "id": "hue_15",
+      "name": "Hue 15",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 0.9375
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#hue_15"
+      }
+    },
+    {
+      "id": "fv_15",
+      "name": "Filter visibility 15",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#fv_15"
+      }
+    },
+    {
+      "id": "decramp",
+      "name": "Equalizer decramping",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "x2",
+        "x3",
+        "x4",
+        "x6",
+        "x8"
+      ],
+      "labels": [
+        "Off",
+        "x2",
+        "x3",
+        "x4",
+        "x6",
+        "x8"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/para_equalizer_x16_mono.ttl#decramp"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "in",
+      "name": "Input",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out",
+      "name": "Output",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "tempo": true,
+    "transport": true,
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/urid#map"
+      ],
+      "optional": [
+        "http://harrisonconsoles.com/lv2/inlinedisplay#queue_draw",
+        "http://lv2plug.in/ns/ext/options#options",
+        "http://lv2plug.in/ns/ext/state#mapPath",
+        "http://lv2plug.in/ns/ext/worker#schedule",
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#ParaEQPlugin",
+      "lv2:latency": "out_latency",
+      "patch:writable": [
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/para_equalizer_x16_mono/ports#send",
+          "label": "Audio send",
+          "range": "String"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/para_equalizer_x16_mono/ports#return",
+          "label": "Audio return",
+          "range": "String"
+        }
+      ]
+    }
+  },
+  "source": {
+    "from": "lsp-plugins.lv2/lsp-plugins-lv2.so#lv2_descriptor"
+  }
+}
