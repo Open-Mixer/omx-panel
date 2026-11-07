@@ -90,6 +90,9 @@ make test
 * Sat Nov 07 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.1-1
 - describe serves what the console's derivation served: a CLAP parameter under its id, a scanned EQ's inferred bands, a factor gain as coef, a default inside the ends, a choice's labels only over integer values
 - The renderer answers input with the one gesture vocabulary (omx_panel_view_input), read from schema/gestures.json; omx-panel-render --input runs a script
+- describe --pages --per-page N: the one cut into pages (Easy first, remote pages as given, a group kept whole); the user's Easy list wins
+- schema/gestures.json declares the gestures of every surface once and is installed
+- The MOD GUI's static curve and band-origin marks through omx-dsp's twin when installed, the frame alone otherwise
 * Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.0-1
 - describe, the one derivation of a panel description: the family rule, the meaning inference, displays with their basis, refusals by code
 - Bars: a section's bar group in the layout, the skin and the MOD GUI; the renderer draws bars, curve frames and host points
