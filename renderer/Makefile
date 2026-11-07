@@ -26,7 +26,7 @@ CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werr
 LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
 
 B := build
-LIB_OBJ := $(B)/view.o $(B)/raster.o
+LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/raster.o
 
 # WINDOW=1 adds the window (pugl and NanoVG on OpenGL): libomx-panel-window.a, its header and pkg-config file, and
 # --window in the command. Off by default: the buffer path links no window system.
@@ -43,11 +43,11 @@ all: $(B)/libomx-panel-render.a $(B)/omx-panel-render $(B)/omx-panel-render.pc $
 
 $(B):
 	mkdir -p $@
-$(B)/%.o: src/%.c src/raster.h src/draw.h include/omx_panel_render.h | $(B)
+$(B)/%.o: src/%.c src/raster.h src/draw.h src/view.h include/omx_panel_render.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^
-$(B)/window.o: src/window.c src/draw.h src/raster.h include/omx_panel_render.h include/omx_panel_window.h | $(B)
+$(B)/window.o: src/window.c src/draw.h src/view.h src/raster.h include/omx_panel_render.h include/omx_panel_window.h | $(B)
 	$(CC) $(CFLAGS) $(shell $(PKG_CONFIG) --cflags $(WINDOW_DEPS)) -c -o $@ $<
 $(B)/libomx-panel-window.a: $(B)/window.o
 	$(AR) rcs $@ $^

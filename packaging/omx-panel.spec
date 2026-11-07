@@ -89,6 +89,7 @@ make test
 %changelog
 * Sat Nov 07 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.1-1
 - describe serves what the console's derivation served: a CLAP parameter under its id, a scanned EQ's inferred bands, a factor gain as coef, a default inside the ends, a choice's labels only over integer values
+- The renderer answers input with the one gesture vocabulary (omx_panel_view_input), read from schema/gestures.json; omx-panel-render --input runs a script
 * Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.0-1
 - describe, the one derivation of a panel description: the family rule, the meaning inference, displays with their basis, refusals by code
 - Bars: a section's bar group in the layout, the skin and the MOD GUI; the renderer draws bars, curve frames and host points

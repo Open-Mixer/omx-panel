@@ -6,7 +6,7 @@
  *
  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
  *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
- *                    [--raw <file>] [--png <file>] [--rects] [--window]
+ *                    [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
@@ -15,7 +15,8 @@
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
  * own at its natural size, NanoVG on OpenGL, and reads the window's frame back instead of drawing the buffer.
- * Prints "<width> <height>" on stdout first. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
+ * --input runs a script of input events through the view (the gestures of docs/panel-gestures.md) and prints what the renderer
+ * answered as JSON: see run_input below for the script's words. Prints "<width> <height>" on stdout first, except for --input. Exit 0 drawn, 1 refused (the reason on stderr), 2 usage.
  */
 #include <cjson/cJSON.h>
 #include <math.h>
@@ -35,7 +36,7 @@
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
-    "                        [--raw <file>] [--png <file>] [--rects] [--window]\n";
+    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -186,8 +187,153 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
   return ok;
 }
 
+
+/* --input: {"travel": {"<symbol>": {"min", "max", "def", "step", "log", "integer"}}, "fractions": {"<symbol>": f}, "readOnly": ["<symbol>"],
+ * "hold": ["<symbol>"], "handles": [{"freq", "gain", "q": "<symbol>", "target": [x, y, w, h], "plot": [w, h]}], "settings": {"timings":
+ * {"<name>": ms}, "paintWithMouse": bool, "paintWithTouch": bool}, "events": [{"t", "type": "down"|"move"|"up"|"wheel"|"detent"|"key",
+ * "id", "ptype", "x", "y", "fine", "n", "coarse", "encoder", "key", "shift", "control": "<symbol>"}]}. The answer: {"geometry":
+ * {"<symbol>": {"rect": [x, y, w, h], "travelPx"}}, "controls": {"<symbol>": {"fraction", "value"}}, "gestures": [{"id", "word",
+ * "begin", "end", "fine", "changes": {"<symbol>": value}}], "refused": [{"code", "t"}], "cancelled": n, "selected": "<symbol>"|null} or
+ * {"error": "<code>"}. The clock is ticked before each event and after the last, as the reference does. */
+static const char *refusal_name(omx_panel_refusal_t r) {
+  static const char *const names[] = {"", "GESTURE_READ_ONLY", "GESTURE_CONTROL_OWNED", "GESTURE_NO_DEFAULT", "GESTURE_NOT_IN_TABLE", "GESTURE_HOLD_SHORT",
+                                      "GESTURE_NO_TARGET", "GESTURE_NO_TABLE", "GESTURE_BAD_SETTING", "GESTURE_HOLD_BELOW_FLOOR", "GESTURE_PAINT_REQUIRED_ON_TOUCH"};
+  return names[r];
+}
+static const char *word_name(omx_panel_word_t w) {
+  static const char *const names[] = {"", "drag", "fine", "step", "second", "reset", "more", "select", "toggle", "paint"};
+  return names[w];
+}
+static int run_input(omx_panel_view_t *v, const char *path, uint32_t width, uint32_t height, double scale) {
+  char *text = slurp(path);
+  cJSON *root = text ? cJSON_Parse(text) : NULL;
+  free(text);
+  if (!cJSON_IsObject(root)) { fprintf(stderr, "omx-panel-render: %s is not a JSON object\n", path); cJSON_Delete(root); return 1; }
+  cJSON *out = cJSON_CreateObject(), *it;
+  int ok = 1;
+  if (!omx_panel_view_set_surface(v, width, height, scale)) { fputs("omx-panel-render: no surface\n", stderr); ok = 0; }
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "fractions")) {
+    int32_t i = omx_panel_view_find(v, it->string);
+    if (i < 0 || !cJSON_IsNumber(it) || !omx_panel_view_set_value(v, (uint32_t)i, it->valuedouble, "")) { fprintf(stderr, "omx-panel-render: fraction of '%s'\n", it->string); ok = 0; }
+  }
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "travel")) {
+    int32_t i = omx_panel_view_find(v, it->string);
+    cJSON *mn = cJSON_GetObjectItemCaseSensitive(it, "min"), *mx = cJSON_GetObjectItemCaseSensitive(it, "max"), *df = cJSON_GetObjectItemCaseSensitive(it, "def"),
+          *st = cJSON_GetObjectItemCaseSensitive(it, "step");
+    omx_panel_travel_t t = {cJSON_IsNumber(mn) ? mn->valuedouble : 0, cJSON_IsNumber(mx) ? mx->valuedouble : 1, cJSON_IsNumber(df) ? df->valuedouble : 0,
+                            cJSON_IsNumber(st) ? st->valuedouble : 0, cJSON_IsNumber(df), cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "log")),
+                            cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "integer"))};
+    if (i < 0 || !omx_panel_view_set_travel(v, (uint32_t)i, &t)) { fprintf(stderr, "omx-panel-render: travel of '%s'\n", it->string); ok = 0; }
+  }
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "readOnly")) {
+    int32_t i = omx_panel_view_find(v, cJSON_GetStringValue(it));
+    if (i < 0 || !omx_panel_view_set_read_only(v, (uint32_t)i, true)) ok = 0;
+  }
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "hold")) {
+    int32_t i = omx_panel_view_find(v, cJSON_GetStringValue(it));
+    if (i < 0 || !omx_panel_view_set_hold(v, (uint32_t)i, true)) ok = 0;
+  }
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "handles")) {
+    int32_t f = omx_panel_view_find(v, cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "freq"))),
+            g = omx_panel_view_find(v, cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "gain"))),
+            q = omx_panel_view_find(v, cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "q")));
+    cJSON *tg = cJSON_GetObjectItemCaseSensitive(it, "target"), *pl = cJSON_GetObjectItemCaseSensitive(it, "plot");
+    double target[4], plot[2];
+    for (int k = 0; k < 4; k++) target[k] = cJSON_GetNumberValue(cJSON_GetArrayItem(tg, k));
+    for (int k = 0; k < 2; k++) plot[k] = cJSON_GetNumberValue(cJSON_GetArrayItem(pl, k));
+    if (f < 0 || g < 0 || q < 0 || !omx_panel_view_set_handle(v, (uint32_t)f, (uint32_t)g, (uint32_t)q, target, plot)) { fputs("omx-panel-render: handle\n", stderr); ok = 0; }
+  }
+  cJSON *settings = cJSON_GetObjectItemCaseSensitive(root, "settings");
+  omx_panel_refusal_t bad = OMX_PANEL_REFUSED_NONE;
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(settings, "timings")) {
+    omx_panel_refusal_t r = omx_panel_view_set_timing(v, it->string, cJSON_GetNumberValue(it));
+    if (r) bad = r;
+  }
+  cJSON *pt = cJSON_GetObjectItemCaseSensitive(settings, "paintWithTouch"), *pm = cJSON_GetObjectItemCaseSensitive(settings, "paintWithMouse");
+  omx_panel_refusal_t r = omx_panel_view_set_paint(v, pt ? cJSON_IsTrue(pt) : true, cJSON_IsTrue(pm));
+  if (r) bad = r;
+  if (bad) {
+    cJSON_AddStringToObject(out, "error", refusal_name(bad));
+  } else if (ok) {
+    cJSON *geo = cJSON_AddObjectToObject(out, "geometry");
+    for (uint32_t i = 0; i < omx_panel_view_count(v); i++) {
+      double rect[4], px;
+      if (!omx_panel_view_target_rect(v, i, rect, &px)) continue;
+      cJSON *g = cJSON_CreateObject();
+      cJSON_AddItemToObject(g, "rect", cJSON_CreateDoubleArray(rect, 4));
+      cJSON_AddNumberToObject(g, "travelPx", px);
+      cJSON_AddItemToObject(geo, omx_panel_view_symbol(v, i), g);
+    }
+    cJSON *refused = cJSON_AddArrayToObject(out, "refused");
+    double cancelled = 0, last_t = 0;
+    int selected = -1;
+    omx_panel_change_t ch[256];
+    cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "events")) {
+      omx_panel_event_t e = {0};
+      const char *type = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "type")), *pty = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "ptype")),
+                 *key = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "key")), *ctl = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "control")),
+                 *id = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "id"));
+      e.t_ms = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(it, "t"));
+      e.kind = !type ? OMX_PANEL_EVENT_KEY : !strcmp(type, "down") ? OMX_PANEL_EVENT_DOWN : !strcmp(type, "move") ? OMX_PANEL_EVENT_MOVE : !strcmp(type, "up") ? OMX_PANEL_EVENT_UP
+             : !strcmp(type, "wheel") ? OMX_PANEL_EVENT_WHEEL : !strcmp(type, "detent") ? OMX_PANEL_EVENT_DETENT : OMX_PANEL_EVENT_KEY;
+      e.pointer = 0;
+      for (const char *c = id ? id : ""; *c; c++) e.pointer = e.pointer * 31 + (unsigned char)*c;
+      e.type = !pty || !strcmp(pty, "touch") ? OMX_PANEL_POINTER_TOUCH : !strcmp(pty, "mouse") ? OMX_PANEL_POINTER_MOUSE : !strcmp(pty, "pen") ? OMX_PANEL_POINTER_PEN : OMX_PANEL_POINTER_FADER;
+      e.x = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(it, "x")), e.y = cJSON_GetNumberValue(cJSON_GetObjectItemCaseSensitive(it, "y"));
+      e.fine = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "fine")), e.coarse = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "coarse"));
+      e.shift = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "shift"));
+      cJSON *n = cJSON_GetObjectItemCaseSensitive(it, "n"), *enc = cJSON_GetObjectItemCaseSensitive(it, "encoder");
+      e.n = cJSON_IsNumber(n) ? (int32_t)n->valuedouble : 1, e.encoder = cJSON_IsNumber(enc) ? (int32_t)enc->valuedouble : 0;
+      e.key = !key ? OMX_PANEL_KEY_BACKSPACE : !strcmp(key, "ArrowUp") ? OMX_PANEL_KEY_UP : !strcmp(key, "ArrowDown") ? OMX_PANEL_KEY_DOWN
+              : !strcmp(key, "ArrowLeft") ? OMX_PANEL_KEY_LEFT : !strcmp(key, "ArrowRight") ? OMX_PANEL_KEY_RIGHT : OMX_PANEL_KEY_BACKSPACE;
+      e.control = ctl ? omx_panel_view_find(v, ctl) : -1;
+      omx_panel_answer_t a;
+      omx_panel_view_input(v, &e, ch, 256, &a);
+      if (a.refusal) {
+        cJSON *rf = cJSON_CreateObject();
+        cJSON_AddStringToObject(rf, "code", refusal_name(a.refusal));
+        cJSON_AddNumberToObject(rf, "t", e.t_ms);
+        cJSON_AddItemToArray(refused, rf);
+      }
+      if (a.cancelled) cancelled++;
+      if (a.selected >= 0) selected = a.selected;
+      last_t = e.t_ms;
+    }
+    omx_panel_answer_t a;
+    omx_panel_view_tick(v, last_t, NULL, 0, &a);
+    cJSON_AddNumberToObject(out, "cancelled", cancelled);
+    if (selected >= 0) cJSON_AddStringToObject(out, "selected", omx_panel_view_symbol(v, (uint32_t)selected));
+    else cJSON_AddNullToObject(out, "selected");
+    cJSON *ctls = cJSON_AddObjectToObject(out, "controls");
+    for (uint32_t i = 0; i < omx_panel_view_count(v); i++) {
+      double f, val;
+      omx_panel_view_reading(v, i, &f, &val);
+      cJSON *c = cJSON_CreateObject();
+      cJSON_AddNumberToObject(c, "fraction", f), cJSON_AddNumberToObject(c, "value", val);
+      cJSON_AddItemToObject(ctls, omx_panel_view_symbol(v, i), c);
+    }
+    cJSON *gs = cJSON_AddArrayToObject(out, "gestures");
+    for (uint32_t k = 0; k < omx_panel_view_gesture_count(v); k++) {
+      omx_panel_gesture_t g;
+      size_t nch = 0;
+      omx_panel_view_gesture(v, k, &g, ch, 256, &nch);
+      cJSON *o = cJSON_CreateObject(), *chg = cJSON_AddObjectToObject(o, "changes");
+      cJSON_AddNumberToObject(o, "id", g.id), cJSON_AddStringToObject(o, "word", word_name(g.word));
+      cJSON_AddNumberToObject(o, "begin", g.begin_ms), cJSON_AddNumberToObject(o, "end", g.end_ms), cJSON_AddNumberToObject(o, "shownUntil", g.shown_until_ms);
+      cJSON_AddBoolToObject(o, "fine", g.fine);
+      for (size_t m = 0; m < nch && m < 256; m++) cJSON_AddNumberToObject(chg, omx_panel_view_symbol(v, ch[m].control), ch[m].value);
+      cJSON_AddItemToArray(gs, o);
+    }
+  }
+  char *printed = cJSON_PrintUnformatted(out);
+  puts(printed);
+  free(printed);
+  cJSON_Delete(out), cJSON_Delete(root);
+  return ok ? 0 : 1;
+}
+
 int main(int argc, char **argv) {
-  const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL;
+  const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL;
   double scale = 1;
   long width = 0, height = 0;
   int bgra = 0, straight = 0, rects = 0, window = 0;
@@ -201,6 +347,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--state")) state = val;
     else if (!strcmp(a, "--raw")) raw = val;
     else if (!strcmp(a, "--png")) png = val;
+    else if (!strcmp(a, "--input")) input = val;
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
@@ -209,7 +356,7 @@ int main(int argc, char **argv) {
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png && !rects) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
+  if (!desc || (!raw && !png && !rects && !input) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
       (window && width)) {
     fputs(USAGE, stderr);
     return 2;
@@ -243,6 +390,11 @@ int main(int argc, char **argv) {
 #else
 #define DRAW(b) omx_panel_view_draw(v, b)
 #endif
+  if (input) {
+    int rc = run_input(v, input, (uint32_t)width, (uint32_t)height, scale);
+    omx_panel_view_destroy(v);
+    return rc;
+  }
   omx_panel_pixel_format_t format = bgra ? (straight ? OMX_PANEL_PIXEL_BGRA8_STRAIGHT : OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
                                           : (straight ? OMX_PANEL_PIXEL_RGBA8_STRAIGHT : OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED);
   omx_panel_buffer_t b = {malloc((size_t)width * height * 4), (uint32_t)width, (uint32_t)height, (uint32_t)width * 4, scale, format};

@@ -58,7 +58,7 @@ export function face(fx, scale) {
 
 /** The fixture's panel description, as `omx-panel layout` writes it, in a file. */
 export function descriptionFile(fx, dir) {
-  const args = [OMX_PANEL, 'layout', '--descriptor', join(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', join(ROOT, fx.panel)] : [])];
+  const args = [OMX_PANEL, 'layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
   const file = join(dir, `${fx.name}.layout.json`);
   writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8' }));
   return file;
