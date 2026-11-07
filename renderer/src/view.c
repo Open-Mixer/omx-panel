@@ -16,78 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "draw.h"
-
-typedef enum { W_KNOB, W_FADER, W_SWITCH, W_SELECTOR, W_METER, W_CURVE, W_XY, W_DISPLAY } widget;
-
-/* The standard widgets by omx-contract's names (PANEL_STANDARD_WIDGETS): a widget it adds is drawn
- * here before the count below lets this file build. */
-static const struct { const char *name; widget w; } WIDGET_NAMES[] = {
-    {OMX_PANEL_STANDARD_WIDGETS_KNOB, W_KNOB},       {OMX_PANEL_STANDARD_WIDGETS_FADER, W_FADER},
-    {OMX_PANEL_STANDARD_WIDGETS_SWITCH, W_SWITCH},   {OMX_PANEL_STANDARD_WIDGETS_SELECTOR, W_SELECTOR},
-    {OMX_PANEL_STANDARD_WIDGETS_METER, W_METER},     {OMX_PANEL_STANDARD_WIDGETS_CURVE, W_CURVE},
-    {OMX_PANEL_STANDARD_WIDGETS_XY, W_XY},           {OMX_PANEL_STANDARD_WIDGETS_DISPLAY, W_DISPLAY},
-};
-_Static_assert(sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES == OMX_PANEL_STANDARD_WIDGETS_COUNT,
-               "every standard widget of omx-contract is drawn");
-
-typedef struct {
-  char *symbol, *label;
-  int section;
-  widget w;
-  double fraction;
-  char *text;
-  uint32_t at, count;
-  /* visibility (the description's visibleWhen and mask): shown while bit `value` of `mask` is set, `value` the
-   * governing control's current integer; `gov` NULL for a control always shown */
-  char *gov;
-  uint64_t mask;
-  int64_t value;
-  /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
-  char *bar;
-} control;
-
-/* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
-typedef struct {
-  int section;
-  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
-  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
-  char *basis;   /* "exact" or "modelled", printed in the caption place */
-  double *x, *y;
-  size_t n;
-  /* the marks a host hands with the points: one per band a planter owns, none by default */
-  double *mark_freq, *mark_depth;
-  char *mark_letter;
-  size_t nmarks;
-} display;
-
-typedef struct {
-  double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap;
-} geometry;
-
-typedef struct {
-  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, valueBase;
-} textsizes;
-
-typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent;
-} palette;
-
-struct omx_panel_view {
-  char **sections;
-  size_t nsections;
-  control *controls;
-  size_t ncontrols;
-  display *displays;
-  size_t ndisplays;
-  char *brand, *name;
-  int row_controls;
-  geometry g;
-  textsizes t;
-  palette col;
-  omx_font *font;
-};
+#include "view.h"
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -181,6 +110,7 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
   }
   v->nsections = (size_t)cJSON_GetArraySize(secs);
   v->sections = calloc(v->nsections ? v->nsections : 1, sizeof *v->sections);
+  v->section_keys = calloc(v->nsections ? v->nsections : 1, sizeof *v->section_keys);
   size_t i = 0;
   cJSON *it;
   cJSON_ArrayForEach(it, secs) {
@@ -189,6 +119,7 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       fail(err, n, "description: a section has no label%s%s", NULL, NULL);
       goto bad;
     }
+    v->section_keys[i] = dup(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "key")));
     v->sections[i++] = dup(label);
   }
   v->ncontrols = (size_t)cJSON_GetArraySize(ctls);
@@ -291,6 +222,7 @@ omx_panel_view_t *omx_panel_view_create(const omx_panel_sources_t *src, char *er
   omx_panel_view_t *v = calloc(1, sizeof *v);
   if (!v) return NULL;
   v->brand = dup(""), v->name = dup("");
+  v->gestures_json = src->gestures_json ? dup(src->gestures_json) : NULL;
   if (!read_look(v, src->look_json, err, n) || !read_geometry(v, src->geometry_json, err, n) ||
       !read_description(v, src->description_json, err, n) || !(v->font = omx_font_load(src->font, src->font_size, err, n))) {
     omx_panel_view_destroy(v);
@@ -321,12 +253,12 @@ static char *slurp(const char *path, size_t *size) {
 }
 
 omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
-  char look_path[4096], geom_path[4096], font_path[4096];
+  char look_path[4096], geom_path[4096], font_path[4096], gest_path[4096];
   snprintf(look_path, sizeof look_path, "%s/look.json", data_dir);
   snprintf(geom_path, sizeof geom_path, "%s/look/geometry.json", data_dir);
   omx_panel_view_t *v = NULL;
   size_t font_size = 0;
-  char *desc = slurp(description_path, NULL), *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL;
+  char *desc = slurp(description_path, NULL), *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
   if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); goto out; }
   if (!look) { fail(err, n, "cannot read %s%s", look_path, NULL); goto out; }
   if (!geom) { fail(err, n, "cannot read %s%s", geom_path, NULL); goto out; }
@@ -344,16 +276,27 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
   }
   font = slurp(font_path, &font_size);
   if (!font) { fail(err, n, "cannot read %s%s", font_path, NULL); goto out; }
-  omx_panel_sources_t s = {desc, look, geom, (const uint8_t *)font, font_size};
+  /* the gesture declaration is omx-panel's schema/gestures.json: beside the tools directory in the source tree and in dist/,
+   * under the data directory itself where an install puts it. A tree without it still draws; its input refuses by name. */
+  snprintf(gest_path, sizeof gest_path, "%s/../schema/gestures.json", data_dir);
+  gest = slurp(gest_path, NULL);
+  if (!gest) {
+    snprintf(gest_path, sizeof gest_path, "%s/gestures.json", data_dir);
+    gest = slurp(gest_path, NULL);
+  }
+  omx_panel_sources_t s = {desc, look, geom, (const uint8_t *)font, font_size, gest};
   v = omx_panel_view_create(&s, err, n);
 out:
-  free(desc), free(look), free(geom), free(font);
+  free(desc), free(look), free(geom), free(font), free(gest);
   return v;
 }
 
 void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
-  for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]);
+  omx_input_free(v->in);
+  free(v->gestures_json);
+  for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]), free(v->section_keys ? v->section_keys[i] : NULL);
+  free(v->section_keys);
   for (size_t i = 0; i < v->ncontrols; i++)
     free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
   for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter);
@@ -369,6 +312,8 @@ int32_t omx_panel_view_find(const omx_panel_view_t *v, const char *symbol) {
     if (strcmp(v->controls[i].symbol, symbol) == 0) return (int32_t)i;
   return -1;
 }
+
+const char *omx_panel_view_symbol(const omx_panel_view_t *v, uint32_t i) { return v && i < v->ncontrols ? v->controls[i].symbol : NULL; }
 
 void omx_panel_view_set_title(omx_panel_view_t *v, const char *brand, const char *name) {
   if (!v) return;
@@ -439,6 +384,7 @@ bool omx_panel_view_set_integer(omx_panel_view_t *v, const char *symbol, int64_t
   bool governs = false;
   for (size_t i = 0; v && symbol && i < v->ncontrols; i++)
     if (v->controls[i].gov && strcmp(v->controls[i].gov, symbol) == 0) v->controls[i].value = value, governs = true;
+  if (governs) omx_input_dirty(v);
   return governs;
 }
 
@@ -636,6 +582,20 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint
   const box *sec = &L.sections[v->controls[index].section];
   rect[0] = (sec->x + L.cx[index]) * s, rect[1] = (sec->y + L.cy[index]) * s;
   rect[2] = v->g.cellW * s, rect[3] = v->g.cellH * s;
+  lay_free(&L);
+  return true;
+}
+
+bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, double *cells, unsigned char *shown_out) {
+  if (!v || !width || !height || !(scale > 0)) return false;
+  double s;
+  laid L = place(v, width, height, scale, &s);
+  for (size_t i = 0; i < v->ncontrols; i++) {
+    shown_out[i] = shown(&v->controls[i]);
+    if (!shown_out[i]) continue;
+    const box *sec = &L.sections[v->controls[i].section];
+    cells[4 * i] = sec->x + L.cx[i], cells[4 * i + 1] = sec->y + L.cy[i], cells[4 * i + 2] = v->g.cellW, cells[4 * i + 3] = v->g.cellH;
+  }
   lay_free(&L);
   return true;
 }
