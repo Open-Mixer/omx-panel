@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.11.0
+Version: 0.11.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -87,6 +87,8 @@ make test
 %dir %{_datadir}/omx/skins/
 
 %changelog
+* Sat Nov 07 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.1-1
+- describe serves what the console's derivation served: a CLAP parameter under its id, a scanned EQ's inferred bands, a factor gain as coef, a default inside the ends, a choice's labels only over integer values
 * Fri Nov 06 2026 Pau Aliagas <linuxnow@gmail.com> - 0.11.0-1
 - describe, the one derivation of a panel description: the family rule, the meaning inference, displays with their basis, refusals by code
 - Bars: a section's bar group in the layout, the skin and the MOD GUI; the renderer draws bars, curve frames and host points
