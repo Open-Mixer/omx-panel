@@ -221,6 +221,130 @@ export interface Refusal {
   readonly args?: Readonly<Record<string, string | number>>;
 }
 
+/** One sentence a person reads for a refusal, in each served language (omx-contract spec 7.11): what happened and,
+ * where there is one, what the person can do. `args` is the ordered list of `{name}` placeholders the sentence uses. */
+export interface CodeText {
+  readonly text: { readonly en: string; readonly ca: string };
+  readonly args: readonly string[];
+}
+
+/** Every refusal code this package owns, in the owner's own words (docs/skin-package.md, spec 7.11). Checked by
+ * test/skin-refusal-text.test.mjs against the omx-contract schema's `text`/`args` shape and its placeholder rule. */
+export const SKIN_REFUSAL_TEXT: Readonly<Record<SkinRefusalCode, CodeText>> = {
+  SKIN_OVERRIDE_INVALID: {
+    text: {
+      en: 'The override for {plugin} is invalid at {field}; fix skin.json and reload the skin.',
+      ca: "La personalització de {plugin} no és vàlida a {field}; corregeix skin.json i torna a carregar l'aparença.",
+    },
+    args: ['plugin', 'field'],
+  },
+  SKIN_OVERRIDE_ENTRY_DROPPED: {
+    text: {
+      en: 'The {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the override still applies.',
+      ca: "S'ha descartat l'entrada {entry} de {field} per a {plugin} ({reason}); la resta de la personalització encara s'aplica.",
+    },
+    args: ['plugin', 'field', 'entry', 'reason'],
+  },
+  SKIN_API_MISMATCH: {
+    text: {
+      en: 'This skin declares API {declared}, which this console does not support (it serves {supported}); the skin is not loaded.',
+      ca: "Aquesta aparença declara l'API {declared}, que aquesta consola no admet (ofereix {supported}); l'aparença no es carrega.",
+    },
+    args: ['declared', 'supported'],
+  },
+  SKIN_VIEW_ERROR: {
+    text: {
+      en: "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing.",
+      ca: "La vista de l'aparença ha fallat: {message}. Torna-la a carregar, o suprimeix l'aparença si continua fallant.",
+    },
+    args: ['message'],
+  },
+  SKIN_VIEW_LINT: {
+    text: {
+      en: 'The view {file} uses the disallowed word {word}; remove it and reload the skin.',
+      ca: "La vista {file} utilitza la paraula no permesa {word}; suprimeix-la i torna a carregar l'aparença.",
+    },
+    args: ['word', 'file'],
+  },
+  MODGUI_NOT_FOUND: {
+    text: {
+      en: 'No MOD GUI to import was found in {file} ({detail}); nothing was written.',
+      ca: "No s'ha trobat cap MOD GUI per importar a {file} ({detail}); no s'ha escrit res.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_TTL_INVALID: {
+    text: {
+      en: "The bundle's {file} does not read as valid TTL ({detail}); fix it and import again.",
+      ca: 'El {file} del paquet no es llegeix com a TTL vàlid ({detail}); corregeix-lo i torna a importar.',
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_NO_LICENCE: {
+    text: {
+      en: '{file} states no licence ({detail}); add one to its bundle before its MOD GUI can be imported.',
+      ca: "{file} no declara cap llicència ({detail}); afegeix-ne una al seu paquet abans de poder importar el seu MOD GUI.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_LICENCE_UNMAPPED: {
+    text: {
+      en: "The licence in {file} is not one this importer maps to an SPDX id ({detail}); add the mapping or change the licence.",
+      ca: "La llicència de {file} no és cap que aquest importador associï a un identificador SPDX ({detail}); afegeix l'associació o canvia la llicència.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_LICENCE_REFUSED: {
+    text: {
+      en: 'The licence in {file} is outside the allowed list ({detail}); the MOD GUI is not imported.',
+      ca: "La llicència de {file} queda fora de la llista permesa ({detail}); el MOD GUI no s'importa.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_UNKNOWN_PROPERTY: {
+    text: {
+      en: '{file} carries an unknown property ({detail}); remove it or correct it before importing.',
+      ca: "{file} conté una propietat desconeguda ({detail}); suprimeix-la o corregeix-la abans d'importar.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_PORT_UNKNOWN: {
+    text: {
+      en: "{file} names a port that is not one of the plugin's own ports ({detail}); fix the symbol and import again.",
+      ca: "{file} anomena un port que no és cap dels ports propis del connector ({detail}); corregeix el símbol i torna a importar.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_IMAGE_NOT_FOUND: {
+    text: {
+      en: "{file} names an image that is not in the bundle's resources ({detail}); add the file or fix the reference.",
+      ca: "{file} anomena una imatge que no és als recursos del paquet ({detail}); afegeix el fitxer o corregeix la referència.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_PATH_ESCAPE: {
+    text: {
+      en: '{file} names a path that resolves outside the bundle ({detail}); nothing is imported from outside the bundle.',
+      ca: "{file} anomena un camí que es resol fora del paquet ({detail}); no s'importa res de fora del paquet.",
+    },
+    args: ['file', 'detail'],
+  },
+  MODGUI_TARGET_EXISTS: {
+    text: {
+      en: '{file} already exists ({detail}); remove it first if you want to import over it.',
+      ca: "{file} ja existeix ({detail}); suprimeix-lo primer si vols importar-hi a sobre.",
+    },
+    args: ['file', 'detail'],
+  },
+  SKIN_MODGUI_LICENCE: {
+    text: {
+      en: 'The MOD GUI script for {plugin} is dropped: its licence {licence} is missing or not allowed.',
+      ca: "L'script de MOD GUI de {plugin} es descarta: la seva llicència {licence} falta o no és permesa.",
+    },
+    args: ['plugin', 'licence'],
+  },
+} as const;
+
 /** The path prefix the console serves skin packages under (§6.5), beside `MANUAL_MOUNT`. */
 export const SKIN_MOUNT = '/skins';
 
