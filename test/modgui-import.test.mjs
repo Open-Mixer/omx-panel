@@ -131,25 +131,25 @@ describe('modgui-import: the fixture bundle becomes a §6 skin package', () => {
 });
 
 describe('modgui-import: refusals name the code and the file, and write nothing', () => {
-  it('MODGUI_NO_LICENCE: no doap:license on the plugin or its project', () => {
-    refused(edited('echo.ttl', (t) => t.replace(/^\s*doap:license .*$/m, '')), 'MODGUI_NO_LICENCE');
+  it('panel.modgui.no-licence: no doap:license on the plugin or its project', () => {
+    refused(edited('echo.ttl', (t) => t.replace(/^\s*doap:license .*$/m, '')), 'panel.modgui.no-licence');
   });
 
-  it('MODGUI_LICENCE_REFUSED: GPL-2.0-only is outside the allow-list, and the refusal names it and the file', () => {
+  it('panel.modgui.licence-refused: GPL-2.0-only is outside the allow-list, and the refusal names it and the file', () => {
     assert.equal(core.SKIN_LICENCE_ALLOW_LIST.includes('GPL-2.0-only'), false);
     const b = edited('echo.ttl', (t) => t.replace('licenses/GPL-3.0-or-later>', 'licenses/GPL-2.0-only>'));
     assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
-      e.code === 'MODGUI_LICENCE_REFUSED' && e.file === join(b, 'echo.ttl') && e.detail.includes('GPL-2.0-only'));
-    refused(b, 'MODGUI_LICENCE_REFUSED');
+      e.code === 'panel.modgui.licence-refused' && e.file === join(b, 'echo.ttl') && e.detail.includes('GPL-2.0-only'));
+    refused(b, 'panel.modgui.licence-refused');
   });
 
-  it('MODGUI_LICENCE_UNMAPPED: a licence IRI the map does not read', () => {
-    refused(edited('echo.ttl', (t) => t.replace('http://spdx.org/licenses/GPL-3.0-or-later', 'http://example.org/our-terms')), 'MODGUI_LICENCE_UNMAPPED');
+  it('panel.modgui.licence-unmapped: a licence IRI the map does not read', () => {
+    refused(edited('echo.ttl', (t) => t.replace('http://spdx.org/licenses/GPL-3.0-or-later', 'http://example.org/our-terms')), 'panel.modgui.licence-unmapped');
   });
 
-  it('MODGUI_UNKNOWN_PROPERTY: a modgui property the declaration does not list, on the gui or on a port', () => {
-    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand', 'modgui:notAProperty <modgui/icon-echo.html> ;\n        modgui:brand')), 'MODGUI_UNKNOWN_PROPERTY');
-    refused(edited('modgui.ttl', (t) => t.replace('lv2:name "Blend" ;', 'lv2:name "Blend" ;\n            lv2:default 0.5 ;')), 'MODGUI_UNKNOWN_PROPERTY');
+  it('panel.modgui.unknown-property: a modgui property the declaration does not list, on the gui or on a port', () => {
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand', 'modgui:notAProperty <modgui/icon-echo.html> ;\n        modgui:brand')), 'panel.modgui.unknown-property');
+    refused(edited('modgui.ttl', (t) => t.replace('lv2:name "Blend" ;', 'lv2:name "Blend" ;\n            lv2:default 0.5 ;')), 'panel.modgui.unknown-property');
   });
 
   it("accepts mod-ui's full gui property list: javascript, documentation, discussionURL, settingsTemplate, monitoredOutputs do not refuse a real bundle", () => {
@@ -171,34 +171,34 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.equal(existsSync(join(out, core.encodeSkinId(PLUGIN), 'skin.json')), true);
   });
 
-  it("MODGUI_PORT_UNKNOWN: a modgui:port symbol none of the plugin's own lv2:port carries, named with its file", () => {
+  it("panel.modgui.port-unknown: a modgui:port symbol none of the plugin's own lv2:port carries, named with its file", () => {
     const b = edited('modgui.ttl', (t) => t.replace('lv2:symbol "tone" ;', 'lv2:symbol "colour" ;'));
     assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
-      e.code === 'MODGUI_PORT_UNKNOWN' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"colour"'));
-    refused(b, 'MODGUI_PORT_UNKNOWN');
+      e.code === 'panel.modgui.port-unknown' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"colour"'));
+    refused(b, 'panel.modgui.port-unknown');
   });
 
-  it("MODGUI_PORT_UNKNOWN: a modgui:monitoredOutputs symbol none of the plugin's own lv2:port carries", () => {
+  it("panel.modgui.port-unknown: a modgui:monitoredOutputs symbol none of the plugin's own lv2:port carries", () => {
     const monitored = (o) => (t) => t.replace('modgui:brand "openmixer" ;', `modgui:monitoredOutputs ${o} ;\n        modgui:brand "openmixer" ;`);
     const b = edited('modgui.ttl', monitored('[ lv2:symbol "level" ]'));
     assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
-      e.code === 'MODGUI_PORT_UNKNOWN' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"level"'));
-    refused(b, 'MODGUI_PORT_UNKNOWN');
-    refused(edited('modgui.ttl', monitored('"level"')), 'MODGUI_PORT_UNKNOWN');
+      e.code === 'panel.modgui.port-unknown' && e.file === join(b, 'modgui.ttl') && e.detail.includes('"level"'));
+    refused(b, 'panel.modgui.port-unknown');
+    refused(edited('modgui.ttl', monitored('"level"')), 'panel.modgui.port-unknown');
     assert.doesNotThrow(() => importModgui({ bundle: edited('modgui.ttl', monitored('[ lv2:symbol "mix" ]')), out: fresh('out') }, core));
   });
 
-  it('MODGUI_IMAGE_NOT_FOUND: an icon template image the resources directory does not hold, named with the template', () => {
+  it('panel.modgui.image-not-found: an icon template image the resources directory does not hold, named with the template', () => {
     const img = (src) => (t) => t.replace('<div class="mod-control-group">', `<img src="${src}">\n  <div class="mod-control-group">`);
     const b = edited('modgui/icon-echo.html', img('/resources/knobs/missing.png{{{cns}}}'));
     assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
-      e.code === 'MODGUI_IMAGE_NOT_FOUND' && e.file === join(b, 'modgui/icon-echo.html') && e.detail.includes('knobs/missing.png'));
-    refused(b, 'MODGUI_IMAGE_NOT_FOUND');
-    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background-image: url(/resources/gone.png)"')), 'MODGUI_IMAGE_NOT_FOUND');
+      e.code === 'panel.modgui.image-not-found' && e.file === join(b, 'modgui/icon-echo.html') && e.detail.includes('knobs/missing.png'));
+    refused(b, 'panel.modgui.image-not-found');
+    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background-image: url(/resources/gone.png)"')), 'panel.modgui.image-not-found');
     // An image the template names that the bundle holds, its Mustache suffix dropped, imports.
     assert.doesNotThrow(() => importModgui({ bundle: edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png{{{ns}}}')), out: fresh('out') }, core));
     // One that climbs out of the resources directory escapes what the package carries.
-    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl')), 'panel.modgui.path-escape');
   });
 
   it("the stylesheet's images are not checked: a shared pedal theme names files the bundle does not carry, on purpose", () => {
@@ -216,25 +216,25 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.deepEqual(files(r.dir).filter((f) => f.includes('example.org')), []);
   });
 
-  it('MODGUI_PATH_ESCAPE: a file-valued property outside the bundle, javascript and settingsTemplate as much as the screenshot', () => {
-    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:javascript <file:///etc/hostname> ;\n        modgui:brand "openmixer" ;')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:settingsTemplate <https://example.org/settings.html> ;\n        modgui:brand "openmixer" ;')), 'MODGUI_PATH_ESCAPE');
+  it('panel.modgui.path-escape: a file-valued property outside the bundle, javascript and settingsTemplate as much as the screenshot', () => {
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:javascript <file:///etc/hostname> ;\n        modgui:brand "openmixer" ;')), 'panel.modgui.path-escape');
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:settingsTemplate <https://example.org/settings.html> ;\n        modgui:brand "openmixer" ;')), 'panel.modgui.path-escape');
   });
 
-  it('MODGUI_IMAGE_NOT_FOUND: the settings template is checked as the icon template is', () => {
+  it('panel.modgui.image-not-found: the settings template is checked as the icon template is', () => {
     const b = edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:settingsTemplate <modgui/settings-echo.html> ;\n        modgui:brand "openmixer" ;'));
     writeFileSync(join(b, 'modgui', 'settings-echo.html'), '<div class="mod-settings"><img src="/resources/settings-missing.png{{{ns}}}"></div>\n');
     assert.throws(() => importModgui({ bundle: b, out: fresh('out') }, core), (e) =>
-      e.code === 'MODGUI_IMAGE_NOT_FOUND' && e.file === join(b, 'modgui', 'settings-echo.html'));
-    refused(b, 'MODGUI_IMAGE_NOT_FOUND');
+      e.code === 'panel.modgui.image-not-found' && e.file === join(b, 'modgui', 'settings-echo.html'));
+    refused(b, 'panel.modgui.image-not-found');
   });
 
-  it('MODGUI_PATH_ESCAPE: a template naming a web address, an absolute path outside the routes, or a relative path out of the bundle', () => {
+  it('panel.modgui.path-escape: a template naming a web address, an absolute path outside the routes, or a relative path out of the bundle', () => {
     const img = (src) => (t) => t.replace('<div class="mod-control-group">', `<img src="${src}">\n  <div class="mod-control-group">`);
-    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('//example.org/pedal.png')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background: url(/usr/share/pixmaps/x.png)"')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('../../../../etc/pedal.png')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('//example.org/pedal.png')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', (t) => t.replace('class="mod-knob-image"', 'class="mod-knob-image" style="background: url(/usr/share/pixmaps/x.png)"')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('../../../../etc/pedal.png')), 'panel.modgui.path-escape');
   });
 
   // The shapes are mod-ui's own: its templates name `/img/icons/36/<f>.png?v={{version}}`, `js/<f>.js?v={{version}}`
@@ -245,8 +245,8 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
   it('a query or a fragment is not part of the file: the image before it is checked', () => {
     imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png?v={{version}}')));
     imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png?uri=urn%3Aopenmixer%3Afixture%3Aecho#sprite')));
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png?v={{version}}')), 'MODGUI_IMAGE_NOT_FOUND');
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png#sprite')), 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png?v={{version}}')), 'panel.modgui.image-not-found');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png#sprite')), 'panel.modgui.image-not-found');
   });
 
   it('a Mustache tag anywhere in the path cannot be checked, so it is kept, not refused', () => {
@@ -261,31 +261,31 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     }
   });
 
-  it('the escape is decided before existence: a climb out of /resources/ is MODGUI_PATH_ESCAPE whether or not its target exists', () => {
-    refused(edited('modgui/icon-echo.html', img('/resources/../no-such.png')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs/../../echo.ttl')), 'MODGUI_PATH_ESCAPE');
+  it('the escape is decided before existence: a climb out of /resources/ is panel.modgui.path-escape whether or not its target exists', () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/../no-such.png')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/../../echo.ttl')), 'panel.modgui.path-escape');
     // A dot segment that stays inside is no escape.
     imports(edited('modgui/icon-echo.html', img('/resources/knobs/../knobs/knob-sprite.png')));
   });
 
-  it('an empty /resources/ reference names the directory, no image: MODGUI_IMAGE_NOT_FOUND, not MODGUI_PATH_ESCAPE', () => {
-    refused(edited('modgui/icon-echo.html', img('/resources/')), 'MODGUI_IMAGE_NOT_FOUND');
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs/')), 'MODGUI_IMAGE_NOT_FOUND');
+  it('an empty /resources/ reference names the directory, no image: panel.modgui.image-not-found, not panel.modgui.path-escape', () => {
+    refused(edited('modgui/icon-echo.html', img('/resources/')), 'panel.modgui.image-not-found');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/')), 'panel.modgui.image-not-found');
   });
 
   it('a percent-encoded path is decoded once before the escape check', () => {
-    refused(edited('modgui/icon-echo.html', img('/resources/%2e%2e/echo.ttl')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('/resources/%2E%2E/no-such.png')), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs%2f..%2f..%2fecho.ttl')), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/%2e%2e/echo.ttl')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('/resources/%2E%2E/no-such.png')), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs%2f..%2f..%2fecho.ttl')), 'panel.modgui.path-escape');
     imports(edited('modgui/icon-echo.html', img('/resources/knobs%2Fknob%2Dsprite.png')));
     // Once: `%252e%252e` is the literal name `%2e%2e`, a file the bundle does not hold, not a climb.
-    refused(edited('modgui/icon-echo.html', img('/resources/%252e%252e/echo.ttl')), 'MODGUI_IMAGE_NOT_FOUND');
+    refused(edited('modgui/icon-echo.html', img('/resources/%252e%252e/echo.ttl')), 'panel.modgui.image-not-found');
   });
 
   it("a single-quoted src='...' is scanned as a double-quoted one is", () => {
-    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png', "'")), 'MODGUI_IMAGE_NOT_FOUND');
-    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png', "'")), 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl', "'")), 'MODGUI_PATH_ESCAPE');
+    refused(edited('modgui/icon-echo.html', img('/resources/knobs/missing.png', "'")), 'panel.modgui.image-not-found');
+    refused(edited('modgui/icon-echo.html', img('https://example.org/pedal.png', "'")), 'panel.modgui.path-escape');
+    refused(edited('modgui/icon-echo.html', img('/resources/../echo.ttl', "'")), 'panel.modgui.path-escape');
     imports(edited('modgui/icon-echo.html', img('/resources/knobs/knob-sprite.png{{{ns}}}', "'")));
   });
 
@@ -305,30 +305,30 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.doesNotThrow(() => importModgui({ bundle: b, out: fresh('out') }, core));
   });
 
-  it('MODGUI_PATH_ESCAPE: a resource that resolves outside the bundle', () => {
-    refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'MODGUI_PATH_ESCAPE');
+  it('panel.modgui.path-escape: a resource that resolves outside the bundle', () => {
+    refused(edited('modgui.ttl', (t) => t.replace('<modgui/thumbnail-echo.png>', '<file:///etc/hostname>')), 'panel.modgui.path-escape');
     const b = edited('modgui.ttl');
     symlinkSync(tmpdir(), join(b, 'modgui', 'escape'));
-    refused(b, 'MODGUI_PATH_ESCAPE');
-    refused(edited('modgui.ttl', (t) => t.replace('<modgui/screenshot-echo.png>', '<../../screenshot.png>')), 'MODGUI_NOT_FOUND');
+    refused(b, 'panel.modgui.path-escape');
+    refused(edited('modgui.ttl', (t) => t.replace('<modgui/screenshot-echo.png>', '<../../screenshot.png>')), 'panel.modgui.not-found');
   });
 
-  it('MODGUI_TTL_INVALID: a TTL that does not parse', () => {
-    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:brand "openmixer ;')), 'MODGUI_TTL_INVALID');
+  it('panel.modgui.ttl-invalid: a TTL that does not parse', () => {
+    refused(edited('modgui.ttl', (t) => t.replace('modgui:brand "openmixer" ;', 'modgui:brand "openmixer ;')), 'panel.modgui.ttl-invalid');
   });
 
-  it('MODGUI_NOT_FOUND: a bundle without a modgui', () => {
+  it('panel.modgui.not-found: a bundle without a modgui', () => {
     const b = edited('manifest.ttl');
     rmSync(join(b, 'modgui.ttl'));
-    refused(b, 'MODGUI_NOT_FOUND');
+    refused(b, 'panel.modgui.not-found');
   });
 
-  it('MODGUI_TARGET_EXISTS: an existing package is never overwritten', () => {
+  it('panel.modgui.target-exists: an existing package is never overwritten', () => {
     const out = fresh('out');
     importModgui({ bundle: FIXTURE, out }, core);
     const skin = join(out, core.encodeSkinId(PLUGIN), 'skin.json');
     writeFileSync(skin, 'the operator edited this');
-    refused(FIXTURE, 'MODGUI_TARGET_EXISTS', { out });
+    refused(FIXTURE, 'panel.modgui.target-exists', { out });
     assert.equal(readFileSync(skin, 'utf8'), 'the operator edited this');
   });
 
@@ -339,7 +339,7 @@ describe('modgui-import: refusals name the code and the file, and write nothing'
     assert.equal(run.status, 3);
     const line = run.stdout.split('\n').find((l) => l.startsWith('MODGUI-IMPORT-JSON '));
     const got = JSON.parse(line.slice('MODGUI-IMPORT-JSON '.length));
-    assert.deepEqual({ verdict: got.verdict, code: got.code, file: got.file }, { verdict: 'refused', code: 'MODGUI_LICENCE_REFUSED', file: join(b, 'echo.ttl') });
+    assert.deepEqual({ verdict: got.verdict, code: got.code, file: got.file }, { verdict: 'refused', code: 'panel.modgui.licence-refused', file: join(b, 'echo.ttl') });
     assert.equal(existsSync(out), false);
   });
 
@@ -372,7 +372,7 @@ describe('modgui-import: the proof on the installed caps CEO', { skip: ceoSkip }
       try {
         importModgui({ bundle: join(lv2, d), out: fresh('out') }, core);
       } catch (e) {
-        assert.ok(!['MODGUI_IMAGE_NOT_FOUND', 'MODGUI_PATH_ESCAPE'].includes(e.code), `${d}: ${e.message}`);
+        assert.ok(!['panel.modgui.image-not-found', 'panel.modgui.path-escape'].includes(e.code), `${d}: ${e.message}`);
       }
     }
   });

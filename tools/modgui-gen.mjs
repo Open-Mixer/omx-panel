@@ -255,7 +255,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   try {
     panel = panelOf(descriptor, declared, wantEasyFirst);
   } catch (err) {
-    throw err.code === 'PANEL_NO_CONTROLS' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+    throw err.code === 'panel.describe.no-controls' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
   const controls = descriptor.controls ?? [];
   // a control a declared rule governs carries it: the governing port's symbol and the mask of the values that show it,

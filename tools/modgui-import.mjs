@@ -55,7 +55,7 @@ export function readBundle(dir) {
     try {
       parsed = parseTurtle(readFileSync(path, 'utf8'), pathToFileURL(path).href);
     } catch (e) {
-      throw new Refusal('MODGUI_TTL_INVALID', path, e.message);
+      throw new Refusal('panel.modgui.ttl-invalid', path, e.message);
     }
     // Blank nodes are local to their file.
     const local = (t) => (t.t === 'bnode' ? { t: 'bnode', v: `${f}#${t.v}` } : t);
@@ -64,11 +64,11 @@ export function readBundle(dir) {
   return triples;
 }
 
-/** A path inside the bundle, or a PATH_ESCAPE refusal; a missing file is MODGUI_NOT_FOUND. */
+/** A path inside the bundle, or a PATH_ESCAPE refusal; a missing file is panel.modgui.not-found. */
 function insideBundle(bundle, path, file) {
-  if (!existsSync(path)) throw new Refusal('MODGUI_NOT_FOUND', file, `names ${path}, which does not exist`);
+  if (!existsSync(path)) throw new Refusal('panel.modgui.not-found', file, `names ${path}, which does not exist`);
   const real = realpathSync(path);
-  if (real !== bundle && !real.startsWith(bundle + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', file, `${path} resolves outside the bundle, to ${real}`);
+  if (real !== bundle && !real.startsWith(bundle + sep)) throw new Refusal('panel.modgui.path-escape', file, `${path} resolves outside the bundle, to ${real}`);
   return real;
 }
 
@@ -118,14 +118,14 @@ function refPath(ref) {
 
 /**
  * Every reference `template` names, the escape decided before existence: under mod-ui's resources
- * route a path climbing out of the resources directory is MODGUI_PATH_ESCAPE, one naming no file there
- * MODGUI_IMAGE_NOT_FOUND; mod-ui's own routes and a path holding a Mustache tag are kept as text; a web
- * address, any other absolute path, or a relative path out of the bundle is MODGUI_PATH_ESCAPE.
+ * route a path climbing out of the resources directory is panel.modgui.path-escape, one naming no file there
+ * panel.modgui.image-not-found; mod-ui's own routes and a path holding a Mustache tag are kept as text; a web
+ * address, any other absolute path, or a relative path out of the bundle is panel.modgui.path-escape.
  */
 function checkTemplateImages(bundle, resourcesDir, template, routes) {
   for (const ref of templateRefs(readFileSync(template, 'utf8'))) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(ref) || ref.startsWith('//')) {
-      throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, a web address`);
+      throw new Refusal('panel.modgui.path-escape', template, `names ${ref}, a web address`);
     }
     const { path, tagged } = refPath(ref);
     if (tagged) continue;
@@ -136,16 +136,16 @@ function checkTemplateImages(bundle, resourcesDir, template, routes) {
         const rel = url.slice(routes.resources.length);
         const p = join(resourcesDir, rel);
         if (rel === '' || rel.endsWith('/') || !existsSync(p) || statSync(p).isDirectory()) {
-          throw new Refusal('MODGUI_IMAGE_NOT_FOUND', template, `names ${ref}, which is no file under ${resourcesDir}`);
+          throw new Refusal('panel.modgui.image-not-found', template, `names ${ref}, which is no file under ${resourcesDir}`);
         }
         const real = realpathSync(p);
-        if (!real.startsWith(resourcesDir + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which resolves outside ${resourcesDir}, to ${real}`);
+        if (!real.startsWith(resourcesDir + sep)) throw new Refusal('panel.modgui.path-escape', template, `names ${ref}, which resolves outside ${resourcesDir}, to ${real}`);
       } else if (!routes.served.some((r) => url.startsWith(r))) {
-        throw new Refusal('MODGUI_PATH_ESCAPE', template, path.startsWith(routes.resources) ? `names ${ref}, which climbs out of ${resourcesDir}, to ${url}` : `names ${ref}, an absolute path outside the bundle`);
+        throw new Refusal('panel.modgui.path-escape', template, path.startsWith(routes.resources) ? `names ${ref}, which climbs out of ${resourcesDir}, to ${url}` : `names ${ref}, an absolute path outside the bundle`);
       }
     } else {
       const p = join(dirname(template), path);
-      if (p !== bundle && !p.startsWith(bundle + sep)) throw new Refusal('MODGUI_PATH_ESCAPE', template, `names ${ref}, which climbs out of the bundle, to ${p}`);
+      if (p !== bundle && !p.startsWith(bundle + sep)) throw new Refusal('panel.modgui.path-escape', template, `names ${ref}, which climbs out of the bundle, to ${p}`);
     }
   }
 }
@@ -158,7 +158,7 @@ export function importModgui({ bundle, out, plugin }, core) {
   core ??= skinPackage;
   const NS = core.MODGUI_NS;
   const LV2 = core.LV2_NS;
-  if (!existsSync(bundle) || !statSync(bundle).isDirectory()) throw new Refusal('MODGUI_NOT_FOUND', bundle, 'is not a bundle directory');
+  if (!existsSync(bundle) || !statSync(bundle).isDirectory()) throw new Refusal('panel.modgui.not-found', bundle, 'is not a bundle directory');
   const dir = realpathSync(bundle);
   const triples = readBundle(dir);
   const about = (s) => triples.filter((t) => key(t.s) === key(s));
@@ -166,20 +166,20 @@ export function importModgui({ bundle, out, plugin }, core) {
 
   // The plugin that carries the modgui.
   const guis = triples.filter((t) => t.p.v === `${NS}gui` && (plugin === undefined || t.s.v === plugin));
-  if (guis.length === 0) throw new Refusal('MODGUI_NOT_FOUND', dir, plugin ? `no modgui:gui on <${plugin}>` : 'no modgui:gui in any TTL of the bundle');
+  if (guis.length === 0) throw new Refusal('panel.modgui.not-found', dir, plugin ? `no modgui:gui on <${plugin}>` : 'no modgui:gui in any TTL of the bundle');
   if (new Set(guis.map((t) => t.s.v)).size > 1 || guis.length > 1) {
-    throw new Refusal('MODGUI_NOT_FOUND', dir, `${guis.length} modgui:gui nodes (${guis.map((t) => show(t.s)).join(', ')}); name one with --plugin`);
+    throw new Refusal('panel.modgui.not-found', dir, `${guis.length} modgui:gui nodes (${guis.map((t) => show(t.s)).join(', ')}); name one with --plugin`);
   }
   const [{ s: pluginTerm, o: gui, file: guiFile }] = guis;
-  if (pluginTerm.t !== 'iri') throw new Refusal('MODGUI_TTL_INVALID', guiFile, 'the modgui:gui subject is not a plugin IRI');
+  if (pluginTerm.t !== 'iri') throw new Refusal('panel.modgui.ttl-invalid', guiFile, 'the modgui:gui subject is not a plugin IRI');
 
   // Every modgui property it does not know is refused (§6.6), on the gui node, its ports, or anywhere.
   const knownGui = new Set(core.MODGUI_GUI_PROPERTIES.map((p) => `${NS}${p}`));
   const knownPort = new Set(core.MODGUI_PORT_PROPERTIES.map((p) => `${LV2}${p}`));
-  for (const t of about(gui)) if (!knownGui.has(t.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `modgui:gui carries ${show(t.p)}`);
+  for (const t of about(gui)) if (!knownGui.has(t.p.v)) throw new Refusal('panel.modgui.unknown-property', t.file, `modgui:gui carries ${show(t.p)}`);
   for (const t of triples) {
-    if (t.p.v.startsWith(NS) && t.p.v !== `${NS}gui` && !knownGui.has(t.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `${show(t.p)} is not a modgui property this importer knows`);
-    if (t.p.v === RDF_TYPE && t.o.t === 'iri' && t.o.v.startsWith(NS)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', t.file, `a node is typed ${show(t.o)}`);
+    if (t.p.v.startsWith(NS) && t.p.v !== `${NS}gui` && !knownGui.has(t.p.v)) throw new Refusal('panel.modgui.unknown-property', t.file, `${show(t.p)} is not a modgui property this importer knows`);
+    if (t.p.v === RDF_TYPE && t.o.t === 'iri' && t.o.v.startsWith(NS)) throw new Refusal('panel.modgui.unknown-property', t.file, `a node is typed ${show(t.o)}`);
   }
   // The plugin's own lv2:port symbols: a modgui:port naming none of them is stale or renamed.
   const pluginPortSymbols = new Set(
@@ -188,25 +188,25 @@ export function importModgui({ bundle, out, plugin }, core) {
       .filter((s) => typeof s === 'string'),
   );
   const ports = one(gui, `${NS}port`).map((t) => {
-    for (const q of about(t.o)) if (!knownPort.has(q.p.v)) throw new Refusal('MODGUI_UNKNOWN_PROPERTY', q.file, `a modgui:port carries ${show(q.p)}`);
+    for (const q of about(t.o)) if (!knownPort.has(q.p.v)) throw new Refusal('panel.modgui.unknown-property', q.file, `a modgui:port carries ${show(q.p)}`);
     const val = (p) => one(t.o, `${LV2}${p}`)[0]?.o.v;
     const index = Number(val('index'));
     const symbol = val('symbol');
-    if (!Number.isInteger(index) || typeof symbol !== 'string' || symbol === '') throw new Refusal('MODGUI_TTL_INVALID', t.file, 'a modgui:port has no integer lv2:index or no lv2:symbol');
-    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:port lv2:symbol "${symbol}" names no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
+    if (!Number.isInteger(index) || typeof symbol !== 'string' || symbol === '') throw new Refusal('panel.modgui.ttl-invalid', t.file, 'a modgui:port has no integer lv2:index or no lv2:symbol');
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('panel.modgui.port-unknown', t.file, `modgui:port lv2:symbol "${symbol}" names no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
     return { index, symbol, name: val('name') ?? symbol };
   });
   ports.sort((a, b) => a.index - b.index);
   // A monitored output names a port as a modgui:port does: by its lv2:symbol, or by the literal symbol.
   for (const t of one(gui, `${NS}monitoredOutputs`)) {
     const symbol = t.o.t === 'lit' ? t.o.v : one(t.o, `${LV2}symbol`)[0]?.o.v;
-    if (!pluginPortSymbols.has(symbol)) throw new Refusal('MODGUI_PORT_UNKNOWN', t.file, `modgui:monitoredOutputs names "${symbol}", no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
+    if (!pluginPortSymbols.has(symbol)) throw new Refusal('panel.modgui.port-unknown', t.file, `modgui:monitoredOutputs names "${symbol}", no lv2:symbol of <${pluginTerm.v}>'s own lv2:port`);
   }
   const lit = (p) => one(gui, `${NS}${p}`)[0]?.o.v;
   const res = (p) => {
     const t = one(gui, `${NS}${p}`)[0];
     if (!t) return undefined;
-    if (t.o.t !== 'iri' || !t.o.v.startsWith('file:')) throw new Refusal('MODGUI_PATH_ESCAPE', t.file, `modgui:${p} ${show(t.o)} is not a file of the bundle`);
+    if (t.o.t !== 'iri' || !t.o.v.startsWith('file:')) throw new Refusal('panel.modgui.path-escape', t.file, `modgui:${p} ${show(t.o)} is not a file of the bundle`);
     return insideBundle(dir, fileURLToPath(t.o.v), t.file);
   };
 
@@ -214,17 +214,17 @@ export function importModgui({ bundle, out, plugin }, core) {
   let licTriples = one(pluginTerm, `${core.DOAP_NS}license`);
   if (licTriples.length === 0) for (const pr of one(pluginTerm, LV2_PROJECT)) licTriples = licTriples.concat(one(pr.o, `${core.DOAP_NS}license`));
   const pluginFile = triples.find((t) => key(t.s) === key(pluginTerm) && t.p.v === RDF_TYPE)?.file ?? guiFile;
-  if (licTriples.length === 0) throw new Refusal('MODGUI_NO_LICENCE', pluginFile, `<${pluginTerm.v}> carries no doap:license, nor does its lv2:project`);
+  if (licTriples.length === 0) throw new Refusal('panel.modgui.no-licence', pluginFile, `<${pluginTerm.v}> carries no doap:license, nor does its lv2:project`);
   const licences = licTriples.map((t) => {
     const spdx = core.spdxFromDoapLicence(t.o.t === 'iri' ? { iri: t.o.v } : { literal: t.o.v });
-    if (spdx === null) throw new Refusal('MODGUI_LICENCE_UNMAPPED', t.file, `doap:license ${show(t.o)} names no SPDX licence`);
-    if (!core.isSkinLicenceAllowed(spdx)) throw new Refusal('MODGUI_LICENCE_REFUSED', t.file, `doap:license ${show(t.o)} is ${spdx}, outside the allow-list (${core.SKIN_LICENCE_ALLOW_LIST.join(', ')})`);
+    if (spdx === null) throw new Refusal('panel.modgui.licence-unmapped', t.file, `doap:license ${show(t.o)} names no SPDX licence`);
+    if (!core.isSkinLicenceAllowed(spdx)) throw new Refusal('panel.modgui.licence-refused', t.file, `doap:license ${show(t.o)} is ${spdx}, outside the allow-list (${core.SKIN_LICENCE_ALLOW_LIST.join(', ')})`);
     return { spdx, evidence: `${basename(t.file)} doap:license ${show(t.o)}` };
   });
 
   // The files: every resource inside the bundle, every entry of the resources directory too.
   const resourcesDir = res('resourcesDirectory');
-  if (resourcesDir === undefined || !statSync(resourcesDir).isDirectory()) throw new Refusal('MODGUI_NOT_FOUND', guiFile, 'modgui:resourcesDirectory names no directory');
+  if (resourcesDir === undefined || !statSync(resourcesDir).isDirectory()) throw new Refusal('panel.modgui.not-found', guiFile, 'modgui:resourcesDirectory names no directory');
   checkTree(dir, resourcesDir, guiFile);
   // Every file-valued property; a documentation that names no file: IRI is a web address, kept as text.
   const isFile = (p) => p !== 'documentation' || one(gui, `${NS}${p}`).every((t) => t.o.t === 'iri' && t.o.v.startsWith('file:'));
@@ -238,9 +238,9 @@ export function importModgui({ bundle, out, plugin }, core) {
   const name = core.encodeSkinId(id);
   const outDir = resolve(out);
   const target = join(outDir, name);
-  if (existsSync(target)) throw new Refusal('MODGUI_TARGET_EXISTS', target, 'the package is already there; nothing is overwritten');
+  if (existsSync(target)) throw new Refusal('panel.modgui.target-exists', target, 'the package is already there; nothing is overwritten');
   const ttlCopy = basename(guiFile);
-  if (existsSync(join(resourcesDir, ttlCopy))) throw new Refusal('MODGUI_TARGET_EXISTS', join(resourcesDir, ttlCopy), `the resources directory already holds a ${ttlCopy}`);
+  if (existsSync(join(resourcesDir, ttlCopy))) throw new Refusal('panel.modgui.target-exists', join(resourcesDir, ttlCopy), `the resources directory already holds a ${ttlCopy}`);
 
   const label = lit('label');
   const skin = {

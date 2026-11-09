@@ -30,7 +30,7 @@ export const EASY_ROLES = Object.freeze({
 });
 
 export class EasyRefused extends Error {
-  code = 'PANEL_EASY_REFUSED';
+  code = 'panel.describe.easy-refused';
 }
 
 /** A layout control a face can set: no reading, no trigger, no bypass (the header draws it). */

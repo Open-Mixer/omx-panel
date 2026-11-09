@@ -33,14 +33,14 @@ import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, ke
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's. */
 export const DESCRIBE_CODES = {
-  noControls: 'PANEL_NO_CONTROLS',
-  familyNotBacked: 'PANEL_FAMILY_NOT_BACKED',
-  layoutInvalid: 'PANEL_LAYOUT_INVALID',
-  overrideUnavailable: 'PANEL_OVERRIDE_UNAVAILABLE',
-  overrideRefused: 'PANEL_OVERRIDE_REFUSED',
-  overrideDropped: 'PANEL_OVERRIDE_DROPPED',
-  roleDropped: 'PANEL_ROLE_DROPPED',
-  skinDropped: 'PANEL_SKIN_DROPPED',
+  noControls: 'panel.describe.no-controls',
+  familyNotBacked: 'panel.describe.family-not-backed',
+  layoutInvalid: 'panel.describe.layout-invalid',
+  overrideUnavailable: 'panel.describe.override-unavailable',
+  overrideRefused: 'panel.describe.override-refused',
+  overrideDropped: 'panel.describe.override-dropped',
+  roleDropped: 'panel.describe.role-dropped',
+  skinDropped: 'panel.describe.skin-dropped',
 };
 
 /** What a plugin declares about itself (an LV2 class, a CLAP feature) -> the family whose closed form omx-panel knows. */

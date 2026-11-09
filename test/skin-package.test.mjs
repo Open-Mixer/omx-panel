@@ -96,11 +96,11 @@ describe('the override file (§6.3)', () => {
       parseSkinOverride(file({ backdrop: 'art/../../etc/passwd' }), DESC.plugin),
     ].map((r) => (r.ok ? 'ok' : `${r.refusal.code}:${r.refusal.args?.['field']}`));
     assert.deepEqual(codes, [
-      'SKIN_OVERRIDE_INVALID:json',
-      'SKIN_OVERRIDE_INVALID:plugin',
-      'SKIN_OVERRIDE_INVALID:schema',
-      'SKIN_OVERRIDE_INVALID:view',
-      'SKIN_OVERRIDE_INVALID:backdrop',
+      'panel.skin.override-invalid:json',
+      'panel.skin.override-invalid:plugin',
+      'panel.skin.override-invalid:schema',
+      'panel.skin.override-invalid:view',
+      'panel.skin.override-invalid:backdrop',
     ]);
     assert.equal(parseSkinOverride(file({}), DESC.plugin).ok, true);
   });
@@ -114,7 +114,7 @@ describe('the override file (§6.3)', () => {
       parseSkinOverride(file({ modgui: 'modgui/icon.html' }), DESC.plugin),
       parseSkinOverride(file({ modgui: { entry: 'modgui/icon.html' }, view: { entry: 'view/index.mjs', api: '1.0' } }), DESC.plugin),
     ].map((r) => (r.ok ? 'ok' : `${r.refusal.code}:${r.refusal.args?.['field']}`));
-    assert.deepEqual(codes, Array(4).fill('SKIN_OVERRIDE_INVALID:modgui'));
+    assert.deepEqual(codes, Array(4).fill('panel.skin.override-invalid:modgui'));
   });
 
   it('passes exactly the allow-listed licences through the modgui gate (§6.6, §6.7)', () => {
@@ -131,7 +131,7 @@ describe('the override file (§6.3)', () => {
     if (ok.ok) assert.deepEqual(ok.override.source?.modgui, { html: 'modgui/icon.html', css: 'modgui/stylesheet.css' });
 
     const escaping = parseSkinOverride(file({ source: { kind: 'modgui', modgui: { html: '../x.html', css: 'modgui/stylesheet.css' } } }), DESC.plugin);
-    assert.equal(escaping.ok ? 'ok' : escaping.refusal.code, 'SKIN_OVERRIDE_INVALID');
+    assert.equal(escaping.ok ? 'ok' : escaping.refusal.code, 'panel.skin.override-invalid');
 
     const outside = parseSkinOverride(file({ source: { kind: 'modgui', modgui: { html: 'art/icon.html', css: 'modgui/stylesheet.css' } } }), DESC.plugin);
     assert.equal(outside.ok, false);
@@ -226,7 +226,7 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
   });
   it('the importer vocabulary is the spec list', () => {
     assert.equal(MODGUI_IMPORT_REFUSALS.length, 10);
-    for (const code of ['MODGUI_PORT_UNKNOWN', 'MODGUI_IMAGE_NOT_FOUND'])assert.ok(MODGUI_IMPORT_REFUSALS.includes(code), code);
+    for (const code of ['panel.modgui.port-unknown', 'panel.modgui.image-not-found']) assert.ok(MODGUI_IMPORT_REFUSALS.includes(code), code);
     assert.ok(MODGUI_GUI_PROPERTIES.includes('resourcesDirectory'));
     assert.deepEqual(MODGUI_PORT_PROPERTIES, ['index', 'symbol', 'name']);
     for (const code of MODGUI_IMPORT_REFUSALS) assert.ok(SKIN_REFUSAL_CODES.includes(code), code);
@@ -234,11 +234,11 @@ describe('§6.6 the licence map and the allow-list (§12 Q6)', () => {
   it('the importer vocabulary is the one docs/skin-package.md states, so the two cannot drift apart', () => {
     const doc = readFileSync(new URL('../docs/skin-package.md', import.meta.url), 'utf8');
     const s = doc.slice(doc.indexOf('## Importing a MOD GUI'), doc.indexOf('## What the validator checks'));
-    const ticked = (text) => [...text.matchAll(/`(\w+)`/g)].map((m) => m[1]);
+    const ticked = (text) => [...text.matchAll(/`([\w.-]+)`/g)].map((m) => m[1]);
     const known = /The known `modgui:gui` properties are mod-ui's whole list[^:]*:([^(]*)\(`MODGUI_GUI_PROPERTIES`\)/.exec(s)[1];
     assert.deepEqual([...MODGUI_GUI_PROPERTIES].sort(), ticked(known).sort());
-    const refuses = /It refuses[^:]*:([\s\S]*?`MODGUI_TARGET_EXISTS`)/.exec(s)[1];
-    assert.deepEqual([...MODGUI_IMPORT_REFUSALS].sort(), ticked(refuses).filter((w) => w.startsWith('MODGUI_')).sort());
+    const refuses = /It refuses[^:]*:([\s\S]*?`panel.modgui.target-exists`)/.exec(s)[1];
+    assert.deepEqual([...MODGUI_IMPORT_REFUSALS].sort(), ticked(refuses).filter((w) => w.startsWith('panel.modgui.')).sort());
     const fileValued = /The file-valued ones \(([^;]*);/.exec(s)[1];
     assert.deepEqual([...MODGUI_FILE_PROPERTIES].sort(), ticked(fileValued).sort());
     for (const p of MODGUI_FILE_PROPERTIES) assert.ok(MODGUI_GUI_PROPERTIES.includes(p), p);

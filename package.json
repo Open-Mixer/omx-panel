@@ -22,6 +22,8 @@
       "types": "./dist/src/skin-package.d.ts",
       "default": "./dist/src/skin-package.js"
     },
+    "./codes.json": "./dist/schema/codes.json",
+    "./catalogs/*.json": "./dist/catalogs/*.json",
     "./validate": {
       "types": "./dist/lib/validate.d.mts",
       "default": "./dist/lib/validate.mjs"
@@ -115,7 +117,7 @@
     "ajv": "^8.17.1"
   },
   "devDependencies": {
-    "@openmixer/omx-contract": ">=3.8.0 <4",
+    "@openmixer/omx-contract": ">=3.11.0 <4",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   },
