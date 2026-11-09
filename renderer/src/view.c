@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "view.h"
+#include "meter_law.h"
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -91,6 +92,7 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, selectorTop, &v->g, "geometry"); NUM(g, faderW, &v->g, "geometry"); NUM(g, faderCap, &v->g, "geometry");
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
+  NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
   NUM(t, nameBase, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
@@ -184,6 +186,32 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         free(v->controls[at].bar);
         v->controls[at].bar = dup(lab);
       }
+    }
+  }
+  /* the meters (contract 7.9): the range, the unit and the kind are the description's; a meter that is one of the controls
+   * is that control's reading, the others stand in the band below the sections */
+  cJSON *mts = cJSON_GetObjectItemCaseSensitive(root, "meters");
+  if (cJSON_IsArray(mts)) {
+    v->nmeters = (size_t)cJSON_GetArraySize(mts);
+    v->meters = calloc(v->nmeters ? v->nmeters : 1, sizeof *v->meters);
+    i = 0;
+    cJSON_ArrayForEach(it, mts) {
+      meter *m = &v->meters[i++];
+      const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
+      const char *label = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "label"));
+      const char *unit = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unit"));
+      const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
+      cJSON *mn = cJSON_GetObjectItemCaseSensitive(it, "min"), *mx = cJSON_GetObjectItemCaseSensitive(it, "max");
+      if (!sym || !label || !unit || !kind || !cJSON_IsNumber(mn) || !cJSON_IsNumber(mx) || !(mx->valuedouble > mn->valuedouble)) {
+        fail(err, n, "description: meter '%s' lacks a label, a unit, a kind or a range%s", sym ? sym : "?", NULL);
+        goto bad;
+      }
+      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit);
+      m->min = mn->valuedouble, m->max = mx->valuedouble, m->gain_reduction = strcmp(kind, "gain-reduction") == 0;
+      m->in_band = 1;
+      for (size_t k = 0; k < v->ncontrols; k++)
+        if (strcmp(v->controls[k].symbol, sym) == 0) m->in_band = 0;
+      v->nband += (size_t)m->in_band;
     }
   }
   /* the displays: each on a section, its kind the curve's axes, its basis the caption */
@@ -300,9 +328,31 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
   for (size_t i = 0; i < v->ncontrols; i++)
     free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
   for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter);
+  for (size_t i = 0; i < v->nmeters; i++) free(v->meters[i].symbol), free(v->meters[i].label), free(v->meters[i].unit);
+  free(v->meters);
   free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
   omx_font_free(v->font);
   free(v);
+}
+
+uint32_t omx_panel_view_meter_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->nmeters : 0; }
+
+int32_t omx_panel_view_meter_find(const omx_panel_view_t *v, const char *symbol) {
+  for (size_t i = 0; v && symbol && i < v->nmeters; i++)
+    if (strcmp(v->meters[i].symbol, symbol) == 0) return (int32_t)i;
+  return -1;
+}
+
+/* The marker holds the deepest reading and falls toward the empty end by the law's rate over the time elapsed at the draw tick. */
+bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t index, double value, double elapsed) {
+  if (!v || index >= v->nmeters || !isfinite(value) || !(elapsed >= 0) || !isfinite(elapsed)) return false;
+  meter *m = &v->meters[index];
+  double fell = OMX_METER_FALL_DB_PER_S * elapsed;
+  if (!m->has) m->marker = value;
+  else if (m->gain_reduction) m->marker = fmin(value, fmin(m->max, m->marker + fell));
+  else m->marker = fmax(value, fmax(m->min, m->marker - fell));
+  m->value = value, m->has = 1;
+  return true;
 }
 
 uint32_t omx_panel_view_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->ncontrols : 0; }
@@ -399,6 +449,7 @@ typedef struct {
   double *cx, *cy;   /* each control's cell, relative to its section */
   int *curves;       /* one per section: how many curve rows it holds, above its controls */
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
+  box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
 } laid;
 
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
@@ -406,7 +457,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
             calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int))};
+            calloc(v->nsections ? v->nsections : 1, sizeof(int)), {0, 0, 0, 0}};
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
   /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
@@ -435,6 +486,12 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     L.sections[s] = (box){g->pad, y, section_w, h};
     last = y + h;
     y += h + g->sectionGap;
+  }
+  if (v->nband) {
+    double top = last >= 0 ? last + g->sectionGap : y;
+    double h = g->sectionTitleH + (double)v->nband * (g->meterH + g->meterGap) + g->sectionPad / 2;
+    L.meters = (box){g->pad, top, section_w, h};
+    last = top + h;
   }
   L.w = section_w + 2 * g->pad;
   L.h = last >= 0 ? last + g->pad : g->sectionTop + g->pad;
@@ -600,6 +657,27 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
   return true;
 }
 
+/* The fraction of a meter's range a value fills: a level from the foot of the range, a gain reduction from its top (0 dB). */
+static double meter_fraction(const meter *m, double value) {
+  double f = m->gain_reduction ? (m->max - value) / (m->max - m->min) : (value - m->min) / (m->max - m->min);
+  return fmin(1, fmax(0, f));
+}
+
+/* A meter of the band: the frame with its caption (the label and the range with its unit), the bar along the foot, and the
+ * peak marker over it. Until a reading is given only the frame and the caption stand, as the MOD GUI draws it. */
+static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, const meter *m, double x, double y, double w, double h, double s,
+                       const palette *col) {
+  d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  char cap[256];
+  snprintf(cap, sizeof cap, "%s  %g to %g %s", m->label, m->min, m->max, m->unit);
+  text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  if (!m->has) return;
+  double inner = w - 4 * s, f = meter_fraction(m, m->value), mk = meter_fraction(m, m->marker);
+  if (f > 0) d->round_rect(d->ctx, x + 2 * s, y + h - 6 * s, inner * f, 4 * s, 0, col->accent);
+  d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->ink);
+}
+
 void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
   const geometry *g = &v->g;
   const textsizes *T = &v->t;
@@ -657,6 +735,17 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
              T->small * s, col->ink, OMX_ALIGN_CENTRE);
       else if (!reading || k->text[0])
         text(d, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+    }
+  }
+  if (v->nband) {
+    box b = L.meters;
+    d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
+    text(d, font, "Meters", 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    int row = 0;
+    for (size_t k = 0; k < v->nmeters; k++) {
+      if (!v->meters[k].in_band) continue;
+      draw_meter(d, font, T, &v->meters[k], (b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s,
+                 (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
     }
   }
   lay_free(&L);

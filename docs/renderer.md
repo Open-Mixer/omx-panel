@@ -94,6 +94,18 @@ control's integer value: its come-up value (`visibleWhen.default`) until the hos
 `omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
 leaves with none takes no space, so the panel is drawn exactly as one without them.
 
+## Meters
+
+The description's `meters` (docs/panel-layout.md, "Meters") that are no control of a section stand in a band below the
+sections: a frame captioned with the label, the range and its unit, a bar along the foot and a marker over it.
+`omx_panel_view_set_meter(view, index, value, elapsed)` gives a reading: the bar is the value over the description's range (a
+level from the foot, a gain reduction from 0 dB), the marker holds the peak (the deepest reduction) and falls by `elapsed`
+seconds at the rate in omx-dsp's `data/primitives/meter.json` (`fallDbPerSecond`, 18 dB/s), the same at any draw rate and on
+silence. The rate is read from that file when the renderer is built (the installed contract directory of omx-dsp, or
+`make METER_JSON=<file>`) and written to `build/meter_law.h`; no number is copied into the source. Until a reading is
+given only the frame stands, which is what the MOD GUI face draws. The command's state takes
+`"meters": {"<symbol>": [{"value", "elapsed"}, ...]}`, one entry for each draw tick.
+
 ## Input
 
 The renderer answers input with the one gesture vocabulary (`docs/panel-gestures.md`, one-panel spec 7.8). An event

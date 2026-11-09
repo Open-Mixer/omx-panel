@@ -301,6 +301,16 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
     const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     for (const sec of sections) for (const dsp of sec.displays) dsp.curve = staticCurve(descriptor, x, dsp);
   }
+  // the meters of the panel description (contract 7.9) that are no control of a section: a static frame with the description's
+  // range, in a band below the sections (a live MOD GUI meter waits for its own spec). A foreign meter that is a control stays one.
+  let meters = [];
+  try {
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
+    const symbols = new Set(x.controls.map((c) => c.symbol));
+    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: m.unit, min: m.min, max: m.max, kind: m.kind }));
+  } catch {
+    meters = [];
+  }
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
@@ -319,7 +329,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       });
     }
   }
-  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, skipped };
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
@@ -341,7 +351,15 @@ export function layout(panel) {
     return sec;
   });
   const last = sections[sections.length - 1];
-  return { w: sectionW + 2 * g.pad, h: last.y + last.h + g.pad, sections };
+  const meters = panel.meters ?? [];
+  let bottom = last.y + last.h;
+  let band = null;
+  if (meters.length > 0) {
+    const h = g.sectionTitleH + meters.length * (g.meterH + g.meterGap) + g.sectionPad / 2;
+    band = { x: g.pad, y: bottom + g.sectionGap, w: sectionW, h, meters };
+    bottom = band.y + h;
+  }
+  return { w: sectionW + 2 * g.pad, h: bottom + g.pad, sections, band };
 }
 
 /** The look: tools/look.json, every colour a plain #rrggbb. */
@@ -422,6 +440,9 @@ export function valueText(k) {
   return k.unit ? `${n} ${k.unit}` : n;
 }
 
+/** A meter's caption: the label, then the description's range with its unit. */
+export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}`;
+
 /** The face at `scale`, every control at its declared default. */
 export function renderFace(lay, look, scale) {
   const g = GEOMETRY, tok = look.tokens, font = look.font, col = palette(tok), s = scale;
@@ -478,6 +499,19 @@ export function renderFace(lay, look, scale) {
       }
     }
   }
+  // the meters band: each a frame with its caption (label, range, unit); no reading, so no bar and no marker
+  if (lay.band) {
+    const b = lay.band;
+    roundRect(c, b.x * s, b.y * s, b.w * s, b.h * s, g.sectionRadius * s, col.section);
+    drawText(c, font, fitText(font, 'METERS', TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
+    b.meters.forEach((m, row) => {
+      const mx = (b.x + g.sectionPad) * s, my = (b.y + g.sectionTitleH + row * (g.meterH + g.meterGap)) * s, mw = (b.w - 2 * g.sectionPad) * s, mh = g.meterH * s;
+      roundRect(c, mx, my, mw, mh, Math.min(4, mh / 4), col.rim);
+      roundRect(c, mx + 1, my + 1, mw - 2, mh - 2, Math.min(3, mh / 4), col.body);
+      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s), mx + 6 * s, my + 12 * s, TEXT.small * s, col.inkDim);
+    });
+  }
+
   return encodePng(c);
 }
 
@@ -594,7 +628,11 @@ export function emitTemplate(panel, lay, source) {
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
 ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
-        </div>`).join('\n');
+        </div>`).join('\n') + (lay.band ? `
+        <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
+            <h2 class="omx-section-title">Meters</h2>
+${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span></div>`).join('\n')}
+        </div>` : '');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
         <div class="mod-${dir} mod-${dir}-disconnected" title="{{name}}" mod-role="${dir}-${kind}-port" mod-port-symbol="{{symbol}}">
             <div class="mod-pedal-${dir}-image"></div>
@@ -661,6 +699,8 @@ ${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
 ${P} .omx-curve-line { stroke: ${tok['--accent']}; stroke-width: 1.5; stroke-linejoin: round; }
 ${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
 ${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
+${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ` : ''}`;

@@ -20,9 +20,13 @@ PKG_CONFIG ?= pkg-config
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 
 DEPS := libcjson omx-contract
+# The meter's view law is omx-dsp's, read when the renderer is built and never copied: data/primitives/meter.json, installed
+# with omx-dsp's contract data (METER_JSON names another file, a checkout's for one).
+CONTRACTDIR := $(shell $(PKG_CONFIG) --variable=contractdir omx-contract 2>/dev/null)
+METER_JSON ?= $(CONTRACTDIR)/3/omx-dsp/meter.json
 # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
 CFLAGS ?= -O2 -g
-CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude $(shell $(PKG_CONFIG) --cflags $(DEPS))
+CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude -I$(B) $(shell $(PKG_CONFIG) --cflags $(DEPS))
 LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
 
 B := build
@@ -43,7 +47,11 @@ all: $(B)/libomx-panel-render.a $(B)/omx-panel-render $(B)/omx-panel-render.pc $
 
 $(B):
 	mkdir -p $@
-$(B)/%.o: src/%.c src/raster.h src/draw.h src/view.h include/omx_panel_render.h | $(B)
+$(B)/meter_law.h: $(METER_JSON) | $(B)
+	@fall=$$(sed -n 's/.*"fallDbPerSecond": *\([0-9.][0-9.]*\).*/\1/p' $< | head -n 1); \
+	test -n "$$fall" || { echo "no fallDbPerSecond in $<" >&2; exit 1; }; \
+	printf '/* from %s, METER_VIEW.value.fallDbPerSecond: generated, do not edit */\n#define OMX_METER_FALL_DB_PER_S %s\n' "$<" "$$fall" > $@
+$(B)/%.o: src/%.c $(B)/meter_law.h src/raster.h src/draw.h src/view.h include/omx_panel_render.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^

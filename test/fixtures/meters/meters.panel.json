@@ -1,0 +1,11 @@
+{
+  "family": "dynamics",
+  "sections": [
+    {
+      "key": "comp",
+      "label": "Compressor",
+      "controls": ["threshold", "ratio", "attack", "release"]
+    }
+  ],
+  "roles": { "threshold": "threshold", "ratio": "ratio", "attack": "attack", "release": "release" }
+}

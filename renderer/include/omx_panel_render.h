@@ -91,6 +91,19 @@ void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const c
  * 0.5; a meter fills to the fraction. */
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 
+/** The description's meters (`meters`): their count, and the index of the one named `symbol` (-1 when there is none). A meter that is
+ * a control of a section is that control's reading; the others are drawn in a band below the sections, a bar and a marker over the
+ * description's range, captioned with the label, the range and its unit. */
+uint32_t omx_panel_view_meter_count(const omx_panel_view_t *view);
+int32_t omx_panel_view_meter_find(const omx_panel_view_t *view, const char *symbol);
+
+/** A meter's reading, `value` in the meter's own unit as its source gives it, and `elapsed` the seconds since the last draw tick. The bar
+ * is the value over the description's range (a gain reduction grows from 0 dB); the marker holds the peak (the deepest reduction) and
+ * falls by elapsed time at the rate of omx-dsp's data/primitives/meter.json (`fallDbPerSecond`, read when the renderer is built, never
+ * copied), silence included. Until a reading is set the frame and its caption stand. False for an index past the meters, or a value
+ * or elapsed time that is not finite (or is negative). */
+bool omx_panel_view_set_meter(omx_panel_view_t *view, uint32_t index, double value, double elapsed);
+
 /** A selector's reading: option `at` of `count`, and its label. */
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
 

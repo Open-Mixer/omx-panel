@@ -36,6 +36,8 @@ export const FIXTURES = [
   { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
   // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
   { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
+  // a compressor with the descriptor's meters word: the band below the sections, a frame with the range and the unit
+  { name: 'meters', descriptor: 'test/fixtures/meters/meters.descriptor.json', panel: 'test/fixtures/meters/meters.panel.json', stem: 'meters' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];

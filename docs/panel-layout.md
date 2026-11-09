@@ -181,17 +181,34 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 | `fader` | a travel the declared panel draws as a fader |
 | `switch` | a toggle; a trigger (momentary) |
 | `selector` | a choice |
-| `meter` | a read-only travel in a level unit (`dB`, `dBFS`, `dBu`, `LUFS`) |
+| `meter` | a read-only travel in a level unit (`dB`, `dBFS`, `dBTP`, `dBu`, `LUFS`, `LU`) |
 | `display` | any other read-only control |
 | `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`) |
 | `xy` | no descriptor word names a pair of controls yet; nothing takes it |
 
-A meter carries `measurement`, `held` and `clip`. One read from the descriptor's own `meters` word
-(contract §7.9) carries what the descriptor states: `measurement` one of `peak`, `true-peak`,
-`lufs-m`, `lufs-s`, `lufs-i`, `lra` for a level or `gain-reduction` for a gain reduction, `held` and
-`clip` the descriptor's own booleans. A foreign meter, one only inferred here from a read-only
-control's unit (no `meters` word names it), never guesses: `measurement` is always `null`, `held`
-and `clip` always `false`. `rms`, `vu` and `ppm` are not measurement words.
+### Meters
+
+`describe` reads the descriptor's `meters` word (omx-contract, the first descriptor word for what a plugin publishes while it
+runs): each meter is a meter control in the description's `meters` list, in the descriptor's order, with
+`{ kind, measurement, unit, min, max, channels, symbol, held, clip }`.
+
+- `kind` is `level` or `gain-reduction`; a level's `measurement` is `peak`, `true-peak`, `lufs-m`, `lufs-s`, `lufs-i` or
+  `lra` (units dBFS, dBTP, LUFS, LU), a gain reduction's is `gain-reduction` (dB). `rms`, `vu` and `ppm` are not words.
+- `held` says the plugin keeps the block value until the host reads it; a descriptor that does not say it is `false`, and
+  the meter is unheld. `clip` is a digital clip word and only a level meter in dBFS or dBTP carries it; anything else is `false`.
+- A foreign read-only control in a level unit stays a meter: `measurement` is `null` (never guessed from the unit), `held` and
+  `clip` are `false`.
+- A meter is a measurement. A meter, or a read-only control, whose meaning, symbol or name is phantom, pad or head-amp
+  state is not a meter: it is left out and reported as `PANEL_METER_REFUSED`.
+- A dynamics, gate, limiter or de-esser family's gain-reduction meter is its section's `gain_reduction_bar` display (source
+  `meters`, `meterIds` its index in `meters`). The transfer curve's operating point reads the level meters whose symbols
+  name the input (`in`, `input`) and the output (`out`, `output`), as `meterIds`.
+- The meters are a view: they stay out of the canonical form and the fingerprint. A description carries no ballistics: the
+  fall of a marker is the surface's, from omx-dsp's `data/primitives/meter.json`.
+
+A meter that is no control of a section is drawn by a surface in a band below the sections: the renderer as a bar and a
+peak marker over the description's range (`omx_panel_view_set_meter`), the MOD GUI as a static frame with the range and the
+unit in its caption and no live meter yet.
 
 What a face serves keeps the extension's widget enum: `knob`, `fader` and `switch` as they are, a
 `selector` as `auto` (a CLAP selector needs `CLAP_PARAM_IS_ENUM`, which the faces do not set).
