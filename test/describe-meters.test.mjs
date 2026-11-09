@@ -107,3 +107,34 @@ test('arm: the fingerprint does move with a control, so the equality above is no
 test('no ballistics in a description: a meter carries no release, fall or attack', () => {
   for (const m of describe(descriptor(dyn(), METERS)).description.meters) for (const k of Object.keys(m)) assert.ok(!/release|fall|attack|ballistic|decay/i.test(k), k);
 });
+
+// omx-comp's meters word as omx-plugins emits it (FreeMixer/omx-plugins#331): camelCase symbols, a level with clip, a key level with
+// clip: false, a gain reduction; none of them is a control
+const COMP = [
+  meter('compGr', 'gain-reduction', { measurement: 'gain-reduction', held: true, min: -60 }),
+  meter('compIn', 'level', { measurement: 'peak', held: true, clip: true, channels: 2, max: 6 }),
+  meter('compOut', 'level', { measurement: 'peak', held: true, clip: true, channels: 2, max: 6 }),
+  meter('compKey', 'level', { measurement: 'peak', held: true, clip: false }),
+];
+test('a camelCase input and output level (compIn, compOut) is the transfer curve\'s operating point', () => {
+  const { description } = describe(descriptor(dyn(), COMP));
+  assert.deepEqual(description.displays.find((d) => d.kind === 'transfer_curve').meterIds, [1, 2]);
+});
+test('arm: a word that only contains in or out (compKey, compInfo, compGrout) is no operating point', () => {
+  const { description } = describe(descriptor(dyn(), [COMP[0], meter('compInfo', 'level', { measurement: 'peak' }), meter('compGrout', 'level', { measurement: 'peak' }), COMP[3]]));
+  assert.deepEqual(description.displays.find((d) => d.kind === 'transfer_curve').meterIds, [null, null]);
+});
+test('every meter row names its section: a descriptor meter the gain-reduction bar\'s, a foreign meter its control\'s', () => {
+  const { description } = describe(descriptor([...dyn(), travel('peak out', undefined, { min: -60, max: 0, unit: 'dB' }, { readonly: true, id: 'peak_out', symbol: 'peak_out' })], COMP));
+  const bar = description.displays.find((d) => d.kind === 'gain_reduction_bar');
+  const keys = description.sections.map((s) => s.key);
+  for (const m of description.meters.slice(0, 4)) assert.equal(m.section, bar.section, m.symbol);
+  const foreign = description.meters.find((m) => m.symbol === 'peak_out');
+  assert.ok(keys.includes(foreign.section));
+  assert.equal(foreign.section, description.controls.find((c) => c.symbol === 'peak_out')?.section ?? foreign.section);
+});
+test('with no gain-reduction bar a descriptor meter sits in the last section', () => {
+  const plain = descriptor([travel('gain', 'gain', { min: -12, max: 12, unit: 'dB' })], [COMP[1]], { extensions: undefined });
+  const { description } = describe(plain);
+  assert.equal(description.meters[0].section, description.sections.at(-1).key);
+});

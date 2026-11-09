@@ -382,14 +382,23 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     meters.push({ symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });
   }
   // a dynamics family's gain reduction is its section's bar; the curve's operating point reads the input and output meters
-  const levelAt = (re) => meters.findIndex((m) => m.kind === 'level' && m.measurement !== null && re.test(m.symbol));
-  const inAt = levelAt(/(^|_)in(put)?($|_)/i), outAt = levelAt(/(^|_)out(put)?($|_)/i);
+  // a symbol's words, snake_case or camelCase alike (`in_level`, `compIn`): the operating point is a whole word `in`/`input`, `out`/`output`
+  const wordsOf = (symbol) => symbol.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().split(/[^a-z0-9]+/);
+  const levelAt = (...names) => meters.findIndex((m) => m.kind === 'level' && m.measurement !== null && wordsOf(m.symbol).some((w) => names.includes(w)));
+  const inAt = levelAt('in', 'input'), outAt = levelAt('out', 'output');
   for (const d of displays) if (d.kind === 'transfer_curve' && inAt >= 0 && outAt >= 0) d.meters = [inAt, outAt];
   const grAt = meters.findIndex((m) => m.kind === 'gain-reduction');
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
     displays.push({ kind: 'gain_reduction_bar', section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+  }
+  // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
+  const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
+  for (const m of meters) {
+    const own = controls.find((c) => c.symbol === m.symbol)?.section;
+    m.section = own ?? barAt ?? Math.max(0, sections.length - 1);
+    m.sectionKey = sections[m.section]?.key ?? null;
   }
 
   if (controls.length === 0) {

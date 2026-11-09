@@ -218,7 +218,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
     // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
-    meters: layout.meters.map((m) => ({ symbol: m.symbol, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
+    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
