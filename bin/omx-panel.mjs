@@ -18,7 +18,7 @@
  *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
  *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
  *                                                        port groups, for each installed bundle that needs one
- *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
+ *   look [--check]                                       tools/look.mjs: tools/look.json from the colour roles
  *   copies <tree> | --self-test                          tools/copies-check.mjs: no tracked file copies what omx-panel renders or ships
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
  *                                                        directories, the meanings, the LV2 unit table, the param-contract

@@ -24,7 +24,7 @@ build:
 	@test -d node_modules || { echo "run npm ci first: the build needs typescript, the validator ajv" >&2; exit 1; }
 	npm run -s build
 
-# The example skin is valid against the schema and look.json is what the token cascade resolves to.
+# The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
 check: build spdx public-sources look copies
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 

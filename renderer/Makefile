@@ -43,7 +43,7 @@ all: $(B)/libomx-panel-render.a $(B)/omx-panel-render $(B)/omx-panel-render.pc $
 
 $(B):
 	mkdir -p $@
-$(B)/%.o: src/%.c src/raster.h src/draw.h src/view.h include/omx_panel_render.h | $(B)
+$(B)/%.o: src/%.c src/raster.h src/draw.h src/view.h src/look_roles.h include/omx_panel_render.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^

@@ -2,123 +2,183 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * look.mjs — tools/look.json, the plain values the MOD GUI wears (tools/modgui-gen.mjs), resolved
- * from the token cascade tools/look/tokens.css at the look LOOK names: every rule whose selector the
- * root element matches at those axes, the most specific winning and, at equal specificity, the
- * later; then every var() followed to its value. Colours come out #rrggbb.
+ * look.mjs — the colour roles of a panel (schema/look-roles.json, the one-panel spec,
+ * §7.10) and the two files derived from them:
  *
- * Usage: `node tools/look.mjs [--check]` — `--check` writes nothing and fails when tools/look.json
- * is not what tools/look/tokens.css resolves to.
+ *   · tools/look.json, the values the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads from its data
+ *     directory: every role at its one default, and the font;
+ *   · renderer/src/look_roles.h, the role list the renderer's read_look requires of every look a host passes.
+ *
+ * The roles are declared once; the values are each host's (the console's tokens.css, Zynthian's palette table). Nothing
+ * here resolves a host's cascade: the hand copy of the console's tokens that lived in tools/look/tokens.css is gone.
+ *
+ * Usage: `node tools/look.mjs [--check]` — `--check` writes nothing and fails when a derived file is not what
+ * schema/look-roles.json gives, or when the role file breaks a rule of checkRoles.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
-export const TOKENS_CSS = join(TOOLS, 'look', 'tokens.css');
+export const ROLES_JSON = join(TOOLS, '..', 'schema', 'look-roles.json');
 export const LOOK_JSON = join(TOOLS, 'look.json');
+export const ROLE_HEADER = join(TOOLS, '..', 'renderer', 'src', 'look_roles.h');
 
-/** The look the plugins wear: the console's openmixer board, its axes as the root element carries them. */
-export const LOOK = Object.freeze({ theme: 'dark', accent: 'cyan', finish: 'aluminium', style: 'modern' });
-
-/** The tokens a renderer reads, in the order tools/look.json lists them. */
-export const LOOK_TOKENS = Object.freeze(['--surface', '--surface-2', '--surface-3', '--border-strong', '--ink', '--ink-dim', '--accent', '--font-ui', '--font-file']);
-
+/** The families a role belongs to (omx look §2(i)); finish is a host's chrome, never a role's. */
+export const FAMILIES = Object.freeze(['theme', 'accent', 'fixed', 'state']);
+/** The keys a role carries: one value, `default`, and nothing that could hold a second. */
+const ROLE_KEYS = Object.freeze(['name', 'family', 'draws', 'ground', 'floor', 'apart', 'default']);
+const TOP_KEYS = Object.freeze(['$comment', 'look', 'font', 'roles']);
+const LOOK_AXES = Object.freeze(['theme', 'accent', 'finish', 'style']);
 /** The tokens that are not colours: the CSS font stack, and the font file (relative to tools/) the raster reads. */
 export const NOT_COLOURS = Object.freeze(['--font-ui', '--font-file']);
 
-/** Every rule of `css`, in order: its selectors and its declarations. Comments are dropped. */
-export function parseRules(css) {
-  const rules = [];
-  const body = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const m of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    const decls = [];
-    for (const d of m[2].split(';')) {
-      const at = d.indexOf(':');
-      if (at < 0) {
-        if (d.trim()) throw new Error(`look: '${d.trim()}' is no declaration`);
+/** The role file, parsed. */
+export const loadRoles = (file = ROLES_JSON) => JSON.parse(readFileSync(file, 'utf8'));
+
+const hex = (v) => typeof v === 'string' && /^#[0-9a-f]{6}$/.test(v);
+
+/** WCAG relative luminance of `#rrggbb`. */
+export function luminance(h) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio of two `#rrggbb` colours. */
+export function contrast(a, b) {
+  const x = luminance(a), y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * Every rule of the role file `doc` broken, as sentences, or none. The floors are measured on `values` (name ->
+ * #rrggbb) when given, else on the defaults: a host's table is held to the same floors by the same function.
+ */
+export function checkRoles(doc, values) {
+  const faults = [];
+  for (const k of Object.keys(doc ?? {})) if (!TOP_KEYS.includes(k)) faults.push(`the role file carries '${k}': one value per role, under its role`);
+  const roles = Array.isArray(doc?.roles) ? doc.roles : (faults.push('the role file has no roles list'), []);
+  for (const a of LOOK_AXES) if (typeof doc?.look?.[a] !== 'string') faults.push(`look.${a} is not named: the defaults are one look's`);
+  for (const f of NOT_COLOURS) if (typeof doc?.font?.[f] !== 'string') faults.push(`font sets no ${f}`);
+  const byName = new Map();
+  for (const r of roles) {
+    if (typeof r?.name !== 'string' || !/^--[a-z][a-z0-9-]*$/.test(r.name)) {
+      faults.push(`a role is named '${r?.name}', not a --token`);
+      continue;
+    }
+    if (byName.has(r.name)) faults.push(`${r.name} is declared twice`);
+    byName.set(r.name, r);
+    for (const k of Object.keys(r)) if (!ROLE_KEYS.includes(k)) faults.push(`${r.name} carries '${k}': a role has one value, its default`);
+    if (!FAMILIES.includes(r.family)) faults.push(`${r.name}'s family '${r.family}' is none of ${FAMILIES.join(', ')}`);
+    if (typeof r.draws !== 'string' || !r.draws) faults.push(`${r.name} names nothing it draws`);
+    if (!hex(r.default)) faults.push(`${r.name}'s default '${r.default}' is not one #rrggbb colour`);
+    if (r.ground === true) {
+      if (r.floor) faults.push(`${r.name} is a ground and has a floor`);
+    } else if (!r.floor) faults.push(`${r.name} is no ground and has no floor`);
+  }
+  const value = (n) => (values ? values[n] : byName.get(n)?.default);
+  for (const r of byName.values()) {
+    const v = value(r.name);
+    if (values && !hex(v)) {
+      faults.push(`${r.name} has no #rrggbb value`);
+      continue;
+    }
+    if (!hex(v)) continue;
+    if (r.floor) {
+      if (!(r.floor.ratio >= 1) || !Array.isArray(r.floor.on) || r.floor.on.length === 0) faults.push(`${r.name}'s floor is no ratio on a list of grounds`);
+      for (const g of r.floor.on ?? []) {
+        if (byName.get(g)?.ground !== true) {
+          faults.push(`${r.name}'s floor is on ${g}, which is no ground role`);
+          continue;
+        }
+        if (!hex(value(g))) continue;
+        const c = contrast(v, value(g));
+        if (c < r.floor.ratio) faults.push(`${r.name} ${v} measures ${c.toFixed(2)}:1 on ${g} ${value(g)}, under its ${r.floor.ratio}:1 floor`);
+      }
+    }
+    for (const o of r.apart?.from ?? []) {
+      if (!byName.has(o)) {
+        faults.push(`${r.name} stands apart from ${o}, which is no role`);
         continue;
       }
-      decls.push([d.slice(0, at).trim(), d.slice(at + 1).trim()]);
+      if (!hex(value(o))) continue;
+      const c = contrast(v, value(o));
+      if (c < r.apart.ratio) faults.push(`${r.name} ${v} and ${o} ${value(o)} are ${c.toFixed(2)}:1 apart in luminance, under ${r.apart.ratio}:1`);
     }
-    rules.push({ selectors: m[1].split(',').map((s) => s.trim()), decls });
   }
-  return rules;
+  return faults;
 }
 
-/** A selector's specificity at `axes` (one for :root, one more per attribute), or -1 when the root
- * element does not match it. Only `:root` and `[data-<axis>="<value>"]` are selectors here. */
-export function specificity(selector, axes) {
-  const m = selector.match(/^:root((?:\[data-[a-z]+="[a-z0-9-]+"\])*)$/);
-  if (!m) throw new Error(`look: '${selector}' is not :root with [data-<axis>="<value>"] attributes`);
-  const attrs = [...m[1].matchAll(/\[data-([a-z]+)="([a-z0-9-]+)"\]/g)];
-  for (const [, axis] of attrs) if (!(axis in axes)) throw new Error(`look: '${selector}' names the axis '${axis}', which the look does not set`);
-  return attrs.every(([, axis, value]) => axes[axis] === value) ? 1 + attrs.length : -1;
+/** The role names, in the order the file declares them. */
+export const roleNames = (doc = loadRoles()) => doc.roles.map((r) => r.name);
+
+/** The tokens tools/look.json lists: every role, then the font. */
+export const LOOK_TOKENS = Object.freeze([...roleNames(), ...NOT_COLOURS]);
+
+function assertSound(doc) {
+  const faults = checkRoles(doc);
+  if (faults.length) throw new Error(`look: schema/look-roles.json: ${faults.join('; ')}`);
 }
 
-/** `#rgb` as `#rrggbb`, lower case; any other value as it is. */
-const longHex = (v) => (/^#[0-9a-fA-F]{3}$/.test(v) ? `#${[...v.slice(1)].map((c) => c + c).join('')}` : v).replace(/^#[0-9A-F]{6}$/i, (x) => x.toLowerCase());
-
-/** Every custom property of `css` at `axes`, cascaded and its var()s followed. */
-export function resolveTokens(css, axes = LOOK) {
-  const won = new Map();
-  parseRules(css).forEach((rule, order) => {
-    const spec = Math.max(...rule.selectors.map((s) => specificity(s, axes)));
-    if (spec < 0) return;
-    for (const [prop, value] of rule.decls) {
-      const was = won.get(prop);
-      if (!was || spec >= was.spec) won.set(prop, { spec, order, value });
-    }
-  });
-  const out = {};
-  const follow = (prop, seen) => {
-    if (prop in out) return out[prop];
-    if (seen.includes(prop)) throw new Error(`look: ${[...seen, prop].join(' -> ')} is a cycle`);
-    const w = won.get(prop);
-    if (!w) throw new Error(`look: ${prop} is not set at ${JSON.stringify(axes)}`);
-    const v = w.value.replace(/var\((--[A-Za-z0-9-]+)\)/g, (_x, name) => follow(name, [...seen, prop]));
-    out[prop] = longHex(v);
-    return out[prop];
-  };
-  for (const prop of won.keys()) follow(prop, []);
-  return out;
-}
-
-/** tools/look.json's text: the look, and each token a renderer reads as plain values. */
-export function emitLook(css, axes = LOOK) {
-  const all = resolveTokens(css, axes);
+/** tools/look.json's text: the look the defaults are, every role at its default, and the font. */
+export function emitLook(doc = loadRoles()) {
+  assertSound(doc);
   const tokens = {};
-  for (const k of LOOK_TOKENS) {
-    if (!(k in all)) throw new Error(`look: tools/look/tokens.css sets no ${k}`);
-    if (!NOT_COLOURS.includes(k) && !/^#[0-9a-f]{6}$/.test(all[k])) throw new Error(`look: ${k} resolves to '${all[k]}', not a #rrggbb colour`);
-    tokens[k] = all[k];
-  }
+  for (const r of doc.roles) tokens[r.name] = r.default;
+  for (const f of NOT_COLOURS) tokens[f] = doc.font[f];
   const look = {
-    $comment: 'GENERATED — DO NOT EDIT BY HAND. The look the MOD GUI wears (tools/modgui-gen.mjs): tools/look/tokens.css resolved by tools/look.mjs at the look it names, every colour a plain #rrggbb. Regenerate: `node tools/look.mjs`, then commit the result.',
-    ...axes,
+    $comment: 'GENERATED — DO NOT EDIT BY HAND. The look the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads: every colour role of schema/look-roles.json at its one default, and the font. Regenerate: `node tools/look.mjs`, then commit the result.',
+    ...Object.fromEntries(LOOK_AXES.map((a) => [a, doc.look[a]])),
     tokens,
   };
   return `${JSON.stringify(look, null, 2)}\n`;
 }
 
+/** renderer/src/look_roles.h's text: the role names read_look requires of every look. */
+export function emitRoleHeader(doc = loadRoles()) {
+  assertSound(doc);
+  const names = doc.roles.map((r) => r.name);
+  return `/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ *
+ * GENERATED — DO NOT EDIT BY HAND: the colour roles of schema/look-roles.json, which read_look (view.c) requires of
+ * every look its host passes, each a #rrggbb. Regenerate: \`node tools/look.mjs\`, then commit the result.
+ */
+#ifndef OMX_PANEL_LOOK_ROLES_H
+#define OMX_PANEL_LOOK_ROLES_H
+
+#define OMX_LOOK_ROLE_COUNT ${names.length}
+
+static const char *const omx_look_roles[OMX_LOOK_ROLE_COUNT] = {
+${names.map((n) => `    "${n}",`).join('\n')}
+};
+
+#endif
+`;
+}
+
 function main(argv) {
-  const want = emitLook(readFileSync(TOKENS_CSS, 'utf8'));
+  const doc = loadRoles();
+  const outs = [[LOOK_JSON, emitLook(doc), 'tools/look.json']];
+  // the renderer's sources are the tree's, not the package's: an installed omx-panel checks its look.json alone, and says so
+  if (existsSync(dirname(ROLE_HEADER))) outs.push([ROLE_HEADER, emitRoleHeader(doc), 'renderer/src/look_roles.h']);
+  else console.log('look: no renderer/src in this tree: its role header is the source tree\'s to check');
   if (argv.includes('--check')) {
-    let have = '';
-    try {
-      have = readFileSync(LOOK_JSON, 'utf8');
-    } catch {
-      // missing: stale below
+    let stale = 0;
+    for (const [file, want, name] of outs) {
+      let have = '';
+      try {
+        have = readFileSync(file, 'utf8');
+      } catch {
+        // missing: stale below
+      }
+      if (have !== want) console.error(`look: STALE ${name} (run \`node tools/look.mjs\`)`), stale++;
     }
-    if (have !== want) {
-      console.error('look: STALE tools/look.json (run `node tools/look.mjs`)');
-      process.exit(1);
-    }
-    console.log('look: tools/look.json is what tools/look/tokens.css resolves to');
+    if (stale) process.exit(1);
+    console.log(`look: ${outs.map((o) => o[2]).join(' and ')} ${outs.length > 1 ? 'are' : 'is'} what schema/look-roles.json gives`);
     return;
   }
-  writeFileSync(LOOK_JSON, want);
-  console.log('look: wrote tools/look.json');
+  for (const [file, want, name] of outs) writeFileSync(file, want), console.log(`look: wrote ${name}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));

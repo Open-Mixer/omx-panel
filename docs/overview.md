@@ -8,7 +8,7 @@
   the family, the pages of eight a controller shows), under the plugin's declared panel when it has one
   ([panel-layout.md](panel-layout.md)).
 - The MOD GUI generator: `omx-panel modgui` writes a plugin's MOD GUI from its descriptor, its images rasterised
-  byte for byte, in the omx look (`tools/look/tokens.css`) ([modgui.md](modgui.md)).
+  byte for byte, in the omx look (the colour roles of `schema/look-roles.json` at their defaults) ([modgui.md](modgui.md)).
 - The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
   `/usr/local/lib/lv2` (`~/.lv2` for a user), one bundle per plugin, never touching a bundle that is not its own.
   The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each

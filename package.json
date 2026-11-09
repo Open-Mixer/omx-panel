@@ -102,7 +102,7 @@
     },
     "./schema/skin-package.schema.json": "./dist/schema/skin-package.schema.json",
     "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
-    "./tokens.css": "./dist/tools/look/tokens.css",
+    "./look-roles.json": "./dist/schema/look-roles.json",
     "./package.json": "./package.json"
   },
   "files": [
