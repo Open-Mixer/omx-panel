@@ -34,11 +34,19 @@ export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
 
 /** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each. */
 export const STANDARD_WIDGETS = ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'];
-/** What a meter measures. */
-export const MEASUREMENTS = ['peak', 'rms', 'vu', 'ppm', 'lufs'];
-/** The units a read-only travel is a level meter in, and the measurement a unit itself names. */
-const LEVEL_UNITS = ['dB', 'dBFS', 'dBu', 'LUFS'];
-const MEASUREMENT_OF_UNIT = { LUFS: 'lufs' };
+/** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
+ * `ppm` are not words. */
+export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
+/** The units a read-only travel is a level meter in. */
+const LEVEL_UNITS = ['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU'];
+/** The units a level meter's clip word can be in: a digital clip, never a modelled one (contract §7.9). */
+const CLIP_UNITS = ['dBFS', 'dBTP'];
+/** A word that names the state of an analogue input stage (phantom power, a pad, a head amp): a meter is a measurement,
+ * and a modelled value is never drawn as one, so a meter or a read-only control with such a name is refused by code. */
+const ANALOGUE_WORD = /phantom|(^|[^a-z])pad([^a-z]|$)|head[-_ ]?amp|headamp/;
+/** Whether `text` (a meaning in camelCase, a symbol, a name) names such a state, whole words only. */
+export const namesAnalogueState = (text) => ANALOGUE_WORD.test(text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase());
+export const METER_REFUSED = 'PANEL_METER_REFUSED';
 /** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
 const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
@@ -47,15 +55,17 @@ const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };
 
 /**
  * The standard widget control `c` (a descriptor control) is drawn with: `{ widget }`, a meter's with
- * its `measurement` (null when the descriptor does not state it), a trigger's switch `momentary`. A
- * declared widget wins; else a read-only travel in a level unit is a meter and any other read-only
- * control a display, a toggle or a trigger a switch, a choice a selector, a travel a knob.
+ * its `measurement`, `held` and `clip`, a trigger's switch `momentary`. A declared widget wins; else a
+ * read-only travel in a level unit is a meter and any other read-only control a display, a toggle or a
+ * trigger a switch, a choice a selector, a travel a knob. A foreign meter (one inferred here, not read
+ * from the descriptor's `meters` word) never guesses its measurement from the unit, and holds nothing
+ * and clips nothing of its own (contract §7.9).
  */
 export function widgetOf(c, declared) {
   if (declared !== undefined) return { widget: DECLARED_WIDGET[declared] ?? declared };
   if (c.readonly) {
     const unit = c.travel?.unit;
-    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: MEASUREMENT_OF_UNIT[unit] ?? null } : { widget: 'display' };
+    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
   }
   if (c.kind === 'toggle') return { widget: 'switch' };
   if (c.kind === 'trigger') return { widget: 'switch', momentary: true };
@@ -349,13 +359,55 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     }),
   );
 
+  // the meters (contract §7.9): the descriptor's `meters` word, each a meter control; a foreign read-only control in a level
+  // unit stays a meter with no measurement. A view of the panel: out of the canonical form and the fingerprint.
+  const meterRefusals = [];
+  const meters = [];
+  const refuseMeter = (symbol, why) => meterRefusals.push({ symbol, reason: why });
+  for (const m of descriptor.meters ?? []) {
+    const named = [m.id, m.symbol, m.name, m.doc].filter((t) => typeof t === 'string').find(namesAnalogueState);
+    if (named !== undefined) { refuseMeter(m.symbol, `a meter is a measurement; '${named}' names an analogue input state`); continue; }
+    const level = m.kind === 'level';
+    meters.push({
+      symbol: m.symbol, widget: 'meter', kind: m.kind, measurement: m.measurement ?? (level ? null : 'gain-reduction'), unit: m.unit, min: m.min, max: m.max,
+      channels: m.channels, held: m.held === true, clip: level && m.clip === true && CLIP_UNITS.includes(m.unit),
+      label: label(m.name ?? m.symbol, `meter '${m.symbol}'`), labelKey: labelKey(`meter.${snake(m.symbol)}`, 'meter label key'),
+    });
+  }
+  const have = new Set(meters.map((m) => m.symbol));
+  for (const c of all) {
+    if (!c.readonly || have.has(keyOf(c)) || !LEVEL_UNITS.includes(c.travel?.unit)) continue;
+    const named = [c.meaning, keyOf(c), c.name].filter((t) => typeof t === 'string').find(namesAnalogueState);
+    if (named !== undefined) { refuseMeter(keyOf(c), `a meter is a measurement; '${named}' names an analogue input state`); continue; }
+    meters.push({ symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });
+  }
+  // a dynamics family's gain reduction is its section's bar; the curve's operating point reads the input and output meters
+  // a symbol's words, snake_case or camelCase alike (`in_level`, `compIn`): the operating point is a whole word `in`/`input`, `out`/`output`
+  const wordsOf = (symbol) => symbol.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().split(/[^a-z0-9]+/);
+  const levelAt = (...names) => meters.findIndex((m) => m.kind === 'level' && m.measurement !== null && wordsOf(m.symbol).some((w) => names.includes(w)));
+  const inAt = levelAt('in', 'input'), outAt = levelAt('out', 'output');
+  for (const d of displays) if (d.kind === 'transfer_curve' && inAt >= 0 && outAt >= 0) d.meters = [inAt, outAt];
+  const grAt = meters.findIndex((m) => m.kind === 'gain-reduction');
+  if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
+    const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
+    const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
+    displays.push({ kind: 'gain_reduction_bar', section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+  }
+  // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
+  const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
+  for (const m of meters) {
+    const own = controls.find((c) => c.symbol === m.symbol)?.section;
+    m.section = own ?? barAt ?? Math.max(0, sections.length - 1);
+    m.sectionKey = sections[m.section]?.key ?? null;
+  }
+
   if (controls.length === 0) {
     const listsPrograms = ['programs', 'presets'].map((k) => [k, descriptor[k]]).find(([, v]) => Array.isArray(v) && v.length > 0);
     throw new NoControls(`${where}: no control to lay out (${all.length === 0 ? 'the descriptor states no controls' : `its ${all.length} controls are all hidden`})${listsPrograms ? `; its ${listsPrograms[1].length} ${listsPrograms[0]} are not drawn, a program list is not a control` : ''}`);
   }
   // The Easy face: a view of the panel, so it stays out of the canonical form and the fingerprint
   const easy = easyOf({ family, roles, controls }, { declared: panel?.easy ?? descriptor.easy, where });
-  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy };
+  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy, meters, meterRefusals };
 }
 
 /** The highest value a visibility mask has a bit for: the ABI's visible_mask is 64 bits. */
@@ -511,10 +563,11 @@ export function panelCanonical(x) {
   x.sections.forEach((s, i) => lines.push(['section', i, s.key, s.labelKey].join('\t')));
   for (const c of x.controls) lines.push(['control', c.symbol, c.sectionKey, c.widget, c.labelKey, c.visible ?? '-', c.mask.toString(16)].join('\t'));
   for (const r of [...x.roles].sort((a, b) => byCodeUnit(a.role, b.role) || a.index - b.index)) lines.push(['role', r.role, r.index, r.symbol].join('\t'));
-  for (const v of x.displays) {
+  // a display read from the meters word, and the meters a curve reads, are views: out of the canonical form
+  for (const v of x.displays.filter((d) => d.source !== 'meters')) {
     const floor = v.floor === null ? '-' : typeof v.floor === 'number' ? shortest(v.floor) : v.floor;
     const meter = (m) => (m === null ? '-' : String(m));
-    lines.push(['display', v.kind, v.sectionKey, v.source, meter(v.meters[0]), meter(v.meters[1]), v.curve ?? '-', floor, v.labelKey].join('\t'));
+    lines.push(['display', v.kind, v.sectionKey, v.source, meter(null), meter(null), v.curve ?? '-', floor, v.labelKey].join('\t'));
   }
   const order = (p) => PLACEMENTS.indexOf(p);
   for (const p of [...x.defaults].sort((a, b) => order(a.placement) - order(b.placement) || byCodeUnit(a.symbol, b.symbol))) lines.push(['default', p.placement, p.symbol, shortest(p.value)].join('\t'));

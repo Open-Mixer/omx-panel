@@ -27,6 +27,7 @@
     "panel.describe.override-dropped": "A la capa de personalització {layer} ({name}) de {plugin}, s'ha descartat l'entrada de {control}: {message}.",
     "panel.describe.role-dropped": "El rol {entry} de {symbol} de {plugin} no es mostra ({reason}); el control es queda a la seva pàgina.",
     "panel.describe.skin-dropped": "S'ha descartat l'entrada {entry} de {field} de l'aparença per a {plugin} ({reason}); la resta de l'aparença encara s'aplica.",
+    "panel.describe.meter-refused": "S'ha deixat fora el mesurador {symbol} de {plugin}: {reason}.",
     "panel.describe.bars-too-few": "Un grup de barres de {plugin} té massa pocs controls per dibuixar-los com a barres ({message}); es dibuixen com a botons.",
     "panel.describe.bars-not-travel": "Un grup de barres de {plugin} conté un control que no pot ser una barra ({message}); corregiu el grup a la declaració del panell.",
     "panel.describe.bars-facts-differ": "Els controls d'un grup de barres de {plugin} difereixen en rang, pas, unitat o escala ({message}); les barres els han de compartir.",

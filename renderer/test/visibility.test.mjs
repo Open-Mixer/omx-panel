@@ -45,7 +45,8 @@ function without(x) {
   const kept = x.sections.map((_s, i) => controls.some((k) => k.section === i));
   assert.deepEqual(kept, [true, false, false], 'the middle and the last sections are emptied');
   const index = kept.map((_k, i) => kept.slice(0, i).filter(Boolean).length);
-  return { ...x, sections: x.sections.filter((_s, i) => kept[i]), controls: controls.map((k) => ({ ...k, section: index[k.section] })) };
+  // a meter of a dropped control goes with it: a meter that is no control is drawn in the band
+  return { ...x, meters: (x.meters ?? []).filter((m) => !GOVERNED.includes(m.symbol)), sections: x.sections.filter((_s, i) => kept[i]), controls: controls.map((k) => ({ ...k, section: index[k.section] })) };
 }
 
 const same = (a, b, what) => {

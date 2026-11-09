@@ -85,12 +85,40 @@ jobs:
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
       - name: The renderer, and its golden images and parity with the MOD GUI face
         run: make renderer-check
+
+  # One recorded meter stream drawn by the renderer, by the MOD GUI's template in Chromium (playwright-core, the twin of omx-dsp's
+  # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and
+  # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5).
+  meter-surfaces:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
+    steps:
+      - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins \
+            python3-lilv chromium python3-tkinter python3-pillow xorg-x11-server-Xvfb xorg-x11-xauth
+      - name: Add the OpenMixer repository
+        uses: FreeMixer/.github/.github/actions/add-openmixer@v1
+      - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+      - uses: actions/checkout@v4
+      - name: The tree, the renderer, playwright-core and omx-dsp's twin
+        run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.0 <0.33'
+      - name: The three surfaces from one stream
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meter-surfaces
+          path: meter-surfaces.json
 
   # The renderer's window (WINDOW=1): pugl and NanoVG on OpenGL, drawn under Xvfb on Mesa's software GL and held to the
   # buffer by structure (renderer/test/window.test.mjs), never skipped here. pugl-devel and nanovg-devel are built from
@@ -109,7 +137,7 @@ jobs:
         uses: FreeMixer/.github/.github/actions/add-openmixer@v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: pugl and nanovg, from their packaging
         uses: FreeMixer/.github/.github/actions/pinned-rpms@v1
         with:

@@ -7,6 +7,7 @@
 #define OMX_PANEL_VIEW_H
 
 #include <omxcontract/omx_vocabulary.h>
+#include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
 
@@ -60,9 +61,22 @@ typedef struct {
   size_t nmarks;
 } display;
 
+/* One meter of the description's `meters` (contract 7.9): its range is the description's, its reading the host's. A meter whose
+ * symbol is a control of a section is that control's reading and is not drawn again; the others stand in a band of their own. */
+typedef struct {
+  char *symbol, *label, *unit;
+  double min, max;
+  int gain_reduction; /* the bar grows from the top of the range toward its foot */
+  int in_band;        /* drawn in the meters band */
+  int has;            /* a reading was given; until then the frame stands */
+  double fill;        /* the last reading's fraction of the range, 0..1 */
+  double marker;      /* the marker's fraction, omx_meter_view_step()'s */
+  struct omx_meter_view view; /* omx-dsp's view state: the peak the marker took and the time since */
+} meter;
+
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap;
 } geometry;
 
 typedef struct {
@@ -80,6 +94,8 @@ struct omx_panel_view {
   size_t ncontrols;
   display *displays;
   size_t ndisplays;
+  meter *meters;
+  size_t nmeters, nband;
   char *brand, *name;
   int row_controls;
   geometry g;

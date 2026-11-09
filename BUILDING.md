@@ -21,7 +21,8 @@ make install PREFIX=/usr DESTDIR=…   # the built tree under share/omx-panel, t
 ```
 
 The panel renderer (`renderer/`, [docs/renderer.md](docs/renderer.md)) is C and builds on its own: a C11 compiler, cJSON
-(`cjson-devel`; `libcjson-dev` on Debian) and omx-contract's C headers (`omx-contract-devel`; `libomx-contract-dev`).
+(`cjson-devel`; `libcjson-dev` on Debian), omx-contract's C headers (`omx-contract-devel`; `libomx-contract-dev`) and omx-dsp's
+meter view (`omx-dsp-devel` >= 0.32.0 and < 0.33; `libomxdsp-dev`).
 `make renderer` builds the library, its header, its pkg-config file and the `omx-panel-render` command into
 `renderer/build/`; `make renderer-check` draws the fixtures against the golden images and the MOD GUI face.
 `WINDOW=1` adds the window, which needs pugl and NanoVG (`pugl-devel`, `nanovg-devel`; `libpugl-dev`, `libnanovg-dev`,

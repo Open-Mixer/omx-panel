@@ -252,6 +252,17 @@
         "reason"
       ]
     },
+    "panelMeterRefused": {
+      "code": "panel.describe.meter-refused",
+      "text": {
+        "en": "The meter {symbol} of {plugin} was left out: {reason}."
+      },
+      "args": [
+        "plugin",
+        "symbol",
+        "reason"
+      ]
+    },
     "panelBarsTooFew": {
       "code": "panel.describe.bars-too-few",
       "text": {

@@ -1,0 +1,138 @@
+{
+  "origin": "scanned",
+  "plugin": {
+    "id": "urn:omx-panel:test:meters",
+    "format": "lv2",
+    "uri": "urn:omx-panel:test:meters",
+    "name": "Test Meters",
+    "vendor": "omx-panel tests",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "threshold",
+      "symbol": "threshold",
+      "name": "Threshold",
+      "label": "Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -18
+      },
+      "meaning": "threshold"
+    },
+    {
+      "id": "ratio",
+      "symbol": "ratio",
+      "name": "Ratio",
+      "label": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "unit": "ratio",
+        "scale": "linear",
+        "default": 4
+      },
+      "meaning": "ratio"
+    },
+    {
+      "id": "attack",
+      "symbol": "attack",
+      "name": "Attack",
+      "label": "Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 100,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 10
+      },
+      "meaning": "attack"
+    },
+    {
+      "id": "release",
+      "symbol": "release",
+      "name": "Release",
+      "label": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 1000,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 100
+      },
+      "meaning": "release"
+    }
+  ],
+  "meters": [
+    {
+      "id": "in_level",
+      "symbol": "in_level",
+      "name": "Input",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "peak",
+      "held": true,
+      "clip": true
+    },
+    {
+      "id": "out_level",
+      "symbol": "out_level",
+      "name": "Output",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBTP",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "true-peak",
+      "held": true,
+      "clip": true
+    },
+    {
+      "id": "gr",
+      "symbol": "gr",
+      "name": "Gain reduction",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true
+    },
+    {
+      "id": "lufs",
+      "symbol": "lufs",
+      "name": "Momentary",
+      "kind": "level",
+      "channels": 2,
+      "unit": "LUFS",
+      "min": -70,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "lufs-m",
+      "held": true,
+      "clip": false
+    }
+  ],
+  "ports": [],
+  "extensions": {
+    "lv2": {
+      "lv2:CompressorPlugin": true
+    }
+  }
+}

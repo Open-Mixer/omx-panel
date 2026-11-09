@@ -95,6 +95,26 @@ control's integer value: its come-up value (`visibleWhen.default`) until the hos
 `omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
 leaves with none takes no space, so the panel is drawn exactly as one without them.
 
+## Meters
+
+The description's `meters` (docs/panel-layout.md, "Meters") that are no control of a section stand in a band below the
+sections: a frame captioned with the label, the range and its unit, a bar along the foot and a marker over it.
+`omx_panel_view_set_meter(view, index, value, elapsed)` gives a reading: the bar is the value over the description's range (a
+level from the foot, a gain reduction from 0 dB), the marker holds the peak (the deepest reduction) and falls by `elapsed`
+seconds at omx-dsp's rate (`fallDbPerSecond` of its `data/primitives/meter.json`, 18 dB/s), the same at any draw rate and on
+silence. The marker is omx-dsp's own view law, `omx_meter_view_step` of `<omxdsp/mix/omx_meter_view.h>` (header-only, omx-dsp-devel
+at or above 0.32.0 and below 0.33, checked by the build), the meter's range standing for the scale; no number of the law is
+copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
+the frame stands, which is what the MOD GUI face draws.
+
+`renderer/test/meter-surfaces.mjs` draws one recorded stream (`test/fixtures/meters/meters.stream.json`, 80 ticks at about
+20 Hz) on three surfaces and measures each from its pixels: the renderer; the MOD GUI's own template and stylesheet in
+Chromium, each frame given a bar and a marker through omx-dsp's TypeScript twin (the MOD GUI has no live meter yet); and a Tk
+canvas through a Python copy of the law read against omx-dsp's vectors. Every bar end, marker and frame edge is held within
+1 px of the renderer's in the browser and 2 px in Tk (`xvfb-run -a node renderer/test/meter-surfaces.mjs`; CI's
+`meter-surfaces` job). The command's state takes
+`"meters": {"<symbol>": [{"value", "elapsed"}, ...]}`, one entry for each draw tick.
+
 ## Input
 
 The renderer answers input with the one gesture vocabulary (`docs/panel-gestures.md`, one-panel spec 7.8). An event
@@ -202,6 +222,7 @@ is a desktop to prove it on), and redrawing only what changed.
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |
+| omx-dsp's meter view (>= 0.32.0, < 0.33) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
 | libm | | glibc | libc6 | |
 | pugl (window) | the window and its events | `pugl-devel` | `libpugl-dev` | ISC |
 | NanoVG (window) | drawing in the window | `nanovg-devel` | `libnanovg-dev` | Zlib |
@@ -209,8 +230,8 @@ is a desktop to prove it on), and redrawing only what changed.
 | node (tests only) | laying out the fixtures, the golden images, the parity with the MOD GUI | `nodejs` | `nodejs` | MIT |
 
 Neither Fedora nor Debian packages pugl or NanoVG. The OpenMixer channel builds both from pinned commits,
-as RPM and DEB, for both architectures. The library itself needs only cJSON, omx-contract's headers and
-libm. All of these licences can be combined with this repository's GPL-3.0-or-later. The font, Inter, is
+as RPM and DEB, for both architectures. The library itself needs only cJSON, omx-contract's headers, omx-dsp's
+meter view header and libm. All of these licences can be combined with this repository's GPL-3.0-or-later. The font, Inter, is
 under the SIL Open Font Licence, as the MOD GUI already ships it (`tools/fonts/Inter-LICENSE.txt`).
 
 ## Building and testing
