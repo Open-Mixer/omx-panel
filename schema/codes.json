@@ -1,0 +1,346 @@
+{
+  "kind": "codes",
+  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, each with its one sentence per language and the placeholders it may use (omx-contract's codes shape, schema 3.11.0). The surfaces read this file; no module repeats a sentence. A code is never reworded.",
+  "codes": {
+    "skinOverrideInvalid": {
+      "code": "SKIN_OVERRIDE_INVALID",
+      "text": {
+        "en": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin.",
+        "ca": "La personalització de {plugin} no és vàlida a {field}; corregiu skin.json i torneu a carregar l'aparença."
+      },
+      "args": [
+        "plugin",
+        "field"
+      ]
+    },
+    "skinOverrideEntryDropped": {
+      "code": "SKIN_OVERRIDE_ENTRY_DROPPED",
+      "text": {
+        "en": "The {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the override still applies.",
+        "ca": "S'ha descartat l'entrada {entry} de {field} per a {plugin} ({reason}); la resta de la personalització encara s'aplica."
+      },
+      "args": [
+        "plugin",
+        "field",
+        "entry",
+        "reason"
+      ]
+    },
+    "skinApiMismatch": {
+      "code": "SKIN_API_MISMATCH",
+      "text": {
+        "en": "This skin declares API {declared}, which this console does not support (it serves {supported}); the skin is not loaded.",
+        "ca": "Aquesta aparença declara l'API {declared}, que aquesta consola no admet (ofereix {supported}); l'aparença no es carrega."
+      },
+      "args": [
+        "declared",
+        "supported"
+      ]
+    },
+    "skinViewError": {
+      "code": "SKIN_VIEW_ERROR",
+      "text": {
+        "en": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing.",
+        "ca": "La vista de l'aparença ha fallat: {message}. Torneu-la a carregar, o suprimiu l'aparença si continua fallant."
+      },
+      "args": [
+        "message"
+      ]
+    },
+    "skinViewLint": {
+      "code": "SKIN_VIEW_LINT",
+      "text": {
+        "en": "The view {file} uses the disallowed word {word}; remove it and reload the skin.",
+        "ca": "La vista {file} utilitza la paraula no permesa {word}; suprimiu-la i torneu a carregar l'aparença."
+      },
+      "args": [
+        "word",
+        "file"
+      ]
+    },
+    "modguiNotFound": {
+      "code": "MODGUI_NOT_FOUND",
+      "text": {
+        "en": "No MOD GUI to import was found in {file} ({detail}); nothing was written.",
+        "ca": "No s'ha trobat cap MOD GUI per importar a {file} ({detail}); no s'ha escrit res."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiTtlInvalid": {
+      "code": "MODGUI_TTL_INVALID",
+      "text": {
+        "en": "The bundle's {file} does not read as valid TTL ({detail}); fix it and import again.",
+        "ca": "El {file} del paquet no es llegeix com a TTL vàlid ({detail}); corregiu-lo i torneu a importar."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiNoLicence": {
+      "code": "MODGUI_NO_LICENCE",
+      "text": {
+        "en": "{file} states no licence ({detail}); add one to its bundle before its MOD GUI can be imported.",
+        "ca": "{file} no declara cap llicència ({detail}); afegiu-ne una al seu paquet abans de poder importar el seu MOD GUI."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiLicenceUnmapped": {
+      "code": "MODGUI_LICENCE_UNMAPPED",
+      "text": {
+        "en": "The licence in {file} is not one this importer maps to an SPDX id ({detail}); add the mapping or change the licence.",
+        "ca": "La llicència de {file} no és cap que aquest importador associï a un identificador SPDX ({detail}); afegiu l'associació o canvieu la llicència."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiLicenceRefused": {
+      "code": "MODGUI_LICENCE_REFUSED",
+      "text": {
+        "en": "The licence in {file} is outside the allowed list ({detail}); the MOD GUI is not imported.",
+        "ca": "La llicència de {file} queda fora de la llista permesa ({detail}); el MOD GUI no s'importa."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiUnknownProperty": {
+      "code": "MODGUI_UNKNOWN_PROPERTY",
+      "text": {
+        "en": "{file} carries an unknown property ({detail}); remove it or correct it before importing.",
+        "ca": "{file} conté una propietat desconeguda ({detail}); suprimiu-la o corregiu-la abans d'importar."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiPortUnknown": {
+      "code": "MODGUI_PORT_UNKNOWN",
+      "text": {
+        "en": "{file} names a port that is not one of the plugin's own ports ({detail}); fix the symbol and import again.",
+        "ca": "{file} anomena un port que no és cap dels ports propis del plugin ({detail}); corregiu el símbol i torneu a importar."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiImageNotFound": {
+      "code": "MODGUI_IMAGE_NOT_FOUND",
+      "text": {
+        "en": "{file} names an image that is not in the bundle's resources ({detail}); add the file or fix the reference.",
+        "ca": "{file} anomena una imatge que no és als recursos del paquet ({detail}); afegiu el fitxer o corregiu la referència."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiPathEscape": {
+      "code": "MODGUI_PATH_ESCAPE",
+      "text": {
+        "en": "{file} names a path that resolves outside the bundle ({detail}); nothing is imported from outside the bundle.",
+        "ca": "{file} anomena un camí que es resol fora del paquet ({detail}); no s'importa res de fora del paquet."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiTargetExists": {
+      "code": "MODGUI_TARGET_EXISTS",
+      "text": {
+        "en": "{file} already exists ({detail}); remove it first to import over it.",
+        "ca": "{file} ja existeix ({detail}); suprimiu-lo primer per importar-hi a sobre."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "skinModguiLicence": {
+      "code": "SKIN_MODGUI_LICENCE",
+      "text": {
+        "en": "The MOD GUI script for {plugin} is dropped: its licence {licence} is missing or not allowed.",
+        "ca": "L'script de MOD GUI de {plugin} es descarta: la seva llicència {licence} falta o no és permesa."
+      },
+      "args": [
+        "plugin",
+        "licence"
+      ]
+    },
+    "panelNoControls": {
+      "code": "PANEL_NO_CONTROLS",
+      "text": {
+        "en": "{plugin} has no control a panel can show, so it gets no panel ({message}).",
+        "ca": "{plugin} no té cap control que un panell pugui mostrar, així que no té panell ({message})."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelFamilyNotBacked": {
+      "code": "PANEL_FAMILY_NOT_BACKED",
+      "text": {
+        "en": "{plugin}'s controls do not carry what that panel family needs ({message}); choose another family or none.",
+        "ca": "Els controls de {plugin} no porten el que necessita aquesta família de panell ({message}); trieu-ne una altra o cap."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelLayoutInvalid": {
+      "code": "PANEL_LAYOUT_INVALID",
+      "text": {
+        "en": "The panel declared for {plugin} cannot be laid out ({message}); fix its panel declaration.",
+        "ca": "El panell declarat per a {plugin} no es pot disposar ({message}); corregiu-ne la declaració."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelOverrideUnavailable": {
+      "code": "PANEL_OVERRIDE_UNAVAILABLE",
+      "text": {
+        "en": "The {layers} override layers for {plugin} were not applied: this host cannot read overrides.",
+        "ca": "No s'han aplicat les {layers} capes de personalització de {plugin}: aquest amfitrió no pot llegir personalitzacions."
+      },
+      "args": [
+        "plugin",
+        "layers"
+      ]
+    },
+    "panelOverrideRefused": {
+      "code": "PANEL_OVERRIDE_REFUSED",
+      "text": {
+        "en": "The override layer {layer} ({name}) for {plugin} was refused: {message}. The layers below it still apply.",
+        "ca": "S'ha refusat la capa de personalització {layer} ({name}) de {plugin}: {message}. Les capes de sota encara s'apliquen."
+      },
+      "args": [
+        "plugin",
+        "layer",
+        "name",
+        "message"
+      ]
+    },
+    "panelOverrideDropped": {
+      "code": "PANEL_OVERRIDE_DROPPED",
+      "text": {
+        "en": "In override layer {layer} ({name}) for {plugin}, the entry for {control} was dropped: {message}.",
+        "ca": "A la capa de personalització {layer} ({name}) de {plugin}, s'ha descartat l'entrada de {control}: {message}."
+      },
+      "args": [
+        "plugin",
+        "layer",
+        "control",
+        "name",
+        "message"
+      ]
+    },
+    "panelRoleDropped": {
+      "code": "PANEL_ROLE_DROPPED",
+      "text": {
+        "en": "The role {entry} on {symbol} of {plugin} is not shown ({reason}); the control stays on its page.",
+        "ca": "El rol {entry} de {symbol} de {plugin} no es mostra ({reason}); el control es queda a la seva pàgina."
+      },
+      "args": [
+        "plugin",
+        "entry",
+        "symbol",
+        "reason"
+      ]
+    },
+    "panelSkinDropped": {
+      "code": "PANEL_SKIN_DROPPED",
+      "text": {
+        "en": "The skin's {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the skin still applies.",
+        "ca": "S'ha descartat l'entrada {entry} de {field} de l'aparença per a {plugin} ({reason}); la resta de l'aparença encara s'aplica."
+      },
+      "args": [
+        "plugin",
+        "field",
+        "entry",
+        "reason"
+      ]
+    },
+    "panelBarsTooFew": {
+      "code": "PANEL_BARS_TOO_FEW",
+      "text": {
+        "en": "A bar group of {plugin} has too few controls to draw as bars ({message}); they are drawn as knobs.",
+        "ca": "Un grup de barres de {plugin} té massa pocs controls per dibuixar-los com a barres ({message}); es dibuixen com a botons."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsNotTravel": {
+      "code": "PANEL_BARS_NOT_TRAVEL",
+      "text": {
+        "en": "A bar group of {plugin} holds a control that cannot be a bar ({message}); fix the group in the panel declaration.",
+        "ca": "Un grup de barres de {plugin} conté un control que no pot ser una barra ({message}); corregiu el grup a la declaració del panell."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsFactsDiffer": {
+      "code": "PANEL_BARS_FACTS_DIFFER",
+      "text": {
+        "en": "The controls of a bar group of {plugin} differ in range, step, unit or scale ({message}); bars must share them.",
+        "ca": "Els controls d'un grup de barres de {plugin} difereixen en rang, pas, unitat o escala ({message}); les barres els han de compartir."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsLabelsNotSeries": {
+      "code": "PANEL_BARS_LABELS_NOT_SERIES",
+      "text": {
+        "en": "The labels of a bar group of {plugin} do not form one series ({message}); rename them or split the group.",
+        "ca": "Les etiquetes d'un grup de barres de {plugin} no formen una sola sèrie ({message}); canvieu-ne el nom o dividiu el grup."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsUnknownControl": {
+      "code": "PANEL_BARS_UNKNOWN_CONTROL",
+      "text": {
+        "en": "A bar group of {plugin} names a control the plugin does not have ({message}); fix the symbol.",
+        "ca": "Un grup de barres de {plugin} anomena un control que el plugin no té ({message}); corregiu el símbol."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelEasyRefused": {
+      "code": "PANEL_EASY_REFUSED",
+      "text": {
+        "en": "The Easy list of {plugin} was refused ({message}); the Easy page takes the rule instead.",
+        "ca": "S'ha refusat la llista Easy de {plugin} ({message}); la pàgina Easy pren la regla en lloc seu."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    }
+  }
+}

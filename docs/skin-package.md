@@ -66,6 +66,11 @@ Each refusal is a code with named arguments (`SKIN_REFUSAL_CODES`): `SKIN_OVERRI
 or fails the schema, `args.field` the first field that broke it), `SKIN_OVERRIDE_ENTRY_DROPPED`, `SKIN_API_MISMATCH`,
 `SKIN_VIEW_ERROR`, `SKIN_VIEW_LINT`, `SKIN_MODGUI_LICENCE`, and the importer's own ten, `MODGUI_*` (below).
 
+The one sentence a person reads for each code, in English and Catalan, is in `schema/codes.json` (exported as
+`@openmixer/omx-panel/codes.json`), beside the codes of `describe`, the bar rule and the easy list: an omx-contract
+codes document (`text` per language, `args` the placeholders it may use), keyed by the code word. A surface fills the
+placeholders from the refusal's `args` and keeps no sentence of its own.
+
 ## The licence
 
 `SKIN_LICENCE_ALLOW_LIST` is the one list a MOD GUI's licence must be on: GPL-2.0-or-later, GPL-3.0-or-later,
