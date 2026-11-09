@@ -11,6 +11,9 @@
   stay out of the canonical form and the fingerprint.
 - `rms`, `vu` and `ppm` are no longer measurements.
 - The renderer draws the meters: a bar and a peak marker over the description's range (`omx_panel_view_set_meter`); the marker
-  falls by elapsed time at the rate of omx-dsp's `data/primitives/meter.json`, read when the renderer is built.
-- The MOD GUI face draws each meter as a static frame with its range; there is no live meter.
-- The renderer build needs omx-dsp's contract data (`omx-dsp-contract`) for that file.
+  is omx-dsp's view law (`omx_meter_view_step`), falling by elapsed time at 18 dB/s.
+- The MOD GUI face draws each meter as a static frame with its range; there is no live meter. The meter frame's style is
+  written whenever a meter stands, with or without a curve.
+- The MOD GUI's pedal rim is an inset shadow: its border had set every box of the template 1 px right and down of the raster.
+- The renderer build needs omx-dsp-devel >= 0.32.0 and < 0.33 (`pkg-config omxdsp`).
+- `renderer/test/meter-surfaces.mjs` measures one recorded stream on the renderer, in Chromium and in Tk.
