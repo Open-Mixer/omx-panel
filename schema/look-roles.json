@@ -1,0 +1,32 @@
+{
+  "$comment": "The colour roles of a panel (spec 2026-11-06-one-panel-derivation-curves-and-bar-group.md §7.10): every colour a panel description makes a surface draw, named once here under the console's token names, each with its family (omx look §2(i): theme, accent, fixed, state), the floor its value must clear against the grounds it is drawn on, and ONE default value. The values are each host's: the console's tokens.css sets every role in every theme, Zynthian's palette table maps onto every role; the MOD GUI, whose host supplies nothing, wears these defaults, the dark look `look` names (tools/look.mjs derives tools/look.json from them). A ground carries no floor: it is what the others are measured on. Finish and selection colours (knob and fader-cap metal, slot, fill, glass grid, focus ring, shade, selected) are a host's chrome and not roles.",
+  "look": { "theme": "dark", "accent": "cyan", "finish": "aluminium", "style": "modern" },
+  "font": {
+    "--font-ui": "\"Inter\", \"Helvetica Neue\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif",
+    "--font-file": "fonts/Inter-Regular.ttf"
+  },
+  "roles": [
+    { "name": "--surface", "family": "theme", "draws": "the panel's face", "ground": true, "default": "#15191e" },
+    { "name": "--surface-2", "family": "theme", "draws": "a section on the face", "ground": true, "default": "#1c2127" },
+    { "name": "--surface-3", "family": "theme", "draws": "a control's body: a switch track, a selector, a curve's frame", "ground": true, "default": "#242b33" },
+    { "name": "--glass", "family": "theme", "draws": "the recessed glass a display and a meter sit behind", "ground": true, "default": "#0d1115" },
+    { "name": "--border", "family": "theme", "draws": "a hairline rim", "floor": { "ratio": 1.2, "on": ["--surface"] }, "default": "#2a323b" },
+    { "name": "--border-strong", "family": "theme", "draws": "the face's rim, a control's rim, a curve's axis", "floor": { "ratio": 1.4, "on": ["--surface", "--surface-2", "--surface-3"] }, "default": "#3a444f" },
+    { "name": "--ink", "family": "theme", "draws": "a value, a selected option, a mark and its letter", "floor": { "ratio": 4.5, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#eaf0f4" },
+    { "name": "--ink-dim", "family": "theme", "draws": "a label, a section title, a caption", "floor": { "ratio": 4.5, "on": ["--surface", "--surface-2", "--surface-3"] }, "default": "#8a97a3" },
+    { "name": "--ink-faint", "family": "theme", "draws": "a graticule's numbers and a decoration, never a word that must be read", "floor": { "ratio": 2, "on": ["--surface", "--surface-2", "--surface-3"] }, "default": "#5a6571" },
+    { "name": "--legend", "family": "theme", "draws": "the silkscreen: a scale's legend printed on the face or the glass", "floor": { "ratio": 4.5, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#e9dfc6" },
+    { "name": "--accent", "family": "accent", "draws": "everything live: a knob's pointer, a fill, a curve, the head line", "floor": { "ratio": 3, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#28c8e6" },
+    { "name": "--meter-green", "family": "fixed", "draws": "a meter's safe zone", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#34d17b" },
+    { "name": "--meter-amber", "family": "fixed", "draws": "a meter's caution zone", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#f2b632" },
+    { "name": "--meter-red", "family": "fixed", "draws": "a meter's top zone", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#ff4d45" },
+    { "name": "--eq-delta-boost", "family": "fixed", "draws": "the EQ delta view's boost between the pre and post traces", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#e0a84a" },
+    { "name": "--eq-delta-cut", "family": "fixed", "draws": "the EQ delta view's cut between the pre and post traces", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#4f95c9" },
+    { "name": "--state-engaged", "family": "state", "draws": "the lamp of an engaged processor", "floor": { "ratio": 3, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#f2b03a" },
+    { "name": "--state-reduction", "family": "state", "draws": "gain reduction and clip, one red", "floor": { "ratio": 3, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#ef5a3f" },
+    { "name": "--state-bypass", "family": "state", "draws": "the picture of a bypassed processor", "floor": { "ratio": 3, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#7f8389" },
+    { "name": "--origin-fbs", "family": "fixed", "draws": "the mark of a band the feedback corrector planted (both pools, told apart by shape)", "floor": { "ratio": 3, "on": ["--glass"] }, "apart": { "ratio": 1.3, "from": ["--origin-hrp", "--origin-room-mode"] }, "default": "#ff7ad0" },
+    { "name": "--origin-hrp", "family": "fixed", "draws": "the mark of a band the harmonic resonance planter planted", "floor": { "ratio": 3, "on": ["--glass"] }, "apart": { "ratio": 1.3, "from": ["--origin-fbs", "--origin-room-mode"] }, "default": "#f5d76e" },
+    { "name": "--origin-room-mode", "family": "fixed", "draws": "the mark of a band the room-mode planter planted", "floor": { "ratio": 3, "on": ["--glass"] }, "apart": { "ratio": 1.3, "from": ["--origin-fbs", "--origin-hrp"] }, "default": "#4a86f0" }
+  ]
+}
