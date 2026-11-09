@@ -41,6 +41,7 @@ export const DESCRIBE_CODES = {
   overrideDropped: 'PANEL_OVERRIDE_DROPPED',
   roleDropped: 'PANEL_ROLE_DROPPED',
   skinDropped: 'PANEL_SKIN_DROPPED',
+  meterRefused: 'PANEL_METER_REFUSED',
 };
 
 /** What a plugin declares about itself (an LV2 class, a CLAP feature) -> the family whose closed form omx-panel knows. */
@@ -203,6 +204,8 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   const served = (key) => servedOf.get(key) ?? key;
   for (const u of layout.unpublished) refusals.push(refuse(DESCRIBE_CODES.roleDropped, { plugin, entry: u.role, symbol: served(u.symbol), reason: u.why }));
 
+  for (const m of layout.meterRefusals ?? []) refusals.push(refuse(DESCRIBE_CODES.meterRefused, { plugin, symbol: m.symbol, reason: m.reason }));
+
   const factors = new Set(layout.roles.filter((r) => r.role === 'band_gain' && r.inferred && (r.token ?? r.unit) === 'coef').map((r) => r.symbol));
   const params = effective.controls.map((c) => servedParamOf(c, { factor: factors.has(keyOf(c)) }));
   const visibleWhen = (c) => (c.visibleWhen ? { param: served(c.visibleWhen.symbol), values: valuesOfMask(c.mask) } : null);
@@ -214,6 +217,8 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     params,
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
+    // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
+    meters: layout.meters.map((m) => ({ symbol: m.symbol, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
