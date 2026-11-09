@@ -23,6 +23,7 @@
       "default": "./dist/src/skin-package.js"
     },
     "./codes.json": "./dist/schema/codes.json",
+    "./catalogs/*.json": "./dist/catalogs/*.json",
     "./validate": {
       "types": "./dist/lib/validate.d.mts",
       "default": "./dist/lib/validate.mjs"

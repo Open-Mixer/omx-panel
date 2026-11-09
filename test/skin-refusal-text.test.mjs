@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * Every refusal code this package owns carries its own sentence, in en and ca (omx-contract spec 7.11): the owner's
- * words for what happened and what the person can do, in schema/codes.json, the one place they are written. The
- * console and the other surfaces read that file; no table in src/ or tools/ repeats a sentence. The shape and the
- * placeholder rule are omx-contract's (schema >= 3.11.0, `codes.codes.*.text`/`args`); this test holds every entry to
- * both, and holds the file to the codes the package actually emits: the skin package's, describe's, the bar rule's and
- * the easy list's.
+ * Every refusal code this package owns carries its own source sentence in English (omx-contract#90, spec 7.11): the
+ * owner's words for what happened and what the person can do, in schema/codes.json beside the code and its args. Each
+ * other language is a catalog the package ships, catalogs/<lang>.json, keyed by the code; Catalan is complete. The
+ * console and the other surfaces read both; no table in src/ or tools/ repeats a sentence. This test holds every entry
+ * to the shape and the placeholder rule, holds the file to the codes the package actually emits (the skin package's,
+ * describe's, the bar rule's and the easy list's), and holds the catalog to those codes and their args.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -19,6 +19,9 @@ import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
+const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.meta.url);
+/** The languages this package ships a catalog for, each complete. */
+const CATALOG_LANGS = ['ca'];
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
 const gte = (a, b) => {
@@ -32,6 +35,11 @@ const gte = (a, b) => {
 const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];
 
 /** The file's entries by their code word; an absent file reads as no entries, so every code below is red by name. */
+/** A shipped catalog; an absent one reads as empty, so every code is red by name. */
+function catalog(lang) {
+  try { return JSON.parse(readFileSync(CATALOG_FILE(lang), 'utf8')); } catch { return {}; }
+}
+
 function declared() {
   let doc;
   try { doc = JSON.parse(readFileSync(CODES_FILE, 'utf8')); } catch { return new Map(); }
@@ -43,12 +51,17 @@ test('omx-contract is at least the schema version this declaration is written ag
   assert.ok(gte(schema['x-omx-schema-version'], floor), `schema is ${schema['x-omx-schema-version']}, need >= ${floor}`);
 });
 
-/** One entry's `text`/`args`, exactly as omx-contract's own `codes.codes.*` shape; the code word is this package's. */
+/** One entry: the code word, its source sentence and its args (omx-contract#90: the source only, no other language). */
 const itemShape = schema.$defs.codes.properties.codes.additionalProperties.properties;
 const ENTRY_SHAPE = {
   $defs: schema.$defs,
   type: 'object',
-  properties: { code: { type: 'string', pattern: '^[A-Z][A-Z0-9_]*$' }, doc: itemShape.doc, text: itemShape.text, args: itemShape.args },
+  properties: {
+    code: { type: 'string', pattern: '^[A-Z][A-Z0-9_]*$' },
+    doc: itemShape.doc,
+    text: { type: 'object', properties: { en: { type: 'string', minLength: 1 } }, required: ['en'], additionalProperties: false },
+    args: itemShape.args,
+  },
   required: ['code', 'text', 'args'],
   additionalProperties: false,
 };
@@ -63,30 +76,49 @@ test('the codes file is a codes document: kind, doc and lowerCamel names', () =>
 });
 
 for (const code of EMITTED) {
-  test(`${code} carries en and ca text in omx-contract's codes shape`, () => {
+  test(`${code} carries its source sentence and args in the codes shape`, () => {
     const entry = declared().get(code);
     assert.ok(entry, `${code} has no entry in schema/codes.json`);
     const { ok, errors } = validate(ENTRY_SHAPE, entry);
     assert.ok(ok, `${code}: ${JSON.stringify(errors)}`);
   });
 
-  test(`${code}'s en and ca sentences use the same placeholders, all of them in args`, () => {
+  test(`${code}'s source sentence uses only placeholders in args`, () => {
     const entry = declared().get(code);
     assert.ok(entry, `${code} has no entry in schema/codes.json`);
-    const en = placeholders(entry.text.en);
-    const ca = placeholders(entry.text.ca);
-    assert.deepEqual([...en].sort(), [...ca].sort(), `${code}: en uses {${[...en].join('}, {')}}, ca uses {${[...ca].join('}, {')}}`);
-    for (const name of new Set([...en, ...ca])) assert.ok(entry.args.includes(name), `${code}: {${name}} is not in args`);
+    for (const name of placeholders(entry.text.en)) assert.ok(entry.args.includes(name), `${code}: {${name}} is not in args`);
   });
+
+  for (const lang of CATALOG_LANGS) {
+    test(`${code} has a ${lang} sentence in catalogs/${lang}.json naming only its args`, () => {
+      const entry = declared().get(code);
+      const sentence = catalog(lang).messages?.[code];
+      assert.ok(typeof sentence === 'string' && sentence !== '', `${code} has no ${lang} sentence`);
+      for (const name of placeholders(sentence)) assert.ok(entry?.args.includes(name), `${code} (${lang}): {${name}} is not in args`);
+    });
+  }
 }
 
 test('the codes file declares no code the package does not emit', () => {
   assert.deepEqual([...declared().keys()].filter((k) => !EMITTED.includes(k)), []);
 });
 
-test('no module under src/ or tools/ spells a sentence of the codes file', () => {
+for (const lang of CATALOG_LANGS) {
+  test(`catalogs/${lang}.json is a ${lang} catalog of omx-panel holding no code the package does not emit`, () => {
+    const cat = catalog(lang);
+    assert.equal(cat.kind, 'catalog');
+    assert.equal(cat.lang, lang);
+    assert.equal(cat.owner, pkg.name.replace(/^@openmixer\//, ''));
+    assert.deepEqual(Object.keys(cat.messages ?? {}).filter((k) => !EMITTED.includes(k)), []);
+  });
+}
+
+test('no module under src/ or tools/ spells a sentence of the codes file or a catalog', () => {
   const doc = JSON.parse(readFileSync(CODES_FILE, 'utf8'));
-  const sentences = Object.values(doc.codes).flatMap((e) => [e.text.en, e.text.ca]);
+  const sentences = [
+    ...Object.values(doc.codes).map((e) => e.text.en),
+    ...CATALOG_LANGS.flatMap((l) => Object.values(catalog(l).messages ?? {})),
+  ];
   for (const f of ['src/skin-package.ts', 'tools/describe.mjs', 'tools/bars.mjs', 'tools/easy.mjs']) {
     const body = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
     for (const s of sentences) assert.ok(!body.includes(s), `${f} repeats "${s}"`);
