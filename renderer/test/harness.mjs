@@ -94,11 +94,12 @@ export function stateFile(fx, dir, readings = {}) {
 export const scratch = () => mkdtempSync(join(tmpdir(), 'omx-panel-render-'));
 
 /** The renderer over a description and a state: `{ w, h, data }`, RGBA with straight alpha unless `format`/`alpha` say
- * otherwise. `size` [w, h] in device px, or the natural size; `window` reads a window's frame instead (natural size). */
-export function render(description, state, { scale = 1, size, format = 'rgba', alpha = 'straight', window = false } = {}) {
+ * otherwise. `size` [w, h] in device px, or the natural size; `window` reads a window's frame instead (natural size);
+ * `data` is the directory the look, the geometry and the font are read from (tools/ by default). */
+export function render(description, state, { scale = 1, size, format = 'rgba', alpha = 'straight', window = false, data = DATA } = {}) {
   const dir = scratch();
   const out = join(dir, 'out.raw');
-  const args = ['--description', description, '--data', DATA, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--raw', out];
+  const args = ['--description', description, '--data', data, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--raw', out];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   if (window) args.push('--window');
   const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);

@@ -56,7 +56,8 @@ src/skin-package.ts               the skin package's facts: name, schema 1, over
 tools/panel-description.mjs       the layout from a descriptor
 tools/vocabulary.mjs              the readers of the installed vocabulary: meanings, unit tokens
 tools/modgui-gen.mjs raster.mjs   the MOD GUI and its images
-tools/look.mjs look/ look.json    the omx look's tokens and their resolved values, the face's geometry (look/geometry.json)
+schema/look-roles.json            the colour roles of a panel, each with its family, floor and one default
+tools/look.mjs look/ look.json    look.json and renderer/src/look_roles.h from the roles, the face's geometry (look/geometry.json)
 tools/modgui-test.sh modgui-terms.ttl  a written MOD GUI held to its descriptor
 tools/modgui-import.mjs turtle-read.mjs  a MOD GUI bundle in, a skin package out
 tools/group-infer.mjs             the port groups an LV2 plugin lacks, inferred

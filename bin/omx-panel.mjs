@@ -18,7 +18,7 @@
  *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
  *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
  *                                                        port groups, for each installed bundle that needs one
- *   look [--check]                                       tools/look.mjs: tools/look.json from the token cascade
+ *   look [--check]                                       tools/look.mjs: tools/look.json from the colour roles
  *   copies <tree> | --self-test                          tools/copies-check.mjs: no tracked file copies what omx-panel renders or ships
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
  *                                                        directories, the meanings, the LV2 unit table, the param-contract
@@ -56,6 +56,15 @@ const [command, ...args] = process.argv.slice(2);
 
 /** package.json sits beside bin/ in the tree and the installed package, and two up from dist/bin in the npm one. */
 const packageVersion = () => JSON.parse(readFileSync(['..', '../..'].map((up) => join(HERE, up, 'package.json')).find(existsSync), 'utf8')).version;
+
+/** The owner's sentences (schema/codes.json, spec 7.11), beside tools/ in the tree, dist and the installed package. */
+const CODES = Object.values(JSON.parse(readFileSync(join(HERE, '..', 'schema', 'codes.json'), 'utf8')).codes);
+
+/** `CODE: <en sentence>` for a code this package owns, its placeholders filled from `args`; `CODE:` otherwise. */
+const said = (code, args = {}) => {
+  const entry = CODES.find((e) => e.code === code);
+  return entry ? `${code}: ${entry.text.en.replace(/\{([^{}]*)\}/g, (m, k) => (args[k] === undefined ? m : String(args[k])))}` : `${code}:`;
+};
 
 /** A verb that is a tool of its own: run it with the same node, its exit status this command's. */
 const tool = (file) => process.exit(spawnSync(process.execPath, [join(TOOLS, file), ...args], { stdio: 'inherit' }).status ?? 1);
@@ -108,7 +117,7 @@ async function layout(argv) {
     }
     x = panelLayout(descriptor, { panel, ns: opt('--ns'), where: file });
   } catch (err) {
-    process.stderr.write(`omx-panel: ${err.code ? `${err.code}: ` : ''}${err.message}\n`);
+    process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
     process.exit(1);
   }
   if (argv.includes('--canonical')) process.stdout.write(panelCanonical(x));
@@ -164,11 +173,14 @@ async function describeCommand(argv) {
       ns: opt('--ns'), where: file, perPage,
     });
     if (argv.includes('--pages')) {
-      if (!out.description) throw new Error(`no panel: ${out.refusals.map((r) => r.code).join(', ')}`);
+      if (!out.description) {
+        for (const r of out.refusals) process.stderr.write(`omx-panel: ${said(r.code, r.args)}\n`);
+        process.exit(1);
+      }
       process.stdout.write(`${JSON.stringify(out.description.pages, null, 2)}\n`);
     } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
   } catch (err) {
-    process.stderr.write(`omx-panel: ${err.code ? `${err.code}: ` : ''}${err.message}\n`);
+    process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
     process.exit(1);
   }
 }
@@ -192,7 +204,7 @@ async function compare(argv) {
       : m[op](queued, values);
     process.stdout.write(`${JSON.stringify({ ring: queued, ...out })}\n`);
   } catch (err) {
-    process.stderr.write(`omx-panel: ${err.code ? `${err.code}: ` : ''}${err.message}\n`);
+    process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
     process.exit(1);
   }
 }

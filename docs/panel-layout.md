@@ -104,8 +104,8 @@ the switch:
 - a choice is a stepped number over its values' span. It carries one label per integer of the span only when every value is an
   integer (a sparse one, FFT sizes 128..16384, labels each integer between, up to a 16-bit span); a choice whose values lie
   between integers (0, 0.5, 1) is served unlabelled, its default rounded to an integer inside the ends;
-- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `PANEL_NO_CONTROLS`, `PANEL_FAMILY_NOT_BACKED`, `PANEL_LAYOUT_INVALID`, a bar group's
-`PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `PANEL_ROLE_DROPPED`, `PANEL_SKIN_DROPPED`. The description is `null` only where no panel can be
+- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `panel.describe.no-controls`, `panel.describe.family-not-backed`, `panel.describe.layout-invalid`, a bar group's
+`PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `panel.describe.role-dropped`, `panel.describe.skin-dropped`. The description is `null` only where no panel can be
 made (no control, an invalid layout); a family the controls do not back is `none` with its refusal.
 
 ### The family of a plugin that declares no panel
@@ -166,7 +166,7 @@ A run of more than 16 is cut into runs of 16 (`MAX_BARS`). Runs over the same ba
 gains, frequencies and Qs) are one group: the run whose controls have a level meaning (`gain`) takes the bars and the others are its
 `tied`; with no meaning the first run in section order. Two runs over different bands are two groups. A declared section says
 `"bars": true` (its controls, in order, are one run; the rule's checks still apply and a failing one refuses the layout by
-`PANEL_BARS_TOO_FEW`, `_NOT_TRAVEL`, `_FACTS_DIFFER` or `_LABELS_NOT_SERIES`) or `"bars": false` (no inference there). A plugin that
+`panel.describe.bars-too-few`, `_NOT_TRAVEL`, `_FACTS_DIFFER` or `_LABELS_NOT_SERIES`) or `"bars": false` (no inference there). A plugin that
 declares no panel gets its skin package's `skin.json` section word, the same `bars`; a skin that rebuilds the sections gets its bars
 recomputed over them, a failing `true` dropped by name.
 
@@ -199,7 +199,7 @@ runs): each meter is a meter control in the description's `meters` list, in the 
 - A foreign read-only control in a level unit stays a meter: `measurement` is `null` (never guessed from the unit), `held` and
   `clip` are `false`.
 - A meter is a measurement. A meter, or a read-only control, whose meaning, symbol or name is phantom, pad or head-amp
-  state is not a meter: it is left out and reported as `PANEL_METER_REFUSED`.
+  state is not a meter: it is left out and reported as `panel.describe.meter-refused`.
 - A dynamics, gate, limiter or de-esser family's gain-reduction meter is its section's `gain_reduction_bar` display (source
   `meters`, `meterIds` its index in `meters`). The transfer curve's operating point reads the level meters whose symbols
   name the input (`in`, `input`) and the output (`out`, `output`), as `meterIds`.

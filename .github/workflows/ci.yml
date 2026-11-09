@@ -59,7 +59,7 @@ jobs:
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
       - id: handback-look
-        name: look.json is what the token cascade resolves to
+        name: look.json and the renderer's role list are what the colour roles give
         run: make look
       - id: handback-example
         name: The example skin package validates

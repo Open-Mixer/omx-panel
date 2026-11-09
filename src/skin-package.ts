@@ -176,42 +176,42 @@ export const checkSkinRoles: SkinRoleCheck = (family, roles, params) => {
 /** The refusal codes of the skin package and its importer, each with named arguments (docs/skin-package.md). */
 export const SKIN_REFUSAL_CODES = [
   /** `skin.json` does not parse or fails the one schema (§6.3): `args.plugin`, `args.field` the first field that broke it. */
-  'SKIN_OVERRIDE_INVALID',
+  'panel.skin.override-invalid',
   /** One override entry names what the plugin's parameters cannot take: that entry is left out, the rest stands.
    * `args.plugin`, `args.field`, `args.entry`, `args.reason` (the drop's own code). */
-  'SKIN_OVERRIDE_ENTRY_DROPPED',
+  'panel.skin.override-entry-dropped',
   /** A view declares a skin-API version §7.2 does not accept; it is never imported. `args.declared`, `args.supported`. */
-  'SKIN_API_MISMATCH',
+  'panel.skin.api-mismatch',
   /** A view failed to import, threw on mount or render, or raised an uncaught error naming the package. `args.message`. */
-  'SKIN_VIEW_ERROR',
+  'panel.skin.view-error',
   /** A view names a word §7.3's lint refuses: `args.word`, in `args.file`. An accident catcher, not a security control. */
-  'SKIN_VIEW_LINT',
+  'panel.skin.view-lint',
   /** The importer: the bundle holds no `modgui:gui` (or more than one with no plugin named), or a resource it names
    * does not exist. Nothing is written; `args.file` names the file read, `args.detail` what was found there. */
-  'MODGUI_NOT_FOUND',
+  'panel.modgui.not-found',
   /** The importer: a TTL of the bundle does not parse, or a `modgui:port` has no integer `lv2:index` or no `lv2:symbol`. */
-  'MODGUI_TTL_INVALID',
+  'panel.modgui.ttl-invalid',
   /** The importer: the plugin carries no `doap:license`, nor does its `lv2:project`. */
-  'MODGUI_NO_LICENCE',
+  'panel.modgui.no-licence',
   /** The importer: the plugin's `doap:license` names no SPDX licence the map reads. */
-  'MODGUI_LICENCE_UNMAPPED',
+  'panel.modgui.licence-unmapped',
   /** The importer: the plugin's licence maps to an SPDX id outside the allow-list (GPL-2.0-only among them). */
-  'MODGUI_LICENCE_REFUSED',
+  'panel.modgui.licence-refused',
   /** The importer: the bundle carries a `modgui:` property (or a `modgui:port` an `lv2:` property) outside its list. */
-  'MODGUI_UNKNOWN_PROPERTY',
+  'panel.modgui.unknown-property',
   /** The importer: a `modgui:port`'s `lv2:symbol` names no `lv2:symbol` of the plugin's own `lv2:port`, a renamed or
    * stale entry. `args.file` names the TTL, `args.detail` the symbol. */
-  'MODGUI_PORT_UNKNOWN',
+  'panel.modgui.port-unknown',
   /** The importer: an image the icon template names under mod-ui's `/resources/` route is not in the resources
    * directory. `args.file` names the template, `args.detail` the path it names. */
-  'MODGUI_IMAGE_NOT_FOUND',
+  'panel.modgui.image-not-found',
   /** The importer: a resource the modgui names resolves outside the bundle (a symlink or a non-`file:` IRI). */
-  'MODGUI_PATH_ESCAPE',
+  'panel.modgui.path-escape',
   /** The importer: the package directory is already in the skins directory; nothing is overwritten. */
-  'MODGUI_TARGET_EXISTS',
+  'panel.modgui.target-exists',
   /** A package opted into the MOD GUI's own script (`skin.json`'s `modgui`, §6.7) with a licence missing or outside
    * `SKIN_LICENCE_ALLOW_LIST`: the entry is dropped. `args.plugin`, `args.licence`. */
-  'SKIN_MODGUI_LICENCE',
+  'panel.skin.modgui-licence',
 ] as const;
 export type SkinRefusalCode = (typeof SKIN_REFUSAL_CODES)[number];
 
@@ -427,11 +427,11 @@ export function parseSkinOverride(text: string, dirId: string): { readonly ok: t
   try {
     o = JSON.parse(text);
   } catch (e) {
-    return { ok: false, refusal: { code: 'SKIN_OVERRIDE_INVALID', args: { plugin: dirId, field: 'json', detail: (e as Error).message } } };
+    return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', detail: (e as Error).message } } };
   }
-  if (!isObj(o)) return { ok: false, refusal: { code: 'SKIN_OVERRIDE_INVALID', args: { plugin: dirId, field: 'json', detail: 'not an object' } } };
+  if (!isObj(o)) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', detail: 'not an object' } } };
   const fault = schemaFault(o, dirId);
-  if (fault) return { ok: false, refusal: { code: 'SKIN_OVERRIDE_INVALID', args: { plugin: dirId, field: fault, detail: `the ${fault} field fails the schema` } } };
+  if (fault) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: fault, detail: `the ${fault} field fails the schema` } } };
   return { ok: true, override: o as unknown as SkinOverride };
 }
 
@@ -673,16 +673,16 @@ export const MODGUI_PORT_PROPERTIES = ['index', 'symbol', 'name'] as const;
 
 /** The importer's refusals (§6.6), each naming the file it read; nothing is written on any of them. */
 export const MODGUI_IMPORT_REFUSALS = [
-  'MODGUI_NOT_FOUND',
-  'MODGUI_TTL_INVALID',
-  'MODGUI_NO_LICENCE',
-  'MODGUI_LICENCE_UNMAPPED',
-  'MODGUI_LICENCE_REFUSED',
-  'MODGUI_UNKNOWN_PROPERTY',
-  'MODGUI_PORT_UNKNOWN',
-  'MODGUI_IMAGE_NOT_FOUND',
-  'MODGUI_PATH_ESCAPE',
-  'MODGUI_TARGET_EXISTS',
+  'panel.modgui.not-found',
+  'panel.modgui.ttl-invalid',
+  'panel.modgui.no-licence',
+  'panel.modgui.licence-unmapped',
+  'panel.modgui.licence-refused',
+  'panel.modgui.unknown-property',
+  'panel.modgui.port-unknown',
+  'panel.modgui.image-not-found',
+  'panel.modgui.path-escape',
+  'panel.modgui.target-exists',
 ] as const satisfies readonly SkinRefusalCode[];
 export type ModguiImportRefusal = (typeof MODGUI_IMPORT_REFUSALS)[number];
 

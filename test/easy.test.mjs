@@ -74,7 +74,7 @@ test('a declared list wins, in its own order, past the rule\'s cap', () => {
 
 test('a wrong declared list is refused whole, by name, never trimmed', () => {
   const controls = [...Array.from({ length: 9 }, (_, i) => control(`c${i}`)), control('m', { standard: { widget: 'meter' } })];
-  const refused = (declared, match) => assert.throws(() => easyOf(x('none', [], controls), { declared }), (e) => e instanceof EasyRefused && e.code === 'PANEL_EASY_REFUSED' && match.test(e.message));
+  const refused = (declared, match) => assert.throws(() => easyOf(x('none', [], controls), { declared }), (e) => e instanceof EasyRefused && e.code === 'panel.describe.easy-refused' && match.test(e.message));
   refused(['nope'], /'nope'.*no control/);
   refused(['m'], /'m'.*no face/);
   refused(['c0', 'c0'], /'c0'.*twice/);

@@ -54,9 +54,14 @@ A fixed-code deflate and no zlib, so their bytes depend only on the descriptor, 
 
 ## The look
 
-`tools/look/tokens.css` is the omx look's token cascade, the one source of the colours and the font a renderer
-wears. `tools/look.mjs` resolves it at the look it names into `tools/look.json`, every colour a plain `#rrggbb`;
-`omx-panel look --check` refuses a `look.json` that is not what the cascade resolves to.
+`schema/look-roles.json` declares the colour roles of a panel once: every colour a panel description makes a surface
+draw, under the console's token names, each with its family (theme, accent, fixed, state), the contrast floor its
+value clears on the grounds it is drawn on, and one default. The values are each host's: the console sets every role
+in every theme of its own `tokens.css`, Zynthian's theme maps its palette onto every role. The MOD GUI's host supplies
+nothing, so it wears the defaults, the dark look the file names: `tools/look.mjs` writes them, with the font, into
+`tools/look.json`, and the renderer's role list into `renderer/src/look_roles.h`; `omx-panel look --check` refuses
+either when it is not what the role file gives. No surface spells a colour, and every token a surface reads is a
+role (`test/look-roles.test.mjs`). The package exports the file as `@openmixer/omx-panel/look-roles.json`.
 
 ## The test
 

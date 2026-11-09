@@ -1,0 +1,327 @@
+{
+  "kind": "codes",
+  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.",
+  "codes": {
+    "skinOverrideInvalid": {
+      "code": "panel.skin.override-invalid",
+      "text": {
+        "en": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin."
+      },
+      "args": [
+        "plugin",
+        "field"
+      ]
+    },
+    "skinOverrideEntryDropped": {
+      "code": "panel.skin.override-entry-dropped",
+      "text": {
+        "en": "The {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the override still applies."
+      },
+      "args": [
+        "plugin",
+        "field",
+        "entry",
+        "reason"
+      ]
+    },
+    "skinApiMismatch": {
+      "code": "panel.skin.api-mismatch",
+      "text": {
+        "en": "This skin declares API {declared}, which this console does not support (it serves {supported}); the skin is not loaded."
+      },
+      "args": [
+        "declared",
+        "supported"
+      ]
+    },
+    "skinViewError": {
+      "code": "panel.skin.view-error",
+      "text": {
+        "en": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing."
+      },
+      "args": [
+        "message"
+      ]
+    },
+    "skinViewLint": {
+      "code": "panel.skin.view-lint",
+      "text": {
+        "en": "The view {file} uses the disallowed word {word}; remove it and reload the skin."
+      },
+      "args": [
+        "word",
+        "file"
+      ]
+    },
+    "modguiNotFound": {
+      "code": "panel.modgui.not-found",
+      "text": {
+        "en": "No MOD GUI to import was found in {file} ({detail}); nothing was written."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiTtlInvalid": {
+      "code": "panel.modgui.ttl-invalid",
+      "text": {
+        "en": "The bundle's {file} does not read as valid TTL ({detail}); fix it and import again."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiNoLicence": {
+      "code": "panel.modgui.no-licence",
+      "text": {
+        "en": "{file} states no licence ({detail}); add one to its bundle before its MOD GUI can be imported."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiLicenceUnmapped": {
+      "code": "panel.modgui.licence-unmapped",
+      "text": {
+        "en": "The licence in {file} is not one this importer maps to an SPDX id ({detail}); add the mapping or change the licence."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiLicenceRefused": {
+      "code": "panel.modgui.licence-refused",
+      "text": {
+        "en": "The licence in {file} is outside the allowed list ({detail}); the MOD GUI is not imported."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiUnknownProperty": {
+      "code": "panel.modgui.unknown-property",
+      "text": {
+        "en": "{file} carries an unknown property ({detail}); remove it or correct it before importing."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiPortUnknown": {
+      "code": "panel.modgui.port-unknown",
+      "text": {
+        "en": "{file} names a port that is not one of the plugin's own ports ({detail}); fix the symbol and import again."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiImageNotFound": {
+      "code": "panel.modgui.image-not-found",
+      "text": {
+        "en": "{file} names an image that is not in the bundle's resources ({detail}); add the file or fix the reference."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiPathEscape": {
+      "code": "panel.modgui.path-escape",
+      "text": {
+        "en": "{file} names a path that resolves outside the bundle ({detail}); nothing is imported from outside the bundle."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "modguiTargetExists": {
+      "code": "panel.modgui.target-exists",
+      "text": {
+        "en": "{file} already exists ({detail}); remove it first to import over it."
+      },
+      "args": [
+        "file",
+        "detail"
+      ]
+    },
+    "skinModguiLicence": {
+      "code": "panel.skin.modgui-licence",
+      "text": {
+        "en": "The MOD GUI script for {plugin} is dropped: its licence {licence} is missing or not allowed."
+      },
+      "args": [
+        "plugin",
+        "licence"
+      ]
+    },
+    "panelNoControls": {
+      "code": "panel.describe.no-controls",
+      "text": {
+        "en": "{plugin} has no control a panel can show, so it gets no panel ({message})."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelFamilyNotBacked": {
+      "code": "panel.describe.family-not-backed",
+      "text": {
+        "en": "{plugin}'s controls do not carry what that panel family needs ({message}); choose another family or none."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelLayoutInvalid": {
+      "code": "panel.describe.layout-invalid",
+      "text": {
+        "en": "The panel declared for {plugin} cannot be laid out ({message}); fix its panel declaration."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelOverrideUnavailable": {
+      "code": "panel.describe.override-unavailable",
+      "text": {
+        "en": "The {layers} override layers for {plugin} were not applied: this host cannot read overrides."
+      },
+      "args": [
+        "plugin",
+        "layers"
+      ]
+    },
+    "panelOverrideRefused": {
+      "code": "panel.describe.override-refused",
+      "text": {
+        "en": "The override layer {layer} ({name}) for {plugin} was refused: {message}. The layers below it still apply."
+      },
+      "args": [
+        "plugin",
+        "layer",
+        "name",
+        "message"
+      ]
+    },
+    "panelOverrideDropped": {
+      "code": "panel.describe.override-dropped",
+      "text": {
+        "en": "In override layer {layer} ({name}) for {plugin}, the entry for {control} was dropped: {message}."
+      },
+      "args": [
+        "plugin",
+        "layer",
+        "control",
+        "name",
+        "message"
+      ]
+    },
+    "panelRoleDropped": {
+      "code": "panel.describe.role-dropped",
+      "text": {
+        "en": "The role {entry} on {symbol} of {plugin} is not shown ({reason}); the control stays on its page."
+      },
+      "args": [
+        "plugin",
+        "entry",
+        "symbol",
+        "reason"
+      ]
+    },
+    "panelSkinDropped": {
+      "code": "panel.describe.skin-dropped",
+      "text": {
+        "en": "The skin's {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the skin still applies."
+      },
+      "args": [
+        "plugin",
+        "field",
+        "entry",
+        "reason"
+      ]
+    },
+    "panelMeterRefused": {
+      "code": "panel.describe.meter-refused",
+      "text": {
+        "en": "The meter {symbol} of {plugin} was left out: {reason}."
+      },
+      "args": [
+        "plugin",
+        "symbol",
+        "reason"
+      ]
+    },
+    "panelBarsTooFew": {
+      "code": "panel.describe.bars-too-few",
+      "text": {
+        "en": "A bar group of {plugin} has too few controls to draw as bars ({message}); they are drawn as knobs."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsNotTravel": {
+      "code": "panel.describe.bars-not-travel",
+      "text": {
+        "en": "A bar group of {plugin} holds a control that cannot be a bar ({message}); fix the group in the panel declaration."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsFactsDiffer": {
+      "code": "panel.describe.bars-facts-differ",
+      "text": {
+        "en": "The controls of a bar group of {plugin} differ in range, step, unit or scale ({message}); bars must share them."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsLabelsNotSeries": {
+      "code": "panel.describe.bars-labels-not-series",
+      "text": {
+        "en": "The labels of a bar group of {plugin} do not form one series ({message}); rename them or split the group."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelBarsUnknownControl": {
+      "code": "panel.describe.bars-unknown-control",
+      "text": {
+        "en": "A bar group of {plugin} names a control the plugin does not have ({message}); fix the symbol."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    },
+    "panelEasyRefused": {
+      "code": "panel.describe.easy-refused",
+      "text": {
+        "en": "The Easy list of {plugin} was refused ({message}); the Easy page takes the rule instead."
+      },
+      "args": [
+        "plugin",
+        "message"
+      ]
+    }
+  }
+}

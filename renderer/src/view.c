@@ -4,7 +4,8 @@
  * view.c — a panel description laid out and drawn: the head, each section in order, each control in
  * its cell by its standard widget, its label and the text its plugin gives for its value. The layout
  * and the widgets are the MOD GUI face's (tools/modgui-gen.mjs: layout, renderFace, drawKnob ...), the
- * numbers tools/look/geometry.json's and the colours tools/look.json's; nothing here types a size or
+ * numbers tools/look/geometry.json's and the colours the colour roles' (schema/look-roles.json, whose list
+ * look_roles.h carries), valued by the look its host passes, tools/look.json by default; nothing here types a size or
  * a colour. The widget names are omx-contract's (PANEL_STANDARD_WIDGETS).
  */
 #include "omx_panel_render.h"
@@ -16,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "look_roles.h"
 #include "view.h"
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
@@ -51,6 +53,15 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
     fail(err, n, "look: no tokens object%s%s", NULL, NULL);
     cJSON_Delete(root);
     return 0;
+  }
+  /* every colour role, drawn here or not: a look short of one is no look of the role file's, refused by name */
+  for (size_t i = 0; i < OMX_LOOK_ROLE_COUNT; i++) {
+    omx_rgb any;
+    if (!hex_colour(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, omx_look_roles[i])), &any)) {
+      fail(err, n, "look: the role %s is not a #rrggbb colour%s", omx_look_roles[i], NULL);
+      cJSON_Delete(root);
+      return 0;
+    }
   }
   for (size_t i = 0; i < sizeof want / sizeof *want; i++) {
     const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, want[i].name));

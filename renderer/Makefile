@@ -53,7 +53,7 @@ $(B)/omxdsp-version: FORCE | $(B)
 	@$(PKG_CONFIG) --atleast-version=$(OMXDSP_FLOOR) omxdsp && ! $(PKG_CONFIG) --atleast-version=$(OMXDSP_CEILING) omxdsp || \
 	  { echo "the renderer needs omx-dsp-devel >= $(OMXDSP_FLOOR) and < $(OMXDSP_CEILING) (pkg-config omxdsp: $$($(PKG_CONFIG) --modversion omxdsp 2>&1))" >&2; exit 1; }
 	@$(PKG_CONFIG) --modversion omxdsp | cmp -s - $@ || $(PKG_CONFIG) --modversion omxdsp > $@
-$(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h include/omx_panel_render.h | $(B)
+$(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h src/look_roles.h include/omx_panel_render.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^
