@@ -44,7 +44,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.6.0' 'plugin-hostd-contract >= 0.12.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

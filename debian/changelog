@@ -1,3 +1,16 @@
+omx-panel (0.13.0) unstable; urgency=medium
+
+  * Every code omx-panel emits has en and ca text in schema/codes.json; the
+    meter refusal is panel.describe.meter-refused
+  * Meters: describe reads the descriptor's meters word, and the renderer and
+    the MOD GUI draw them
+  * Colour roles: one declared set; look.json and the renderer derive from it
+  * Runs beside plugin-hostd 0.20.2: plugin-hostd-contract and the recommended
+    plugin-hostd >= 0.20.2 and < 0.21, omx-contract-data >= 3.12.0 and < 4, the
+    recommended omx-plugins-contract >= 0.19.2 and < 0.20
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Mon, 09 Nov 2026 18:37:52 +0100
+
 omx-panel (0.12.0) unstable; urgency=medium
 
   * Runs beside plugin-hostd 0.20: plugin-hostd-contract (and the recommended
