@@ -3,9 +3,9 @@
 /*
  * A meter of the description is drawn as a bar and a marker over the description's range (contract 7.9, omx-dsp#301): the bar by
  * the value (a level from the foot of the range, a gain reduction from 0 dB), the marker holding the peak (the deepest
- * reduction) and falling by elapsed time at omx-dsp's rate, whatever the draw tick's rate, silence included. The rate is
- * omx-dsp's data/primitives/meter.json, read when the renderer was built: this reads the same file and the built header,
- * and holds them equal. Each rule has its arm in the sabotage of renderer/src/view.c the commit message names.
+ * reduction) and falling by elapsed time at omx-dsp's rate, whatever the draw tick's rate, silence included. The marker is omx-dsp's
+ * own omx_meter_view_step (omx-dsp-devel >= 0.32.0 < 0.33): its rate is held to omx-dsp's data/primitives/meter.json and every
+ * drawn tick to omx-dsp's golden fall vectors. Each rule has its arm in the sabotage the commit message names.
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -27,15 +27,21 @@ const row = (symbol) => METERS.indexOf(symbol);
 /** The frame of a meter: x, y, inner width at scale 1. */
 const frame = (symbol) => ({ x: lay.band.x + g.sectionPad, y: lay.band.y + g.sectionTitleH + row(symbol) * (g.meterH + g.meterGap), w: lay.band.w - 2 * g.sectionPad });
 
-/** The meter law's fall, dB per second: the built header's, and the file's it was generated from. */
+const pc = (variable, pkg = 'omxdsp') => execFileSync('pkg-config', [`--variable=${variable}`, pkg], { encoding: 'utf8' }).trim();
+/** The meter law the renderer was compiled against: omx-dsp's header (omxdsp_definitions.h, OMX_METER_VIEW_FALL_DB_PER_SECOND), held
+ * equal to the file it is generated from (data/primitives/meter.json in omx-dsp's contract data) and to the version the build checked. */
 function lawFall() {
-  const header = readFileSync(join(RENDERER, 'build', 'meter_law.h'), 'utf8');
-  const fall = Number(/OMX_METER_FALL_DB_PER_S ([0-9.]+)/.exec(header)[1]);
-  const from = /^\/\* from (.*), METER_VIEW/.exec(header)[1];
-  assert.ok(existsSync(from), `the header names ${from}`);
-  assert.equal(fall, JSON.parse(readFileSync(from, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
+  const defs = readFileSync(join(pc('includedir'), 'omxdsp', 'omxdsp_definitions.h'), 'utf8');
+  const fall = Number(/#define OMX_METER_VIEW_FALL_DB_PER_SECOND ([0-9.]+)/.exec(defs)[1]);
+  const file = join(pc('contractdir', 'omx-contract'), '3', 'omx-dsp', 'primitives', 'meter.json');
+  assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
+  assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
+  const built = readFileSync(join(RENDERER, 'build', 'omxdsp-version'), 'utf8').trim();
+  assert.match(built, /^0\.32\.\d+$/, `built against omx-dsp ${built}: the floor 0.32.0 and the ceiling 0.33`);
   return fall;
 }
+/** omx-dsp's golden vectors of the view law (vectors/meter-view.json, installed as pkg-config omxdsp's meterviewvectors). */
+const VECTORS = JSON.parse(readFileSync(pc('meterviewvectors'), 'utf8'));
 
 /** The picture with `ticks` given to the meter `symbol`; the pixels at scale 1. */
 function draw(symbol, ticks) {
@@ -59,8 +65,24 @@ const markerAt = (img, f) => { for (let x = Math.round(f.x) + 2; x < Math.round(
 const outside = (img, f, y) => { let n = 0; for (let x = Math.round(f.x + f.w) - 1; x < img.w; x++) if (near(at(img, x, y), ACCENT)) n++; return n; };
 const inner = (f) => f.w - 4;
 
-test('the law the renderer was built with is omx-dsp\'s meter.json, 18 dB per second', () => {
+test('the law the renderer was built with is omx-dsp\'s meter view, 18 dB per second', () => {
   assert.equal(lawFall(), 18);
+});
+test('the marker is omx-dsp\'s: every tick of the golden fall vectors, at each draw rate, within a pixel', () => {
+  const f = frame('in_level');
+  const falls = VECTORS.cases.filter((c) => c.set === 'fall');
+  assert.ok(falls.length >= 8, `${falls.length} draw rates`);
+  assert.deepEqual([VECTORS.law.floorDb, VECTORS.law.fallDbPerSecond], [-60, 18], 'in_level spans the law\'s own scale, -60 to 0 dBFS');
+  for (const c of falls) {
+    const ticks = [{ value: 0, elapsed: 0 }];
+    c.marker.forEach((want, k) => {
+      if (k > 0) ticks.push({ value: -60 + 60 * c.live, elapsed: 1 / c.drawHz });
+      if (k % 4 !== 0 && k !== c.marker.length - 1) return;
+      const m = markerAt(draw('in_level', ticks), f);
+      const at = Math.max(0, want * inner(f) - 2);
+      assert.ok(m !== null && Math.abs(m - at) <= 1, `${c.drawHz} Hz, tick ${k}: marker at ${m}, the vector's ${want} is ${at.toFixed(2)}`);
+    });
+  }
 });
 test('a level bar is the value\'s place in the description\'s range, from its foot', () => {
   const f = frame('in_level');

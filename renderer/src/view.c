@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "view.h"
-#include "meter_law.h"
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -343,15 +342,21 @@ int32_t omx_panel_view_meter_find(const omx_panel_view_t *v, const char *symbol)
   return -1;
 }
 
-/* The marker holds the deepest reading and falls toward the empty end by the law's rate over the time elapsed at the draw tick. */
+/* The fraction of a meter's range a value fills: a level from the foot of the range, a gain reduction from its top (0 dB). */
+static double meter_fraction(const meter *m, double value) {
+  double f = m->gain_reduction ? (m->max - value) / (m->max - m->min) : (value - m->min) / (m->max - m->min);
+  return fmin(1, fmax(0, f));
+}
+
+/* The bar is the reading's fraction; the marker is omx-dsp's view law (omx_meter_view_step): it takes a fuller fraction at
+ * once and falls OMX_METER_VIEW_FALL_DB_PER_SECOND for each second elapsed, the meter's own range standing for the scale's
+ * floor, so a fall in dB is the same on a -24 dB gain reduction and a -70 LUFS loudness. */
 bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t index, double value, double elapsed) {
   if (!v || index >= v->nmeters || !isfinite(value) || !(elapsed >= 0) || !isfinite(elapsed)) return false;
   meter *m = &v->meters[index];
-  double fell = OMX_METER_FALL_DB_PER_S * elapsed;
-  if (!m->has) m->marker = value;
-  else if (m->gain_reduction) m->marker = fmin(value, fmin(m->max, m->marker + fell));
-  else m->marker = fmax(value, fmax(m->min, m->marker - fell));
-  m->value = value, m->has = 1;
+  m->fill = meter_fraction(m, value);
+  m->marker = omx_meter_view_step(&m->view, m->fill, elapsed, OMX_METER_VIEW_FALL_DB_PER_SECOND, -(m->max - m->min));
+  m->has = 1;
   return true;
 }
 
@@ -657,12 +662,6 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
   return true;
 }
 
-/* The fraction of a meter's range a value fills: a level from the foot of the range, a gain reduction from its top (0 dB). */
-static double meter_fraction(const meter *m, double value) {
-  double f = m->gain_reduction ? (m->max - value) / (m->max - m->min) : (value - m->min) / (m->max - m->min);
-  return fmin(1, fmax(0, f));
-}
-
 /* A meter of the band: the frame with its caption (the label and the range with its unit), the bar along the foot, and the
  * peak marker over it. Until a reading is given only the frame and the caption stand, as the MOD GUI draws it. */
 static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, const meter *m, double x, double y, double w, double h, double s,
@@ -673,7 +672,7 @@ static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, co
   snprintf(cap, sizeof cap, "%s  %g to %g %s", m->label, m->min, m->max, m->unit);
   text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
   if (!m->has) return;
-  double inner = w - 4 * s, f = meter_fraction(m, m->value), mk = meter_fraction(m, m->marker);
+  double inner = w - 4 * s, f = m->fill, mk = m->marker;
   if (f > 0) d->round_rect(d->ctx, x + 2 * s, y + h - 6 * s, inner * f, 4 * s, 0, col->accent);
   d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->ink);
 }

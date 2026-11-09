@@ -7,6 +7,7 @@
 #define OMX_PANEL_VIEW_H
 
 #include <omxcontract/omx_vocabulary.h>
+#include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
 
@@ -68,7 +69,9 @@ typedef struct {
   int gain_reduction; /* the bar grows from the top of the range toward its foot */
   int in_band;        /* drawn in the meters band */
   int has;            /* a reading was given; until then the frame stands */
-  double value, marker;
+  double fill;        /* the last reading's fraction of the range, 0..1 */
+  double marker;      /* the marker's fraction, omx_meter_view_step()'s */
+  struct omx_meter_view view; /* omx-dsp's view state: the peak the marker took and the time since */
 } meter;
 
 typedef struct {
