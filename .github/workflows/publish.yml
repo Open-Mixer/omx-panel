@@ -46,7 +46,7 @@ jobs:
           node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
       - name: Every file a comment can be written in opens with its licence and copyright
-        uses: Open-Mixer/.github/.github/actions/spdx-check@main
+        uses: Open-Mixer/.github/.github/actions/spdx-check@openmixer-v1
 
       - name: The tag is the package version
         if: github.ref_type == 'tag'

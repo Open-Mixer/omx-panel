@@ -30,12 +30,12 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - uses: actions/checkout@v4
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       # a dedupe/all run builds on its siblings' dedupe/all (.github/wave-deps); @main until Open-Mixer/.github moves v1 past it
-      - uses: Open-Mixer/.github/.github/actions/wave-deps@main
+      - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.6.0'
@@ -61,7 +61,7 @@ jobs:
         run: make test
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
-        uses: Open-Mixer/.github/.github/actions/spdx-check@main
+        uses: Open-Mixer/.github/.github/actions/spdx-check@openmixer-v1
       - id: handback-copies
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
@@ -83,7 +83,7 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins python3-lilv
       - name: Add the OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
@@ -106,7 +106,7 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins \
             python3-lilv chromium python3-tkinter python3-pillow xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
@@ -135,12 +135,12 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins \
             python3-lilv mesa-libGL-devel mesa-dri-drivers xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.7.0' 'omx-contract-data >= 3.7.0' 'plugin-hostd-contract >= 0.12.0' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: pugl and nanovg, from their packaging
-        uses: Open-Mixer/.github/.github/actions/pinned-rpms@main
+        uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
         with:
           names: pugl nanovg
       - uses: actions/checkout@v4
@@ -246,9 +246,9 @@ jobs:
           name: omx-panel-packages
           path: out
       - name: The OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       # a dedupe/all run builds on its siblings' dedupe/all (.github/wave-deps); @main until Open-Mixer/.github moves v1 past it
-      - uses: Open-Mixer/.github/.github/actions/wave-deps@main
+      - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
 
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
@@ -258,4 +258,4 @@ jobs:
   # the checks every FreeMixer repository runs on what it publishes: commit messages, private references, and no
   # local copy of either (Open-Mixer/.github's public-sources-check)
   public-sources:
-    uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@main
+    uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1

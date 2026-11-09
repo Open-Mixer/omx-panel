@@ -41,7 +41,7 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
-        uses: Open-Mixer/.github/.github/actions/add-openmixer@main
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.6.0' 'plugin-hostd-contract >= 0.12.0'
@@ -75,7 +75,7 @@ jobs:
 
   rpm:
     needs: check
-    uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@main
+    uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@openmixer-v1
     with:
       package-name: omx-panel
       binary-names: omx-panel
@@ -91,7 +91,7 @@ jobs:
   deb:
     needs: rpm
     if: ${{ !cancelled() && needs.rpm.result == 'success' }}
-    uses: Open-Mixer/.github/.github/workflows/build-deb.yml@main
+    uses: Open-Mixer/.github/.github/workflows/build-deb.yml@openmixer-v1
     with:
       package-name: omx-panel
       binary-names: omx-panel
