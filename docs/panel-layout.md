@@ -186,8 +186,12 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 | `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`) |
 | `xy` | no descriptor word names a pair of controls yet; nothing takes it |
 
-A meter carries its measurement (`peak`, `rms`, `vu`, `ppm`, `lufs`): `lufs` for a LUFS reading.
-The descriptor has no word for the others, so any other meter's measurement is `null`, not a guess.
+A meter carries `measurement`, `held` and `clip`. One read from the descriptor's own `meters` word
+(contract §7.9) carries what the descriptor states: `measurement` one of `peak`, `true-peak`,
+`lufs-m`, `lufs-s`, `lufs-i`, `lra` for a level or `gain-reduction` for a gain reduction, `held` and
+`clip` the descriptor's own booleans. A foreign meter, one only inferred here from a read-only
+control's unit (no `meters` word names it), never guesses: `measurement` is always `null`, `held`
+and `clip` always `false`. `rms`, `vu` and `ppm` are not measurement words.
 
 What a face serves keeps the extension's widget enum: `knob`, `fader` and `switch` as they are, a
 `selector` as `auto` (a CLAP selector needs `CLAP_PARAM_IS_ENUM`, which the faces do not set).
