@@ -48,8 +48,10 @@ STATE_DIR=${STATE_DIR:-$base/modgui-sync}
 if [ -n "$LV2_PATH" ]; then
 	lv2_source='$LV2_PATH'
 else
-	LV2_PATH=/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
-	lv2_source="plugin-hostd's default"
+	# our folder first: lilv then meets our bundle before the installed one and ignores that one as older, where ours last
+	# it loads the installed bundle, meets ours, replaces every plugin of it and drops it (seconds per world load on a Pi 5)
+	LV2_PATH=$MODGUI_DIR:/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2
+	lv2_source="plugin-hostd's default, our folder first"
 fi
 export LV2_PATH
 
@@ -70,7 +72,8 @@ if [ "$check" = 1 ]; then
 	echo "LV2 search list (from $lv2_source):"
 	echo "$LV2_PATH" | tr ':' '\n' | sed 's/^/  /'
 	case ":$LV2_PATH:" in
-		*":$MODGUI_DIR:"*) echo "Complement bundles go to $MODGUI_DIR: it is on that list" ;;
+		"$MODGUI_DIR:"*|":$MODGUI_DIR:"*) echo "Complement bundles go to $MODGUI_DIR: it is on that list, first: lilv meets our bundle before the installed one" ;;
+		*":$MODGUI_DIR:"*) echo "Complement bundles go to $MODGUI_DIR: it is on that list, but it is AFTER the installed folders: lilv loads each installed bundle before it meets ours and replaces it (seconds per world load on a Pi 5); put it first" ;;
 		*) echo "Complement bundles go to $MODGUI_DIR: it is NOT on that list; add it to LV2_PATH or set MODGUI_DIR to a folder on it" ;;
 	esac
 	for unit in mod-host mod-ui; do
