@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * look.mjs — the colour roles of a panel (schema/look-roles.json, spec 2026-11-06-one-panel-derivation-curves-and-bar-group.md
+ * look.mjs — the colour roles of a panel (schema/look-roles.json, the one-panel spec,
  * §7.10) and the two files derived from them:
  *
  *   · tools/look.json, the values the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads from its data

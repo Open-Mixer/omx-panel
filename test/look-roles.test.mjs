@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-// The colour roles (spec 2026-11-06-one-panel-derivation-curves-and-bar-group.md §7.10): declared once in
+// The colour roles (the one-panel spec, §7.10): declared once in
 // schema/look-roles.json, each with its family, its floor and ONE default; tools/look.json and the renderer's role list
 // derive from that file; the hand copy of the console's cascade (tools/look/tokens.css) is gone; no surface spells a
 // colour, every token a surface reads is a role; and each role a surface reads moves what it draws. Every rule has a
