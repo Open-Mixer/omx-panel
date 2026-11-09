@@ -6,6 +6,7 @@ on:
   push:
     branches: [main, dedupe/all]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -155,6 +156,7 @@ jobs:
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.
   packages:
     name: build the RPM and the DEB
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -190,6 +192,7 @@ jobs:
   # A distribution build has no registry: the vendored tarball builds with --network=none, and the plain archive does not.
   offline:
     name: build with no network (${{ matrix.kind }})
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -207,6 +210,7 @@ jobs:
   # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
   deb-lint:
     name: build and lint the DEB (${{ matrix.suite }})
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     strategy:
