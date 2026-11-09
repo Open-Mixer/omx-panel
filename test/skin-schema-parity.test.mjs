@@ -59,7 +59,7 @@ const CASES = [
 /** Where the two differ, and why: [case, the validator's verdict, the reader's]. */
 const DIFFER = new Map([
   ['a field the format does not have', [false, true, 'the validator refuses a field the format does not have, so an author learns of a typo; a reader ignores it']],
-  ['a view API version that is not MAJOR.MINOR', [false, true, 'the validator holds the version to MAJOR.MINOR; a reader refuses it at resolve time by the version rule (SKIN_API_MISMATCH)']],
+  ['a view API version that is not MAJOR.MINOR', [false, true, 'the validator holds the version to MAJOR.MINOR; a reader refuses it at resolve time by the version rule (panel.skin.api-mismatch)']],
   ['two sections with one key', [true, false, 'JSON Schema cannot say that a key is unique across the array; the reader refuses it']],
 ]);
 

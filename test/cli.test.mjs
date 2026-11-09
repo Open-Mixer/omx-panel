@@ -93,7 +93,7 @@ test('describe --pages with no panel: each refusal printed as its code and its e
   assert.equal(r.status, 1, r.stdout + r.stderr);
   const codes = JSON.parse(readFileSync(join(ROOT, 'dist/schema/codes.json'), 'utf8')).codes;
   const en = codes.panelNoControls.text.en.split('{plugin}')[1].split('(')[0];
-  assert.match(r.stderr, /^omx-panel: PANEL_NO_CONTROLS: /m);
+  assert.match(r.stderr, /^omx-panel: panel.describe.no-controls: /m);
   assert.ok(r.stderr.includes(en), `the en sentence after the code: ${r.stderr}`);
   assert.ok(r.stderr.includes('urn:test:empty has no control'), `the plugin placeholder filled: ${r.stderr}`);
 });

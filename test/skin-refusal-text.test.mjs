@@ -57,7 +57,7 @@ const ENTRY_SHAPE = {
   $defs: schema.$defs,
   type: 'object',
   properties: {
-    code: { type: 'string', pattern: '^[A-Z][A-Z0-9_]*$' },
+    code: { type: 'string', pattern: '^panel(\\.[a-z0-9]+(-[a-z0-9]+)*){2,}$' },
     doc: itemShape.doc,
     text: { type: 'object', properties: { en: { type: 'string', minLength: 1 } }, required: ['en'], additionalProperties: false },
     args: itemShape.args,
