@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { keyOf, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
+import { keyOf, MEASUREMENTS, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
 import { contractUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -59,10 +59,12 @@ check('a travel is a knob', widgetOf(travel('dB')), { widget: 'knob' });
 check('a toggle is a switch', widgetOf({ kind: 'toggle' }), { widget: 'switch' });
 check('a trigger is a momentary switch', widgetOf({ kind: 'trigger' }), { widget: 'switch', momentary: true });
 check('a choice is a selector', widgetOf({ kind: 'choice', ids: ['a', 'b'] }), { widget: 'selector' });
-check('a read-only dB travel is a meter whose measurement is not stated', widgetOf(travel('dB', { readonly: true })), { widget: 'meter', measurement: null });
-check('a read-only LUFS travel is a lufs meter', widgetOf(travel('LUFS', { readonly: true })), { widget: 'meter', measurement: 'lufs' });
+check('a read-only dB travel is a meter whose measurement is not stated', widgetOf(travel('dB', { readonly: true })), { widget: 'meter', measurement: null, held: false, clip: false });
+check('a read-only LUFS travel is a foreign meter: measurement is never guessed from the unit', widgetOf(travel('LUFS', { readonly: true })), { widget: 'meter', measurement: null, held: false, clip: false });
 check('arm: the same LUFS travel, not read-only, is a knob', widgetOf(travel('LUFS')), { widget: 'knob' });
 check('arm: a read-only travel in no level unit is a display', widgetOf(travel('ms', { readonly: true })), { widget: 'display' });
+check('rms, vu and ppm are not measurement words (7.9)', MEASUREMENTS.some((m) => ['rms', 'vu', 'ppm'].includes(m)), false);
+check('the measurement words are the level kinds the descriptor spells, lra among them', MEASUREMENTS, ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra']);
 check('a declared fader wins', widgetOf(travel('dB'), 'fader'), { widget: 'fader' });
 check('a declared selector, and the older choice, are selectors', [widgetOf(travel(''), 'selector'), widgetOf(travel(''), 'choice')], [{ widget: 'selector' }, { widget: 'selector' }]);
 check('a face serves knob, fader and switch as they are, every other widget as auto',
@@ -130,7 +132,7 @@ check('scanned LV2 compressor: the widgets, each control by its port symbol', lv
 ]);
 check('scanned LV2 compressor: the threshold role, by meaning', rolesOf(lv2), [['threshold', 0, 'threshold', 'dB']]);
 check('scanned LV2 compressor: its ratio states no unit (LV2 has none for a ratio), so the role is named, not published', lv2.unpublished, [{ role: 'ratio', symbol: 'ratio', why: 'the ratio role takes ratio, coef, not no unit' }]);
-check('scanned LV2 compressor: the gain-reduction meter states no measurement', lv2.controls.find((c) => c.symbol === 'gr').standard, { widget: 'meter', measurement: null });
+check('scanned LV2 compressor: the gain-reduction meter states no measurement, held or clip', lv2.controls.find((c) => c.symbol === 'gr').standard, { widget: 'meter', measurement: null, held: false, clip: false });
 check('scanned LV2 compressor: the ports, side-chain among them', lv2.ports, {
   inputs: [{ id: 'main_in', name: 'Input', role: 'main', channels: 2 }, { id: 'sidechain_in', name: 'Side-chain', role: 'sidechain', channels: 1 }],
   outputs: [{ id: 'main_out', name: 'Output', role: 'main', channels: 2 }], sidechain: true, notes: false,

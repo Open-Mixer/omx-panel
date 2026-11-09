@@ -34,11 +34,11 @@ export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
 
 /** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each. */
 export const STANDARD_WIDGETS = ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'];
-/** What a meter measures. */
-export const MEASUREMENTS = ['peak', 'rms', 'vu', 'ppm', 'lufs'];
-/** The units a read-only travel is a level meter in, and the measurement a unit itself names. */
+/** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
+ * `ppm` are not words. */
+export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
+/** The units a read-only travel is a level meter in. */
 const LEVEL_UNITS = ['dB', 'dBFS', 'dBu', 'LUFS'];
-const MEASUREMENT_OF_UNIT = { LUFS: 'lufs' };
 /** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
 const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
@@ -47,15 +47,17 @@ const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };
 
 /**
  * The standard widget control `c` (a descriptor control) is drawn with: `{ widget }`, a meter's with
- * its `measurement` (null when the descriptor does not state it), a trigger's switch `momentary`. A
- * declared widget wins; else a read-only travel in a level unit is a meter and any other read-only
- * control a display, a toggle or a trigger a switch, a choice a selector, a travel a knob.
+ * its `measurement`, `held` and `clip`, a trigger's switch `momentary`. A declared widget wins; else a
+ * read-only travel in a level unit is a meter and any other read-only control a display, a toggle or a
+ * trigger a switch, a choice a selector, a travel a knob. A foreign meter (one inferred here, not read
+ * from the descriptor's `meters` word) never guesses its measurement from the unit, and holds nothing
+ * and clips nothing of its own (contract §7.9).
  */
 export function widgetOf(c, declared) {
   if (declared !== undefined) return { widget: DECLARED_WIDGET[declared] ?? declared };
   if (c.readonly) {
     const unit = c.travel?.unit;
-    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: MEASUREMENT_OF_UNIT[unit] ?? null } : { widget: 'display' };
+    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
   }
   if (c.kind === 'toggle') return { widget: 'switch' };
   if (c.kind === 'trigger') return { widget: 'switch', momentary: true };
