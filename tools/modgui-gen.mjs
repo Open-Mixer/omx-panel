@@ -9,8 +9,8 @@
  * the declared panel (a plugin's own, omx-plugins' `panel` block) gives the family, the sections and each
  * control's widget (`widgets`, by schema/panel.schema.json's names; left out, the kind's default). With no
  * declared panel the sections and the family are the layout's (tools/panel-description.mjs) over the
- * descriptor's groups and meanings. The colours and the font are the omx look's, tools/look.json, which
- * tools/look.mjs resolves from tools/look/tokens.css. This file types no travel and no colour.
+ * descriptor's groups and meanings. The colours are the colour roles of schema/look-roles.json at their defaults and the
+ * font the look's, tools/look.json, which tools/look.mjs derives. This file types no travel and no colour.
  *
  * Written into the LV2 bundle `--out` names: `modgui.ttl` and `modgui/` (template, stylesheet, screenshot,
  * thumbnail, knob film strip, and the fader's when a control is one). The images are rasterised here from the
@@ -350,7 +350,7 @@ export function loadLook() {
   const tokens = {};
   for (const k of LOOK_TOKENS) {
     const v = look.tokens?.[k];
-    if (typeof v !== 'string' || !v) throw new Error(`modgui-gen: tools/look.json resolves no ${k}`);
+    if (typeof v !== 'string' || !v) throw new Error(`modgui-gen: tools/look.json sets no ${k}`);
     if (!NOT_COLOURS.includes(k)) rgbOf(v);
     tokens[k] = v;
   }
@@ -694,6 +694,9 @@ function (event, funcs) {
 /** Every file of a descriptor's modgui, as [path relative to the LV2 bundle, bytes], in a fixed order. `source`
  * is what the banner names the files were made from. */
 export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false }, look = loadLook()) {
+  // every colour role, whether this face draws it or not: a look short of one is no look of the role file's
+  const short = LOOK_TOKENS.filter((k) => typeof look.tokens?.[k] !== 'string' || !look.tokens[k]);
+  if (short.length) throw new Error(`modgui-gen: the look sets no ${short.join(', ')}`);
   const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst });
   const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem };
   const f = files(panel.stem);

@@ -97,7 +97,7 @@ test('tools/look.json is the role defaults and the font, and nothing else; a mov
   assert.deepEqual(Object.keys(tokens), [...CENSUS, '--font-ui', '--font-file']);
   for (const r of doc.roles) assert.equal(tokens[r.name], r.default);
   const moved = clone();
-  role(moved, '--accent').default = '#123456';
+  role(moved, '--accent').default = '#40d0f0';
   assert.notEqual(emitLook(moved), emitLook(doc));
 });
 
@@ -116,8 +116,8 @@ test("the renderer's role list is the role file's, and read_look walks it", () =
   assert.match(view, /#include "look_roles\.h"/);
   assert.match(view, /for \(size_t i = 0; i < OMX_LOOK_ROLE_COUNT; i\+\+\)/);
   const fewer = clone();
-  fewer.roles = fewer.roles.filter((r) => r.name !== '--origin-hrp');
-  assert.doesNotMatch(emitRoleHeader(fewer), /--origin-hrp/);
+  fewer.roles = fewer.roles.filter((r) => r.name !== '--eq-delta-cut');
+  assert.doesNotMatch(emitRoleHeader(fewer), /--eq-delta-cut/);
 });
 
 /* ---------------------------------------------------------------------------------------------------- the ratchet */
