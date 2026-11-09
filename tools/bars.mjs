@@ -22,11 +22,11 @@ export const FOOTAGES = ['16\'', '5 1/3\'', '8\'', '4\'', '2 2/3\'', '2\'', '1 3
 
 /** The refusal codes of a declared `bars: true`, each naming the check it failed. */
 export const BARS_CODES = {
-  few: 'PANEL_BARS_TOO_FEW',
-  kind: 'PANEL_BARS_NOT_TRAVEL',
-  facts: 'PANEL_BARS_FACTS_DIFFER',
-  series: 'PANEL_BARS_LABELS_NOT_SERIES',
-  unknown: 'PANEL_BARS_UNKNOWN_CONTROL',
+  few: 'panel.describe.bars-too-few',
+  kind: 'panel.describe.bars-not-travel',
+  facts: 'panel.describe.bars-facts-differ',
+  series: 'panel.describe.bars-labels-not-series',
+  unknown: 'panel.describe.bars-unknown-control',
 };
 
 /** A bar-able control: a visible, writable travel. */

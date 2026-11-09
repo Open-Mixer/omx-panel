@@ -183,7 +183,7 @@ test('describe never throws: no control, a bad key, a bar group refused are each
   assert.deepEqual([bad.description, bad.refusals[0].code], [null, DESCRIBE_CODES.layoutInvalid]);
   const four = Array.from({ length: 3 }, (_, i) => ({ ...travel(`Step ${i + 1}`), symbol: `s${i}`, id: `s${i}` }));
   const barred = describe(descriptor(four), { panel: { sections: [{ key: 's', label: 'S', controls: ['s0', 's1', 's2'], bars: true }] } });
-  assert.deepEqual([barred.description, barred.refusals[0].code], [null, 'PANEL_BARS_TOO_FEW']);
+  assert.deepEqual([barred.description, barred.refusals[0].code], [null, 'panel.describe.bars-too-few']);
 });
 
 // -- bars in the description and in the skin
@@ -204,7 +204,7 @@ test('a skin section says bars: false to remove them, true to make one; a failin
   assert.equal(describe(d, { skin: skin(false) }).description.sections[0].bars, undefined);
   const forced = describe(d, { skin: skin(true) });
   assert.equal(forced.description.sections[0].bars, undefined);
-  assert.deepEqual(forced.refusals.map((r) => [r.code, r.args.reason]), [[DESCRIBE_CODES.skinDropped, 'PANEL_BARS_FACTS_DIFFER']]);
+  assert.deepEqual(forced.refusals.map((r) => [r.code, r.args.reason]), [[DESCRIBE_CODES.skinDropped, 'panel.describe.bars-facts-differ']]);
 });
 
 // -- the pages amendment (spec 7.14): describe serves `easy`, cuts after the skin

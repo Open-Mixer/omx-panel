@@ -83,3 +83,17 @@ test('modgui: a descriptor with nothing to draw exits 3 with one line and no sta
   assert.match(r.stderr, /^modgui-gen: 'hidden-only' has no control to draw\n$/);
   assert.equal(existsSync(out), false, 'nothing is written');
 });
+
+// Spec 7.11: a tool prints the owner's en sentence after the code, from schema/codes.json, its placeholders filled.
+test('describe --pages with no panel: each refusal printed as its code and its en sentence', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-'));
+  const file = join(dir, 'empty.json');
+  writeFileSync(file, JSON.stringify({ plugin: { id: 'urn:test:empty' }, controls: [] }));
+  const r = run('describe', '--descriptor', file, '--pages');
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  const codes = JSON.parse(readFileSync(join(ROOT, 'dist/schema/codes.json'), 'utf8')).codes;
+  const en = codes.panelNoControls.text.en.split('{plugin}')[1].split('(')[0];
+  assert.match(r.stderr, /^omx-panel: panel.describe.no-controls: /m);
+  assert.ok(r.stderr.includes(en), `the en sentence after the code: ${r.stderr}`);
+  assert.ok(r.stderr.includes('urn:test:empty has no control'), `the plugin placeholder filled: ${r.stderr}`);
+});

@@ -149,12 +149,12 @@ const keyOfText = (s) => {
 /** A descriptor with no control to lay out (none stated, or every one hidden): there is no panel to make, and the
  * layout says so by code instead of answering an empty one. */
 export class NoControls extends Error {
-  code = 'PANEL_NO_CONTROLS';
+  code = 'panel.describe.no-controls';
 }
 
 /** A declared family none of whose meanings the controls carry: a transient designer is no compressor (#138). */
 export class FamilyNotBacked extends Error {
-  code = 'PANEL_FAMILY_NOT_BACKED';
+  code = 'panel.describe.family-not-backed';
 }
 
 /** A section's declared `bars: true` that fails a check of the bar rule, by the check's code (tools/bars.mjs). */

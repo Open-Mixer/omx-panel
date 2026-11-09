@@ -62,9 +62,14 @@ accepts a threshold in dBu or LUFS.
 
 ## Refusals
 
-Each refusal is a code with named arguments (`SKIN_REFUSAL_CODES`): `SKIN_OVERRIDE_INVALID` (the file does not parse
-or fails the schema, `args.field` the first field that broke it), `SKIN_OVERRIDE_ENTRY_DROPPED`, `SKIN_API_MISMATCH`,
-`SKIN_VIEW_ERROR`, `SKIN_VIEW_LINT`, `SKIN_MODGUI_LICENCE`, and the importer's own ten, `MODGUI_*` (below).
+Each refusal is a code with named arguments (`SKIN_REFUSAL_CODES`): `panel.skin.override-invalid` (the file does not parse
+or fails the schema, `args.field` the first field that broke it), `panel.skin.override-entry-dropped`, `panel.skin.api-mismatch`,
+`panel.skin.view-error`, `panel.skin.view-lint`, `panel.skin.modgui-licence`, and the importer's own ten, `MODGUI_*` (below).
+
+The one sentence a person reads for each code, in English and Catalan, is in `schema/codes.json` (exported as
+`@openmixer/omx-panel/codes.json`), beside the codes of `describe`, the bar rule and the easy list: an omx-contract
+codes document (`text` per language, `args` the placeholders it may use), keyed by the code word. A surface fills the
+placeholders from the refusal's `args` and keeps no sentence of its own.
 
 ## The licence
 
@@ -78,16 +83,16 @@ LGPL-2.1-or-later, LGPL-3.0-or-later, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Zlib
 `modgui.ttl` and the plugin's `doap:license` and writes a package: one section in `modgui:port` order, each port's
 `lv2:name` as its label, the screenshot as the backdrop under `art/`, the whole resources directory and the TTL
 under `modgui/`, and `source` `{ kind: "modgui", bundle, licenceEvidence }`. It writes no view, no family and no
-roles. It refuses, with a code that names the file it read and nothing written: `MODGUI_NOT_FOUND`,
-`MODGUI_TTL_INVALID`, `MODGUI_NO_LICENCE`, `MODGUI_LICENCE_UNMAPPED`, `MODGUI_LICENCE_REFUSED` (outside the
-allow-list), `MODGUI_UNKNOWN_PROPERTY`, `MODGUI_PORT_UNKNOWN` (a `modgui:port` or `modgui:monitoredOutputs`
-symbol the plugin does not carry), `MODGUI_IMAGE_NOT_FOUND` (a template image the bundle does not hold),
-`MODGUI_PATH_ESCAPE` (a resource, or a template reference, outside the bundle) and `MODGUI_TARGET_EXISTS`.
+roles. It refuses, with a code that names the file it read and nothing written: `panel.modgui.not-found`,
+`panel.modgui.ttl-invalid`, `panel.modgui.no-licence`, `panel.modgui.licence-unmapped`, `panel.modgui.licence-refused` (outside the
+allow-list), `panel.modgui.unknown-property`, `panel.modgui.port-unknown` (a `modgui:port` or `modgui:monitoredOutputs`
+symbol the plugin does not carry), `panel.modgui.image-not-found` (a template image the bundle does not hold),
+`panel.modgui.path-escape` (a resource, or a template reference, outside the bundle) and `panel.modgui.target-exists`.
 
 The known `modgui:gui` properties are mod-ui's whole list, not only the ones a reviewed bundle used:
 `resourcesDirectory`, `iconTemplate`, `settingsTemplate`, `javascript`, `stylesheet`, `screenshot`, `thumbnail`,
 `documentation`, `discussionURL`, `brand`, `label`, `model`, `panel`, `color`, `knob`, `port` and `monitoredOutputs`
-(`MODGUI_GUI_PROPERTIES`). Any other `modgui:` property is `MODGUI_UNKNOWN_PROPERTY`, as is an `lv2:` property on a
+(`MODGUI_GUI_PROPERTIES`). Any other `modgui:` property is `panel.modgui.unknown-property`, as is an `lv2:` property on a
 `modgui:port` other than `index`, `symbol` and `name`. The file-valued ones (`iconTemplate`, `settingsTemplate`,
 `javascript`, `stylesheet`, `screenshot`, `thumbnail`, and `documentation` when it names a `file:` IRI;
 `MODGUI_FILE_PROPERTIES`) must resolve inside the bundle and are copied with the package; `discussionURL`, and a
@@ -95,7 +100,7 @@ The known `modgui:gui` properties are mod-ui's whole list, not only the ones a r
 
 Every `modgui:port` is checked against the plugin's own `lv2:port` declarations in the bundle, the same TTL the
 importer reads for the licence: a `modgui:port` whose `lv2:symbol` names no `lv2:symbol` of the plugin's own ports
-is `MODGUI_PORT_UNKNOWN`, naming the file and the symbol, so a renamed or stale modgui entry is never imported as if
+is `panel.modgui.port-unknown`, naming the file and the symbol, so a renamed or stale modgui entry is never imported as if
 it controlled a real parameter. A `modgui:monitoredOutputs` entry is checked the same way: its `lv2:symbol` (or the
 literal symbol it names) must be one of the plugin's own ports.
 
@@ -104,9 +109,9 @@ Every image a template names (`MODGUI_TEMPLATE_PROPERTIES`: the icon template an
 `?uri=...`), a query and a fragment are dropped, and the path is percent-decoded once and its dot segments resolved,
 as a browser and mod-ui's server do, before anything else is decided. Under mod-ui's `/resources/` route
 (`MODGUI_RESOURCES_ROUTE`, the bundle's `resourcesDirectory`) a path that climbs out of the resources directory is
-`MODGUI_PATH_ESCAPE`, whether its target exists or not; one that names no file there, the directory itself
-included, is `MODGUI_IMAGE_NOT_FOUND`, naming the template file and the path it names. A web address, any other
-absolute path, or a relative path that climbs out of the bundle is `MODGUI_PATH_ESCAPE`, so a drawn template never
+`panel.modgui.path-escape`, whether its target exists or not; one that names no file there, the directory itself
+included, is `panel.modgui.image-not-found`, naming the template file and the path it names. A web address, any other
+absolute path, or a relative path that climbs out of the bundle is `panel.modgui.path-escape`, so a drawn template never
 reaches outside the package. The absolute paths kept are mod-ui's own routes, the directories its static handler
 serves from its html directory, `/fonts/`, `/img/`, `/js/`, `/css/` and `/include/` (`MODGUI_SERVER_ROUTES`): a file
 the drawing supplies or replaces, kept as text and never fetched. A path holding a Mustache tag anywhere cannot be
