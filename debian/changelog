@@ -1,3 +1,11 @@
+omx-panel (0.12.0) unstable; urgency=medium
+
+  * Runs beside plugin-hostd 0.20: plugin-hostd-contract (and the recommended
+    plugin-hostd) >= 0.20.0 and < 0.21, omx-contract-data >= 3.11.0 and < 4,
+    the recommended omx-plugins-contract >= 0.19.1 and < 0.20.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Mon, 09 Nov 2026 07:26:02 +0100
+
 omx-panel (0.11.1) unstable; urgency=medium
 
   * describe serves what the console's own derivation served for a scanned

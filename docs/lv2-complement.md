@@ -178,8 +178,10 @@ on a Zynthian: `lv2ls` takes 0.01 s over the installed folders alone, 0.03 s wit
 last, when lilv also prints 1398 replace lines. Zynthian's `zynthian_envars*.sh` puts `/usr/local/lib/lv2` after the
 system folders, so on the touchscreen ours comes last: the costly order. Every program that builds a lilv world pays it
 at start (zynthian-ui, each jalv it spawns, mod-host, mod-ui). On a Pi, not measured yet, the figure that
-matters is what it adds to jalv's start and to zynthian-ui's plugin scan. Nothing here changes the search order: it is
-Zynthian's (and each distribution's) to set, and the result is the same either way.
+matters is what it adds to jalv's start and to zynthian-ui's plugin scan (reported on a Pi 5 as about 5.4 s per world
+load, not re-measured here). The order of the hosts' list is Zynthian's (and each distribution's) to set, and the result is the same
+either way; `omx-complement-sync --check` now says whether `MODGUI_DIR` is first (cheap) or after the installed folders
+(the costly order), and its own default list, used when `LV2_PATH` is unset, puts `MODGUI_DIR` first.
 
 ## Measured
 

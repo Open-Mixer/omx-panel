@@ -790,4 +790,24 @@ describe('omx-complement-sync, the installed-side entry', () => {
     assert.match(check.stdout, /Complement bundles go to .*: it is on that list/);
     assert.equal(r.run(['--bogus']).status, 2);
   });
+
+  it('--check says where MODGUI_DIR stands on the list: first is cheap, after the installed folders costs every lilv world load', () => {
+    const r = rig();
+    const after = r.run(['--check']);
+    assert.match(after.stdout, /it is AFTER the installed folders: lilv loads each installed bundle before it meets ours and replaces it \(seconds per world load on a Pi 5\); put it first/);
+    const first = spawnSync(SYNC, ['--check'], {
+      encoding: 'utf8',
+      env: { ...process.env, PATH: `${r.bin}:${process.env.PATH}`, LV2_PATH: `${r.out}:${r.lv2}`, MODGUI_DIR: r.out, STATE_DIR: r.state },
+    });
+    assert.match(first.stdout, /it is on that list, first: lilv meets our bundle before the installed one/);
+    assert.doesNotMatch(first.stdout, /AFTER the installed folders/);
+  });
+
+  it('with no LV2_PATH set, its default list holds MODGUI_DIR first', () => {
+    const r = rig();
+    const env = { ...process.env, PATH: `${r.bin}:${process.env.PATH}`, MODGUI_DIR: r.out, STATE_DIR: r.state };
+    delete env.LV2_PATH;
+    const check = spawnSync(SYNC, ['--check'], { encoding: 'utf8', env });
+    assert.match(check.stdout, new RegExp(`LV2 search list \\(from plugin-hostd's default.*\\):\\n  ${r.out.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n`));
+  });
 });
