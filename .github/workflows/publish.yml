@@ -4,7 +4,7 @@ name: Publish to npm
 
 # Publishes @openmixer/omx-panel to npmjs.org by npm trusted publishing (OIDC, no token anywhere). npmjs.com
 # trusts the CALLER of the publish by repository + workflow filename (+ environment when one is set there; none is), so:
-#   Repository: FreeMixer/omx-panel    Workflow filename: publish.yml    Environment: (none)
+#   Repository: Open-Mixer/omx-panel    Workflow filename: publish.yml    Environment: (none)
 # A version tag publishes; any other ref (a manual dispatch) is a dry run. Only the public repository
 # publishes: a tag on any other copy of this tree stops before npm.
 
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   publish:
-    if: github.repository == 'FreeMixer/omx-panel'
+    if: github.repository == 'Open-Mixer/omx-panel'
     runs-on: ubuntu-latest
     # job-level: a workflow-level id-token grant does not reliably reach the job, and without the token npm never
     # attempts the OIDC exchange and fails with ENEEDAUTH
@@ -46,7 +46,7 @@ jobs:
           node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
       - name: Every file a comment can be written in opens with its licence and copyright
-        uses: FreeMixer/.github/.github/actions/spdx-check@v1
+        uses: Open-Mixer/.github/.github/actions/spdx-check@main
 
       - name: The tag is the package version
         if: github.ref_type == 'tag'
