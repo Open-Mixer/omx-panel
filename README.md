@@ -22,8 +22,8 @@ sudo dnf install omx-panel
 Debian bookworm and trixie, amd64 or arm64 (also Raspberry Pi OS and Zynthian):
 
 ```
-curl -fsSLO https://www.openmixer.org/deb/openmixer-release.deb && sudo apt install ./openmixer-release.deb
-sudo apt install omx-panel
+cd /tmp && curl -fsSLO https://www.openmixer.org/deb/openmixer-release.deb && sudo apt install ./openmixer-release.deb
+sudo apt update && sudo apt install omx-panel
 ```
 
 Also on npm: `npm install @openmixer/omx-panel`.
