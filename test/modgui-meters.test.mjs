@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { layout, meterCaption, emitTemplate, resolvePanel, GEOMETRY } from '../dist/tools/modgui-gen.mjs';
+import { layout, meterCaption, emitStylesheet, emitTemplate, loadLook, resolvePanel, GEOMETRY } from '../dist/tools/modgui-gen.mjs';
 
 const load = (f) => JSON.parse(readFileSync(new URL(`./fixtures/meters/${f}`, import.meta.url), 'utf8'));
 const resolved = (descriptor = load('meters.descriptor.json')) => resolvePanel(descriptor, { panel: load('meters.panel.json'), stem: 'meters' });
@@ -36,4 +36,23 @@ test('the template carries a static frame for each meter and no port role', () =
   assert.equal((html.match(/omx-meter-frame"/g) ?? []).length, 4);
   assert.match(html, /Gain reduction  -24 to 0 dB/);
   assert.ok(!/mod-role="output-control-port"[^>]*omx-meter|omx-meter[^>]*mod-role/.test(html));
+});
+test('the stylesheet styles the meter frame whenever a meter stands, with or without a curve', () => {
+  const d = load('meters.descriptor.json');
+  const p = resolved(d);
+  for (const sec of p.sections) sec.displays = [];
+  const css = emitStylesheet(p, loadLook(), 'test');
+  assert.match(css, /\.omx-meter-frame \{/);
+  assert.match(css, /\.omx-meter-caption \{/);
+  assert.ok(!/\.omx-curve \{/.test(css), 'no curve here, so no curve rule: the meter rule stands on its own');
+});
+test('arm: a panel with no meter carries no meter rule', () => {
+  const d = load('meters.descriptor.json'); delete d.meters;
+  assert.ok(!/omx-meter-frame/.test(emitStylesheet(resolved(d), loadLook(), 'test')));
+});
+test('the pedal\'s rim takes no layout: every box of the template sits where the raster face draws it', () => {
+  const css = emitStylesheet(resolved(), loadLook(), 'test');
+  const pedal = /^\.omx-pedal\{\{\{cns\}\}\} \{[^}]*\}/m.exec(css)[0];
+  assert.match(pedal, /box-shadow: inset 0 0 0 1px #[0-9a-f]{6}/);
+  assert.ok(!/\bborder:/.test(pedal), 'a border would set the sections, the meter frames and every control 1 px right and down of the raster');
 });

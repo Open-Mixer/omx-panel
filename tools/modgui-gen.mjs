@@ -660,7 +660,8 @@ ${jacks('output')}
 `;
 }
 
-/** The stylesheet: the GEOMETRY and the look's resolved tokens, scoped by MOD's {{{cns}}}. */
+/** The stylesheet: the GEOMETRY and the look's resolved tokens, scoped by MOD's {{{cns}}}. The pedal's rim is an inset shadow, not a
+ * border: a border takes a pixel of layout and would set every box of the face 1 px right and down of the raster's (renderFace). */
 export function emitStylesheet(panel, look, source) {
   const g = GEOMETRY, f = files(panel.stem), tok = look.tokens;
   const P = '.omx-pedal{{{cns}}}';
@@ -670,7 +671,7 @@ export function emitStylesheet(panel, look, source) {
 ${banner(' * ', source).join('\n')}
  * Colours and font: the OpenMixer console's ${look.theme} theme, resolved in tools/look.json.
  */
-${P} { position: relative; box-sizing: border-box; background: ${tok['--surface']}; border: 1px solid ${tok['--border-strong']}; border-radius: ${g.radius}px; color: ${tok['--ink']}; font-family: ${tok['--font-ui']}; }
+${P} { position: relative; box-sizing: border-box; background: ${tok['--surface']}; box-shadow: inset 0 0 0 1px ${tok['--border-strong']}; border-radius: ${g.radius}px; color: ${tok['--ink']}; font-family: ${tok['--font-ui']}; }
 ${P} .omx-head { position: absolute; left: 0; right: 0; top: 0; border-bottom: 2px solid ${tok['--accent']}; }
 ${P} .omx-brand { position: absolute; left: ${g.pad}px; top: 5px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: ${tok['--ink-dim']}; }
 ${P} .omx-label { position: absolute; left: ${g.pad}px; top: 17px; font-size: 14px; font-weight: 600; }
@@ -699,9 +700,9 @@ ${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
 ${P} .omx-curve-line { stroke: ${tok['--accent']}; stroke-width: 1.5; stroke-linejoin: round; }
 ${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
 ${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
-${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
-${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
+` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ` : ''}`;
 }
