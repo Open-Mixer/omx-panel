@@ -169,3 +169,17 @@ test('omx-eq8 as LV2 scans it: each band the words name gets its Q, its type wit
   }
   assert.deepEqual(description.displays.map((x) => x.kind), ['eq_response']);
 });
+
+// -- a CLAP parameter's id is a number: its band is read from its name
+test('omx-eq8 as CLAP scans it (ids, no units, no meanings): the bands are read from the names, served by id', () => {
+  const d = fixture('scanned-clap-omx-eq8.json');
+  const { description } = describe(d);
+  assert.equal(description.family, 'eq');
+  const id = (name) => String(d.controls.find((c) => c.name === name).id);
+  const band = (i) => Object.fromEntries(description.roles.filter((r) => r.index === i && r.role.startsWith('band_')).map((r) => [r.role, r.symbol]));
+  // the scan gives the type no labels, so no shape can be read from it: the band is drawn as the shape of its names, a bell
+  assert.deepEqual(band(0), { band_freq: id('Band 1 Frequency'), band_gain: id('Band 1 Gain'), band_q: id('Band 1 Q'), band_on: id('Band 1 On') });
+  assert.equal(description.roles.find((r) => r.role === 'band_freq' && r.index === 0).shape, 'bell');
+  assert.deepEqual(band(7).band_freq, id('Band 8 Frequency'));
+  assert.deepEqual(description.displays.map((x) => x.kind), ['eq_response']);
+});

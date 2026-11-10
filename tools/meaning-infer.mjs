@@ -31,6 +31,10 @@ const nameOf = (c) => c.name ?? c.label ?? '';
 const symbolOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : Number.isInteger(c.id) ? `p${c.id}` : nameOf(c));
 const unitOf = (c) => (c.travel?.unit ?? '').toLowerCase();
 
+/** What a band is keyed by: the symbol, or for a CLAP parameter, whose id is a number and says nothing of its band, its name
+ * ("Band 1 Frequency" and "Band 1 Gain" are one band, p7 and p8 are not). */
+const keyNameOf = (c) => (c.symbol === undefined && Number.isInteger(c.id) && nameOf(c) ? nameOf(c) : symbolOf(c));
+
 /** Symbol + name, underscores flattened to spaces, lowercased: the match haystack. */
 const hay = (c) => `${symbolOf(c)} ${nameOf(c)}`.replace(/_/g, ' ').toLowerCase();
 
@@ -138,7 +142,7 @@ export function inferBands(controls) {
   for (const c of controls) {
     const role = roleOf(c);
     if (!role) continue;
-    const key = bandKey(symbolOf(c), role);
+    const key = bandKey(keyNameOf(c), role);
     if (!key) continue;
     const g = groups.get(key) ?? { order: order++ };
     const strongQ = (x) => /\bq\b|quality|resonance/.test(hay(x));

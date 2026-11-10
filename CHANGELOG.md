@@ -13,6 +13,8 @@
 - An EQ band whose frequency and gain the descriptor's words name gets the Q, the type (with its shapes) and the switch the
   words leave unnamed from the band inference, at the words' index: an LV2 port states no Q, so a scanned LV2 EQ had a curve
   plugin-hostd could not draw.
+- The band inference keys a CLAP parameter by its name: its id is a number and says nothing of its band, so a scanned CLAP
+  EQ (`Band 1 Frequency`, `Band 1 Gain`) had no band.
 - describe reads the descriptor's `meters` word: each meter is a meter control with its kind, measurement, unit, range,
   channels, symbol, held and clip. A dynamics family's gain reduction is its section's `gain_reduction_bar`; the transfer
   curve's operating point reads the input and output level meters. A foreign read-only level control stays a meter with no
