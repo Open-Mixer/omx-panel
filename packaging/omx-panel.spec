@@ -4,12 +4,13 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.12.0
+Version: 0.13.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
-URL: https://github.com/FreeMixer/omx-panel
-BuildArch: noarch
+URL: https://github.com/Open-Mixer/omx-panel
+# omx-panel itself is architecture independent; the renderer library (omx-panel-render) is not, so the build is per
+# architecture
 
 Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
@@ -21,25 +22,30 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: (omx-contract-data >= 3.11.0 with omx-contract-data < 4)
-BuildRequires: (plugin-hostd-contract >= 0.20.0 with plugin-hostd-contract < 0.21)
+BuildRequires: (omx-contract-data >= 3.12.0 with omx-contract-data < 4)
+BuildRequires: (plugin-hostd-contract >= 0.20.2 with plugin-hostd-contract < 0.21)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: (plugin-hostd >= 0.20.0 with plugin-hostd < 0.21)
+Recommends: (plugin-hostd >= 0.20.2 with plugin-hostd < 0.21)
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros
+# the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
+BuildRequires: gcc
+BuildRequires: pkgconfig(libcjson)
+BuildRequires: (omx-contract-devel >= 3.12.0 with omx-contract-devel < 4)
+BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: (omx-contract-data >= 3.11.0 with omx-contract-data < 4)
-Requires: (plugin-hostd-contract >= 0.20.0 with plugin-hostd-contract < 0.21)
+Requires: (omx-contract-data >= 3.12.0 with omx-contract-data < 4)
+Requires: (plugin-hostd-contract >= 0.20.2 with plugin-hostd-contract < 0.21)
 # the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: (omx-plugins-contract >= 0.19.1 with omx-plugins-contract < 0.20)
+Recommends: (omx-plugins-contract >= 0.19.2 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -52,15 +58,37 @@ packages are installed into. The omx-panel command runs each; the tools are
 under /usr/share/omx-panel for a build that calls them.
 Its documentation is on openmixer.org.
 
+%package -n omx-panel-render
+Summary: The omx-panel renderer, a library that draws a panel description into a pixel buffer
+# the renderer reads the look, the geometry and the fonts omx-panel installs under /usr/share/omx-panel/tools
+Requires: omx-panel%{?_isa} = %{version}-%{release}
+
+%description -n omx-panel-render
+libomx-panel-render.so.0 draws a panel description in the omx look into a CPU
+pixel buffer and answers input with the one gesture vocabulary. A surface loads
+it at run time (Zynthian's panel view); its look, geometry and fonts are
+omx-panel's.
+
+%package -n omx-panel-render-devel
+Summary: Header, link and pkg-config file of the omx-panel renderer
+Requires: omx-panel-render%{?_isa} = %{version}-%{release}
+Requires: pkgconfig(libcjson)
+
+%description -n omx-panel-render-devel
+The header omx_panel_render.h, the libomx-panel-render.so link and the
+omx-panel-render pkg-config file, to build against the omx-panel renderer.
+
 %prep
 %autosetup
 
 %build
 test -d node_modules || npm ci --no-audit --no-fund
 %make_build
+%make_build -C renderer WINDOW=0 PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} DATADIR=%{_datadir}
 
 %install
 %make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
+make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 
 %check
 make test
@@ -86,7 +114,31 @@ make test
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/
 
+%files -n omx-panel-render
+%license LICENSE
+%{_libdir}/libomx-panel-render.so.0
+
+%files -n omx-panel-render-devel
+%{_libdir}/libomx-panel-render.so
+%{_includedir}/omx_panel_render.h
+%{_libdir}/pkgconfig/omx-panel-render.pc
+
 %changelog
+* Mon Nov 09 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.0-1
+- the renderer ships as a shared library: omx-panel-render carries
+  libomx-panel-render.so.0, omx-panel-render-devel its header, link and
+  pkg-config file; the build is per architecture for it
+- describe --layout, CLAP feature macros, and an EQ band's Q, type and switch
+  inferred from what its words name
+- every code omx-panel emits has en and ca text in schema/codes.json; the
+  meter refusal is panel.describe.meter-refused
+- meters: describe reads the descriptor's meters word, and the renderer and
+  the MOD GUI draw them
+- colour roles: one declared set; look.json and the renderer derive from it
+- runs beside plugin-hostd 0.20.2: plugin-hostd-contract and the recommended
+  plugin-hostd >= 0.20.2 and < 0.21, omx-contract-data >= 3.12.0 and < 4, the
+  recommended omx-plugins-contract >= 0.19.2 and < 0.20
+
 * Mon Nov 09 2026 Pau Aliagas <linuxnow@gmail.com> - 0.12.0-1
 - runs beside plugin-hostd 0.20: plugin-hostd-contract and the recommended
   plugin-hostd >= 0.20.0 and < 0.21, omx-contract-data >= 3.11.0 and < 4, the

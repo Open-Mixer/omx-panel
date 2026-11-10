@@ -44,7 +44,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.6.0' 'plugin-hostd-contract >= 0.12.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -78,7 +78,8 @@ jobs:
     uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@openmixer-v1
     with:
       package-name: omx-panel
-      binary-names: omx-panel
+      # omx-panel, and the renderer's shared library with its development files (each installed by the install checks)
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
@@ -87,14 +88,13 @@ jobs:
       channel-deps: true
     secrets: inherit
 
-  # after the RPMs: both publish into one tree, and a push that loses a race is refused
+  # beside the RPMs: the two publish jobs share one concurrency group, so their pushes never race
   deb:
-    needs: rpm
-    if: ${{ !cancelled() && needs.rpm.result == 'success' }}
+    needs: check
     uses: Open-Mixer/.github/.github/workflows/build-deb.yml@openmixer-v1
     with:
       package-name: omx-panel
-      binary-names: omx-panel
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

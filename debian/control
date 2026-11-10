@@ -8,19 +8,22 @@ Build-Depends: debhelper-compat (= 13),
                pkgconf,
                nodejs (>= 18),
                npm,
-               omx-contract-data (>= 3.11.0~) <!nocheck>,
+               omx-contract-data (>= 3.12.0~) <!nocheck>,
                omx-contract-data (<< 4~) <!nocheck>,
-               plugin-hostd-contract (>= 0.20.0~) <!nocheck>,
-               plugin-hostd-contract (<< 0.21~) <!nocheck>
+               plugin-hostd-contract (>= 0.20.2~) <!nocheck>,
+               plugin-hostd-contract (<< 0.21~) <!nocheck>,
+               libcjson-dev,
+               libomx-contract-dev (>= 3.12.0~), libomx-contract-dev (<< 4~),
+               libomxdsp-dev (>= 0.32.0~), libomxdsp-dev (<< 0.33~)
 Standards-Version: 4.6.2
-Homepage: https://github.com/FreeMixer/omx-panel
+Homepage: https://github.com/Open-Mixer/omx-panel
 Rules-Requires-Root: no
 
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data (>= 3.11.0~), omx-contract-data (<< 4~), plugin-hostd-contract (>= 0.20.0~), plugin-hostd-contract (<< 0.21~), ${misc:Depends}
-Recommends: plugin-hostd (>= 0.20.0~), plugin-hostd (<< 0.21~), omx-plugins-contract (>= 0.19.1~), omx-plugins-contract (<< 0.20~)
+Depends: nodejs (>= 18), omx-contract-data (>= 3.12.0~), omx-contract-data (<< 4~), plugin-hostd-contract (>= 0.20.2~), plugin-hostd-contract (<< 0.21~), ${misc:Depends}
+Recommends: plugin-hostd (>= 0.20.2~), plugin-hostd (<< 0.21~), omx-plugins-contract (>= 0.19.2~), omx-plugins-contract (<< 0.20~)
 # omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
 Suggests: python3-lilv
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -33,3 +36,23 @@ Description: panels for LV2 and CLAP plugins, generated from what each plugin de
  under /usr/share/omx-panel for a build that calls them.
  .
  Its documentation is on openmixer.org.
+
+Package: libomx-panel-render0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel (= ${source:Version})
+Description: omx-panel renderer, a library that draws a panel into a pixel buffer
+ libomx-panel-render.so.0 draws a panel description in the omx look into a CPU
+ pixel buffer and answers input with the one gesture vocabulary. A surface
+ loads it at run time (Zynthian's panel view); its look, geometry and fonts
+ are omx-panel's.
+
+Package: libomx-panel-render-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libomx-panel-render0 (= ${binary:Version}), libcjson-dev, ${misc:Depends}
+Description: omx-panel renderer, development files
+ The header omx_panel_render.h, the libomx-panel-render.so link and the
+ omx-panel-render pkg-config file, to build against the omx-panel renderer.

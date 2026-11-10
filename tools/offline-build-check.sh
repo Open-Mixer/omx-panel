@@ -21,12 +21,12 @@ git archive --format=tar.gz --prefix="omx-panel-$version/" -o "$work/omx-panel-$
 case "$kind" in
   rpm)
     image=${IMAGE:-fedora:44}
-    install='dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm systemd-rpm-macros'
+    install='dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm && dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm systemd-rpm-macros gcc cjson-devel "omx-contract-devel >= 3.12.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"'
     build='mkdir -p ~/rpmbuild/SOURCES && cp "$1" ~/rpmbuild/SOURCES/omx-panel-$2.tar.gz && tar -xzOf "$1" omx-panel-$2/packaging/omx-panel.spec >/tmp/omx-panel.spec && rpmbuild -bb --nocheck --nodeps /tmp/omx-panel.spec'
     ;;
   deb)
     image=${IMAGE:-debian:trixie}
-    install='apt-get update -qq && apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make'
+    install='apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates && curl -fsSLo /tmp/r.deb https://www.openmixer.org/deb/openmixer-release.deb && apt-get install -y -qq /tmp/r.deb && apt-get update -qq && apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf libcjson-dev libomx-contract-dev libomxdsp-dev'
     build='mkdir -p /b && tar -xzf "$1" -C /b && cd /b/omx-panel-$2 && DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d'
     ;;
   *) echo "usage: offline-build-check.sh <rpm | deb>" >&2; exit 2 ;;
