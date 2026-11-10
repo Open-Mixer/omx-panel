@@ -5,10 +5,10 @@
   "type": "module",
   "license": "GPL-3.0-or-later",
   "author": "Pau Aliagas <linuxnow@gmail.com>",
-  "homepage": "https://github.com/FreeMixer/omx-panel",
+  "homepage": "https://github.com/Open-Mixer/omx-panel",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FreeMixer/omx-panel.git"
+    "url": "git+https://github.com/Open-Mixer/omx-panel.git"
   },
   "bin": {
     "omx-panel": "dist/bin/omx-panel.mjs"
