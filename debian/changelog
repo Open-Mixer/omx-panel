@@ -1,3 +1,11 @@
+omx-panel (0.13.1) unstable; urgency=medium
+
+  * The package metadata names Open-Mixer/omx-panel: repository, homepage and
+    bugs in package.json, the Debian and RPM homepage and source; npm refused
+    0.13.0, whose repository named the old organisation
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 10 Nov 2026 23:20:00 +0100
+
 omx-panel (0.13.0) unstable; urgency=medium
 
   * Every code omx-panel emits has en and ca text in schema/codes.json; the

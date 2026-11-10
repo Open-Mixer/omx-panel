@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 0.13.1: the package metadata names Open-Mixer/omx-panel (repository, homepage, bugs), so npm accepts the package
+  its provenance names; 0.13.0 was refused for naming the old organisation.
 - The renderer is also a shared library, `libomx-panel-render.so.0`, exporting only the header's functions, for a surface
   that loads it at run time (Zynthian's Tk panel).
 - `omx-panel describe --layout` prints the layout the description was derived from, the family's displays included: what the

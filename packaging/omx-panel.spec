@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.0
+Version: 0.13.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -124,6 +124,11 @@ make test
 %{_libdir}/pkgconfig/omx-panel-render.pc
 
 %changelog
+* Tue Nov 10 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.1-1
+- the package metadata names Open-Mixer/omx-panel: repository, homepage and
+  bugs in package.json, the Debian and RPM homepage and source; npm refused
+  0.13.0, whose repository named the old organisation
+
 * Mon Nov 09 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.0-1
 - the renderer ships as a shared library: omx-panel-render carries
   libomx-panel-render.so.0, omx-panel-render-devel its header, link and
