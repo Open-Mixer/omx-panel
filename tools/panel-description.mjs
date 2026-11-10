@@ -200,7 +200,7 @@ function portsOf(ports = []) {
  * one their meanings make and the roles the ones their meanings play. `ns` is the label-key namespace
  * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
  */
-export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, derive = false } = {}) {
+export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false } = {}) {
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
@@ -307,6 +307,20 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
       const BAND = /^(band_|hpf_|lpf_)/;
       for (let i = roles.length - 1; i >= 0; i--) if (BAND.test(roles[i].role)) roles.splice(i, 1);
       for (const r of inferredRoles) bind(r.role, r.index, r.symbol, { inferred: true, token: r.unit, ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}) });
+    } else if (completingRoles?.length) {
+      // the words name a band's frequency and gain and leave its Q, type and switch unnamed (an LV2 port states no Q): the
+      // inference over the controls with their meanings set aside (`completingRoles`) completes each band the words named,
+      // at the words' index, by its band_freq symbol; a role the words bind stays theirs, and a band they do not name is not added
+      const wordsIndex = new Map(roles.filter((r) => r.role === 'band_freq').map((r) => [r.symbol, r.index]));
+      const inferredFreq = new Map(completingRoles.filter((r) => r.role === 'band_freq').map((r) => [r.index, r.symbol]));
+      const bound = new Set(roles.map((r) => `${r.role}.${r.index}`));
+      for (const r of completingRoles) {
+        if (!['band_q', 'band_type', 'band_on'].includes(r.role)) continue;
+        const index = wordsIndex.get(inferredFreq.get(r.index));
+        if (index === undefined || bound.has(`${r.role}.${index}`)) continue;
+        bind(r.role, index, r.symbol, { inferred: true, token: r.unit, ...(r.shapes ? { shapes: r.shapes } : {}) });
+        bound.add(`${r.role}.${index}`);
+      }
     }
   }
 

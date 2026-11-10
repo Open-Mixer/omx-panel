@@ -6,7 +6,8 @@
 # pkg-config omx-contract) and omx-dsp's meter view (omx-dsp-devel, pkg-config omxdsp). `make check` draws the fixtures and holds them to the golden images and to the MOD GUI
 # face (node, the parent tree's `npm ci` and the installed vocabulary its layout reads).
 #
-#   make [-C renderer] [WINDOW=1] build/ : the library, the command (and the window: pugl-devel, nanovg-devel, GL)
+#   make [-C renderer] [WINDOW=1] build/ : the library (static and shared), the command (and the window: pugl-devel,
+#                                 nanovg-devel, GL)
 #   make check                    the golden images and the parity with the MOD GUI face; with WINDOW=1 and a display
 #                                 (xvfb-run make WINDOW=1 check) the window held to the buffer by structure too
 #   make install PREFIX=... DESTDIR=...
@@ -32,6 +33,10 @@ LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
 
 B := build
 LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/raster.o
+# the shared library, for a surface that loads the renderer at run time (Zynthian's Tk panel, through ctypes): the same
+# objects, the C API its only exported symbols. SOVERSION moves when the API breaks.
+SOVERSION := 0
+SONAME := libomx-panel-render.so.$(SOVERSION)
 
 # WINDOW=1 adds the window (pugl and NanoVG on OpenGL): libomx-panel-window.a, its header and pkg-config file, and
 # --window in the command. Off by default: the buffer path links no window system.
@@ -44,7 +49,7 @@ WINDOW_TARGETS := $(B)/libomx-panel-window.a $(B)/omx-panel-window.pc
 endif
 
 .PHONY: all check install clean
-all: $(B)/libomx-panel-render.a $(B)/omx-panel-render $(B)/omx-panel-render.pc $(WINDOW_TARGETS)
+all: $(B)/libomx-panel-render.a $(B)/$(SONAME) $(B)/omx-panel-render $(B)/omx-panel-render.pc $(WINDOW_TARGETS)
 
 $(B):
 	mkdir -p $@
@@ -57,6 +62,8 @@ $(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h src/loo
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^
+$(B)/$(SONAME): $(LIB_OBJ) src/exports.map
+	$(CC) $(LDFLAGS) -shared -Wl,-soname,$(SONAME) -Wl,--version-script=src/exports.map -o $@ $(LIB_OBJ) $(LDLIBS)
 $(B)/window.o: src/window.c $(B)/omxdsp-version src/draw.h src/view.h src/raster.h include/omx_panel_render.h include/omx_panel_window.h | $(B)
 	$(CC) $(CFLAGS) $(shell $(PKG_CONFIG) --cflags $(WINDOW_DEPS)) -c -o $@ $<
 $(B)/libomx-panel-window.a: $(B)/window.o
@@ -82,6 +89,8 @@ check: all
 install: all
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(BINDIR)
 	install -m 0644 $(B)/libomx-panel-render.a $(DESTDIR)$(LIBDIR)/
+	install -m 0755 $(B)/$(SONAME) $(DESTDIR)$(LIBDIR)/
+	ln -sf $(SONAME) $(DESTDIR)$(LIBDIR)/libomx-panel-render.so
 	install -m 0644 include/omx_panel_render.h $(DESTDIR)$(INCLUDEDIR)/
 	install -m 0644 $(B)/omx-panel-render.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0755 $(B)/omx-panel-render $(DESTDIR)$(BINDIR)/

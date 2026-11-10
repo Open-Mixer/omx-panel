@@ -97,3 +97,19 @@ test('describe --pages with no panel: each refusal printed as its code and its e
   assert.ok(r.stderr.includes(en), `the en sentence after the code: ${r.stderr}`);
   assert.ok(r.stderr.includes('urn:test:empty has no control'), `the plugin placeholder filled: ${r.stderr}`);
 });
+
+test('describe --layout: the derived layout the description was made from, its displays the description\'s, for the renderer', () => {
+  const file = join(ROOT, 'test/fixtures/descriptors/scanned-lv2-lsp-para-equalizer-x16-mono.json');
+  const r = run('describe', '--descriptor', file, '--layout');
+  assert.equal(r.status, 0, r.stderr);
+  const layout = JSON.parse(r.stdout);
+  const { description } = JSON.parse(run('describe', '--descriptor', file).stdout);
+  // the layout's shape (a section index, a standard widget), which `layout` alone gives without the derivation
+  assert.ok(layout.controls.every((c) => Number.isInteger(c.section) && c.standard?.widget));
+  assert.deepEqual(layout.displays.map((d) => [d.kind, d.sectionKey, d.basis]), description.displays.map((d) => [d.kind, d.section, d.basis]));
+  assert.deepEqual(layout.displays.map((d) => d.kind), ['eq_response']);
+  assert.deepEqual(layout.sections.map((s) => s.key), description.sections.map((s) => s.key));
+  // with --pages or a skin it is a usage error: a skin reorders the description, never the layout
+  assert.equal(run('describe', '--descriptor', file, '--layout', '--pages').status, 2);
+  assert.equal(run('describe', '--descriptor', file, '--layout', '--skin', file).status, 2);
+});

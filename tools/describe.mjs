@@ -7,6 +7,8 @@
  * is a refusal by code.
  *
  *   describe(descriptor, { overrides, applyOverride, skin, panel, ns }) -> { description, refusals }
+ *   describe(descriptor, { ..., withLayout: true }) -> { description, refusals, layout }: the derived layout the description was made
+ *   from, what the renderer draws (renderer/include/omx_panel_render.h), so a host draws exactly what it describes
  *
  * - the override layers are omx-contract's `applyOverride` over the descriptor (the caller passes the function; omx-contract
  *   does not export it from its package entry), before the layout;
@@ -57,16 +59,21 @@ const LV2_CORE = 'http://lv2plug.in/ns/lv2core#';
 /**
  * The classes and features the descriptor carries as the plugin states them: its extension bag, `extensions.lv2` (a class
  * as a field, `lv2:CompressorPlugin`, or among `rdf:type`'s values) and `extensions.clap`
- * (`clap_plugin_descriptor.features`).
+ * (`clap_plugin_descriptor.features`). A scan spells a CLAP feature by its macro (`CLAP_PLUGIN_FEATURE_EQUALIZER`, the format
+ * table's term), a declaration by its string (`equalizer`): the macro is read as the string it stands for.
  */
 export function declaredOf(descriptor) {
   const lv2 = descriptor.extensions?.lv2 ?? {};
   const clap = descriptor.extensions?.clap ?? {};
   const out = new Set(Object.keys(lv2).filter((k) => lv2[k] !== false && lv2[k] !== null));
   for (const t of [lv2['rdf:type']].flat()) if (typeof t === 'string') out.add(t.startsWith(LV2_CORE) ? `lv2:${t.slice(LV2_CORE.length)}` : t);
-  for (const f of [clap['clap_plugin_descriptor.features']].flat()) if (typeof f === 'string') out.add(f);
+  for (const f of [clap['clap_plugin_descriptor.features']].flat()) if (typeof f === 'string') out.add(clapFeature(f));
   return [...out];
 }
+
+const CLAP_FEATURE_MACRO = 'CLAP_PLUGIN_FEATURE_';
+/** A CLAP feature as the string the format defines: CLAP_PLUGIN_FEATURE_DE_ESSER is "de-esser". */
+const clapFeature = (f) => (f.startsWith(CLAP_FEATURE_MACRO) ? f.slice(CLAP_FEATURE_MACRO.length).toLowerCase().replaceAll('_', '-') : f);
 
 /** The candidate families of a descriptor's declarations, in the table's order and without repeats. */
 export const candidatesOf = (descriptor) => [...new Set(declaredOf(descriptor).map((d) => FAMILY_OF_DECLARED[d]).filter(Boolean))];
@@ -131,7 +138,15 @@ export function servedParamOf(c, { factor = false } = {}) {
 /** The layout of `descriptor` under `family`, with the bands the meanings leave unnamed inferred (family `eq` only). */
 function layoutUnder(descriptor, family, options) {
   const inferred = family === 'eq' ? inferBands(descriptor.controls) : null;
-  return panelLayout(descriptor, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined });
+  return panelLayout(descriptor, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined, completingRoles: completing(descriptor, family) });
+}
+
+/** The bands as the inference reads them with every stated meaning set aside: what completes a band the words name with
+ * the Q, type and switch they leave unnamed (panelLayout's `completingRoles`). Family `eq` only. */
+function completing(descriptor, family) {
+  if (family !== 'eq') return undefined;
+  const all = inferBands(descriptor.controls.map((c) => ({ ...c, meaning: undefined })));
+  return all.outcome === 'inferred' ? all.roles : undefined;
 }
 
 /**
@@ -155,7 +170,7 @@ const refuse = (code, args = {}) => ({ code, args });
  * The description of `descriptor` and the refusals, as the header says. `description` is null when no panel can be made
  * (no control, an invalid layout); a declared family the controls do not back is `none` with its refusal.
  */
-export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where, perPage, remote } = {}) {
+export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where, perPage, remote, withLayout = false } = {}) {
   const refusals = [];
   const plugin = descriptor.plugin?.id;
   let effective = descriptor, userFamily;
@@ -191,7 +206,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
       const { needs } = familyOf(effective.controls, family);
       layout = tryDeclared(() => {
         if (needs) throw new FamilyNotBacked(`${plugin}: the ${family} family needs a control meaning ${needs.join(' or ')}`);
-        return panelLayout(effective, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined });
+        return panelLayout(effective, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined, completingRoles: completing(effective, family) });
       });
     } else layout = familyRule(effective, options).layout;
   } catch (e) {
@@ -232,7 +247,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   }
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
   description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
-  return { description, refusals };
+  return withLayout ? { description, refusals, layout } : { description, refusals };
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */

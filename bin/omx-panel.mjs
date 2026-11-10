@@ -8,9 +8,11 @@
  *   layout --descriptor <file> [--panel <file>] [--ns <label-key namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]
  *                                                        the panel laid out from a descriptor, as JSON (or its canonical
  *                                                        serialisation, or its pages of eight, the Easy ones first)
- *   describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <label-key namespace>] [--remote <file>] [--pages --per-page N]
+ *   describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <label-key namespace>] [--remote <file>] [--pages --per-page N | --layout]
  *                                                        the one derivation (tools/describe.mjs): { description, refusals } as JSON, or with
- *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut
+ *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut;
+ *                                                        with --layout the derived layout it was made from, what the renderer
+ *                                                        draws (no skin: a skin reorders the description, not the layout)
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
@@ -41,7 +43,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
-  + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N]]\n'
+  + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
@@ -164,9 +166,15 @@ async function describeCommand(argv) {
     process.stderr.write(`omx-panel: --per-page must be a whole number of at least 1, not ${raw}\n`);
     process.exit(2);
   }
+  const wantLayout = argv.includes('--layout');
+  if (wantLayout && (argv.includes('--pages') || opt('--skin'))) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
   try {
     const json = (f) => JSON.parse(readFileSync(f, 'utf8'));
     const out = describe(json(file), {
+      withLayout: wantLayout,
       panel: opt('--panel') ? json(opt('--panel')) : undefined,
       skin: opt('--skin') ? json(opt('--skin')) : undefined,
       remote: opt('--remote') ? json(opt('--remote')) : undefined,
@@ -178,6 +186,12 @@ async function describeCommand(argv) {
         process.exit(1);
       }
       process.stdout.write(`${JSON.stringify(out.description.pages, null, 2)}\n`);
+    } else if (wantLayout) {
+      if (!out.description) {
+        for (const r of out.refusals) process.stderr.write(`omx-panel: ${said(r.code, r.args)}\n`);
+        process.exit(1);
+      }
+      process.stdout.write(`${JSON.stringify(out.layout, (_k, v) => (typeof v === 'bigint' ? v.toString(16) : v), 2)}\n`);
     } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
   } catch (err) {
     process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);

@@ -41,6 +41,13 @@ test('the CLAP feature gives the candidate as the LV2 class does', () => {
   const d = descriptor(dyn(), { clap: { 'clap_plugin_descriptor.features': ['audio-effect', 'compressor'] } }, { plugin: { id: 'x.clap', format: 'clap', name: 'C', features: ['audio-effect'] } });
   assert.equal(describe(d).description.family, 'dynamics');
 });
+test('a scan spells the CLAP feature by its macro, and it is read as the feature', () => {
+  const scanned = { clap: { 'clap_plugin_descriptor.features': ['CLAP_PLUGIN_FEATURE_COMPRESSOR', 'CLAP_PLUGIN_FEATURE_STEREO'] } };
+  const d = descriptor(dyn(), scanned, { plugin: { id: 'x.clap', format: 'clap', name: 'C', features: ['audio-effect'] } });
+  assert.deepEqual(candidatesOf(d), ['dynamics']);
+  assert.equal(describe(d).description.family, 'dynamics');
+  assert.deepEqual(candidatesOf(descriptor(dyn(), { clap: { 'clap_plugin_descriptor.features': ['CLAP_PLUGIN_FEATURE_EQUALIZER'] } })), ['eq']);
+});
 test('the class may be written as rdf:type, in full or as a CURIE', () => {
   assert.deepEqual(candidatesOf(descriptor(dyn(), { lv2: { 'rdf:type': ['http://lv2plug.in/ns/lv2core#CompressorPlugin', 'lv2:Plugin'] } })), ['dynamics']);
 });
