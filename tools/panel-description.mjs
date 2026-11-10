@@ -383,7 +383,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     if (named !== undefined) { refuseMeter(m.symbol, `a meter is a measurement; '${named}' names an analogue input state`); continue; }
     const level = m.kind === 'level';
     meters.push({
-      symbol: m.symbol, widget: 'meter', kind: m.kind, measurement: m.measurement ?? (level ? null : 'gain-reduction'), unit: m.unit, min: m.min, max: m.max,
+      declared: true, symbol: m.symbol, widget: 'meter', kind: m.kind, measurement: m.measurement ?? (level ? null : 'gain-reduction'), unit: m.unit, min: m.min, max: m.max,
       channels: m.channels, held: m.held === true, clip: level && m.clip === true && CLIP_UNITS.includes(m.unit),
       label: label(m.name ?? m.symbol, `meter '${m.symbol}'`), labelKey: labelKey(`meter.${snake(m.symbol)}`, 'meter label key'),
     });
@@ -393,12 +393,14 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     if (!c.readonly || have.has(keyOf(c)) || !LEVEL_UNITS.includes(c.travel?.unit)) continue;
     const named = [c.meaning, keyOf(c), c.name].filter((t) => typeof t === 'string').find(namesAnalogueState);
     if (named !== undefined) { refuseMeter(keyOf(c), `a meter is a measurement; '${named}' names an analogue input state`); continue; }
-    meters.push({ symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });
+    meters.push({ declared: false, symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });
   }
   // a dynamics family's gain reduction is its section's bar; the curve's operating point reads the input and output meters
   // a symbol's words, snake_case or camelCase alike (`in_level`, `compIn`): the operating point is a whole word `in`/`input`, `out`/`output`
   const wordsOf = (symbol) => symbol.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().split(/[^a-z0-9]+/);
-  const levelAt = (...names) => meters.findIndex((m) => m.kind === 'level' && m.measurement !== null && wordsOf(m.symbol).some((w) => names.includes(w)));
+  // a level the descriptor's meters[] declares, with or without its `measurement` (clap.meters/1 states none, so a CLAP
+  // meter plugin-hostd describes carries none); a foreign read-only control is never the operating point
+  const levelAt = (...names) => meters.findIndex((m) => m.kind === 'level' && m.declared && wordsOf(m.symbol).some((w) => names.includes(w)));
   const inAt = levelAt('in', 'input'), outAt = levelAt('out', 'output');
   for (const d of displays) if (d.kind === 'transfer_curve' && inAt >= 0 && outAt >= 0) d.meters = [inAt, outAt];
   const grAt = meters.findIndex((m) => m.kind === 'gain-reduction');
