@@ -147,3 +147,25 @@ test('LSP Compressor Mono: the declared class names dynamics, but no control car
   const named = { ...d, controls: d.controls.map((c) => (c.id === 'al' ? { ...c, meaning: 'threshold', travel: { ...c.travel, unit: 'dB', min: -60, max: 0, default: -20 } } : c.id === 'cr' ? { ...c, meaning: 'ratio', travel: { ...c.travel, unit: 'ratio' } } : c.id === 'at' ? { ...c, meaning: 'attack' } : c.id === 'rt' ? { ...c, meaning: 'release' } : c)) };
   assert.equal(describe(named).description.family, 'dynamics');
 });
+
+// -- the words name a band's frequency and gain; the inference completes its Q, type and switch
+test('omx-eq8 as LV2 scans it: each band the words name gets its Q, its type with shapes and its switch from the inference', () => {
+  const d = fixture('scanned-lv2-omx-eq8.json');
+  const { description } = describe(d);
+  assert.equal(description.family, 'eq');
+  const band0 = description.roles.filter((r) => r.index === 0 && r.role.startsWith('band_'));
+  const by = Object.fromEntries(band0.map((r) => [r.role, r]));
+  assert.equal(by.band_freq.symbol, 'b1_freq');
+  assert.equal(by.band_freq.inferred, undefined, 'the words\' own');
+  assert.equal(by.band_gain.symbol, 'b1_gain');
+  assert.deepEqual([by.band_q.symbol, by.band_q.inferred], ['b1_q', true]);
+  assert.deepEqual([by.band_on.symbol, by.band_on.inferred], ['b1_on', true]);
+  assert.equal(by.band_type.symbol, 'b1_type');
+  assert.deepEqual(by.band_type.shapes, ['bell', 'lowshelf', 'highshelf', 'notch', '-', '-']);
+  // all eight bands, each at the words' index
+  for (const role of ['band_q', 'band_type', 'band_on']) {
+    assert.deepEqual(description.roles.filter((r) => r.role === role).map((r) => [r.index, r.symbol]),
+      [0, 1, 2, 3, 4, 5, 6, 7].map((i) => [i, `b${i + 1}_${role.slice(5)}`]), role);
+  }
+  assert.deepEqual(description.displays.map((x) => x.kind), ['eq_response']);
+});

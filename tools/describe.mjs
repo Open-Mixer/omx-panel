@@ -138,7 +138,15 @@ export function servedParamOf(c, { factor = false } = {}) {
 /** The layout of `descriptor` under `family`, with the bands the meanings leave unnamed inferred (family `eq` only). */
 function layoutUnder(descriptor, family, options) {
   const inferred = family === 'eq' ? inferBands(descriptor.controls) : null;
-  return panelLayout(descriptor, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined });
+  return panelLayout(descriptor, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined, completingRoles: completing(descriptor, family) });
+}
+
+/** The bands as the inference reads them with every stated meaning set aside: what completes a band the words name with
+ * the Q, type and switch they leave unnamed (panelLayout's `completingRoles`). Family `eq` only. */
+function completing(descriptor, family) {
+  if (family !== 'eq') return undefined;
+  const all = inferBands(descriptor.controls.map((c) => ({ ...c, meaning: undefined })));
+  return all.outcome === 'inferred' ? all.roles : undefined;
 }
 
 /**
@@ -198,7 +206,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
       const { needs } = familyOf(effective.controls, family);
       layout = tryDeclared(() => {
         if (needs) throw new FamilyNotBacked(`${plugin}: the ${family} family needs a control meaning ${needs.join(' or ')}`);
-        return panelLayout(effective, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined });
+        return panelLayout(effective, { ...options, family, derive: true, inferredRoles: inferred?.outcome === 'inferred' ? inferred.roles : undefined, completingRoles: completing(effective, family) });
       });
     } else layout = familyRule(effective, options).layout;
   } catch (e) {
