@@ -59,16 +59,21 @@ const LV2_CORE = 'http://lv2plug.in/ns/lv2core#';
 /**
  * The classes and features the descriptor carries as the plugin states them: its extension bag, `extensions.lv2` (a class
  * as a field, `lv2:CompressorPlugin`, or among `rdf:type`'s values) and `extensions.clap`
- * (`clap_plugin_descriptor.features`).
+ * (`clap_plugin_descriptor.features`). A scan spells a CLAP feature by its macro (`CLAP_PLUGIN_FEATURE_EQUALIZER`, the format
+ * table's term), a declaration by its string (`equalizer`): the macro is read as the string it stands for.
  */
 export function declaredOf(descriptor) {
   const lv2 = descriptor.extensions?.lv2 ?? {};
   const clap = descriptor.extensions?.clap ?? {};
   const out = new Set(Object.keys(lv2).filter((k) => lv2[k] !== false && lv2[k] !== null));
   for (const t of [lv2['rdf:type']].flat()) if (typeof t === 'string') out.add(t.startsWith(LV2_CORE) ? `lv2:${t.slice(LV2_CORE.length)}` : t);
-  for (const f of [clap['clap_plugin_descriptor.features']].flat()) if (typeof f === 'string') out.add(f);
+  for (const f of [clap['clap_plugin_descriptor.features']].flat()) if (typeof f === 'string') out.add(clapFeature(f));
   return [...out];
 }
+
+const CLAP_FEATURE_MACRO = 'CLAP_PLUGIN_FEATURE_';
+/** A CLAP feature as the string the format defines: CLAP_PLUGIN_FEATURE_DE_ESSER is "de-esser". */
+const clapFeature = (f) => (f.startsWith(CLAP_FEATURE_MACRO) ? f.slice(CLAP_FEATURE_MACRO.length).toLowerCase().replaceAll('_', '-') : f);
 
 /** The candidate families of a descriptor's declarations, in the table's order and without repeats. */
 export const candidatesOf = (descriptor) => [...new Set(declaredOf(descriptor).map((d) => FAMILY_OF_DECLARED[d]).filter(Boolean))];
