@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * The shared library exports the C API of include/omx_panel_render.h and nothing else: each function by name
+ * (test/shared.test.mjs holds the list to the header). */
+OMX_PANEL_RENDER_0 {
+  global:
+    omx_panel_view_control_rect;
+    omx_panel_view_count;
+    omx_panel_view_create;
+    omx_panel_view_create_from_files;
+    omx_panel_view_destroy;
+    omx_panel_view_draw;
+    omx_panel_view_find;
+    omx_panel_view_gesture;
+    omx_panel_view_gesture_count;
+    omx_panel_view_input;
+    omx_panel_view_meter_count;
+    omx_panel_view_meter_find;
+    omx_panel_view_natural_size;
+    omx_panel_view_reading;
+    omx_panel_view_set_choice;
+    omx_panel_view_set_curve;
+    omx_panel_view_set_handle;
+    omx_panel_view_set_hold;
+    omx_panel_view_set_integer;
+    omx_panel_view_set_marks;
+    omx_panel_view_set_meter;
+    omx_panel_view_set_paint;
+    omx_panel_view_set_read_only;
+    omx_panel_view_set_surface;
+    omx_panel_view_set_timing;
+    omx_panel_view_set_title;
+    omx_panel_view_set_travel;
+    omx_panel_view_set_value;
+    omx_panel_view_symbol;
+    omx_panel_view_target_rect;
+    omx_panel_view_tick;
+    omx_panel_view_visible;
+  local:
+    *;
+};

@@ -76,6 +76,14 @@ bytes. `create_from_files` reads them from a description file and omx-panel's to
 installed `share/omx-panel/tools`, or the source tree's `tools/`). Nothing else is read from disk, so a
 plugin can embed the four and draw with no file at all.
 
+The library is built static (`libomx-panel-render.a`) and shared (`libomx-panel-render.so.0`), the shared one exporting
+the functions of the header and nothing else (`renderer/src/exports.map`, held to the header by `renderer/test/shared.test.mjs`):
+a surface that loads the renderer at run time, such as Zynthian's Tk panel through Python's ctypes, opens the shared one.
+
+The description a host draws is `omx-panel describe --layout`: the layout the one derivation made the description from, the
+family's displays included, in the shape this library reads. `omx-panel layout` alone lays out the declared panel and derives
+no display.
+
 `omx_panel_view_draw` fills every pixel of the buffer, transparent where the panel does not reach. At the
 natural size times the scale the panel is drawn as laid out. A smaller buffer gets the number of controls
 a row that lets the panel be drawn largest, then the panel scaled down to fit; a larger one gets the panel
@@ -238,7 +246,7 @@ under the SIL Open Font Licence, as the MOD GUI already ships it (`tools/fonts/I
 
 ```
 npm ci && make                 # the tree the tests read: dist/
-make -C renderer               # renderer/build/: libomx-panel-render.a, omx_panel_render.h, omx-panel-render.pc, omx-panel-render
+make -C renderer               # renderer/build/: libomx-panel-render.a and .so.0, omx_panel_render.h, omx-panel-render.pc, omx-panel-render
 make -C renderer check         # the golden images, the pixel formats and the parity with the MOD GUI face
 make -C renderer WINDOW=1      # the window too: libomx-panel-window.a, omx_panel_window.h, omx-panel-window.pc
 xvfb-run -a make -C renderer WINDOW=1 check   # and the window held to the buffer

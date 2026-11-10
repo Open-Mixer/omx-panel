@@ -23,7 +23,8 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .IR file ]
 .RB [ \-\-pages
 .RB [ \-\-per\-page
-.IR N ]]
+.IR N ]
+.RB "| " \-\-layout ]
 .br
 .B omx-panel
 .B vocabulary
@@ -40,7 +41,9 @@ only the pages, the Easy controls first, cut at
 .I N
 slots (eight when left out) by the one cut every surface uses, the skin applied first and a
 .B \-\-remote
-file's declared pages, as given, replacing the derived ones.
+file's declared pages, as given, replacing the derived ones; with
+.B \-\-layout
+the layout the description was derived from, the family's displays included, which is what the panel renderer draws.
 .PP
 .B omx-panel validate
 reads each skin given, a

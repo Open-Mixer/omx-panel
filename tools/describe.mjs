@@ -7,6 +7,8 @@
  * is a refusal by code.
  *
  *   describe(descriptor, { overrides, applyOverride, skin, panel, ns }) -> { description, refusals }
+ *   describe(descriptor, { ..., withLayout: true }) -> { description, refusals, layout }: the derived layout the description was made
+ *   from, what the renderer draws (renderer/include/omx_panel_render.h), so a host draws exactly what it describes
  *
  * - the override layers are omx-contract's `applyOverride` over the descriptor (the caller passes the function; omx-contract
  *   does not export it from its package entry), before the layout;
@@ -155,7 +157,7 @@ const refuse = (code, args = {}) => ({ code, args });
  * The description of `descriptor` and the refusals, as the header says. `description` is null when no panel can be made
  * (no control, an invalid layout); a declared family the controls do not back is `none` with its refusal.
  */
-export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where, perPage, remote } = {}) {
+export function describe(descriptor, { overrides = [], applyOverride, skin, panel, ns, where, perPage, remote, withLayout = false } = {}) {
   const refusals = [];
   const plugin = descriptor.plugin?.id;
   let effective = descriptor, userFamily;
@@ -232,7 +234,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   }
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
   description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
-  return { description, refusals };
+  return withLayout ? { description, refusals, layout } : { description, refusals };
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */

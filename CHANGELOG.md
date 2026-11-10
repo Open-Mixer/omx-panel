@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+- The renderer is also a shared library, `libomx-panel-render.so.0`, exporting only the header's functions, for a surface
+  that loads it at run time (Zynthian's Tk panel).
+- `omx-panel describe --layout` prints the layout the description was derived from, the family's displays included: what the
+  renderer draws, so a host draws exactly what it describes.
 - describe reads the descriptor's `meters` word: each meter is a meter control with its kind, measurement, unit, range,
   channels, symbol, held and clip. A dynamics family's gain reduction is its section's `gain_reduction_bar`; the transfer
   curve's operating point reads the input and output level meters. A foreign read-only level control stays a meter with no
