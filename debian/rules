@@ -2,6 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+include /usr/share/dpkg/architecture.mk
+
 %:
 	dh $@
 
@@ -10,6 +15,7 @@
 override_dh_auto_build:
 	test -d node_modules || npm ci --no-audit --no-fund
 	dh_auto_build
+	$(MAKE) -C renderer WINDOW=0 PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include DATADIR=/usr/share
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
@@ -17,7 +23,9 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 endif
 
 override_dh_auto_install:
-	dh_auto_install -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share UNITDIR=/usr/lib/systemd/system SYSCONFDIR=/etc
+	dh_auto_install --destdir=debian/omx-panel -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share UNITDIR=/usr/lib/systemd/system SYSCONFDIR=/etc
+	# the renderer's shared library, header, link and pkg-config file, split by debian/libomx-panel-render*.install
+	$(MAKE) install-renderer DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include BINDIR=/usr/bin DATADIR=/usr/share
 	# the vendored modules' lint and VCS dotfiles are theirs, not the package's: lintian refuses .eslintrc.yml
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
 

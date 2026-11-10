@@ -166,22 +166,40 @@ jobs:
           v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
           mkdir -p src
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
-      # --nodeps: the build itself needs node, npm and make; the contract packages %check reads are the test job's
+      # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
+      # reads are the test job's
       - name: The RPM (fedora:44)
         run: |
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
-            dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm
+            dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
+            dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
+              "omx-contract-devel >= 3.12.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
-            cp ~/rpmbuild/RPMS/noarch/omx-panel-*.rpm out/'
+            cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
+              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
       - name: The DEB (bookworm)
         run: |
           docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends dpkg-dev debhelper nodejs npm make ca-certificates
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
+            curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
+            apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
+            apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
+              libcjson-dev libomx-contract-dev libomxdsp-dev
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /w/out/'
+            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /w/out/'
+      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
+      # on omx-panel, which does not (tools/render-package-check.sh)
+      - name: The renderer's library in its packages
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
+          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
+            tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-packages
@@ -224,6 +242,10 @@ jobs:
         run: |
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends ca-certificates git dpkg-dev debhelper build-essential lintian nodejs npm make
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - name: The renderer's build dependencies
+        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libomx-contract-dev libomxdsp-dev
       - uses: actions/checkout@v4
       - name: Build the DEB and lint it
         run: tools/deb-lint-check.sh "$PWD/out-deb"
@@ -252,7 +274,7 @@ jobs:
 
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
-          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-*.noarch.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
+          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
           bash tools/runtime-install-check.sh "$PWD/$pkg"
 
   # the checks every FreeMixer repository runs on what it publishes: commit messages, private references, and no

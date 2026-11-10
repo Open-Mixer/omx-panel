@@ -10,12 +10,14 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
 MANDIR ?= $(DATADIR)/man
+LIBDIR ?= $(PREFIX)/lib
+INCLUDEDIR ?= $(PREFIX)/include
 SYSCONFDIR ?= /etc
 UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install renderer renderer-check
+.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer
 
 all: build
 
@@ -52,14 +54,20 @@ copies:
 	node tools/copies-check.mjs --self-test
 	node tools/copies-check.mjs .
 
-# The panel renderer, C (docs/renderer.md): its own Makefile, not part of `make` or the package yet. Its check reads the
-# built tree, so `make` first. WINDOW=1 adds the window (pugl, NanoVG); its tests want a display (xvfb-run).
+# The panel renderer, C (docs/renderer.md): its own Makefile. Its check reads the built tree, so `make` first. WINDOW=1
+# adds the window (pugl, NanoVG); its tests want a display (xvfb-run). The packages ship the shared library alone
+# (omx-panel-render, libomx-panel-render0) and its header, .so link and pkg-config file (-devel, -dev): install-renderer
+# installs those, never the static library or the command.
 WINDOW ?= 0
 renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
 renderer-check: build
 	$(MAKE) -C renderer check WINDOW=$(WINDOW)
+
+install-renderer:
+	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
+	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
 
 install: build
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins

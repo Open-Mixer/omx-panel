@@ -78,7 +78,8 @@ jobs:
     uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@openmixer-v1
     with:
       package-name: omx-panel
-      binary-names: omx-panel
+      # omx-panel, and the renderer's shared library with its development files (each installed by the install checks)
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
@@ -94,7 +95,7 @@ jobs:
     uses: Open-Mixer/.github/.github/workflows/build-deb.yml@openmixer-v1
     with:
       package-name: omx-panel
-      binary-names: omx-panel
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

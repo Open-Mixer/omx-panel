@@ -8,6 +8,11 @@ omx-panel (0.13.0) unstable; urgency=medium
   * Runs beside plugin-hostd 0.20.2: plugin-hostd-contract and the recommended
     plugin-hostd >= 0.20.2 and < 0.21, omx-contract-data >= 3.12.0 and < 4, the
     recommended omx-plugins-contract >= 0.19.2 and < 0.20
+  * The renderer ships as a shared library: libomx-panel-render0 carries
+    libomx-panel-render.so.0, libomx-panel-render-dev its header, link and
+    pkg-config file, built for each architecture.
+  * describe --layout, CLAP feature macros, and an EQ band's Q, type and
+    switch inferred from what its words name.
 
  -- Pau Aliagas <linuxnow@gmail.com>  Mon, 09 Nov 2026 18:37:52 +0100
 
