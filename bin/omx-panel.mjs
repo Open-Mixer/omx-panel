@@ -237,6 +237,7 @@ async function vocabulary(refs) {
   };
   line('contractdir', () => v.contractDirs().join(':'));
   line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
+  line('role-meanings', () => `${v.roleMeanings().size} roles from ${process.env.OMX_ROLE_MEANINGS || 'the contract directories'}`);
   line('lv2-units', () => `${Object.keys(v.lv2UnitTable()).length} from ${v.lv2TableFile()}`);
   line('param-contract', () => `${v.paramUnits().size} units from ${v.paramUnitsFile()}`);
   for (const ref of refs) {
