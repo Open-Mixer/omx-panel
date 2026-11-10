@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.1
+Version: 0.13.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -22,14 +22,14 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: (omx-contract-data >= 3.12.0 with omx-contract-data < 4)
-BuildRequires: (plugin-hostd-contract >= 0.20.2 with plugin-hostd-contract < 0.21)
+BuildRequires: (omx-contract-data >= 3.13.0 with omx-contract-data < 4)
+BuildRequires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: (plugin-hostd >= 0.20.2 with plugin-hostd < 0.21)
+Recommends: (plugin-hostd >= 0.20.3 with plugin-hostd < 0.21)
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -37,15 +37,15 @@ BuildRequires: systemd-rpm-macros
 # the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
-BuildRequires: (omx-contract-devel >= 3.12.0 with omx-contract-devel < 4)
+BuildRequires: (omx-contract-devel >= 3.13.0 with omx-contract-devel < 4)
 BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: (omx-contract-data >= 3.12.0 with omx-contract-data < 4)
-Requires: (plugin-hostd-contract >= 0.20.2 with plugin-hostd-contract < 0.21)
+Requires: (omx-contract-data >= 3.13.0 with omx-contract-data < 4)
+Requires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
 # the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: (omx-plugins-contract >= 0.19.2 with omx-plugins-contract < 0.20)
+Recommends: (omx-plugins-contract >= 0.19.3 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -124,6 +124,18 @@ make test
 %{_libdir}/pkgconfig/omx-panel-render.pc
 
 %changelog
+* Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.2-1
+- the meaning each panel role plays is read from the roleMeanings items the
+  installed packages declare in their contract directories (omx-plugins-contract
+  0.19.3 installs omx-plugins'); omx-panel keeps no list of its own, a role no
+  package declares plays none, and one declared twice is refused
+- a level meter of the descriptor's meters[] is the transfer curve's operating
+  point whether or not it names its measurement: clap.meters/1 meters as
+  plugin-hostd 0.20.3 describes them state none
+- runs beside plugin-hostd 0.20.3: plugin-hostd-contract and the recommended
+  plugin-hostd >= 0.20.3 and < 0.21, omx-contract-data >= 3.13.0 and < 4, the
+  recommended omx-plugins-contract >= 0.19.3 and < 0.20
+
 * Tue Nov 10 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.1-1
 - the package metadata names Open-Mixer/omx-panel: repository, homepage and
   bugs in package.json, the Debian and RPM homepage and source; npm refused

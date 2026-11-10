@@ -1,3 +1,20 @@
+omx-panel (0.13.2) unstable; urgency=medium
+
+  * The meaning each panel role plays is read from the roleMeanings items the
+    installed packages declare in their contract directories
+    (omx-plugins-contract 0.19.3 installs omx-plugins'); omx-panel keeps no
+    list of its own, a role no package declares plays none, and one declared
+    twice is refused.
+  * A level meter of the descriptor's meters[] is the transfer curve's
+    operating point whether or not it names its measurement: clap.meters/1
+    meters as plugin-hostd 0.20.3 describes them state none.
+  * Runs beside plugin-hostd 0.20.3: plugin-hostd-contract and the
+    recommended plugin-hostd >= 0.20.3 and < 0.21, omx-contract-data
+    >= 3.13.0 and < 4, the recommended omx-plugins-contract >= 0.19.3 and
+    < 0.20.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 11 Nov 2026 01:30:00 +0100
+
 omx-panel (0.13.1) unstable; urgency=medium
 
   * The package metadata names Open-Mixer/omx-panel: repository, homepage and
