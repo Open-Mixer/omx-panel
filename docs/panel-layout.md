@@ -209,7 +209,8 @@ What a face serves keeps the extension's widget enum: `knob`, `fader` and `switc
 
 Each distinct `group` path is a section, in the order its first control comes; its label is the path
 joined with ` / `, its key the path's segments in the key grammar, joined with dots. Controls with no
-group go to a section `controls`. A hidden control is left out. The layout also carries the ports: the
+group go to a section `controls`. A hidden control is left out, and so is a control meaning `bypass`:
+the header draws the one bypass of a panel, and the param stays served for it to set. The layout also carries the ports: the
 audio inputs and outputs with their channels, whether one is a side-chain, and the note inputs.
 
 ## Pages

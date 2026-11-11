@@ -228,7 +228,8 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   else {
     const groups = new Map();
     for (const c of all) {
-      if (c.hidden) continue;
+      // a bypass is the header's, which draws one per panel: not drawn a second time (as easy.mjs and modgui-gen.mjs)
+      if (c.hidden || c.meaning === 'bypass') continue;
       const path = c.group?.length ? c.group : ['Controls'];
       const k = path.map(keyOfText).join('.');
       if (!groups.has(k)) groups.set(k, { key: k, label: path.join(' / '), controls: [] });

@@ -23,17 +23,20 @@ const fixture = (name) => JSON.parse(readFileSync(join(FIXTURES, name), 'utf8'))
 test('a CLAP plugin\'s params, controls and Easy list are served under each parameter\'s id in decimal', () => {
   const d = fixture('scanned-clap-balancer.json');
   const ids = d.controls.map((c) => String(c.id));
+  // its bypass parameter is the header's (plugin-qualify#27): served as a param, not drawn, not slotted on a page
+  const drawn = d.controls.filter((c) => c.meaning !== 'bypass');
+  assert.equal(drawn.length, d.controls.length - 1);
   const { description, refusals } = describe(d);
   assert.deepEqual(refusals, []);
   assert.deepEqual(description.params.map((p) => p.symbol), ids);
-  assert.deepEqual(description.controls.map((c) => c.symbol).sort(), [...ids].sort());
+  assert.deepEqual(description.controls.map((c) => c.symbol).sort(), drawn.map((c) => String(c.id)).sort());
   assert.ok(description.easy.length > 0 && description.easy.every((s) => ids.includes(s)), JSON.stringify(description.easy));
   // the pages slot the parameter itself, as before
-  assert.deepEqual(description.pages.flatMap((p) => p.ids).filter((v) => v !== null).sort((a, b) => a - b), d.controls.map((c) => c.id).sort((a, b) => a - b));
+  assert.deepEqual(description.pages.flatMap((p) => p.ids).filter((v) => v !== null).sort((a, b) => a - b), drawn.map((c) => c.id).sort((a, b) => a - b));
 });
 test('arm: the layout keeps its own key p<id> for a CLAP control; only the description serves the id', () => {
   const d = fixture('scanned-clap-balancer.json');
-  assert.deepEqual(panelLayout(d).controls.map((c) => c.symbol).sort(), d.controls.map((c) => `p${c.id}`).sort());
+  assert.deepEqual(panelLayout(d).controls.map((c) => c.symbol).sort(), d.controls.filter((c) => c.meaning !== 'bypass').map((c) => `p${c.id}`).sort());
   assert.equal(servedSymbolOf({ id: 7 }), '7');
   assert.equal(servedSymbolOf({ id: 'gain', symbol: 'gain' }), 'gain');
   assert.equal(servedSymbolOf({ id: 'g_0' }), 'g_0');
