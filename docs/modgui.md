@@ -67,7 +67,7 @@ role (`test/look-roles.test.mjs`). The package exports the file as `@openmixer/o
 
 `tools/modgui-test.sh <bundle.lv2> <descriptor> [<panel>]` holds a written MOD GUI to its descriptor on values:
 the files are the generation byte for byte; every control is drawn in the template with its symbol, travel and
-default (a readout with its symbol and range, as a display with no port role), and nothing undeclared is; every choice is a selector with each of its values; `sord_validate` accepts
+default (a readout with its symbol and range, as a display with no port role), every meter that is no control of a section as a static frame with its symbol, range and unit and no port role, and nothing undeclared is; every choice is a selector with each of its values; `sord_validate` accepts
 the bundle against the LV2 specifications, `tools/modgui-terms.ttl` (the closed modgui vocabulary) and
 omx-contract's resource-hint terms, and refuses a property outside that vocabulary; and a descriptor with its
 first control's default moved makes `--check` fail on the template.
