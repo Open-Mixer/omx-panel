@@ -7,6 +7,10 @@ name: release
 # GitHub release. The npm package is published by publish.yml (npmjs.com trusts that file by name, with no
 # environment), on the same tag.
 
+# A manual run with staged on (never a tag) builds fc44 x86_64 and trixie amd64 only and leaves them on the prerelease
+# staged-v<version> for the next layer of the release chain, which names them in its own staged-deps; nothing reaches
+# the channel, and the real release still publishes once from the v<version> tag (Open-Mixer/.github build-rpm.yml).
+
 on:
   push:
     tags: ['v*']
@@ -20,6 +24,14 @@ on:
         description: 'finish a partial publish of a version the channel already serves'
         type: boolean
         default: false
+      staged:
+        description: 'Build fc44 x86_64 and trixie amd64 only and put them on the prerelease staged-v<version> for the next layer; publishes nothing to the channel'
+        type: boolean
+        default: false
+      staged-deps:
+        description: 'Staged packages of inner layers to build against, [owner/]repo@version[:package,package], space separated'
+        type: string
+        default: ''
 
 # A called workflow cannot exceed its caller's token. build-rpm.yml and build-deb.yml run a report-failure job that
 # asks for `issues: write` and `actions: read`; without both here GitHub refuses to start the run at all.
@@ -42,6 +54,20 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      # a staged run against inner layers the channel does not serve yet: their staged packages first, so the
+      # vocabulary install below finds them installed (install-staged checks them against this tree's packaging)
+      - name: The packaging the staged packages must meet
+        if: ${{ inputs.staged-deps }}
+        uses: actions/checkout@v4
+        with:
+          path: staged-tree
+      - name: Install the staged packages of the inner layers
+        if: ${{ inputs.staged-deps }}
+        uses: Open-Mixer/.github/.github/actions/install-staged@openmixer-v1
+        with:
+          packages: ${{ inputs.staged-deps }}
+          tree: staged-tree
+
       - name: Install the vocabulary the suite reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21'
@@ -77,6 +103,8 @@ jobs:
     needs: check
     uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@openmixer-v1
     with:
+      staged: ${{ inputs.staged == true }}
+      staged-deps: ${{ inputs.staged-deps || '' }}
       package-name: omx-panel
       # omx-panel, and the renderer's shared library with its development files (each installed by the install checks)
       binary-names: omx-panel omx-panel-render omx-panel-render-devel
@@ -93,6 +121,8 @@ jobs:
     needs: check
     uses: Open-Mixer/.github/.github/workflows/build-deb.yml@openmixer-v1
     with:
+      staged: ${{ inputs.staged == true }}
+      staged-deps: ${{ inputs.staged-deps || '' }}
       package-name: omx-panel
       binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
