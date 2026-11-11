@@ -1,3 +1,11 @@
+omx-panel (0.13.2) unstable; urgency=medium
+
+  * tools/modgui-test.sh holds each meter frame the generator draws to the
+    description's symbol, range and unit and counts it; a MOD GUI with meters
+    failed 0.13.1's test with more rows drawn than declared
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 11 Nov 2026 06:05:00 +0100
+
 omx-panel (0.13.1) unstable; urgency=medium
 
   * The package metadata names Open-Mixer/omx-panel: repository, homepage and

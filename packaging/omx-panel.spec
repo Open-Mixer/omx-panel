@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.1
+Version: 0.13.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -124,6 +124,11 @@ make test
 %{_libdir}/pkgconfig/omx-panel-render.pc
 
 %changelog
+* Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.2-1
+- tools/modgui-test.sh holds each meter frame the generator draws to the
+  description's symbol, range and unit and counts it; a MOD GUI with meters
+  failed 0.13.1's test with more rows drawn than declared
+
 * Tue Nov 10 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.1-1
 - the package metadata names Open-Mixer/omx-panel: repository, homepage and
   bugs in package.json, the Debian and RPM homepage and source; npm refused

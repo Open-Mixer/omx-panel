@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 0.13.2: `tools/modgui-test.sh` holds each meter frame the generator draws to the description's symbol, range and unit,
+  with no port role, and counts it; a MOD GUI with meters failed 0.13.1's test with more rows drawn than declared.
 - 0.13.1: the package metadata names Open-Mixer/omx-panel (repository, homepage, bugs), so npm accepts the package
   its provenance names; 0.13.0 was refused for naming the old organisation.
 - The renderer is also a shared library, `libomx-panel-render.so.0`, exporting only the header's functions, for a surface
