@@ -308,7 +308,10 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
     const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     const symbols = new Set(x.controls.map((c) => c.symbol));
     meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: m.unit, min: m.min, max: m.max, kind: m.kind }));
-  } catch {
+  } catch (err) {
+    // a refusal of the layout carries its code and leaves no meter to draw; anything else (plugin-hostd's LV2 table not
+    // installed) would write a MOD GUI that silently lacks its meters
+    if (!err.code) throw err;
     meters = [];
   }
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,

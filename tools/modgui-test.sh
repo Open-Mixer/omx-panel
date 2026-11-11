@@ -93,7 +93,7 @@ while IFS= read -r row; do
 done <"$TMP/declared"
 # (b1) every meter of the panel description that is no control of a section is a static frame in the template, with
 # its symbol, range and unit and no port role (docs/panel-layout.md, Meters). The declared rows are the description's
-# meters; a descriptor the layout cannot describe has no meter to draw.
+# meters; a descriptor the layout refuses by code has no meter to draw, and a layout that could not be read fails the check.
 node --input-type=module -e '
 const { readFileSync } = await import("node:fs");
 const { panelLayout } = await import(process.argv[1]);
@@ -101,10 +101,12 @@ const d = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const panel = process.argv[3] ? JSON.parse(readFileSync(process.argv[3], "utf8")) : null;
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 let x;
-try { x = panelLayout(d, panel ? { panel, derive: true } : { derive: true }); } catch { process.exit(0); }
+// a refusal of the layout carries its code and leaves no meter to draw; any other failure (the LV2 table of plugin-hostd
+// not installed, a panel the layout rejects) fails the check, with its reason
+try { x = panelLayout(d, panel ? { panel, derive: true } : { derive: true }); } catch (err) { if (err.code) process.exit(0); console.error(err.message); process.exit(1); }
 const controls = new Set(x.controls.map((c) => c.symbol));
 for (const m of x.meters) if (!controls.has(m.symbol)) console.log(`data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}"`);
-' "$ROOT/tools/panel-description.mjs" "$DESC" "${PANEL:-}" >"$TMP/meters" || fail "read the meters of $DESC"
+' "$ROOT/tools/panel-description.mjs" "$DESC" "${PANEL:-}" >"$TMP/meters" 2>"$TMP/meters.err" || fail "read the meters of $DESC ($(tr '\n' ' ' <"$TMP/meters.err" | sed 's/ *$//'))"
 while IFS= read -r row; do
   n=$((n + 1))
   sym=$(printf '%s\n' "$row" | sed 's/^data-symbol="\([^"]*\)".*/\1/')

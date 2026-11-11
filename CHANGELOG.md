@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- `tools/modgui-test.sh` and `tools/modgui-gen.mjs` fail with the reason when the panel layout cannot be read (plugin-hostd's
+  LV2 table not installed): both read that as "no meters", so the generator wrote a MOD GUI without its meter frames and
+  the test passed it (#11).
 - 0.13.2: `tools/modgui-test.sh` holds each meter frame the generator draws to the description's symbol, range and unit,
   with no port role, and counts it; a MOD GUI with meters failed 0.13.1's test with more rows drawn than declared.
 - 0.13.1: the package metadata names Open-Mixer/omx-panel (repository, homepage, bugs), so npm accepts the package

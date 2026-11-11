@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -76,4 +76,22 @@ test('arm: a frame given a port role is refused: a meter frame is static', () =>
   const { status, out } = lines(bundle);
   assert.equal(status, 1);
   assert.ok(out.some((l) => l.startsWith('FAIL template draws meter lufs as a frame')), out.join('\n'));
+});
+// plugin-hostd's LV2 table missing: the layout cannot be read, and neither the test nor the generator may answer "no meters"
+const NO_TABLES = mkdtempSync(join(tmpdir(), 'omx-panel-no-tables-'));
+const NOT_INSTALLED = `vocabulary: plugin-hostd's LV2 table is not installed (${join(NO_TABLES, 'lv2.json')})`;
+test('arm: without plugin-hostd\'s LV2 table the meter check fails with the reason, it does not pass with no meters', () => {
+  const bundle = written();
+  const r = spawnSync('sh', [join(ROOT, 'tools/modgui-test.sh'), bundle, DESC, PANEL], { encoding: 'utf8', env: { ...process.env, MODGUI_SOURCE: SOURCE, PLUGIN_HOSTD_TABLES: NO_TABLES } });
+  const out = r.stdout.split('\n');
+  assert.equal(r.status, 1);
+  assert.ok(out.some((l) => l.startsWith(`FAIL read the meters of ${DESC} (${NOT_INSTALLED}`)), r.stdout);
+  assert.ok(!out.some((l) => l.startsWith('PASS template draws exactly')), r.stdout);
+});
+test('arm: without plugin-hostd\'s LV2 table the generator refuses with the reason, it writes no MOD GUI without its meters', () => {
+  const bundle = join(mkdtempSync(join(tmpdir(), 'omx-panel-modgui-test-')), 'meters.lv2');
+  const r = spawnSync(process.execPath, [join(ROOT, 'tools/modgui-gen.mjs'), '--descriptor', DESC, '--panel', PANEL, '--out', bundle, '--source', SOURCE], { encoding: 'utf8', env: { ...process.env, PLUGIN_HOSTD_TABLES: NO_TABLES } });
+  assert.notEqual(r.status, 0);
+  assert.ok(r.stderr.includes(NOT_INSTALLED), r.stderr);
+  assert.ok(!existsSync(join(bundle, 'modgui/icon-meters.html')));
 });
