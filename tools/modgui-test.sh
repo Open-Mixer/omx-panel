@@ -6,7 +6,7 @@
 # VALUES:
 #   (a) `node tools/modgui-gen.mjs --check` is clean;
 #   (b) every control the panel draws is in the template with its symbol, min, max and default, read from the
-#       descriptor itself;
+#       descriptor itself, and every meter that is no control as a static frame with its range and unit;
 #   (c) sord_validate passes the bundle against the LV2 specs, tools/modgui-terms.ttl and the installed
 #       omx-contract's omx-resource-hints.ttl, the terms of the omxres: hints (skipped when sord_validate is
 #       not installed);
@@ -91,12 +91,35 @@ while IFS= read -r row; do
       fi ;;
   esac
 done <"$TMP/declared"
+# (b1) every meter of the panel description that is no control of a section is a static frame in the template, with
+# its symbol, range and unit and no port role (docs/panel-layout.md, Meters). The declared rows are the description's
+# meters; a descriptor the layout cannot describe has no meter to draw.
+node --input-type=module -e '
+const { readFileSync } = await import("node:fs");
+const { panelLayout } = await import(process.argv[1]);
+const d = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const panel = process.argv[3] ? JSON.parse(readFileSync(process.argv[3], "utf8")) : null;
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+let x;
+try { x = panelLayout(d, panel ? { panel, derive: true } : { derive: true }); } catch { process.exit(0); }
+const controls = new Set(x.controls.map((c) => c.symbol));
+for (const m of x.meters) if (!controls.has(m.symbol)) console.log(`data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}"`);
+' "$ROOT/tools/panel-description.mjs" "$DESC" "${PANEL:-}" >"$TMP/meters" || fail "read the meters of $DESC"
+while IFS= read -r row; do
+  n=$((n + 1))
+  sym=$(printf '%s\n' "$row" | sed 's/^data-symbol="\([^"]*\)".*/\1/')
+  if [ -f "$TEMPLATE" ] && grep -qF "<div class=\"omx-meter-frame\" $row " "$TEMPLATE" && ! grep -qF "mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
+    pass "template draws meter $sym as a frame with its declared range and unit"
+  else
+    fail "template draws meter $sym as a frame with its declared range and unit ($row)"
+  fi
+done <"$TMP/meters"
 drawn=$(grep -c 'data-symbol="' "$TEMPLATE" 2>/dev/null); drawn=${drawn:-0}
 # Positive control: the scan read the template it claims to, and it draws nothing undeclared.
 if [ "$n" -gt 0 ] && [ "$drawn" -eq "$n" ]; then
-  pass "template draws exactly the $n declared parameters"
+  pass "template draws exactly the $n declared parameters and meters"
 else
-  fail "template draws exactly the declared parameters (declared $n, drawn $drawn)"
+  fail "template draws exactly the declared parameters and meters (declared $n, drawn $drawn)"
 fi
 
 # (b2) every choice is a selector: MOD's custom-select on its port, with one enumeration option per value, each at

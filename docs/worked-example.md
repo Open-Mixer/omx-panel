@@ -185,7 +185,7 @@ PASS template draws slew with its declared travel and default
 PASS template draws sidech with its declared travel and default
 PASS template draws readout gr as a display with its declared range
 PASS template draws readout outlevel as a display with its declared range
-PASS template draws exactly the 10 declared parameters
+PASS template draws exactly the 10 declared parameters and meters
 PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1947 restrictions); all 21 of them label errors)
 PASS sord_validate refuses a modgui property outside modgui-terms.ttl
 PASS a moved default makes modgui-gen --check fail
@@ -272,7 +272,7 @@ PASS template draws sidech with its declared travel and default
 PASS template draws mak with its declared travel and default
 PASS template draws readout gr as a display with its declared range
 PASS template draws readout outlevel as a display with its declared range
-PASS template draws exactly the 10 declared parameters
+PASS template draws exactly the 10 declared parameters and meters
 PASS sord_validate ZamComp.lv2/*.ttl against the LV2 specs, modgui terms and resource-hint terms (Found 21 errors among 85 files (checked 1938 restrictions); all 21 of them label errors)
 PASS sord_validate refuses a modgui property outside modgui-terms.ttl
 PASS a moved default makes modgui-gen --check fail
@@ -439,7 +439,7 @@ PASS template draws sidech with its declared travel and default
 PASS template draws mak with its declared travel and default
 PASS template draws readout gr as a display with its declared range
 PASS template draws readout outlevel as a display with its declared range
-PASS template draws exactly the 10 declared parameters
+PASS template draws exactly the 10 declared parameters and meters
 error: Object not in range <http://lv2plug.in/ns/lv2core#ExtensionData>
 
 error: Use of undefined property
