@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.2
+Version: 0.13.3
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -124,7 +124,7 @@ make test
 %{_libdir}/pkgconfig/omx-panel-render.pc
 
 %changelog
-* Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.2-1
+* Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.3-1
 - the meaning each panel role plays is read from the roleMeanings items the
   installed packages declare in their contract directories (omx-plugins-contract
   0.19.3 installs omx-plugins'); omx-panel keeps no list of its own, a role no
@@ -135,6 +135,15 @@ make test
 - runs beside plugin-hostd 0.20.3: plugin-hostd-contract and the recommended
   plugin-hostd >= 0.20.3 and < 0.21, omx-contract-data >= 3.13.0 and < 4, the
   recommended omx-plugins-contract >= 0.19.3 and < 0.20
+- tools/modgui-test.sh and tools/modgui-gen.mjs fail with the reason when the
+  panel layout cannot be read (plugin-hostd's LV2 table not installed); both
+  read that as no meters, so a MOD GUI was written without its meter frames and
+  the test passed it (#11)
+
+* Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.2-1
+- tools/modgui-test.sh holds each meter frame the generator draws to the
+  description's symbol, range and unit and counts it; a MOD GUI with meters
+  failed 0.13.1's test with more rows drawn than declared
 
 * Tue Nov 10 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.1-1
 - the package metadata names Open-Mixer/omx-panel: repository, homepage and

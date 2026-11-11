@@ -4,10 +4,15 @@
 
 ## Unreleased
 
-- 0.13.2: the meaning each panel role plays comes from the `roleMeanings` items the installed packages declare
+- 0.13.3: the meaning each panel role plays comes from the `roleMeanings` items the installed packages declare
   (omx-contract 3.13.0's kind; omx-plugins-contract 0.19.3 installs omx-plugins'), no list of omx-panel's own; a role no
   package declares plays none, one declared twice is refused. A level meter of the descriptor's `meters[]` is the
   transfer curve's operating point without a `measurement`, as plugin-hostd 0.20.3 describes `clap.meters/1` meters.
+- 0.13.3: `tools/modgui-test.sh` and `tools/modgui-gen.mjs` fail with the reason when the panel layout cannot be read (plugin-hostd's
+  LV2 table not installed): both read that as "no meters", so the generator wrote a MOD GUI without its meter frames and
+  the test passed it (#11).
+- 0.13.2: `tools/modgui-test.sh` holds each meter frame the generator draws to the description's symbol, range and unit,
+  with no port role, and counts it; a MOD GUI with meters failed 0.13.1's test with more rows drawn than declared.
 - 0.13.1: the package metadata names Open-Mixer/omx-panel (repository, homepage, bugs), so npm accepts the package
   its provenance names; 0.13.0 was refused for naming the old organisation.
 - The renderer is also a shared library, `libomx-panel-render.so.0`, exporting only the header's functions, for a surface
