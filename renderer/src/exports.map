@@ -4,6 +4,7 @@
  * (test/shared.test.mjs holds the list to the header). */
 OMX_PANEL_RENDER_0 {
   global:
+    omx_panel_word_name;
     omx_panel_view_control_rect;
     omx_panel_view_count;
     omx_panel_view_create;

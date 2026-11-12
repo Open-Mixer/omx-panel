@@ -211,6 +211,11 @@ typedef enum omx_panel_word {
   OMX_PANEL_WORD_PAINT,
 } omx_panel_word_t;
 
+/** The name of a gesture word as schema/gestures.json spells it ("drag", "fine", ...), the name the panel's own
+ * command writes; "" for OMX_PANEL_WORD_NONE and NULL for a value that is no word. A host that is not JavaScript reads
+ * the names here instead of keeping a list of its own (#23). */
+const char *omx_panel_word_name(omx_panel_word_t word);
+
 /** Why an event was refused, by the rule that refused it (the reference's GESTURE_* codes). */
 typedef enum omx_panel_refusal {
   OMX_PANEL_REFUSED_NONE = 0,
