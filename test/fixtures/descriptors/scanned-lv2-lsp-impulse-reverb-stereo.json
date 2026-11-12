@@ -1,0 +1,1960 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo",
+    "uri": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo",
+    "name": "LSP Impulse Reverb Stereo",
+    "vendor": "LSP LV2",
+    "version": "0.32",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "enabled",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#enabled"
+      }
+    },
+    {
+      "id": "fsel",
+      "name": "File selector",
+      "kind": "choice",
+      "ids": [
+        "file1",
+        "file2",
+        "file3",
+        "file4"
+      ],
+      "labels": [
+        "File 1",
+        "File 2",
+        "File 3",
+        "File 4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "file1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#fsel"
+      }
+    },
+    {
+      "id": "fft",
+      "name": "FFT size",
+      "kind": "choice",
+      "ids": [
+        "512",
+        "1024",
+        "2048",
+        "4096",
+        "8192",
+        "16384",
+        "32768",
+        "65536"
+      ],
+      "labels": [
+        "512",
+        "1024",
+        "2048",
+        "4096",
+        "8192",
+        "16384",
+        "32768",
+        "65536"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "default": "32768",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#fft"
+      }
+    },
+    {
+      "id": "pd",
+      "name": "Pre-delay",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pd"
+      }
+    },
+    {
+      "id": "pl",
+      "name": "Left channel panorama",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": -100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pl"
+      }
+    },
+    {
+      "id": "pr",
+      "name": "Right channel panorama",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pr"
+      }
+    },
+    {
+      "id": "dry",
+      "name": "Dry amount",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#dry"
+      }
+    },
+    {
+      "id": "wet",
+      "name": "Wet amount",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#wet"
+      }
+    },
+    {
+      "id": "drywet",
+      "name": "Dry/Wet balance",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#drywet"
+      }
+    },
+    {
+      "id": "g_out",
+      "name": "Output gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#g_out"
+      }
+    },
+    {
+      "id": "psh0",
+      "name": "File pitch 0",
+      "kind": "travel",
+      "travel": {
+        "min": -24.0,
+        "max": 24.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#psh0"
+      }
+    },
+    {
+      "id": "ihc0",
+      "name": "Head cut 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ihc0"
+      }
+    },
+    {
+      "id": "itc0",
+      "name": "Tail cut 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#itc0"
+      }
+    },
+    {
+      "id": "ifi0",
+      "name": "Fade in 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifi0"
+      }
+    },
+    {
+      "id": "ifo0",
+      "name": "Fade out 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifo0"
+      }
+    },
+    {
+      "id": "ils0",
+      "name": "Impulse listen preview 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ils0"
+      }
+    },
+    {
+      "id": "ilc0",
+      "name": "Impulse stop preview 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ilc0"
+      }
+    },
+    {
+      "id": "irv0",
+      "name": "Impulse reverse 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#irv0"
+      }
+    },
+    {
+      "id": "ifs0",
+      "name": "Load status 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifs0"
+      }
+    },
+    {
+      "id": "ifl0",
+      "name": "Impulse length 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifl0"
+      }
+    },
+    {
+      "id": "psh1",
+      "name": "File pitch 1",
+      "kind": "travel",
+      "travel": {
+        "min": -24.0,
+        "max": 24.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#psh1"
+      }
+    },
+    {
+      "id": "ihc1",
+      "name": "Head cut 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ihc1"
+      }
+    },
+    {
+      "id": "itc1",
+      "name": "Tail cut 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#itc1"
+      }
+    },
+    {
+      "id": "ifi1",
+      "name": "Fade in 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifi1"
+      }
+    },
+    {
+      "id": "ifo1",
+      "name": "Fade out 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifo1"
+      }
+    },
+    {
+      "id": "ils1",
+      "name": "Impulse listen preview 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ils1"
+      }
+    },
+    {
+      "id": "ilc1",
+      "name": "Impulse stop preview 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ilc1"
+      }
+    },
+    {
+      "id": "irv1",
+      "name": "Impulse reverse 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#irv1"
+      }
+    },
+    {
+      "id": "ifs1",
+      "name": "Load status 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifs1"
+      }
+    },
+    {
+      "id": "ifl1",
+      "name": "Impulse length 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifl1"
+      }
+    },
+    {
+      "id": "psh2",
+      "name": "File pitch 2",
+      "kind": "travel",
+      "travel": {
+        "min": -24.0,
+        "max": 24.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#psh2"
+      }
+    },
+    {
+      "id": "ihc2",
+      "name": "Head cut 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ihc2"
+      }
+    },
+    {
+      "id": "itc2",
+      "name": "Tail cut 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#itc2"
+      }
+    },
+    {
+      "id": "ifi2",
+      "name": "Fade in 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifi2"
+      }
+    },
+    {
+      "id": "ifo2",
+      "name": "Fade out 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifo2"
+      }
+    },
+    {
+      "id": "ils2",
+      "name": "Impulse listen preview 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ils2"
+      }
+    },
+    {
+      "id": "ilc2",
+      "name": "Impulse stop preview 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ilc2"
+      }
+    },
+    {
+      "id": "irv2",
+      "name": "Impulse reverse 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#irv2"
+      }
+    },
+    {
+      "id": "ifs2",
+      "name": "Load status 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifs2"
+      }
+    },
+    {
+      "id": "ifl2",
+      "name": "Impulse length 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifl2"
+      }
+    },
+    {
+      "id": "psh3",
+      "name": "File pitch 3",
+      "kind": "travel",
+      "travel": {
+        "min": -24.0,
+        "max": 24.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#psh3"
+      }
+    },
+    {
+      "id": "ihc3",
+      "name": "Head cut 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ihc3"
+      }
+    },
+    {
+      "id": "itc3",
+      "name": "Tail cut 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#itc3"
+      }
+    },
+    {
+      "id": "ifi3",
+      "name": "Fade in 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifi3"
+      }
+    },
+    {
+      "id": "ifo3",
+      "name": "Fade out 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifo3"
+      }
+    },
+    {
+      "id": "ils3",
+      "name": "Impulse listen preview 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ils3"
+      }
+    },
+    {
+      "id": "ilc3",
+      "name": "Impulse stop preview 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ilc3"
+      }
+    },
+    {
+      "id": "irv3",
+      "name": "Impulse reverse 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#irv3"
+      }
+    },
+    {
+      "id": "ifs3",
+      "name": "Load status 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifs3"
+      }
+    },
+    {
+      "id": "ifl3",
+      "name": "Impulse length 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 10000.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ifl3"
+      }
+    },
+    {
+      "id": "cim0",
+      "name": "Left/Right input mix 0",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": -100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cim0"
+      }
+    },
+    {
+      "id": "csf0",
+      "name": "Channel source file 0",
+      "kind": "choice",
+      "ids": [
+        "none",
+        "file1",
+        "file2",
+        "file3",
+        "file4"
+      ],
+      "labels": [
+        "None",
+        "File 1",
+        "File 2",
+        "File 3",
+        "File 4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "default": "file1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#csf0"
+      }
+    },
+    {
+      "id": "cst0",
+      "name": "Channel source track 0",
+      "kind": "choice",
+      "ids": [
+        "track1",
+        "track2",
+        "track3",
+        "track4",
+        "track5",
+        "track6",
+        "track7",
+        "track8"
+      ],
+      "labels": [
+        "Track 1",
+        "Track 2",
+        "Track 3",
+        "Track 4",
+        "Track 5",
+        "Track 6",
+        "Track 7",
+        "Track 8"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "default": "track1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cst0"
+      }
+    },
+    {
+      "id": "mk0",
+      "name": "Makeup gain 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#mk0"
+      }
+    },
+    {
+      "id": "cam0",
+      "name": "Channel mute 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cam0"
+      }
+    },
+    {
+      "id": "ca0",
+      "name": "Channel activity 0",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ca0"
+      }
+    },
+    {
+      "id": "pd0",
+      "name": "Channel pre-delay 0",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pd0"
+      }
+    },
+    {
+      "id": "com0",
+      "name": "Channel Left/Right output mix 0",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": -100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#com0"
+      }
+    },
+    {
+      "id": "cim1",
+      "name": "Left/Right input mix 1",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": -100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cim1"
+      }
+    },
+    {
+      "id": "csf1",
+      "name": "Channel source file 1",
+      "kind": "choice",
+      "ids": [
+        "none",
+        "file1",
+        "file2",
+        "file3",
+        "file4"
+      ],
+      "labels": [
+        "None",
+        "File 1",
+        "File 2",
+        "File 3",
+        "File 4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "default": "file1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#csf1"
+      }
+    },
+    {
+      "id": "cst1",
+      "name": "Channel source track 1",
+      "kind": "choice",
+      "ids": [
+        "track1",
+        "track2",
+        "track3",
+        "track4",
+        "track5",
+        "track6",
+        "track7",
+        "track8"
+      ],
+      "labels": [
+        "Track 1",
+        "Track 2",
+        "Track 3",
+        "Track 4",
+        "Track 5",
+        "Track 6",
+        "Track 7",
+        "Track 8"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "default": "track2",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cst1"
+      }
+    },
+    {
+      "id": "mk1",
+      "name": "Makeup gain 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#mk1"
+      }
+    },
+    {
+      "id": "cam1",
+      "name": "Channel mute 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cam1"
+      }
+    },
+    {
+      "id": "ca1",
+      "name": "Channel activity 1",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ca1"
+      }
+    },
+    {
+      "id": "pd1",
+      "name": "Channel pre-delay 1",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pd1"
+      }
+    },
+    {
+      "id": "com1",
+      "name": "Channel Left/Right output mix 1",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#com1"
+      }
+    },
+    {
+      "id": "cim2",
+      "name": "Left/Right input mix 2",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cim2"
+      }
+    },
+    {
+      "id": "csf2",
+      "name": "Channel source file 2",
+      "kind": "choice",
+      "ids": [
+        "none",
+        "file1",
+        "file2",
+        "file3",
+        "file4"
+      ],
+      "labels": [
+        "None",
+        "File 1",
+        "File 2",
+        "File 3",
+        "File 4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "default": "file2",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#csf2"
+      }
+    },
+    {
+      "id": "cst2",
+      "name": "Channel source track 2",
+      "kind": "choice",
+      "ids": [
+        "track1",
+        "track2",
+        "track3",
+        "track4",
+        "track5",
+        "track6",
+        "track7",
+        "track8"
+      ],
+      "labels": [
+        "Track 1",
+        "Track 2",
+        "Track 3",
+        "Track 4",
+        "Track 5",
+        "Track 6",
+        "Track 7",
+        "Track 8"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "default": "track1",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cst2"
+      }
+    },
+    {
+      "id": "mk2",
+      "name": "Makeup gain 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#mk2"
+      }
+    },
+    {
+      "id": "cam2",
+      "name": "Channel mute 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cam2"
+      }
+    },
+    {
+      "id": "ca2",
+      "name": "Channel activity 2",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ca2"
+      }
+    },
+    {
+      "id": "pd2",
+      "name": "Channel pre-delay 2",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pd2"
+      }
+    },
+    {
+      "id": "com2",
+      "name": "Channel Left/Right output mix 2",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": -100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#com2"
+      }
+    },
+    {
+      "id": "cim3",
+      "name": "Left/Right input mix 3",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cim3"
+      }
+    },
+    {
+      "id": "csf3",
+      "name": "Channel source file 3",
+      "kind": "choice",
+      "ids": [
+        "none",
+        "file1",
+        "file2",
+        "file3",
+        "file4"
+      ],
+      "labels": [
+        "None",
+        "File 1",
+        "File 2",
+        "File 3",
+        "File 4"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "default": "file2",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#csf3"
+      }
+    },
+    {
+      "id": "cst3",
+      "name": "Channel source track 3",
+      "kind": "choice",
+      "ids": [
+        "track1",
+        "track2",
+        "track3",
+        "track4",
+        "track5",
+        "track6",
+        "track7",
+        "track8"
+      ],
+      "labels": [
+        "Track 1",
+        "Track 2",
+        "Track 3",
+        "Track 4",
+        "Track 5",
+        "Track 6",
+        "Track 7",
+        "Track 8"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+      ],
+      "default": "track2",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cst3"
+      }
+    },
+    {
+      "id": "mk3",
+      "name": "Makeup gain 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#mk3"
+      }
+    },
+    {
+      "id": "cam3",
+      "name": "Channel mute 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#cam3"
+      }
+    },
+    {
+      "id": "ca3",
+      "name": "Channel activity 3",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ca3"
+      }
+    },
+    {
+      "id": "pd3",
+      "name": "Channel pre-delay 3",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "ms",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#pd3"
+      }
+    },
+    {
+      "id": "com3",
+      "name": "Channel Left/Right output mix 3",
+      "kind": "travel",
+      "travel": {
+        "min": -100.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#com3"
+      }
+    },
+    {
+      "id": "wpp",
+      "name": "Wet post-process",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#wpp"
+      }
+    },
+    {
+      "id": "eqv",
+      "name": "Equalizer visibility",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eqv"
+      }
+    },
+    {
+      "id": "lcm",
+      "name": "Low-cut mode",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#lcm"
+      }
+    },
+    {
+      "id": "lcf",
+      "name": "Low-cut frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 1000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 50.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#lcf"
+      }
+    },
+    {
+      "id": "eq_0",
+      "name": "Band 50Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_0"
+      }
+    },
+    {
+      "id": "eq_1",
+      "name": "Band 107Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_1"
+      }
+    },
+    {
+      "id": "eq_2",
+      "name": "Band 227Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_2"
+      }
+    },
+    {
+      "id": "eq_3",
+      "name": "Band 484Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_3"
+      }
+    },
+    {
+      "id": "eq_4",
+      "name": "Band 1 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_4"
+      }
+    },
+    {
+      "id": "eq_5",
+      "name": "Band 2.2 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_5"
+      }
+    },
+    {
+      "id": "eq_6",
+      "name": "Band 4.7 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_6"
+      }
+    },
+    {
+      "id": "eq_7",
+      "name": "Band 10 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_7"
+      }
+    },
+    {
+      "id": "hcm",
+      "name": "High-cut mode",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#hcm"
+      }
+    },
+    {
+      "id": "hcf",
+      "name": "High-cut frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 2000.0,
+        "max": 22000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 10000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#hcf"
+      }
+    },
+    {
+      "id": "ssplit",
+      "name": "Stereo equalizer split",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#ssplit"
+      }
+    },
+    {
+      "id": "lcmr",
+      "name": "Low-cut modeRight ",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#lcmr"
+      }
+    },
+    {
+      "id": "lcfr",
+      "name": "Low-cut frequencyRight ",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 1000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 50.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#lcfr"
+      }
+    },
+    {
+      "id": "eq_0r",
+      "name": "Band Right 50Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_0r"
+      }
+    },
+    {
+      "id": "eq_1r",
+      "name": "Band Right 107Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_1r"
+      }
+    },
+    {
+      "id": "eq_2r",
+      "name": "Band Right 227Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_2r"
+      }
+    },
+    {
+      "id": "eq_3r",
+      "name": "Band Right 484Hz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_3r"
+      }
+    },
+    {
+      "id": "eq_4r",
+      "name": "Band Right 1 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_4r"
+      }
+    },
+    {
+      "id": "eq_5r",
+      "name": "Band Right 2.2 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_5r"
+      }
+    },
+    {
+      "id": "eq_6r",
+      "name": "Band Right 4.7 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_6r"
+      }
+    },
+    {
+      "id": "eq_7r",
+      "name": "Band Right 10 kHz gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.2511900067329407,
+        "max": 3.981070041656494,
+        "unit": "unknown",
+        "scale": "linear",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#eq_7r"
+      }
+    },
+    {
+      "id": "hcmr",
+      "name": "High-cut modeRight ",
+      "kind": "choice",
+      "ids": [
+        "off",
+        "12dBoct",
+        "24dBoct",
+        "36dBoct"
+      ],
+      "labels": [
+        "off",
+        "12 dB/oct",
+        "24 dB/oct",
+        "36 dB/oct"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "default": "off",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#hcmr"
+      }
+    },
+    {
+      "id": "hcfr",
+      "name": "High-cut frequencyRight ",
+      "kind": "travel",
+      "travel": {
+        "min": 2000.0,
+        "max": 22000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 10000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/impulse_reverb_stereo.ttl#hcfr"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "in_l",
+      "name": "Input L",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "in_r",
+      "name": "Input R",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out_l",
+      "name": "Output L",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out_r",
+      "name": "Output R",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "tempo": true,
+    "transport": true,
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/urid#map"
+      ],
+      "optional": [
+        "http://harrisonconsoles.com/lv2/inlinedisplay#queue_draw",
+        "http://lv2plug.in/ns/ext/options#options",
+        "http://lv2plug.in/ns/ext/state#mapPath",
+        "http://lv2plug.in/ns/ext/worker#schedule",
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#ReverbPlugin",
+      "lv2:latency": "out_latency",
+      "patch:writable": [
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo/ports#ifn0",
+          "label": "Impulse file 0",
+          "range": "Path"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo/ports#ifn3",
+          "label": "Impulse file 3",
+          "range": "Path"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo/ports#ifn1",
+          "label": "Impulse file 1",
+          "range": "Path"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/impulse_reverb_stereo/ports#ifn2",
+          "label": "Impulse file 2",
+          "range": "Path"
+        }
+      ]
+    }
+  },
+  "source": {
+    "from": "lsp-plugins.lv2/lsp-plugins-lv2.so#lv2_descriptor"
+  }
+}

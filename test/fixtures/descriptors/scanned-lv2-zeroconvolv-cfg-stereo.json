@@ -1,0 +1,142 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://gareus.org/oss/lv2/zeroconvolv#CfgStereo",
+    "uri": "http://gareus.org/oss/lv2/zeroconvolv#CfgStereo",
+    "name": "x42 - IR Convolver Stereo",
+    "vendor": "Robin Gareus",
+    "version": "1796.0",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "buffered",
+      "name": "Buffered/Latent Convolution",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "zeroconvo.lv2/zeroconvolv.ttl#buffered"
+      }
+    },
+    {
+      "id": "dry",
+      "name": "Dry Signal Level",
+      "kind": "travel",
+      "travel": {
+        "min": -60.0,
+        "max": 6.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -60.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "zeroconvo.lv2/zeroconvolv.ttl#dry"
+      }
+    },
+    {
+      "id": "wet",
+      "name": "Wet Signal Level",
+      "kind": "travel",
+      "travel": {
+        "min": -60.0,
+        "max": 6.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "zeroconvo.lv2/zeroconvolv.ttl#wet"
+      }
+    },
+    {
+      "id": "enable",
+      "name": "Enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "enabled",
+      "source": {
+        "from": "zeroconvo.lv2/zeroconvolv.ttl#enable"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "out_1",
+      "name": "OutL",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "in_1",
+      "name": "InL",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out_2",
+      "name": "OutR",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "in_2",
+      "name": "InR",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/buf-size#boundedBlockLength",
+        "http://lv2plug.in/ns/ext/options#options",
+        "http://lv2plug.in/ns/ext/urid#map",
+        "http://lv2plug.in/ns/ext/worker#schedule"
+      ],
+      "optional": [
+        "http://lv2plug.in/ns/ext/log#log",
+        "http://lv2plug.in/ns/ext/state#freePath",
+        "http://lv2plug.in/ns/ext/state#mapPath",
+        "http://lv2plug.in/ns/ext/state#threadSafeRestore",
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#ReverbPlugin",
+      "lv2:latency": "latency",
+      "patch:writable": [
+        {
+          "uri": "http://gareus.org/oss/lv2/zeroconvolv#ir",
+          "label": "Impulse Response",
+          "range": "Path"
+        }
+      ]
+    }
+  },
+  "source": {
+    "from": "zeroconvo.lv2/zeroconvolv.so#lv2_descriptor"
+  }
+}
