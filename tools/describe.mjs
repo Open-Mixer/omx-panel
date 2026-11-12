@@ -55,8 +55,9 @@ const TEXT_KIND_OF_RANGE = {
 
 /**
  * The path and text parameters a descriptor declares (#17): an LV2 plugin's patch:writable lv2:Parameters, as a scan
- * writes them under `extensions.lv2["patch:writable"]` ({ uri, label, range }), served as `{ kind: 'path' | 'text',
- * symbol, name, default }`: the symbol is the parameter URI's fragment (else its last segment), the name its label, the
+ * writes them under `extensions.lv2["patch:writable"]` ({ uri, label, range }, and a `symbol` where a host names it), served
+ * as `{ kind: 'path' | 'text', symbol, name, default }`: the symbol is the one stated, else the parameter URI's fragment
+ * (else its last segment), the name its label, the
  * default empty. One of another range is not served: it is listed apart (`unserved`, its symbol and range), for a refusal.
  */
 export function textParamsOf(descriptor) {
@@ -67,7 +68,9 @@ export function textParamsOf(descriptor) {
   for (const p of list) {
     const uri = typeof p === 'string' ? p : p?.uri;
     if (typeof uri !== 'string' || uri === '') continue;
-    const symbol = uri.includes('#') ? uri.slice(uri.lastIndexOf('#') + 1) : uri.slice(uri.lastIndexOf('/') + 1);
+    // a symbol the entry states wins (a host's own name for it); else the URI's fragment, else its last segment
+    const stated = typeof p === 'object' && typeof p.symbol === 'string' && p.symbol !== '' ? p.symbol : undefined;
+    const symbol = stated ?? (uri.includes('#') ? uri.slice(uri.lastIndexOf('#') + 1) : uri.slice(uri.lastIndexOf('/') + 1));
     const range = typeof p === 'object' ? p.range : undefined;
     const kind = TEXT_KIND_OF_RANGE[range];
     if (kind) served.push({ kind, symbol, name: (typeof p.label === 'string' && p.label) || symbol, default: '' });

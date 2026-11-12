@@ -92,6 +92,12 @@ test('a plugin whose only parameter is a path is described, not refused for havi
   assert.ok(!refusals.some((r) => r.code === DESCRIBE_CODES.noControls));
 });
 
+test('a symbol the entry states is the served symbol; else the URI fragment names it', () => {
+  const stated = { ...fileOnly(), extensions: { lv2: { 'patch:writable': [{ uri: 'urn:test:param:impulse', symbol: 'impulse', label: 'Impulse response', range: 'Path' }] } } };
+  assert.deepEqual(describe(stated).description.params.map((p) => p.symbol), ['impulse']);
+  assert.deepEqual(describe(fileOnly()).description.params.map((p) => p.symbol), ['ir']);
+});
+
 test('control: a plugin with no control and no path or text parameter is still refused for having no controls', () => {
   const none = { ...fileOnly(), extensions: { lv2: {} } };
   const { description, refusals } = describe(none);
