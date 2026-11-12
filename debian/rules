@@ -28,6 +28,9 @@ override_dh_auto_install:
 	$(MAKE) install-renderer DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include BINDIR=/usr/bin DATADIR=/usr/share
 	# the vendored modules' lint and VCS dotfiles are theirs, not the package's: lintian refuses .eslintrc.yml
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
+	# the catalogs are the language packs' (debian/omx-panel-l10n-<lang>.install takes them from debian/tmp)
+	install -d debian/tmp/usr/share/omx-panel/catalogs
+	mv debian/omx-panel/usr/share/omx-panel/catalogs/*.json debian/tmp/usr/share/omx-panel/catalogs/
 
 # the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
 # omx-complement-sync) is the choice; so an upgrade has nothing of ours to stop either, and on a host that never had the
