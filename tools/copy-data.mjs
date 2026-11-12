@@ -31,6 +31,14 @@ export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/cod
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/modgui-test.sh'];
 
+// A shipped module that starts with a shebang is a command: it ships executable and its declaration carries no
+// shebang, or the release's lintian --fail-on warning refuses the DEB (script-not-executable; 0.13.6's
+// tools/gesture-words.mjs). Listing it is the one way it ships.
+const unlisted = MODULES.filter((f) => readFileSync(join(ROOT, f), 'utf8').startsWith('#!') && !COMMANDS.includes(f));
+if (unlisted.length > 0) {
+  console.error(`copy-data: ${unlisted.join(', ')} start with a shebang and are not in COMMANDS: list each, or drop its shebang`);
+  process.exit(1);
+}
 for (const f of [...MODULES, ...DATA]) {
   mkdirSync(dirname(join(DIST, f)), { recursive: true });
   copyFileSync(join(ROOT, f), join(DIST, f));
