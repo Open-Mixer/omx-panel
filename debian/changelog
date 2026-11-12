@@ -1,3 +1,14 @@
+omx-panel (0.13.5) unstable; urgency=medium
+
+  * describe serves a plugin's path and text parameters: an LV2
+    patch:writable parameter of range atom:Path or atom:String is a parameter
+    of kind path or text and a control of the panel's last section, never on
+    a page; a plugin whose only parameters are paths or texts has a panel; a
+    patch parameter of another range is refused by
+    panel.describe.param-unserved.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 12 Nov 2026 07:05:00 +0100
+
 omx-panel (0.13.3) unstable; urgency=medium
 
   * The meaning each panel role plays is read from the roleMeanings items the
