@@ -36,11 +36,27 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       # a dedupe/all run builds on its siblings' dedupe/all (.github/wave-deps); @main until Open-Mixer/.github moves v1 past it
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
+      # plugin-hostd-contract 0.20.3 is the floor the packaging puts on it: until the channel serves it, the staged
+      # packages of plugin-hostd 0.20.3 stand in, held to that range by the checkout's packaging (install-staged)
+      - id: hostd
+        name: Is plugin-hostd-contract 0.20.3 installed or in the channel
+        run: |
+          if rpm -q --whatprovides 'plugin-hostd-contract >= 0.20.3' >/dev/null \
+            || dnf -q repoquery --whatprovides 'plugin-hostd-contract >= 0.20.3' | grep -q .; then
+            echo staged=false
+          else
+            echo staged=true
+          fi >> "$GITHUB_OUTPUT"
+      - name: plugin-hostd-contract 0.20.3, staged
+        if: steps.hostd.outputs.staged == 'true'
+        uses: Open-Mixer/.github/.github/actions/install-staged@openmixer-v1
+        with:
+          packages: plugin-hostd@0.20.3:plugin-hostd-contract
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
-          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21' \
+          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       - name: Install the real MOD bundles the importer proof reads
         # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
@@ -84,10 +100,26 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins python3-lilv
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - uses: actions/checkout@v4
+      # plugin-hostd-contract 0.20.3 is the floor the packaging puts on it: until the channel serves it, the staged
+      # packages of plugin-hostd 0.20.3 stand in, held to that range by the checkout's packaging (install-staged)
+      - id: hostd
+        name: Is plugin-hostd-contract 0.20.3 installed or in the channel
+        run: |
+          if rpm -q --whatprovides 'plugin-hostd-contract >= 0.20.3' >/dev/null \
+            || dnf -q repoquery --whatprovides 'plugin-hostd-contract >= 0.20.3' | grep -q .; then
+            echo staged=false
+          else
+            echo staged=true
+          fi >> "$GITHUB_OUTPUT"
+      - name: plugin-hostd-contract 0.20.3, staged
+        if: steps.hostd.outputs.staged == 'true'
+        uses: Open-Mixer/.github/.github/actions/install-staged@openmixer-v1
+        with:
+          packages: plugin-hostd@0.20.3:plugin-hostd-contract
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.12.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
-      - uses: actions/checkout@v4
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: The tree the tests read
         run: npm ci && make
       - name: The renderer, and its golden images and parity with the MOD GUI face
@@ -107,10 +139,26 @@ jobs:
             python3-lilv chromium python3-tkinter python3-pillow xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - uses: actions/checkout@v4
+      # plugin-hostd-contract 0.20.3 is the floor the packaging puts on it: until the channel serves it, the staged
+      # packages of plugin-hostd 0.20.3 stand in, held to that range by the checkout's packaging (install-staged)
+      - id: hostd
+        name: Is plugin-hostd-contract 0.20.3 installed or in the channel
+        run: |
+          if rpm -q --whatprovides 'plugin-hostd-contract >= 0.20.3' >/dev/null \
+            || dnf -q repoquery --whatprovides 'plugin-hostd-contract >= 0.20.3' | grep -q .; then
+            echo staged=false
+          else
+            echo staged=true
+          fi >> "$GITHUB_OUTPUT"
+      - name: plugin-hostd-contract 0.20.3, staged
+        if: steps.hostd.outputs.staged == 'true'
+        uses: Open-Mixer/.github/.github/actions/install-staged@openmixer-v1
+        with:
+          packages: plugin-hostd@0.20.3:plugin-hostd-contract
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.12.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
-      - uses: actions/checkout@v4
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: The tree, the renderer, playwright-core and omx-dsp's twin
         run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.0 <0.33'
       - name: The three surfaces from one stream
@@ -136,14 +184,30 @@ jobs:
             python3-lilv mesa-libGL-devel mesa-dri-drivers xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - uses: actions/checkout@v4
+      # plugin-hostd-contract 0.20.3 is the floor the packaging puts on it: until the channel serves it, the staged
+      # packages of plugin-hostd 0.20.3 stand in, held to that range by the checkout's packaging (install-staged)
+      - id: hostd
+        name: Is plugin-hostd-contract 0.20.3 installed or in the channel
+        run: |
+          if rpm -q --whatprovides 'plugin-hostd-contract >= 0.20.3' >/dev/null \
+            || dnf -q repoquery --whatprovides 'plugin-hostd-contract >= 0.20.3' | grep -q .; then
+            echo staged=false
+          else
+            echo staged=true
+          fi >> "$GITHUB_OUTPUT"
+      - name: plugin-hostd-contract 0.20.3, staged
+        if: steps.hostd.outputs.staged == 'true'
+        uses: Open-Mixer/.github/.github/actions/install-staged@openmixer-v1
+        with:
+          packages: plugin-hostd@0.20.3:plugin-hostd-contract
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.12.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.12.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.2' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: pugl and nanovg, from their packaging
         uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
         with:
           names: pugl nanovg
-      - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
       - name: The renderer with its window, every test run under Xvfb
@@ -173,7 +237,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.12.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
+              "omx-contract-devel >= 3.13.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \

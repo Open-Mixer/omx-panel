@@ -4,7 +4,14 @@
 
 ## Unreleased
 
-- `tools/modgui-test.sh` and `tools/modgui-gen.mjs` fail with the reason when the panel layout cannot be read (plugin-hostd's
+- describe leaves a control meaning `bypass` to the header: a derived panel does not draw it as a control and its
+  fingerprint does not count it; the param is still served. EQ10Q's `eq*qm` toggle `bypass`, which plugin-qualify's
+  scan gives that meaning (plugin-qualify#27), was drawn a second time.
+- 0.13.3: the meaning each panel role plays comes from the `roleMeanings` items the installed packages declare
+  (omx-contract 3.13.0's kind; omx-plugins-contract 0.19.3 installs omx-plugins'), no list of omx-panel's own; a role no
+  package declares plays none, one declared twice is refused. A level meter of the descriptor's `meters[]` is the
+  transfer curve's operating point without a `measurement`, as plugin-hostd 0.20.3 describes `clap.meters/1` meters.
+- 0.13.3: `tools/modgui-test.sh` and `tools/modgui-gen.mjs` fail with the reason when the panel layout cannot be read (plugin-hostd's
   LV2 table not installed): both read that as "no meters", so the generator wrote a MOD GUI without its meter frames and
   the test passed it (#11).
 - 0.13.2: `tools/modgui-test.sh` holds each meter frame the generator draws to the description's symbol, range and unit,

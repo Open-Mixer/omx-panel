@@ -37,23 +37,15 @@ The level roles (`threshold`, `ceiling`) take `dB`, `dBFS`, `dBu` and `LUFS`.
 
 ## Meanings and roles
 
-A skin binds by meaning, never by symbol. A family's roles map to the descriptor's meanings
-(`tools/vocabulary.mjs`, `meaningOfRole`, over omx-contract's closed list of meanings as its installed
-schema declares it); a role whose name is a meaning maps to it, and these are renamed:
-
-| Role | Meaning |
-|---|---|
-| `mix` | `wetDryRatio` |
-| `time` | `delay` |
-| `cutoff` | `cutoffFrequency` |
-| `band_freq`, `band_gain`, `band_q` | `frequency`, `gain`, `q` |
-| `hpf_freq`, `low_cut` | `lowCut` |
-| `lpf_freq`, `high_cut` | `highCut` |
-| `hpf_slope`, `lpf_slope` | `slope` |
-| `key_listen` | `listen` |
-
-A role with no meaning word (`band_type`, `model`, `algorithm`, `knee_start`, ...) is bound only by
-a declared panel.
+A skin binds by meaning, never by symbol. The meaning each family role plays is what the installed packages declare in
+their `roleMeanings` items (omx-contract docs/contract-dir.md, "A package's role meanings"; omx-plugins-contract installs
+omx-plugins'), read by `tools/vocabulary.mjs` (`meaningOfRole`) from the contract directories; omx-panel keeps no list
+of its own. A role is looked up, never read as a meaning: one no package declares, one declared `unknown` (`band_type`,
+`model`, `algorithm`, `knee_start`, ...) and one whose meaning the installed schema does not list play none and are
+bound only by a declared panel. A role two packages declare is refused (`contract.role.duplicate`). `omx-panel
+vocabulary` says how many roles it read. The suite reads a stand-in for the panel families' roles,
+`test/fixtures/role-meanings/panel-roles.json`, through `$OMX_ROLE_MEANINGS` (a `:` list of files holding
+`roleMeanings` items), so omx-panel builds and tests with nothing of omx-plugins.
 
 With no declared panel the roles come from the meanings: in the family the layout takes, each
 meaning that names exactly one of the family's roles plays it; an indexed role (`band_*`) takes every
@@ -217,7 +209,8 @@ What a face serves keeps the extension's widget enum: `knob`, `fader` and `switc
 
 Each distinct `group` path is a section, in the order its first control comes; its label is the path
 joined with ` / `, its key the path's segments in the key grammar, joined with dots. Controls with no
-group go to a section `controls`. A hidden control is left out. The layout also carries the ports: the
+group go to a section `controls`. A hidden control is left out, and so is a control meaning `bypass`:
+the header draws the one bypass of a panel, and the param stays served for it to set. The layout also carries the ports: the
 audio inputs and outputs with their channels, whether one is a side-chain, and the note inputs.
 
 ## Pages

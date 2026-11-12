@@ -23,17 +23,20 @@ const fixture = (name) => JSON.parse(readFileSync(join(FIXTURES, name), 'utf8'))
 test('a CLAP plugin\'s params, controls and Easy list are served under each parameter\'s id in decimal', () => {
   const d = fixture('scanned-clap-balancer.json');
   const ids = d.controls.map((c) => String(c.id));
+  // its bypass parameter is the header's (plugin-qualify#27): served as a param, not drawn, not slotted on a page
+  const drawn = d.controls.filter((c) => c.meaning !== 'bypass');
+  assert.equal(drawn.length, d.controls.length - 1);
   const { description, refusals } = describe(d);
   assert.deepEqual(refusals, []);
   assert.deepEqual(description.params.map((p) => p.symbol), ids);
-  assert.deepEqual(description.controls.map((c) => c.symbol).sort(), [...ids].sort());
+  assert.deepEqual(description.controls.map((c) => c.symbol).sort(), drawn.map((c) => String(c.id)).sort());
   assert.ok(description.easy.length > 0 && description.easy.every((s) => ids.includes(s)), JSON.stringify(description.easy));
   // the pages slot the parameter itself, as before
-  assert.deepEqual(description.pages.flatMap((p) => p.ids).filter((v) => v !== null).sort((a, b) => a - b), d.controls.map((c) => c.id).sort((a, b) => a - b));
+  assert.deepEqual(description.pages.flatMap((p) => p.ids).filter((v) => v !== null).sort((a, b) => a - b), drawn.map((c) => c.id).sort((a, b) => a - b));
 });
 test('arm: the layout keeps its own key p<id> for a CLAP control; only the description serves the id', () => {
   const d = fixture('scanned-clap-balancer.json');
-  assert.deepEqual(panelLayout(d).controls.map((c) => c.symbol).sort(), d.controls.map((c) => `p${c.id}`).sort());
+  assert.deepEqual(panelLayout(d).controls.map((c) => c.symbol).sort(), d.controls.filter((c) => c.meaning !== 'bypass').map((c) => `p${c.id}`).sort());
   assert.equal(servedSymbolOf({ id: 7 }), '7');
   assert.equal(servedSymbolOf({ id: 'gain', symbol: 'gain' }), 'gain');
   assert.equal(servedSymbolOf({ id: 'g_0' }), 'g_0');
@@ -182,4 +185,33 @@ test('omx-eq8 as CLAP scans it (ids, no units, no meanings): the bands are read 
   assert.equal(description.roles.find((r) => r.role === 'band_freq' && r.index === 0).shape, 'bell');
   assert.deepEqual(band(7).band_freq, id('Band 8 Frequency'));
   assert.deepEqual(description.displays.map((x) => x.kind), ['eq_response']);
+});
+
+// -- a bypass is the header's: a control meaning bypass is not drawn a second time (plugin-qualify#27, EQ10Q's eq*qm)
+const eq10qm = (bypassMeaning) => {
+  const t = (id, name, meaning, unit, min, max) => ({ id, name, kind: 'travel', meaning, travel: { min, max, unit, scale: 'linear', default: 0 } });
+  return {
+    origin: 'scanned', plugin: { id: 'urn:test:eq10qm', format: 'lv2', name: 'EQ10Q mono', features: ['audio-effect'] },
+    extensions: { lv2: { 'rdf:type': 'http://lv2plug.in/ns/lv2core#EQPlugin' } },
+    controls: [
+      { id: 'bypass', name: 'Bypass', kind: 'toggle', default: false, meaning: bypassMeaning },
+      t('g1', 'Gain 1', 'gain', 'dB', -20, 20), t('f1', 'Freq 1', 'frequency', 'Hz', 20, 20000),
+    ],
+    ports: [],
+  };
+};
+const withoutBypass = (d) => ({ ...d, controls: d.controls.filter((c) => c.id !== 'bypass') });
+test('a toggle meaning bypass is left to the header: not a drawn control, not in the fingerprint, still a param', () => {
+  const d = eq10qm('bypass');
+  const { description } = describe(d);
+  assert.ok(!description.controls.some((c) => c.symbol === 'bypass'), JSON.stringify(description.controls));
+  assert.ok(!description.easy.includes('bypass'));
+  assert.equal(description.fingerprint, describe(withoutBypass(d)).description.fingerprint);
+  // the header sets it by its symbol, so the param stays served
+  assert.ok(description.params.some((p) => p.symbol === 'bypass'));
+});
+test('arm: the same toggle with no bypass meaning is drawn', () => {
+  const { description } = describe(eq10qm('unknown'));
+  assert.ok(description.controls.some((c) => c.symbol === 'bypass'));
+  assert.notEqual(description.fingerprint, describe(withoutBypass(eq10qm('unknown'))).description.fingerprint);
 });

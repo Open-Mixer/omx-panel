@@ -138,3 +138,27 @@ test('with no gain-reduction bar a descriptor meter sits in the last section', (
   const { description } = describe(plain);
   assert.equal(description.meters[0].section, description.sections.at(-1).key);
 });
+
+// clap.meters/1 as plugin-hostd 0.20.3 describes it (its describe_clap_meters test, omx-comp): the meter id is the CLAP
+// meter id, the symbol the output symbol of the meter's name, the scale unknown, and no measurement (the extension
+// states none). A declared level is a measurement whether or not it names which.
+const HOSTD_CLAP_COMP = [
+  { id: 0, symbol: 'compGr', kind: 'gain-reduction', channels: 1, unit: 'dB', min: -60, max: 0, scale: 'unknown' },
+  { id: 1, symbol: 'compIn', kind: 'level', channels: 2, unit: 'dBFS', min: -60, max: 6, scale: 'unknown' },
+  { id: 2, symbol: 'compOut', kind: 'level', channels: 2, unit: 'dBFS', min: -60, max: 6, scale: 'unknown' },
+  { id: 3, symbol: 'compKey', kind: 'level', channels: 1, unit: 'dBFS', min: -60, max: 0, scale: 'unknown' },
+];
+test('a CLAP plugin\'s meters as plugin-hostd 0.20.3 describes them: in order, the bar and the operating point bound', () => {
+  const { description, refusals } = describe(descriptor(dyn(), HOSTD_CLAP_COMP, { plugin: { id: 'org.openmixer.comp', format: 'clap', name: 'omx comp', features: ['audio-effect', 'compressor'] } }));
+  assert.deepEqual(refusals, []);
+  assert.deepEqual(description.meters.map((m) => [m.symbol, m.kind, m.measurement, m.channels]), [
+    ['compGr', 'gain-reduction', 'gain-reduction', 1], ['compIn', 'level', null, 2], ['compOut', 'level', null, 2], ['compKey', 'level', null, 1],
+  ]);
+  assert.deepEqual(description.displays.find((d) => d.kind === 'gain_reduction_bar')?.meterIds, [0, null]);
+  assert.deepEqual(description.displays.find((d) => d.kind === 'transfer_curve').meterIds, [1, 2]);
+});
+test('arm: a foreign read-only input and output level is still no operating point', () => {
+  const ro = (sym) => travel(sym, undefined, { min: -60, max: 0, unit: 'dB' }, { readonly: true, id: sym, symbol: sym });
+  const { description } = describe(descriptor([...dyn(), ro('comp_in'), ro('comp_out')]));
+  assert.deepEqual(description.displays.find((d) => d.kind === 'transfer_curve').meterIds, [null, null]);
+});
