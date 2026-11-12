@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.3
+Version: 0.13.5
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -124,6 +124,13 @@ make test
 %{_libdir}/pkgconfig/omx-panel-render.pc
 
 %changelog
+* Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.5-1
+- describe serves a plugin's path and text parameters: an LV2 patch:writable
+  parameter of range atom:Path or atom:String is a parameter of kind path or
+  text and a control of the panel's last section, never on a page; a plugin
+  whose only parameters are paths or texts has a panel; a patch parameter of
+  another range is refused by panel.describe.param-unserved
+
 * Wed Nov 11 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.3-1
 - the meaning each panel role plays is read from the roleMeanings items the
   installed packages declare in their contract directories (omx-plugins-contract

@@ -4,12 +4,14 @@
 
 ## Unreleased
 
-- describe serves a plugin's path and text parameters (#17): an LV2 patch:writable lv2:Parameter of range atom:Path or
+- 0.13.4 was tagged without a version bump and never released: its tag is empty, and nothing was published under
+  it.
+- 0.13.5: describe serves a plugin's path and text parameters (#17): an LV2 patch:writable lv2:Parameter of range atom:Path or
   atom:String is a `params` entry of kind `path` or `text` and a control of the last section, never on a page; a plugin
   whose only parameters are paths or texts has a panel; a patch parameter of another range is refused by
   `panel.describe.param-unserved`. LSP Impulse Reverb's four impulse files, LSP Matcher's files and link name and
   zeroconvolv's impulse response are the proofs.
-- describe leaves a control meaning `bypass` to the header: a derived panel does not draw it as a control and its
+- 0.13.3: describe leaves a control meaning `bypass` to the header: a derived panel does not draw it as a control and its
   fingerprint does not count it; the param is still served. EQ10Q's `eq*qm` toggle `bypass`, which plugin-qualify's
   scan gives that meaning (plugin-qualify#27), was drawn a second time.
 - 0.13.3: the meaning each panel role plays comes from the `roleMeanings` items the installed packages declare
