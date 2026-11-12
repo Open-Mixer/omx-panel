@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.6
+Version: 0.13.7
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -212,6 +212,13 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
+- tools/gesture-words.mjs ships as a command: executable, its declaration
+  without the shebang. 0.13.6's DEBs failed lintian --fail-on warning
+  (script-not-executable on gesture-words.mjs and gesture-words.d.mts), so
+  0.13.6 published no DEB; the build now refuses a shipped module with a
+  shebang that is not a listed command.
+
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.6-1
 - omx_panel_word_name (the shared library) names each gesture word as
   schema/gestures.json spells it, from a header generated off gestures.json, and

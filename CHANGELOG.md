@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- 0.13.7: the DEBs build again. 0.13.6's failed lintian --fail-on warning (script-not-executable): tools/gesture-words.mjs ships as a command now, executable, its declaration without the shebang, and the build refuses a shipped module with a shebang that is not a listed command.
 - 0.13.6: a host that is not JavaScript reads the gesture word names through the library (`omx_panel_word_name`,
   generated from schema/gestures.json) and the compare format, slots and ring bound through `omx-panel compare describe`
   (#23); one language pack per listed language (ca, es, fr, de, it, pt), each owning its catalog.

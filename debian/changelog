@@ -1,3 +1,13 @@
+omx-panel (0.13.7) unstable; urgency=medium
+
+  * tools/gesture-words.mjs ships as a command: executable, its declaration
+    without the shebang. 0.13.6's DEBs failed lintian --fail-on warning
+    (script-not-executable on gesture-words.mjs and gesture-words.d.mts), so
+    0.13.6 published no DEB; the build now refuses a shipped module with a
+    shebang that is not a listed command.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 12 Nov 2026 22:55:00 +0000
+
 omx-panel (0.13.6) unstable; urgency=medium
 
   * omx_panel_word_name (the shared library) names each gesture word as
