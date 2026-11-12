@@ -1,0 +1,805 @@
+diff --git a/renderer/Makefile b/renderer/Makefile
+index d9892cd..59221c0 100644
+--- a/renderer/Makefile
++++ b/renderer/Makefile
+@@ -3,7 +3,7 @@
+ #
+ # The panel renderer (docs/renderer.md): libomx-panel-render.a (static, PIC), its header, its pkg-config file and the
+ # omx-panel-render command. Needs a C11 compiler, cJSON (libcjson) and omx-contract's C headers (omx-contract-devel,
+-# pkg-config omx-contract). `make check` draws the fixtures and holds them to the golden images and to the MOD GUI
++# pkg-config omx-contract) and omx-dsp's headers (omx-dsp-devel, pkg-config omxdsp). `make check` draws the fixtures and holds them to the golden images and to the MOD GUI
+ # face (node, the parent tree's `npm ci` and the installed vocabulary its layout reads).
+ #
+ #   make [-C renderer] [WINDOW=1] build/ : the library, the command (and the window: pugl-devel, nanovg-devel, GL)
+@@ -22,7 +22,8 @@ VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
+ DEPS := libcjson omx-contract
+ # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
+ CFLAGS ?= -O2 -g
+-CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude $(shell $(PKG_CONFIG) --cflags $(DEPS))
++# omx-dsp's meter view law (omxdsp/mix/omx_meter_view.h) is header-only: its Cflags, never its archive
++CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude $(shell $(PKG_CONFIG) --cflags $(DEPS) omxdsp)
+ LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
+ 
+ B := build
+diff --git a/renderer/include/omx_panel_render.h b/renderer/include/omx_panel_render.h
+index d2bd848..1ce781b 100644
+--- a/renderer/include/omx_panel_render.h
++++ b/renderer/include/omx_panel_render.h
+@@ -94,6 +94,24 @@ bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fra
+ /** A selector's reading: option `at` of `count`, and its label. */
+ bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
+ 
++/** The meters of the description (`meters`, contract 7.9), in its order: their count, and the control that draws meter `meter` (a
++ * foreign read-only control of the same symbol, else a read-only meter cell of its own in its section), -1 past the count. */
++uint32_t omx_panel_view_meter_count(const omx_panel_view_t *view);
++int32_t omx_panel_view_meter_control(const omx_panel_view_t *view, uint32_t meter);
++
++/** One reading of meter `meter` at the surface's draw tick: `value` in the meter's unit (dB, -inf for silence), `clip` whether the source
++ * saw a clip since the last tick, `dt_s` the seconds since the last tick. Drawn by omx-dsp's view law (omx_meter_view.h) on the
++ * description's range: the fill (omx_meter_view_fill_db, a level from min, a gain reduction down from max), a level's peak marker that
++ * falls OMX_METER_VIEW_FALL_DB_PER_SECOND for each second elapsed (omx_meter_view_step, silence included), the clip word lit until
++ * omx_panel_view_clear_clip (omx_meter_view_clip) and only on a meter whose description carries `clip: true`. A gain reduction is drawn
++ * as given: its recovery is the reader's. No ballistics live in the description. False, changing nothing, for an index past the count
++ * or a NaN value. */
++bool omx_panel_view_set_meter(omx_panel_view_t *view, uint32_t meter, double value, bool clip, double dt_s);
++/** Clear meter `meter`'s clip word (the operator's gesture). */
++bool omx_panel_view_clear_clip(omx_panel_view_t *view, uint32_t meter);
++/** What meter `meter` draws now: the live fill and the marker (0..1 of its range) and the clip word. NULL skips one. */
++bool omx_panel_view_meter_reading(const omx_panel_view_t *view, uint32_t meter, double *fill, double *marker, bool *clip);
++
+ /** The points of display `display` (its index among the description's `displays`), ascending in x: for an `eq_response` x in Hz (above
+  * zero, drawn on a log axis) and y in dB; for a `transfer_curve` input dB and output dB. They are what the host computed
+  * (`omx_curve_points` or its twin): the renderer scales them to the frame and draws the stroke, computes nothing, and prints the
+diff --git a/renderer/src/cli.c b/renderer/src/cli.c
+index 36a35e1..f3f4aaf 100644
+--- a/renderer/src/cli.c
++++ b/renderer/src/cli.c
+@@ -6,11 +6,13 @@
+  *
+  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
+  *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
+- *                    [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]
++ *                    [--raw <file>] [--png <file>] [--rects] [--meters] [--window] [--input <script.json>]
+  *
+  * The size is the panel's natural size times the scale unless --width and --height give one. The
+  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
+- * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
++ * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}}, the integers the governing values a visibility rule reads, the curves the points of each display; "meters":
++ * {"<symbol>": [{"value", "clip", "dt", "clear"}]} the readings of a meter, one per draw tick (apply_state). --meters prints, after the
++ * cells, "meter <symbol> <fill> <marker> <clip>" per meter of the description, what the view law left it drawing. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
+  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
+  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
+@@ -36,7 +38,7 @@
+ static const char *USAGE =
+     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
+     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
+-    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n";
++    "                        [--raw <file>] [--png <file>] [--rects] [--meters] [--window] [--input <script.json>]\n";
+ 
+ static uint32_t crc_table[256];
+ static void crc_init(void) {
+@@ -183,6 +185,27 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
+     }
+     free(f), free(dp), free(l);
+   }
++  /* "meters": {"<symbol>": [{"value", "clip", "dt", "clear"}, ...]}, the readings a host gives one meter, one per draw tick in order:
++   * the value in the meter's unit (null for silence, -inf), the clip seen since the last tick, the seconds since it; "clear" clears the
++   * clip word before the reading */
++  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "meters")) {
++    int32_t m = -1;
++    for (uint32_t k = 0; k < omx_panel_view_meter_count(v); k++)
++      if (!strcmp(omx_panel_view_symbol(v, (uint32_t)omx_panel_view_meter_control(v, k)), it->string)) m = (int32_t)k;
++    int good = m >= 0 && cJSON_IsArray(it);
++    cJSON *r;
++    if (good) cJSON_ArrayForEach(r, it) {
++      cJSON *val = cJSON_GetObjectItemCaseSensitive(r, "value"), *dt = cJSON_GetObjectItemCaseSensitive(r, "dt");
++      if (cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(r, "clear"))) omx_panel_view_clear_clip(v, (uint32_t)m);
++      good = good && (cJSON_IsNumber(val) || cJSON_IsNull(val)) &&
++             omx_panel_view_set_meter(v, (uint32_t)m, cJSON_IsNumber(val) ? val->valuedouble : -INFINITY,
++                                      cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(r, "clip")), cJSON_IsNumber(dt) ? dt->valuedouble : 0);
++    }
++    if (!good) {
++      fprintf(stderr, "omx-panel-render: state's meters name '%s', which is no meter of the panel or its readings are refused\n", it->string);
++      ok = 0;
++    }
++  }
+   cJSON_Delete(root);
+   return ok;
+ }
+@@ -336,11 +359,12 @@ int main(int argc, char **argv) {
+   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL;
+   double scale = 1;
+   long width = 0, height = 0;
+-  int bgra = 0, straight = 0, rects = 0, window = 0;
++  int bgra = 0, straight = 0, rects = 0, window = 0, meters = 0;
+   for (int i = 1; i < argc; i++) {
+     const char *a = argv[i], *val = i + 1 < argc ? argv[i + 1] : NULL;
+     if (!strcmp(a, "--rects")) { rects = 1; continue; }
+     if (!strcmp(a, "--window")) { window = 1; continue; }
++    if (!strcmp(a, "--meters")) { meters = 1; continue; }
+     if (!val) { fputs(USAGE, stderr); return 2; }
+     if (!strcmp(a, "--description")) desc = val;
+     else if (!strcmp(a, "--data")) data = val;
+@@ -416,6 +440,13 @@ int main(int argc, char **argv) {
+     if (omx_panel_view_control_rect(v, b.width, b.height, scale, i, r)) printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
+     else puts("hidden");
+   }
++  /* --meters: one line per meter of the description, after the cells: its symbol, the live fill, the marker and the clip word */
++  for (uint32_t m = 0; ok && meters && m < omx_panel_view_meter_count(v); m++) {
++    double fill, marker;
++    bool clip;
++    omx_panel_view_meter_reading(v, m, &fill, &marker, &clip);
++    printf("meter %s %.17g %.17g %d\n", omx_panel_view_symbol(v, (uint32_t)omx_panel_view_meter_control(v, m)), fill, marker, clip ? 1 : 0);
++  }
+   if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
+   free(b.pixels);
+ #ifdef OMX_PANEL_WINDOW
+diff --git a/renderer/src/view.c b/renderer/src/view.c
+index 5efa7f1..fea285d 100644
+--- a/renderer/src/view.c
++++ b/renderer/src/view.c
+@@ -158,6 +158,55 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
+       c->gov = dup(gov), c->mask = (uint64_t)m, c->value = (int64_t)def->valuedouble;
+     }
+   }
++  for (size_t k = 0; k < v->ncontrols; k++) v->controls[k].meter = -1;
++  /* the meters (`meters`, contract 7.9): each drawn by the control of its symbol when there is one (a foreign read-only control in a
++   * level unit), else by a read-only meter cell of its own in its section, after the controls */
++  cJSON *mets = cJSON_GetObjectItemCaseSensitive(root, "meters");
++  if (mets && !cJSON_IsNull(mets)) {
++    if (!cJSON_IsArray(mets)) {
++      fail(err, n, "description: meters is not an array%s%s", NULL, NULL);
++      goto bad;
++    }
++    v->nmeters = (size_t)cJSON_GetArraySize(mets);
++    v->meters = calloc(v->nmeters ? v->nmeters : 1, sizeof *v->meters);
++    size_t mi = 0;
++    cJSON_ArrayForEach(it, mets) {
++      const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
++      const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
++      const char *unit = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unit"));
++      const char *label = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "label"));
++      cJSON *sec = cJSON_GetObjectItemCaseSensitive(it, "section"), *mn = cJSON_GetObjectItemCaseSensitive(it, "min"),
++            *mx = cJSON_GetObjectItemCaseSensitive(it, "max");
++      int gr = kind && strcmp(kind, "gain-reduction") == 0;
++      if (!sym || !kind || (!gr && strcmp(kind, "level") != 0) || !cJSON_IsNumber(mn) || !cJSON_IsNumber(mx) ||
++          !(mx->valuedouble > mn->valuedouble) || !cJSON_IsNumber(sec) || sec->valueint < 0 || (size_t)sec->valueint >= v->nsections) {
++        fail(err, n, "description: meter '%s' lacks a symbol, a kind (level, gain-reduction), a range of min below max or a section%s",
++             sym ? sym : "(no symbol)", NULL);
++        goto bad;
++      }
++      int at = -1;
++      for (size_t k = 0; k < v->ncontrols; k++)
++        if (strcmp(v->controls[k].symbol, sym) == 0) at = (int)k;
++      if (at < 0) {
++        control *grown = realloc(v->controls, (v->ncontrols + 1) * sizeof *grown);
++        if (!grown) goto bad;
++        v->controls = grown;
++        at = (int)v->ncontrols++;
++        control *c = &v->controls[at];
++        memset(c, 0, sizeof *c);
++        c->symbol = dup(sym), c->label = dup(label ? label : sym), c->section = sec->valueint, c->w = W_METER;
++        c->text = dup(""), c->count = 1;
++      }
++      control *c = &v->controls[at];
++      c->w = W_METER, c->read_only = 1, c->meter = (int)mi, c->gr = gr;
++      c->held = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "held"));
++      c->clip_word = !gr && cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "clip"));
++      c->mmin = mn->valuedouble, c->mmax = mx->valuedouble;
++      free(c->unit);
++      c->unit = dup(unit);
++      v->meters[mi++] = at;
++    }
++  }
+   /* the bar groups: a section's `bars` runs name their controls and labels in order */
+   cJSON_ArrayForEach(it, secs) {
+     cJSON *runs = cJSON_GetObjectItemCaseSensitive(it, "bars"), *run;
+@@ -298,9 +347,10 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
+   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]), free(v->section_keys ? v->section_keys[i] : NULL);
+   free(v->section_keys);
+   for (size_t i = 0; i < v->ncontrols; i++)
+-    free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
++    free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar),
++        free(v->controls[i].unit);
+   for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter);
+-  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
++  free(v->sections), free(v->controls), free(v->meters), free(v->displays), free(v->brand), free(v->name);
+   omx_font_free(v->font);
+   free(v);
+ }
+@@ -325,6 +375,8 @@ bool omx_panel_view_set_value(omx_panel_view_t *v, uint32_t i, double fraction,
+   if (!v || i >= v->ncontrols || fraction != fraction) return false;
+   control *c = &v->controls[i];
+   c->fraction = fraction < 0 ? 0 : fraction > 1 ? 1 : fraction;
++  /* a meter given a plain reading draws it as its live fill and marker, with no fall: omx_panel_view_set_meter is the view law's path */
++  if (c->meter >= 0) c->mv.live = c->mv.marker = c->mv.peak = c->fraction, c->mv.elapsed_s = 0;
+   free(c->text);
+   c->text = dup(text);
+   return true;
+@@ -340,6 +392,50 @@ bool omx_panel_view_set_choice(omx_panel_view_t *v, uint32_t i, uint32_t at, uin
+   return true;
+ }
+ 
++uint32_t omx_panel_view_meter_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->nmeters : 0; }
++
++int32_t omx_panel_view_meter_control(const omx_panel_view_t *v, uint32_t meter) {
++  return v && meter < v->nmeters ? v->meters[meter] : -1;
++}
++
++/* The fill of a reading on the meter's own range, by omx-dsp's view law: a level from `min` (empty) to `max` (full); a gain reduction,
++ * dB at or below `max`, from `max` (none) down to `min` (full). omx_meter_view_fill_db's scale with the range as its floor. */
++static double meter_fill(const control *c, double value) {
++  const double span = c->mmin - c->mmax;
++  return c->gr ? omx_meter_view_fill_db(c->mmin - value, span) : omx_meter_view_fill_db(value - c->mmax, span);
++}
++
++bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t meter, double value, bool clip, double dt_s) {
++  if (!v || meter >= v->nmeters || value != value) return false;
++  control *c = &v->controls[v->meters[meter]];
++  const double fill = meter_fill(c, value);
++  if (c->gr) {
++    /* a gain reduction is drawn as the reader gives it: its recovery is the reader's (omx_meter_view_gr at its tick) */
++    c->mv.live = c->mv.marker = c->mv.peak = fill, c->mv.elapsed_s = 0;
++  } else {
++    omx_meter_view_step(&c->mv, fill, dt_s, OMX_METER_VIEW_FALL_DB_PER_SECOND, c->mmin - c->mmax);
++  }
++  /* a meter that declares no clip word never lights one, whatever the source says */
++  if (c->clip_word) omx_meter_view_clip(&c->mv, clip);
++  c->fraction = fill;
++  return true;
++}
++
++bool omx_panel_view_clear_clip(omx_panel_view_t *v, uint32_t meter) {
++  if (!v || meter >= v->nmeters) return false;
++  omx_meter_view_clip_clear(&v->controls[v->meters[meter]].mv);
++  return true;
++}
++
++bool omx_panel_view_meter_reading(const omx_panel_view_t *v, uint32_t meter, double *fill, double *marker, bool *clip) {
++  if (!v || meter >= v->nmeters) return false;
++  const control *c = &v->controls[v->meters[meter]];
++  if (fill) *fill = c->mv.live;
++  if (marker) *marker = c->mv.marker;
++  if (clip) *clip = c->mv.clip;
++  return true;
++}
++
+ bool omx_panel_view_set_curve(omx_panel_view_t *v, uint32_t index, const double *x, const double *y, uint32_t n) {
+   if (!v || !x || !y || n < 2) return false;
+   /* the index counts the description's displays; one with no place on the panel (a meter, a gain-reduction bar) takes no curve */
+@@ -480,6 +576,19 @@ static void draw_fader(const omx_draw *d, const geometry *g, double cx, double t
+   d->round_rect(d->ctx, cx - (g->faderW * (h / g->knob)) / 2, y + cap / 2 - 0.5, g->faderW * (h / g->knob), 1, 0, col->accent);
+ }
+ 
++/* A meter of the description: its frame, the live fill along the foot (a level from the left, a gain reduction from the right), a level's
++ * peak marker as a tick, and, when the meter carries a clip word, its lamp at the right end: lit by the view law until cleared, unlit
++ * drawn as a rim. A meter that declares no clip word has no lamp. */
++static void draw_meter(const omx_draw *d, double x, double y, double w, double h, const control *k, double s, const palette *col) {
++  d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
++  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
++  double lamp = k->clip_word ? h / 2 : 0, track = w - 4 - (lamp > 0 ? lamp + 2 * s : 0);
++  if (lamp > 0) d->round_rect(d->ctx, x + w - 2 - lamp, y + (h - lamp) / 2, lamp, lamp, fmin(2 * s, lamp / 4), k->mv.clip ? col->accent : col->rim);
++  double f = k->mv.live;
++  if (f > 0) d->round_rect(d->ctx, k->gr ? x + 2 + track * (1 - f) : x + 2, y + h - 4, track * f, 2, 0, col->accent);
++  if (!k->gr && k->mv.marker > 0) d->round_rect(d->ctx, x + 2 + track * k->mv.marker - s / 2, y + 2, s, h - 4, 0, col->ink);
++}
++
+ /* A reading's frame; a meter fills it to its fraction along the foot. */
+ static void draw_display(const omx_draw *d, double x, double y, double w, double h, double fill, const palette *col) {
+   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
+@@ -645,6 +754,14 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
+       case W_KNOB:
+         draw_knob(d, (x + g->cellW / 2) * s, (y + g->knobTop + g->knob / 2) * s, (g->knob / 2) * s, k->fraction, col);
+         break;
++      case W_METER:
++        if (k->meter >= 0) {
++          draw_meter(d, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s, k, s, col);
++          reading = 1;
++          break;
++        }
++        /* a meter control the description's meters do not name fills its frame as a display */
++        /* fall through */
+       default: /* a meter fills its frame; a display, a curve and an xy pad show a frame until each has its own drawing */
+         draw_display(d, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s,
+                      k->w == W_METER ? k->fraction : 0, col);
+@@ -657,6 +774,12 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
+              T->small * s, col->ink, OMX_ALIGN_CENTRE);
+       else if (!reading || k->text[0])
+         text(d, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
++      else if (k->meter >= 0) {
++        /* a meter's caption is its scale's unit, and `unheld` when its plugin holds nothing between reads (contract 7.9) */
++        char cap[64];
++        snprintf(cap, sizeof cap, "%s%s%s", k->unit ? k->unit : "", k->unit && k->unit[0] && !k->held ? " " : "", k->held ? "" : "unheld");
++        text(d, font, cap, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
++      }
+     }
+   }
+   lay_free(&L);
+diff --git a/renderer/src/view.h b/renderer/src/view.h
+index ac04fba..13eeac9 100644
+--- a/renderer/src/view.h
++++ b/renderer/src/view.h
+@@ -7,6 +7,7 @@
+ #define OMX_PANEL_VIEW_H
+ 
+ #include <omxcontract/omx_vocabulary.h>
++#include <omxdsp/mix/omx_meter_view.h>
+ 
+ #include "draw.h"
+ 
+@@ -44,6 +45,12 @@ typedef struct {
+    * reads the declared default exactly and a host's read-back replaces it) */
+   double gv, gv_frac;
+   int gv_ok;
++  /* a meter of the description's `meters` (`meter` its index there, -1 for none): its kind, range, unit and words, and the view
++   * law's state (omx-dsp's omx_meter_view.h), so the marker falls by elapsed time and the clip word stays lit until cleared */
++  int meter, gr, held, clip_word;
++  double mmin, mmax;
++  char *unit;
++  struct omx_meter_view mv;
+ } control;
+ 
+ /* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
+@@ -78,6 +85,8 @@ struct omx_panel_view {
+   size_t nsections;
+   control *controls;
+   size_t ncontrols;
++  int *meters; /* the description's meters, each by the index of the control that draws it */
++  size_t nmeters;
+   display *displays;
+   size_t ndisplays;
+   char *brand, *name;
+diff --git a/renderer/test/harness.mjs b/renderer/test/harness.mjs
+index 272b9d4..da01c64 100644
+--- a/renderer/test/harness.mjs
++++ b/renderer/test/harness.mjs
+@@ -36,6 +36,9 @@ export const FIXTURES = [
+   { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
+   // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
+   { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
++  // a compressor whose descriptor carries the meters word (contract 7.9): a level with clip, a level that declares no clip, a gain
++  // reduction (its section's gain_reduction_bar), and a foreign read-only level control, unheld; each a static meter on the MOD GUI
++  { name: 'meters', descriptor: 'test/fixtures/meters/meters.descriptor.json', stem: 'meters' },
+   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
+   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
+ ];
+diff --git a/renderer/test/meters.test.mjs b/renderer/test/meters.test.mjs
+new file mode 100644
+index 0000000..a35c797
+--- /dev/null
++++ b/renderer/test/meters.test.mjs
+@@ -0,0 +1,131 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
++/*
++ * The renderer's meters (the one-panel spec §7.9): the description's `meters`, each drawn by omx-dsp's meter view law on the
++ * description's range through omx_panel_view_set_meter. Held by value against the law's TypeScript twin (`@openmixer/omx-dsp`,
++ * meterFillDb, meterMarker, meterClip) and by pixels: a level with clip lights its lamp and keeps it lit until cleared, its marker
++ * falls by elapsed time; a gain reduction fills from the right and has no marker; a meter that declares no clip word, and a foreign
++ * meter (unheld), light nothing whatever the source says. Each rule has its sabotage arm: the input broken, the check read red.
++ */
++import assert from 'node:assert/strict';
++import { execFileSync, spawnSync } from 'node:child_process';
++import { readFileSync, writeFileSync } from 'node:fs';
++import { join } from 'node:path';
++import { test } from 'node:test';
++import { CLI, DATA, FIXTURES, HAVE_TWIN, compare, descriptionFile, render, rects, scratch, stateFile } from './harness.mjs';
++
++const fx = FIXTURES.find((f) => f.name === 'meters');
++const twin = HAVE_TWIN ? await import('@openmixer/omx-dsp') : null;
++const needTwin = twin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' };
++
++/** The fixture's description (edited by `edit`) and a state carrying `meters`, in files. */
++function files(meters = {}, edit = (x) => x) {
++  const dir = scratch();
++  const desc = join(dir, 'm.layout.json');
++  writeFileSync(desc, JSON.stringify(edit(JSON.parse(readFileSync(descriptionFile(fx, dir), 'utf8')))));
++  const state = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
++  state.meters = meters;
++  const st = join(dir, 'm.state.json');
++  writeFileSync(st, JSON.stringify(state));
++  return [desc, st];
++}
++
++/** What each meter draws after the readings: `{ <symbol>: { fill, marker, clip } }`, from the renderer's --meters lines. */
++function readings(meters, edit) {
++  const [desc, st] = files(meters, edit);
++  const out = execFileSync(CLI, ['--description', desc, '--data', DATA, '--state', st, '--rects', '--meters'], { encoding: 'utf8' });
++  return Object.fromEntries(out.split('\n').filter((l) => l.startsWith('meter ')).map((l) => {
++    const [, sym, fill, marker, clip] = l.split(' ');
++    return [sym, { fill: Number(fill), marker: Number(marker), clip: clip === '1' }];
++  }));
++}
++const draw = (meters, edit) => render(...files(meters, edit));
++/** The pixels two images differ at, as [x, y]. */
++function diff(a, b) {
++  const at = [];
++  for (let i = 0; i < a.w * a.h; i++) for (let k = 0; k < 4; k++) if (a.data[i * 4 + k] !== b.data[i * 4 + k]) { at.push([i % a.w, Math.floor(i / a.w)]); break; }
++  return at;
++}
++/** The cell of the control that draws meter `symbol` (the meter cells follow the controls, in the description's order). */
++function cellOf(symbol) {
++  const [desc] = files();
++  const x = JSON.parse(readFileSync(desc, 'utf8'));
++  const symbols = [...x.controls.map((c) => c.symbol), ...x.meters.map((m) => m.symbol).filter((s) => !x.controls.some((c) => c.symbol === s))];
++  return rects(desc)[symbols.indexOf(symbol)];
++}
++const inside = (pts, [x, y, w, h]) => pts.every(([px, py]) => px >= x && px < x + w && py >= y && py < y + h);
++
++test('the description\'s meters are drawn: one per meter, the foreign control among them, in order', () => {
++  assert.deepEqual(Object.keys(readings()), ['compGr', 'compIn', 'compOut', 'compKey', 'peak_out']);
++});
++
++test('a level: the fill and the marker are the view law\'s on the description\'s range, the marker falling by elapsed time', needTwin, () => {
++  const seq = [{ value: 0, dt: 0 }, { value: -40, dt: 0.25 }, { value: -40, dt: 0.25 }, { value: null, dt: 1 }];
++  const got = readings({ compIn: seq }).compIn;
++  // the twin over the same ticks: range [-60, 6] dBFS, the declared fall
++  let mk;
++  for (const r of seq) mk = twin.meterMarker(mk, twin.meterFillDb((r.value ?? -Infinity) - 6, -66), r.dt, twin.METER_VIEW.fallDbPerSecond, -66);
++  assert.ok(Math.abs(got.fill - mk.live) < 1e-12, `fill ${got.fill} against ${mk.live}`);
++  assert.ok(Math.abs(got.marker - mk.marker) < 1e-12, `marker ${got.marker} against ${mk.marker}`);
++  // 1.5 s at 18 dB/s from 0 dBFS: 27 dB down on a 66 dB span
++  assert.ok(Math.abs(got.marker - (60 - 27) / 66) < 1e-12, `${got.marker}`);
++});
++test('sabotage: a marker that does not fall (fall 0) is not what the renderer draws, so the agreement above can go red', needTwin, () => {
++  const seq = [{ value: 0, dt: 0 }, { value: null, dt: 1 }];
++  let mk;
++  for (const r of seq) mk = twin.meterMarker(mk, twin.meterFillDb((r.value ?? -Infinity) - 6, -66), r.dt, 0, -66);
++  assert.ok(Math.abs(readings({ compIn: seq }).compIn.marker - mk.marker) > 0.1);
++});
++
++test('a level with clip: the lamp lights on a clip and stays lit until cleared; it is drawn inside the meter\'s cell', () => {
++  const lit = readings({ compIn: [{ value: 3, clip: true }, { value: -30, dt: 2 }] }).compIn;
++  assert.equal(lit.clip, true, 'lit and held over a later tick with no clip');
++  assert.equal(readings({ compIn: [{ value: 3, clip: true }, { value: -30, dt: 2, clear: true }] }).compIn.clip, false, 'cleared');
++  const on = draw({ compIn: [{ value: -60, clip: true }] }), off = draw({ compIn: [{ value: -60 }] });
++  const d = diff(on, off);
++  assert.ok(d.length > 0, 'the lit lamp is drawn');
++  assert.ok(inside(d, cellOf('compIn')), 'and only inside compIn\'s cell');
++});
++test('sabotage: the same meter described with clip: false never lights, whatever the source says', () => {
++  const noClip = (x) => ({ ...x, meters: x.meters.map((m) => (m.symbol === 'compIn' ? { ...m, clip: false } : m)) });
++  assert.equal(readings({ compIn: [{ value: 3, clip: true }] }, noClip).compIn.clip, false);
++  assert.equal(diff(draw({ compIn: [{ value: -60, clip: true }] }, noClip), draw({ compIn: [{ value: -60 }] }, noClip)).length, 0);
++});
++test('a level that declares no clip word (compKey) has no lamp and lights none', () => {
++  assert.equal(readings({ compKey: [{ value: 0, clip: true }] }).compKey.clip, false);
++  assert.equal(diff(draw({ compKey: [{ value: -60, clip: true }] }), draw({ compKey: [{ value: -60 }] })).length, 0);
++});
++
++test('a gain reduction: its fill runs down from max on its range, from the right of its frame, with no marker or fall', needTwin, () => {
++  const got = readings({ compGr: [{ value: -12, dt: 0 }, { value: -6, dt: 1 }] }).compGr;
++  assert.ok(Math.abs(got.fill - twin.meterFillDb(-24 + 6, -24)) < 1e-12 && Math.abs(got.fill - 0.25) < 1e-12, `${got.fill}`);
++  assert.equal(got.marker, got.fill, 'no marker of its own: the reader recovers a reduction');
++  const [x, , w] = cellOf('compGr');
++  const d = diff(draw({ compGr: [{ value: -6 }] }), draw({ compGr: [{ value: 0 }] }));
++  assert.ok(d.length > 0 && d.every(([px]) => px >= x + w / 2), `a quarter of the way in from the right of the cell at x ${x}..${x + w}`);
++});
++test('sabotage: the same reduction read as a level fills from the left, and the check above goes red', () => {
++  const asLevel = (y) => ({ ...y, meters: y.meters.map((m) => (m.symbol === 'compGr' ? { ...m, kind: 'level', measurement: 'peak' } : m)) });
++  const [x, , w] = cellOf('compGr');
++  const d = diff(draw({ compGr: [{ value: -6 }] }, asLevel), draw({ compGr: [{ value: -24 }] }, asLevel));
++  assert.ok(d.some(([px]) => px < x + w / 2));
++});
++
++test('a foreign meter (a read-only level control) is unheld: its caption says so, and a clip from its source lights nothing', () => {
++  assert.equal(readings({ peak_out: [{ value: 0, clip: true }] }).peak_out.clip, false);
++  const held = (y) => ({ ...y, meters: y.meters.map((m) => (m.symbol === 'peak_out' ? { ...m, held: true } : m)) });
++  const d = diff(draw({}), draw({}, held));
++  assert.ok(d.length > 0, 'the caption changes with held: "dB unheld" against "dB"');
++  assert.ok(inside(d, cellOf('peak_out')));
++});
++
++test('refused by code: a meter whose range is not min below max, or a reading for no meter, draws nothing', () => {
++  const [desc, st] = files({}, (y) => ({ ...y, meters: y.meters.map((m) => (m.symbol === 'compIn' ? { ...m, min: 6, max: 6 } : m)) }));
++  const r = spawnSync(CLI, ['--description', desc, '--data', DATA, '--state', st, '--rects'], { encoding: 'utf8' });
++  assert.equal(r.status, 1);
++  assert.match(r.stderr, /meter 'compIn' lacks .* a range of min below max/);
++  const [d2, s2] = files({ nosuch: [{ value: 0 }] });
++  const r2 = spawnSync(CLI, ['--description', d2, '--data', DATA, '--state', s2, '--rects'], { encoding: 'utf8' });
++  assert.equal(r2.status, 1);
++  assert.match(r2.stderr, /no meter of the panel/);
++});
+diff --git a/renderer/test/visibility.test.mjs b/renderer/test/visibility.test.mjs
+index 8f4e7ab..30a273d 100644
+--- a/renderer/test/visibility.test.mjs
++++ b/renderer/test/visibility.test.mjs
+@@ -45,7 +45,9 @@ function without(x) {
+   const kept = x.sections.map((_s, i) => controls.some((k) => k.section === i));
+   assert.deepEqual(kept, [true, false, false], 'the middle and the last sections are emptied');
+   const index = kept.map((_k, i) => kept.slice(0, i).filter(Boolean).length);
+-  return { ...x, sections: x.sections.filter((_s, i) => kept[i]), controls: controls.map((k) => ({ ...k, section: index[k.section] })) };
++  // a meter drawn by a removed control goes with it (the description's meters name gr and outlevel, both read-only level controls)
++  const meters = (x.meters ?? []).filter((m) => !GOVERNED.includes(m.symbol)).map((m) => ({ ...m, section: index[m.section] }));
++  return { ...x, sections: x.sections.filter((_s, i) => kept[i]), controls: controls.map((k) => ({ ...k, section: index[k.section] })), meters };
+ }
+ 
+ const same = (a, b, what) => {
+diff --git a/test/fixtures/meters/meters.descriptor.json b/test/fixtures/meters/meters.descriptor.json
+new file mode 100644
+index 0000000..bc41cab
+--- /dev/null
++++ b/test/fixtures/meters/meters.descriptor.json
+@@ -0,0 +1,178 @@
++{
++  "origin": "authored",
++  "plugin": {
++    "id": "urn:omx-panel:test:meters",
++    "format": "lv2",
++    "uri": "urn:omx-panel:test:meters",
++    "name": "Test Meters",
++    "vendor": "omx-panel tests",
++    "features": [
++      "audio-effect"
++    ]
++  },
++  "controls": [
++    {
++      "id": "threshold",
++      "symbol": "threshold",
++      "name": "Threshold",
++      "label": "Threshold",
++      "kind": "travel",
++      "meaning": "threshold",
++      "group": [
++        "Compressor"
++      ],
++      "travel": {
++        "min": -60,
++        "max": 0,
++        "unit": "dB",
++        "scale": "linear",
++        "default": -18
++      }
++    },
++    {
++      "id": "ratio",
++      "symbol": "ratio",
++      "name": "Ratio",
++      "label": "Ratio",
++      "kind": "travel",
++      "meaning": "ratio",
++      "group": [
++        "Compressor"
++      ],
++      "travel": {
++        "min": 1,
++        "max": 20,
++        "unit": "ratio",
++        "scale": "linear",
++        "default": 4
++      }
++    },
++    {
++      "id": "attack",
++      "symbol": "attack",
++      "name": "Attack",
++      "label": "Attack",
++      "kind": "travel",
++      "meaning": "attack",
++      "group": [
++        "Compressor"
++      ],
++      "travel": {
++        "min": 0.1,
++        "max": 100,
++        "unit": "ms",
++        "scale": "log",
++        "default": 10
++      }
++    },
++    {
++      "id": "release",
++      "symbol": "release",
++      "name": "Release",
++      "label": "Release",
++      "kind": "travel",
++      "meaning": "release",
++      "group": [
++        "Compressor"
++      ],
++      "travel": {
++        "min": 10,
++        "max": 1000,
++        "unit": "ms",
++        "scale": "log",
++        "default": 100
++      }
++    },
++    {
++      "id": "makeup",
++      "symbol": "makeup",
++      "name": "Makeup",
++      "label": "Makeup",
++      "kind": "travel",
++      "meaning": "makeup",
++      "group": [
++        "Compressor"
++      ],
++      "travel": {
++        "min": 0,
++        "max": 24,
++        "unit": "dB",
++        "scale": "linear",
++        "default": 0
++      }
++    },
++    {
++      "id": "peak_out",
++      "symbol": "peak_out",
++      "name": "Peak out",
++      "label": "Peak out",
++      "kind": "travel",
++      "readonly": true,
++      "travel": {
++        "min": -60,
++        "max": 0,
++        "unit": "dB",
++        "scale": "linear",
++        "default": -60
++      }
++    }
++  ],
++  "ports": [],
++  "meters": [
++    {
++      "id": 0,
++      "symbol": "compGr",
++      "name": "Gain reduction",
++      "kind": "gain-reduction",
++      "channels": 1,
++      "unit": "dB",
++      "min": -24,
++      "max": 0,
++      "scale": "linear",
++      "measurement": "gain-reduction",
++      "held": true
++    },
++    {
++      "id": 1,
++      "symbol": "compIn",
++      "name": "Input level",
++      "kind": "level",
++      "channels": 2,
++      "unit": "dBFS",
++      "min": -60,
++      "max": 6,
++      "scale": "linear",
++      "measurement": "peak",
++      "held": true,
++      "clip": true
++    },
++    {
++      "id": 2,
++      "symbol": "compOut",
++      "name": "Output level",
++      "kind": "level",
++      "channels": 2,
++      "unit": "dBFS",
++      "min": -60,
++      "max": 6,
++      "scale": "linear",
++      "measurement": "peak",
++      "held": true,
++      "clip": true
++    },
++    {
++      "id": 3,
++      "symbol": "compKey",
++      "name": "Key level",
++      "kind": "level",
++      "channels": 1,
++      "unit": "dBFS",
++      "min": -60,
++      "max": 0,
++      "scale": "linear",
++      "measurement": "peak",
++      "held": true,
++      "clip": false
++    }
++  ]
++}
+diff --git a/test/modgui-gen.test.mjs b/test/modgui-gen.test.mjs
+index d627653..af96cfe 100644
+--- a/test/modgui-gen.test.mjs
++++ b/test/modgui-gen.test.mjs
+@@ -72,7 +72,8 @@ test('a scanned LV2 compressor with no panel generates, its gain-reduction reado
+   const files = new Map(generateModgui(d, { stem: 'compressor', source: '@openmixer/omx-contract/examples/descriptors/scanned-lv2-compressor.json' }));
+   const html = files.get('modgui/icon-compressor.html').toString();
+   const ttl = files.get('modgui.ttl').toString();
+-  assert.match(html, /<div class="omx-control omx-display"[^>]* data-symbol="gr" data-min="0" data-max="40">/);
++  // a read-only level control is a foreign meter (§7.9): a static frame with its range, its measurement never guessed, unheld, no clip lamp
++  assert.match(html, /<div class="omx-control omx-display omx-meter"[^>]* data-symbol="gr" data-min="0" data-max="40" data-kind="level" data-unit="dB" data-held="false" data-clip="false">/);
+   assert.doesNotMatch(html, /data-symbol="gr"[^>]*data-default/, 'a readout has no default');
+   assert.doesNotMatch(html, /mod-role="input-control-port" mod-port-symbol="gr"/, 'a readout is no control input');
+   assert.doesNotMatch(ttl, /lv2:symbol "gr"/);
+diff --git a/tools/modgui-gen.mjs b/tools/modgui-gen.mjs
+index bd4ecd8..6fa8feb 100755
+--- a/tools/modgui-gen.mjs
++++ b/tools/modgui-gen.mjs
+@@ -296,6 +296,17 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
+   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
+   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
+   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
++  // the meters (the one-panel spec §7.9): a static frame with its range until the live MOD GUI spec, as the renderer draws a meter with no
++  // reading. A readout the description's meters name is that meter; a descriptor meter with no control is a cell of its own after its
++  // section's controls, in the description's order: the renderer's order.
++  const meterLayout = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
++  for (const m of meterLayout.meters) {
++    const facts = { kind: m.kind, unit: m.unit ?? '', held: m.held, clip: m.clip };
++    const own = sections.flatMap((sec) => sec.controls).find((k) => k.symbol === m.symbol);
++    if (own) { own.meter = facts; continue; }
++    const sec = sections.find((x) => x.key === m.sectionKey) ?? sections[sections.length - 1];
++    sec.controls.push({ symbol: m.symbol, name: m.label, widget: 'display', min: m.min, max: m.max, meter: facts, shown: true });
++  }
+   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
+   if (sections.some((sec) => sec.displays.length > 0)) {
+     const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
+@@ -392,6 +403,18 @@ function drawFader(c, cx, top, h, f, col) {
+   roundRect(c, cx - (g.faderW * (h / g.knob)) / 2, y + cap / 2 - 0.5, g.faderW * (h / g.knob), 1, 0, col.accent);
+ }
+ 
++/** A meter with no reading (renderer/src/view.c `draw_meter`, operation for operation): the display's frame and, when the meter carries
++ * a clip word, its lamp unlit at the right end. */
++function drawMeter(c, x, y, w, h, k, s, col) {
++  drawDisplay(c, x, y, w, h, col);
++  if (!k.meter.clip) return;
++  const lamp = h / 2;
++  roundRect(c, x + w - 2 - lamp, y + (h - lamp) / 2, lamp, lamp, Math.min(2 * s, lamp / 4), col.rim);
++}
++
++/** A meter's caption: its unit, and `unheld` when its plugin holds nothing between reads (contract §7.9). */
++export const meterCaption = (m) => [m.unit, m.held ? '' : 'unheld'].filter(Boolean).join(' ');
++
+ /** A readout's display: the selector's frame, empty (a reading has no default to show). */
+ function drawDisplay(c, x, y, w, h, col) {
+   roundRect(c, x, y, w, h, Math.min(4, h / 4), col.rim);
+@@ -456,7 +479,9 @@ export function renderFace(lay, look, scale) {
+       // a control the come-up values hide is not on the screenshot, as the face hides it
+       if (!k.shown) continue;
+       const x = sec.x + k.x, y = sec.y + k.y;
+-      if (k.widget === 'display') {
++      if (k.meter) {
++        drawMeter(c, (x + (g.cellW - g.selectorW) / 2) * s, (y + g.selectorTop) * s, g.selectorW * s, g.selectorH * s, k, s, col);
++      } else if (k.widget === 'display') {
+         drawDisplay(c, (x + (g.cellW - g.selectorW) / 2) * s, (y + g.selectorTop) * s, g.selectorW * s, g.selectorH * s, col);
+       } else if (k.widget === 'switch') {
+         drawSwitch(c, (x + (g.cellW - g.switchW) / 2) * s, (y + g.switchTop) * s, g.switchW * s, g.switchH * s, k.def >= 0.5, col);
+@@ -473,6 +498,8 @@ export function renderFace(lay, look, scale) {
+       if (k.widget === 'selector') {
+         const shown = fitText(font, valueText(k), TEXT.small * s, (g.selectorW - 8) * s);
+         drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, col.ink, 'centre');
++      } else if (k.meter) {
++        drawText(c, font, fitText(font, meterCaption(k.meter), TEXT.small * s, fit), mid, (y + TEXT.valueBase) * s, TEXT.small * s, col.inkDim, 'centre');
+       } else if (k.widget !== 'display') {
+         drawText(c, font, fitText(font, valueText(k), TEXT.small * s, fit), mid, (y + TEXT.valueBase) * s, TEXT.small * s, col.ink, 'centre');
+       }
+@@ -561,9 +588,14 @@ export function emitTemplate(panel, lay, source) {
+     // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
+     if (k.widget === 'display') {
+       const range = k.min === undefined ? '' : ` data-min="${k.min}" data-max="${k.max}"`;
+-      return `            <div class="omx-control omx-display" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}>
+-                <div class="omx-display-image"></div>
+-                <span class="omx-control-title">${esc(k.name)}</span>
++      // a meter is a static frame with its range, its kind and words and its caption, until the live MOD GUI spec (§7.9)
++      const m = k.meter;
++      const meter = m ? ` data-kind="${m.kind}" data-unit="${esc(m.unit)}" data-held="${m.held}" data-clip="${m.clip}"` : '';
++      const lamp = m?.clip ? '<div class="omx-meter-clip"></div>' : '';
++      const caption = m ? `\n                <span class="omx-meter-caption">${esc(meterCaption(m))}</span>` : '';
++      return `            <div class="omx-control omx-display${m ? ' omx-meter' : ''}" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${meter}${vis(k)}>
++                <div class="omx-display-image">${lamp}</div>
++                <span class="omx-control-title">${esc(k.name)}</span>${caption}
+             </div>`;
+     }
+     const data = `data-symbol="${k.symbol}" data-min="${k.min}" data-max="${k.max}" data-default="${k.def}"`;
+@@ -663,6 +695,9 @@ ${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
+ ${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
+ ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
+ ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
++` : ''}${panel.sections.some((x) => x.controls.some((k) => k.meter)) ? `${P} .omx-display-image { position: relative; }
++${P} .omx-meter-clip { position: absolute; right: 1px; top: ${g.selectorH / 4 - 1}px; width: ${g.selectorH / 2}px; height: ${g.selectorH / 2}px; border-radius: 2px; background: ${tok['--border-strong']}; }
++${P} .omx-meter-caption { display: block; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ ` : ''}`;
+ }
+ 
