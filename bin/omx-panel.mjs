@@ -14,6 +14,7 @@
  *                                                        with --layout the derived layout it was made from, what the renderer
  *                                                        draws (no skin: a skin reorders the description, not the layout)
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
+ *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
@@ -45,6 +46,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
+  + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
@@ -203,6 +205,11 @@ async function describeCommand(argv) {
 async function compare(argv) {
   const m = await import(join(TOOLS, 'compare.mjs'));
   const op = argv[0];
+  if (op === 'describe') {
+    // what a host that is not JavaScript needs to hold a compare document: tools/compare.mjs's own values (#23)
+    process.stdout.write(`${JSON.stringify({ format: m.COMPARE_FORMAT, slots: m.COMPARE_SLOTS, ringBound: m.RING_BOUND })}\n`);
+    return;
+  }
   if (!['switch', 'copy', 'undo', 'redo'].includes(op)) {
     process.stderr.write(USAGE);
     process.exit(2);

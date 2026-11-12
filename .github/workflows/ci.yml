@@ -68,6 +68,8 @@ jobs:
       - id: handback-look
         name: look.json and the renderer's role list are what the colour roles give
         run: make look
+      - name: The renderer's gesture word names and omx_panel_word_t are what gestures.json gives (#23)
+        run: node tools/gesture-words.mjs --check
       - id: handback-example
         name: The example skin package validates
         run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
@@ -92,6 +94,10 @@ jobs:
         run: npm ci && make
       - name: The renderer, and its golden images and parity with the MOD GUI face
         run: make renderer-check
+
+      # what a Python host reads through the library and the command: the word names, the compare slots and ring bound
+      - name: A host that is not JavaScript reads the word names and the compare values
+        run: make test-host-reads
 
   # One recorded meter stream drawn by the renderer, by the MOD GUI's template in Chromium (playwright-core, the twin of omx-dsp's
   # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and

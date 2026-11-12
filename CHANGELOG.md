@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- 0.13.6: a host that is not JavaScript reads the gesture word names through the library (`omx_panel_word_name`,
+  generated from schema/gestures.json) and the compare format, slots and ring bound through `omx-panel compare describe`
+  (#23); one language pack per listed language (ca, es, fr, de, it, pt), each owning its catalog.
 - 0.13.4 was tagged without a version bump and never released: its tag is empty, and nothing was published under
   it.
 - 0.13.5: describe serves a plugin's path and text parameters (#17): an LV2 patch:writable lv2:Parameter of range atom:Path or

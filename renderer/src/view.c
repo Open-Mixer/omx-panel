@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "look_roles.h"
+#include "gesture_words.h"
 #include "view.h"
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
@@ -372,6 +373,14 @@ bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t index, double value,
 }
 
 uint32_t omx_panel_view_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->ncontrols : 0; }
+
+const char *omx_panel_word_name(omx_panel_word_t word) {
+  static const char *const names[] = {OMX_PANEL_WORD_NAMES};
+  _Static_assert(sizeof names / sizeof names[0] == OMX_PANEL_WORD_LAST + 1,
+                 "gesture_words.h and omx_panel_word_t differ: run node tools/gesture-words.mjs --check");
+  _Static_assert(OMX_PANEL_WORD_PAINT == OMX_PANEL_WORD_LAST, "omx_panel_word_t's last word is gestures.json's last");
+  return (int)word >= 0 && (size_t)word < sizeof names / sizeof names[0] ? names[word] : NULL;
+}
 
 int32_t omx_panel_view_find(const omx_panel_view_t *v, const char *symbol) {
   for (size_t i = 0; v && symbol && i < v->ncontrols; i++)

@@ -17,7 +17,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer
+.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
 
 all: build
 
@@ -64,6 +64,11 @@ renderer:
 
 renderer-check: build
 	$(MAKE) -C renderer check WINDOW=$(WINDOW)
+
+# a host that is not JavaScript reads the gesture word names and the compare values from what the panel ships (#23):
+# the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)
+test-host-reads: build renderer
+	python3 test/host_reads.py
 
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)

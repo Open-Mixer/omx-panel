@@ -14,7 +14,7 @@ import { test } from 'node:test';
 const HERE = new URL('..', import.meta.url).pathname;
 const SO = join(HERE, 'build', 'libomx-panel-render.so.0');
 
-const declared = [...readFileSync(join(HERE, 'include', 'omx_panel_render.h'), 'utf8').matchAll(/\b(omx_panel_view_[a-z_]+)\s*\(/g)]
+const declared = [...readFileSync(join(HERE, 'include', 'omx_panel_render.h'), 'utf8').matchAll(/\b(omx_panel_[a-z_]+)\s*\(/g)]
   .map((m) => m[1]);
 const exported = execFileSync('nm', ['-D', '--defined-only', SO], { encoding: 'utf8' })
   .split('\n')

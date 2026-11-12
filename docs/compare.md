@@ -17,6 +17,12 @@ omx-panel compare redo              { "ring": ..., "values": { ... } }
                                  -> { "doc": ..., "ring": ..., "moves": [ { "symbol": "ratio", "value": 3 } ], "unknown": [ ] }
 ```
 
+`omx-panel compare describe` answers what a host needs to hold a document of its own, from the module itself (#23):
+
+```
+omx-panel compare describe          -> { "format": "org.openmixer.compare/1", "slots": [ "A", "B", "C", "D" ], "ringBound": 64 }
+```
+
 Leave out `doc` or `ring` for a new one. `captures` is a queue of value sets to take before the step, in order, so a
 host starts no process while a knob turns. A refusal exits 1 and names its code on stderr; a usage error exits 2.
 

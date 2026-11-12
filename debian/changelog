@@ -1,3 +1,18 @@
+omx-panel (0.13.6) unstable; urgency=medium
+
+  * omx_panel_word_name (the shared library) names each gesture word as
+    schema/gestures.json spells it, from a header generated off gestures.json,
+    and `omx-panel compare describe` answers the compare document's format,
+    slots and ring bound: a host that is not JavaScript reads both instead of
+    keeping its own (#23).
+  * Language packs: omx-panel-langpack-<lang> (rpm) and omx-panel-l10n-<lang>
+    (deb), one per language omx-contract lists, each owning
+    /usr/share/omx-panel/catalogs/<lang>.json; the Catalan entries are a
+    person's, the others are made by omx-contract translate. Built against
+    omx-contract >= 3.16.0.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 12 Nov 2026 19:30:00 +0000
+
 omx-panel (0.13.5) unstable; urgency=medium
 
   * describe serves a plugin's path and text parameters: an LV2

@@ -219,10 +219,6 @@ static const char *refusal_name(omx_panel_refusal_t r) {
                                       "GESTURE_NO_TARGET", "GESTURE_NO_TABLE", "GESTURE_BAD_SETTING", "GESTURE_HOLD_BELOW_FLOOR", "GESTURE_PAINT_REQUIRED_ON_TOUCH"};
   return names[r];
 }
-static const char *word_name(omx_panel_word_t w) {
-  static const char *const names[] = {"", "drag", "fine", "step", "second", "reset", "more", "select", "toggle", "paint"};
-  return names[w];
-}
 static int run_input(omx_panel_view_t *v, const char *path, uint32_t width, uint32_t height, double scale) {
   char *text = slurp(path);
   cJSON *root = text ? cJSON_Parse(text) : NULL;
@@ -337,7 +333,7 @@ static int run_input(omx_panel_view_t *v, const char *path, uint32_t width, uint
       size_t nch = 0;
       omx_panel_view_gesture(v, k, &g, ch, 256, &nch);
       cJSON *o = cJSON_CreateObject(), *chg = cJSON_AddObjectToObject(o, "changes");
-      cJSON_AddNumberToObject(o, "id", g.id), cJSON_AddStringToObject(o, "word", word_name(g.word));
+      cJSON_AddNumberToObject(o, "id", g.id), cJSON_AddStringToObject(o, "word", omx_panel_word_name(g.word));
       cJSON_AddNumberToObject(o, "begin", g.begin_ms), cJSON_AddNumberToObject(o, "end", g.end_ms), cJSON_AddNumberToObject(o, "shownUntil", g.shown_until_ms);
       cJSON_AddBoolToObject(o, "fine", g.fine);
       for (size_t m = 0; m < nch && m < 256; m++) cJSON_AddNumberToObject(chg, omx_panel_view_symbol(v, ch[m].control), ch[m].value);

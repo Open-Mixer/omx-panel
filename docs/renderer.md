@@ -56,6 +56,9 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
                                                    char *err, size_t err_size);
 void omx_panel_view_destroy(omx_panel_view_t *view);
 
+/* a gesture word's name as schema/gestures.json spells it, for a host that is not JavaScript (#23) */
+const char *omx_panel_word_name(omx_panel_word_t word);
+
 uint32_t omx_panel_view_count(const omx_panel_view_t *view);
 int32_t omx_panel_view_find(const omx_panel_view_t *view, const char *symbol);
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
