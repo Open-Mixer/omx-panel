@@ -263,6 +263,17 @@
         "reason"
       ]
     },
+    "panelParamUnserved": {
+      "code": "panel.describe.param-unserved",
+      "text": {
+        "en": "The parameter {symbol} of {plugin} is not served: its range {range} is neither a path nor a text."
+      },
+      "args": [
+        "plugin",
+        "symbol",
+        "range"
+      ]
+    },
     "panelBarsTooFew": {
       "code": "panel.describe.bars-too-few",
       "text": {
