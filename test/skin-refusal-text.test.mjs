@@ -9,7 +9,7 @@
  * describe's, the bar rule's and the easy list's), and holds the catalog to those codes and their args.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import schema from '@openmixer/omx-contract/schema.json' with { type: 'json' };
 import { validate } from '@openmixer/omx-contract/validate';
@@ -21,7 +21,8 @@ import { EasyRefused } from '../dist/tools/easy.mjs';
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
 const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.meta.url);
 /** The languages this package ships a catalog for, each complete. */
-const CATALOG_LANGS = ['ca'];
+// every catalog the tree carries, one per listed language (omx-contract's languages.json), each complete
+const CATALOG_LANGS = readdirSync(new URL('../catalogs/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
 const gte = (a, b) => {
@@ -92,7 +93,9 @@ for (const code of EMITTED) {
   for (const lang of CATALOG_LANGS) {
     test(`${code} has a ${lang} sentence in catalogs/${lang}.json naming only its args`, () => {
       const entry = declared().get(code);
-      const sentence = catalog(lang).messages?.[code];
+      // an entry is the sentence, or {text, by[, model, source]} with its provenance (omx-contract 3.16.0)
+      const said = catalog(lang).messages?.[code];
+      const sentence = typeof said === 'string' ? said : said?.text;
       assert.ok(typeof sentence === 'string' && sentence !== '', `${code} has no ${lang} sentence`);
       for (const name of placeholders(sentence)) assert.ok(entry?.args.includes(name), `${code} (${lang}): {${name}} is not in args`);
     });

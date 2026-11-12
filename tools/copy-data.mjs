@@ -24,8 +24,10 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
   .filter((e) => e.isFile())
   .map((e) => relative(ROOT, join(e.parentPath, e.name)))
   .sort();
+/** Every catalog the tree carries, catalogs/<lang>.json, one per listed language. */
+const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `catalogs/${f}`);
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', 'catalogs/ca.json', 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/modgui-test.sh'];
 
