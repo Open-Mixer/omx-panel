@@ -1,0 +1,1625 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.4.0"
+  },
+  "origin": "scanned",
+  "plugin": {
+    "format": "lv2",
+    "id": "http://lsp-plug.in/plugins/lv2/matcher_mono",
+    "uri": "http://lsp-plug.in/plugins/lv2/matcher_mono",
+    "name": "LSP Matcher Mono",
+    "vendor": "LSP LV2",
+    "version": "0.2",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "enabled",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#enabled"
+      }
+    },
+    {
+      "id": "g_in",
+      "name": "Input gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#g_in"
+      }
+    },
+    {
+      "id": "g_out",
+      "name": "Output gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#g_out"
+      }
+    },
+    {
+      "id": "fft_sz",
+      "name": "FFT size",
+      "kind": "choice",
+      "ids": [
+        "256",
+        "512",
+        "1024",
+        "2048",
+        "4096",
+        "8192",
+        "16384"
+      ],
+      "labels": [
+        "256",
+        "512",
+        "1024",
+        "2048",
+        "4096",
+        "8192",
+        "16384"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+      ],
+      "default": "4096",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fft_sz"
+      }
+    },
+    {
+      "id": "rct_in",
+      "name": "Input profile reactivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#rct_in"
+      }
+    },
+    {
+      "id": "rct_ref",
+      "name": "Reference profile reactivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#rct_ref"
+      }
+    },
+    {
+      "id": "in_src",
+      "name": "Input source",
+      "kind": "choice",
+      "ids": [
+        "static",
+        "dynamic"
+      ],
+      "labels": [
+        "Static",
+        "Dynamic"
+      ],
+      "values": [
+        0.0,
+        1.0
+      ],
+      "default": "static",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#in_src"
+      }
+    },
+    {
+      "id": "ref_src",
+      "name": "Reference source",
+      "kind": "choice",
+      "ids": [
+        "none",
+        "capture",
+        "file",
+        "envelope",
+        "link"
+      ],
+      "labels": [
+        "None",
+        "Capture",
+        "File",
+        "Envelope",
+        "Link"
+      ],
+      "values": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "default": "capture",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_src"
+      }
+    },
+    {
+      "id": "cap_src",
+      "name": "Capture source",
+      "kind": "choice",
+      "ids": [
+        "in",
+        "link"
+      ],
+      "labels": [
+        "In",
+        "Link"
+      ],
+      "values": [
+        0.0,
+        1.0
+      ],
+      "default": "in",
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#cap_src"
+      }
+    },
+    {
+      "id": "blend",
+      "name": "Blend signal",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 100.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#blend"
+      }
+    },
+    {
+      "id": "profile",
+      "name": "Profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#profile"
+      }
+    },
+    {
+      "id": "capture",
+      "name": "Capture",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#capture"
+      }
+    },
+    {
+      "id": "listen",
+      "name": "Listen capture",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#listen"
+      }
+    },
+    {
+      "id": "hpf_on",
+      "name": "High-pass filter enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#hpf_on"
+      }
+    },
+    {
+      "id": "hpf_f",
+      "name": "High-pass filter frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 10.0,
+        "max": 500.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 30.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#hpf_f"
+      }
+    },
+    {
+      "id": "hpf_s",
+      "name": "High-pass filter slope",
+      "kind": "travel",
+      "travel": {
+        "min": 6.0,
+        "max": 240.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 36.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#hpf_s"
+      }
+    },
+    {
+      "id": "lpf_on",
+      "name": "Low-pass filter enable",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#lpf_on"
+      }
+    },
+    {
+      "id": "lpf_f",
+      "name": "Low-pass filter frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 1000.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 20000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#lpf_f"
+      }
+    },
+    {
+      "id": "lpf_s",
+      "name": "Low-pass filter slope",
+      "kind": "travel",
+      "travel": {
+        "min": 6.0,
+        "max": 240.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 36.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#lpf_s"
+      }
+    },
+    {
+      "id": "clip_on",
+      "name": "Enable brickwall clipping of high frequencies",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#clip_on"
+      }
+    },
+    {
+      "id": "clip_f",
+      "name": "Brickwall clipping frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 4000.0,
+        "max": 24000.0,
+        "unit": "Hz",
+        "scale": "log",
+        "default": 24000.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#clip_f"
+      }
+    },
+    {
+      "id": "in_rdy",
+      "name": "Match input profile ready",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#in_rdy"
+      }
+    },
+    {
+      "id": "ref_rdy",
+      "name": "Match reference profile ready",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_rdy"
+      }
+    },
+    {
+      "id": "sprdy",
+      "name": "Static input profile ready",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#sprdy"
+      }
+    },
+    {
+      "id": "cprdy",
+      "name": "Capture profile ready",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#cprdy"
+      }
+    },
+    {
+      "id": "fprdy",
+      "name": "File profile ready",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fprdy"
+      }
+    },
+    {
+      "id": "showfil",
+      "name": "Show file loading",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showfil"
+      }
+    },
+    {
+      "id": "fpitch",
+      "name": "File pitch",
+      "kind": "travel",
+      "travel": {
+        "min": -24.0,
+        "max": 24.0,
+        "unit": "st",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fpitch"
+      }
+    },
+    {
+      "id": "fhcut",
+      "name": "Head cut",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fhcut"
+      }
+    },
+    {
+      "id": "ftcut",
+      "name": "Tail cut",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ftcut"
+      }
+    },
+    {
+      "id": "fplay",
+      "name": "Listen file preview",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fplay"
+      }
+    },
+    {
+      "id": "fstop",
+      "name": "File preview stop",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fstop"
+      }
+    },
+    {
+      "id": "fstatus",
+      "name": "File load status",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fstatus"
+      }
+    },
+    {
+      "id": "flength",
+      "name": "File length",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1000.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#flength"
+      }
+    },
+    {
+      "id": "fppos",
+      "name": "Sample play position",
+      "kind": "travel",
+      "travel": {
+        "min": -1.0,
+        "max": 1000.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": -1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#fppos"
+      }
+    },
+    {
+      "id": "showfft",
+      "name": "Show any FFT analysis for all channels",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showfft"
+      }
+    },
+    {
+      "id": "showpro",
+      "name": "Show any profiles",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showpro"
+      }
+    },
+    {
+      "id": "showenv",
+      "name": "Show profile envelope",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showenv"
+      }
+    },
+    {
+      "id": "showlim",
+      "name": "Show profile limiting",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showlim"
+      }
+    },
+    {
+      "id": "showmrp",
+      "name": "Show profile morphing",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showmrp"
+      }
+    },
+    {
+      "id": "showflt",
+      "name": "Show filters",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#showflt"
+      }
+    },
+    {
+      "id": "track",
+      "name": "Enable tracking of dynamic profiles",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#track"
+      }
+    },
+    {
+      "id": "tlimit",
+      "name": "Enable profile limiting from top",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#tlimit"
+      }
+    },
+    {
+      "id": "blimit",
+      "name": "Enable profile limiting from bottom",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#blimit"
+      }
+    },
+    {
+      "id": "limit",
+      "name": "Enable profile limiting",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#limit"
+      }
+    },
+    {
+      "id": "match",
+      "name": "Perform immediate matching",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#match"
+      }
+    },
+    {
+      "id": "mrplink",
+      "name": "Morph time linking",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#mrplink"
+      }
+    },
+    {
+      "id": "ref_1",
+      "name": "Reference level 25Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_1"
+      }
+    },
+    {
+      "id": "amp_1",
+      "name": "Amplification threshold 25Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_1"
+      }
+    },
+    {
+      "id": "red_1",
+      "name": "Reduction threshold 25Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_1"
+      }
+    },
+    {
+      "id": "spd_1",
+      "name": "Reactivity 25Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_1"
+      }
+    },
+    {
+      "id": "ref_2",
+      "name": "Reference level 50Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_2"
+      }
+    },
+    {
+      "id": "amp_2",
+      "name": "Amplification threshold 50Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_2"
+      }
+    },
+    {
+      "id": "red_2",
+      "name": "Reduction threshold 50Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_2"
+      }
+    },
+    {
+      "id": "spd_2",
+      "name": "Reactivity 50Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_2"
+      }
+    },
+    {
+      "id": "ref_3",
+      "name": "Reference level 107Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_3"
+      }
+    },
+    {
+      "id": "amp_3",
+      "name": "Amplification threshold 107Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_3"
+      }
+    },
+    {
+      "id": "red_3",
+      "name": "Reduction threshold 107Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_3"
+      }
+    },
+    {
+      "id": "spd_3",
+      "name": "Reactivity 107Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_3"
+      }
+    },
+    {
+      "id": "ref_4",
+      "name": "Reference level 227Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_4"
+      }
+    },
+    {
+      "id": "amp_4",
+      "name": "Amplification threshold 227Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_4"
+      }
+    },
+    {
+      "id": "red_4",
+      "name": "Reduction threshold 227Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_4"
+      }
+    },
+    {
+      "id": "spd_4",
+      "name": "Reactivity 227Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_4"
+      }
+    },
+    {
+      "id": "ref_5",
+      "name": "Reference level 484Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_5"
+      }
+    },
+    {
+      "id": "amp_5",
+      "name": "Amplification threshold 484Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_5"
+      }
+    },
+    {
+      "id": "red_5",
+      "name": "Reduction threshold 484Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_5"
+      }
+    },
+    {
+      "id": "spd_5",
+      "name": "Reactivity 484Hz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_5"
+      }
+    },
+    {
+      "id": "ref_6",
+      "name": "Reference level 1 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_6"
+      }
+    },
+    {
+      "id": "amp_6",
+      "name": "Amplification threshold 1 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_6"
+      }
+    },
+    {
+      "id": "red_6",
+      "name": "Reduction threshold 1 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_6"
+      }
+    },
+    {
+      "id": "spd_6",
+      "name": "Reactivity 1 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_6"
+      }
+    },
+    {
+      "id": "ref_7",
+      "name": "Reference level 2.2 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_7"
+      }
+    },
+    {
+      "id": "amp_7",
+      "name": "Amplification threshold 2.2 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_7"
+      }
+    },
+    {
+      "id": "red_7",
+      "name": "Reduction threshold 2.2 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_7"
+      }
+    },
+    {
+      "id": "spd_7",
+      "name": "Reactivity 2.2 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_7"
+      }
+    },
+    {
+      "id": "ref_8",
+      "name": "Reference level 4.7 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_8"
+      }
+    },
+    {
+      "id": "amp_8",
+      "name": "Amplification threshold 4.7 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_8"
+      }
+    },
+    {
+      "id": "red_8",
+      "name": "Reduction threshold 4.7 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_8"
+      }
+    },
+    {
+      "id": "spd_8",
+      "name": "Reactivity 4.7 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_8"
+      }
+    },
+    {
+      "id": "ref_9",
+      "name": "Reference level 9 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_9"
+      }
+    },
+    {
+      "id": "amp_9",
+      "name": "Amplification threshold 9 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_9"
+      }
+    },
+    {
+      "id": "red_9",
+      "name": "Reduction threshold 9 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_9"
+      }
+    },
+    {
+      "id": "spd_9",
+      "name": "Reactivity 9 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_9"
+      }
+    },
+    {
+      "id": "ref_10",
+      "name": "Reference level 16 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -36.0,
+        "max": 36.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ref_10"
+      }
+    },
+    {
+      "id": "amp_10",
+      "name": "Amplification threshold 16 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 48.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": 12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#amp_10"
+      }
+    },
+    {
+      "id": "red_10",
+      "name": "Reduction threshold 16 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -48.0,
+        "max": 0.0,
+        "unit": "dB",
+        "scale": "linear",
+        "default": -12.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#red_10"
+      }
+    },
+    {
+      "id": "spd_10",
+      "name": "Reactivity 16 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": 0.10000000149011612,
+        "max": 10.0,
+        "unit": "s",
+        "scale": "linear",
+        "default": 5.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#spd_10"
+      }
+    },
+    {
+      "id": "ir_save",
+      "name": "Save output IR file command",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ir_save"
+      }
+    },
+    {
+      "id": "ir_stat",
+      "name": "Output IR saving status",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 63.0,
+        "unit": "unknown",
+        "scale": "stepped",
+        "step": 1,
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ir_stat"
+      }
+    },
+    {
+      "id": "ir_prog",
+      "name": "IR file saving progress",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "%",
+        "scale": "linear",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ir_prog"
+      }
+    },
+    {
+      "id": "react",
+      "name": "FFT reactivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 1.0,
+        "unit": "ms",
+        "scale": "log",
+        "default": 0.20000000298023224
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#react"
+      }
+    },
+    {
+      "id": "shift",
+      "name": "FFT Shift gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 100.0,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 1.0
+      },
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#shift"
+      }
+    },
+    {
+      "id": "ife",
+      "name": "Input FFT enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ife"
+      }
+    },
+    {
+      "id": "ofe",
+      "name": "Output FFT enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ofe"
+      }
+    },
+    {
+      "id": "cfe",
+      "name": "Capture FFT enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#cfe"
+      }
+    },
+    {
+      "id": "rfe",
+      "name": "Reference FFT enabled",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#rfe"
+      }
+    },
+    {
+      "id": "psfe",
+      "name": "Draw static input profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#psfe"
+      }
+    },
+    {
+      "id": "pcfe",
+      "name": "Draw capture profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#pcfe"
+      }
+    },
+    {
+      "id": "pffe",
+      "name": "Draw file profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#pffe"
+      }
+    },
+    {
+      "id": "pefe",
+      "name": "Draw envelope profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#pefe"
+      }
+    },
+    {
+      "id": "pife",
+      "name": "Draw dynamic input profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#pife"
+      }
+    },
+    {
+      "id": "prfe",
+      "name": "Draw dynamic reference profile",
+      "kind": "toggle",
+      "default": false,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#prfe"
+      }
+    },
+    {
+      "id": "pmfe",
+      "name": "Draw resulting match profile",
+      "kind": "toggle",
+      "default": true,
+      "meaning": "unknown",
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#pmfe"
+      }
+    },
+    {
+      "id": "ilm",
+      "name": "Input level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 15.848930358886719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#ilm"
+      }
+    },
+    {
+      "id": "olm",
+      "name": "Output level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 15.848930358886719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#olm"
+      }
+    },
+    {
+      "id": "clm",
+      "name": "Capture level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 15.848930358886719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#clm"
+      }
+    },
+    {
+      "id": "rlm",
+      "name": "Reference level meter",
+      "kind": "travel",
+      "travel": {
+        "min": 0.0,
+        "max": 15.848930358886719,
+        "unit": "unknown",
+        "scale": "log",
+        "default": 0.0
+      },
+      "meaning": "unknown",
+      "readonly": true,
+      "source": {
+        "from": "lsp-plugins.lv2/matcher_mono.ttl#rlm"
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": "in",
+      "name": "Input",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 1
+    },
+    {
+      "id": "out",
+      "name": "Output",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 1
+    }
+  ],
+  "needs": {
+    "tempo": true,
+    "transport": true,
+    "extensions": {
+      "required": [
+        "http://lv2plug.in/ns/ext/urid#map"
+      ],
+      "optional": [
+        "http://harrisonconsoles.com/lv2/inlinedisplay#queue_draw",
+        "http://lv2plug.in/ns/ext/options#options",
+        "http://lv2plug.in/ns/ext/state#mapPath",
+        "http://lv2plug.in/ns/ext/worker#schedule",
+        "http://lv2plug.in/ns/lv2core#hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "lv2": {
+      "rdf:type": "http://lv2plug.in/ns/lv2core#MultiEQPlugin",
+      "lv2:latency": "out_latency",
+      "patch:writable": [
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/matcher_mono/ports#file",
+          "label": "Reference file",
+          "range": "Path"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/matcher_mono/ports#link",
+          "label": "Side-chain shared memory link",
+          "range": "String"
+        },
+        {
+          "uri": "http://lsp-plug.in/plugins/lv2/matcher_mono/ports#ir_file",
+          "label": "Output IR file name",
+          "range": "Path"
+        }
+      ]
+    }
+  },
+  "source": {
+    "from": "lsp-plugins.lv2/lsp-plugins-lv2.so#lv2_descriptor"
+  }
+}

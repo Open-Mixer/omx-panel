@@ -192,6 +192,12 @@ runs): each meter is a meter control in the description's `meters` list, in the 
   `clip` are `false`.
 - A meter is a measurement. A meter, or a read-only control, whose meaning, symbol or name is phantom, pad or head-amp
   state is not a meter: it is left out and reported as `panel.describe.meter-refused`.
+- A path or a text is a parameter, not a control port: an LV2 plugin's patch:writable lv2:Parameter of range atom:Path
+  or atom:String (a scan writes it under `extensions.lv2["patch:writable"]` as `{ uri, label, range }`) is served in
+  `params` as `{ kind: 'path' | 'text', symbol, name, default: '' }`, its symbol the URI's fragment, and drawn as a
+  control of the panel's last section. It is never on a surface page (a page drives a number) and stays out of the
+  fingerprint. A plugin whose only parameters are paths or texts has a panel of one section, `controls`. A patch
+  parameter of another range is not served and is reported as `panel.describe.param-unserved`.
 - A dynamics, gate, limiter or de-esser family's gain-reduction meter is its section's `gain_reduction_bar` display (source
   `meters`, `meterIds` its index in `meters`). The transfer curve's operating point reads the level meters whose symbols
   name the input (`in`, `input`) and the output (`out`, `output`), as `meterIds`.

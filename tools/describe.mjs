@@ -44,7 +44,40 @@ export const DESCRIBE_CODES = {
   roleDropped: 'panel.describe.role-dropped',
   skinDropped: 'panel.describe.skin-dropped',
   meterRefused: 'panel.describe.meter-refused',
+  paramUnserved: 'panel.describe.param-unserved',
 };
+
+/** The LV2 range of a patch parameter -> the kind it is served as: a file (atom:Path) or a text (atom:String). */
+const TEXT_KIND_OF_RANGE = {
+  Path: 'path', 'atom:Path': 'path', 'http://lv2plug.in/ns/ext/atom#Path': 'path',
+  String: 'text', 'atom:String': 'text', 'http://lv2plug.in/ns/ext/atom#String': 'text',
+};
+
+/**
+ * The path and text parameters a descriptor declares (#17): an LV2 plugin's patch:writable lv2:Parameters, as a scan
+ * writes them under `extensions.lv2["patch:writable"]` ({ uri, label, range }, and a `symbol` where a host names it), served
+ * as `{ kind: 'path' | 'text', symbol, name, default }`: the symbol is the one stated, else the parameter URI's fragment
+ * (else its last segment), the name its label, the
+ * default empty. One of another range is not served: it is listed apart (`unserved`, its symbol and range), for a refusal.
+ */
+export function textParamsOf(descriptor) {
+  const writable = descriptor.extensions?.lv2?.['patch:writable'];
+  const list = Array.isArray(writable) ? writable : writable ? [writable] : [];
+  const served = [];
+  const unserved = [];
+  for (const p of list) {
+    const uri = typeof p === 'string' ? p : p?.uri;
+    if (typeof uri !== 'string' || uri === '') continue;
+    // a symbol the entry states wins (a host's own name for it); else the URI's fragment, else its last segment
+    const stated = typeof p === 'object' && typeof p.symbol === 'string' && p.symbol !== '' ? p.symbol : undefined;
+    const symbol = stated ?? (uri.includes('#') ? uri.slice(uri.lastIndexOf('#') + 1) : uri.slice(uri.lastIndexOf('/') + 1));
+    const range = typeof p === 'object' ? p.range : undefined;
+    const kind = TEXT_KIND_OF_RANGE[range];
+    if (kind) served.push({ kind, symbol, name: (typeof p.label === 'string' && p.label) || symbol, default: '' });
+    else unserved.push({ symbol, range: range ?? null });
+  }
+  return { served, unserved };
+}
 
 /** What a plugin declares about itself (an LV2 class, a CLAP feature) -> the family whose closed form omx-panel knows. */
 export const FAMILY_OF_DECLARED = {
@@ -185,6 +218,8 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     }
   }
   const options = { panel, ns, ...(where ? { where } : {}) };
+  const texts = textParamsOf(effective);
+  for (const u of texts.unserved) refusals.push(refuse(DESCRIBE_CODES.paramUnserved, { plugin, symbol: u.symbol, range: u.range }));
   let layout;
   // a declared family the controls do not back is refused by code and the panel is `none`: the plain sections
   const tryDeclared = (make) => {
@@ -210,9 +245,13 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
       });
     } else layout = familyRule(effective, options).layout;
   } catch (e) {
-    const code = e instanceof NoControls ? DESCRIBE_CODES.noControls : e instanceof BarsRefused ? e.code : DESCRIBE_CODES.layoutInvalid;
-    refusals.push(refuse(code, { plugin, message: e.message }));
-    return { description: null, refusals };
+    // a plugin whose only parameters are paths or texts still has a panel: one section holding their controls
+    if (e instanceof NoControls && texts.served.length > 0) layout = textOnlyLayout(effective);
+    else {
+      const code = e instanceof NoControls ? DESCRIBE_CODES.noControls : e instanceof BarsRefused ? e.code : DESCRIBE_CODES.layoutInvalid;
+      refusals.push(refuse(code, { plugin, message: e.message }));
+      return { description: null, refusals };
+    }
   }
   // the layout keys a control by keyOf; the description serves the name a host sets it by
   const servedOf = new Map(effective.controls.map((c) => [keyOf(c), servedSymbolOf(c)]));
@@ -222,7 +261,10 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   for (const m of layout.meterRefusals ?? []) refusals.push(refuse(DESCRIBE_CODES.meterRefused, { plugin, symbol: m.symbol, reason: m.reason }));
 
   const factors = new Set(layout.roles.filter((r) => r.role === 'band_gain' && r.inferred && (r.token ?? r.unit) === 'coef').map((r) => r.symbol));
-  const params = effective.controls.map((c) => servedParamOf(c, { factor: factors.has(keyOf(c)) }));
+  // a path or text parameter is served after the controls' facts, and drawn as a control of the panel's last section
+  const params = [...effective.controls.map((c) => servedParamOf(c, { factor: factors.has(keyOf(c)) })), ...texts.served];
+  const textSection = layout.sections.at(-1)?.key;
+  const textControls = texts.served.map((t) => ({ symbol: t.symbol, section: textSection, widget: 'auto', labelKey: '', label: t.name, visibleWhen: null }));
   const visibleWhen = (c) => (c.visibleWhen ? { param: served(c.visibleWhen.symbol), values: valuesOfMask(c.mask) } : null);
   let description = {
     family: layout.family,
@@ -231,7 +273,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     easy: layout.easy.map(served),
     params,
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
-    controls: layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })),
+    controls: [...layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })), ...textControls],
     // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
     meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
@@ -248,6 +290,15 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
   description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
   return withLayout ? { description, refusals, layout } : { description, refusals };
+}
+
+/** The layout of a plugin with no control to lay out but path or text parameters: one plain section for them, family
+ * `none`, nothing else (its fingerprint is that section's; the parameters themselves are facts of `params`). */
+function textOnlyLayout(descriptor) {
+  return {
+    origin: descriptor.origin, family: 'none', sections: [{ key: 'controls', labelKey: 'section.controls', label: 'Controls' }],
+    controls: [], roles: [], unpublished: [], displays: [], defaults: [], ports: { inputs: [], outputs: [], sidechain: false, notes: false }, easy: [], meters: [], meterRefusals: [],
+  };
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */
