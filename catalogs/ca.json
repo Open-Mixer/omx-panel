@@ -3,37 +3,133 @@
   "lang": "ca",
   "owner": "omx-panel",
   "messages": {
-    "panel.skin.override-invalid": "La personalització de {plugin} no és vàlida a {field}; corregiu skin.json i torneu a carregar l'aparença.",
-    "panel.skin.override-entry-dropped": "S'ha descartat l'entrada {entry} de {field} per a {plugin} ({reason}); la resta de la personalització encara s'aplica.",
-    "panel.skin.api-mismatch": "Aquesta aparença declara l'API {declared}, que aquesta consola no admet (ofereix {supported}); l'aparença no es carrega.",
-    "panel.skin.view-error": "La vista de l'aparença ha fallat: {message}. Torneu-la a carregar, o suprimiu l'aparença si continua fallant.",
-    "panel.skin.view-lint": "La vista {file} utilitza la paraula no permesa {word}; suprimiu-la i torneu a carregar l'aparença.",
-    "panel.modgui.not-found": "No s'ha trobat cap MOD GUI per importar a {file} ({detail}); no s'ha escrit res.",
-    "panel.modgui.ttl-invalid": "El {file} del paquet no es llegeix com a TTL vàlid ({detail}); corregiu-lo i torneu a importar.",
-    "panel.modgui.no-licence": "{file} no declara cap llicència ({detail}); afegiu-ne una al seu paquet abans de poder importar el seu MOD GUI.",
-    "panel.modgui.licence-unmapped": "La llicència de {file} no és cap que aquest importador associï a un identificador SPDX ({detail}); afegiu l'associació o canvieu la llicència.",
-    "panel.modgui.licence-refused": "La llicència de {file} queda fora de la llista permesa ({detail}); el MOD GUI no s'importa.",
-    "panel.modgui.unknown-property": "{file} conté una propietat desconeguda ({detail}); suprimiu-la o corregiu-la abans d'importar.",
-    "panel.modgui.port-unknown": "{file} anomena un port que no és cap dels ports propis del plugin ({detail}); corregiu el símbol i torneu a importar.",
-    "panel.modgui.image-not-found": "{file} anomena una imatge que no és als recursos del paquet ({detail}); afegiu el fitxer o corregiu la referència.",
-    "panel.modgui.path-escape": "{file} anomena un camí que es resol fora del paquet ({detail}); no s'importa res de fora del paquet.",
-    "panel.modgui.target-exists": "{file} ja existeix ({detail}); suprimiu-lo primer per importar-hi a sobre.",
-    "panel.skin.modgui-licence": "L'script de MOD GUI de {plugin} es descarta: la seva llicència {licence} falta o no és permesa.",
-    "panel.describe.no-controls": "{plugin} no té cap control que un panell pugui mostrar, així que no té panell ({message}).",
-    "panel.describe.family-not-backed": "Els controls de {plugin} no porten el que necessita aquesta família de panell ({message}); trieu-ne una altra o cap.",
-    "panel.describe.layout-invalid": "El panell declarat per a {plugin} no es pot disposar ({message}); corregiu-ne la declaració.",
-    "panel.describe.override-unavailable": "No s'han aplicat les {layers} capes de personalització de {plugin}: aquest amfitrió no pot llegir personalitzacions.",
-    "panel.describe.override-refused": "S'ha refusat la capa de personalització {layer} ({name}) de {plugin}: {message}. Les capes de sota encara s'apliquen.",
-    "panel.describe.override-dropped": "A la capa de personalització {layer} ({name}) de {plugin}, s'ha descartat l'entrada de {control}: {message}.",
-    "panel.describe.role-dropped": "El rol {entry} de {symbol} de {plugin} no es mostra ({reason}); el control es queda a la seva pàgina.",
-    "panel.describe.skin-dropped": "S'ha descartat l'entrada {entry} de {field} de l'aparença per a {plugin} ({reason}); la resta de l'aparença encara s'aplica.",
-    "panel.describe.meter-refused": "S'ha deixat fora el mesurador {symbol} de {plugin}: {reason}.",
-    "panel.describe.param-unserved": "El paràmetre {symbol} de {plugin} no se serveix: el seu rang {range} no és ni un camí ni un text.",
-    "panel.describe.bars-too-few": "Un grup de barres de {plugin} té massa pocs controls per dibuixar-los com a barres ({message}); es dibuixen com a botons.",
-    "panel.describe.bars-not-travel": "Un grup de barres de {plugin} conté un control que no pot ser una barra ({message}); corregiu el grup a la declaració del panell.",
-    "panel.describe.bars-facts-differ": "Els controls d'un grup de barres de {plugin} difereixen en rang, pas, unitat o escala ({message}); les barres els han de compartir.",
-    "panel.describe.bars-labels-not-series": "Les etiquetes d'un grup de barres de {plugin} no formen una sola sèrie ({message}); canvieu-ne el nom o dividiu el grup.",
-    "panel.describe.bars-unknown-control": "Un grup de barres de {plugin} anomena un control que el plugin no té ({message}); corregiu el símbol.",
-    "panel.describe.easy-refused": "S'ha refusat la llista Easy de {plugin} ({message}); la pàgina Easy pren la regla en lloc seu."
+    "panel.skin.override-invalid": {
+      "text": "La personalització de {plugin} no és vàlida a {field}; corregiu skin.json i torneu a carregar l'aparença.",
+      "by": "human"
+    },
+    "panel.skin.override-entry-dropped": {
+      "text": "S'ha descartat l'entrada {entry} de {field} per a {plugin} ({reason}); la resta de la personalització encara s'aplica.",
+      "by": "human"
+    },
+    "panel.skin.api-mismatch": {
+      "text": "Aquesta aparença declara l'API {declared}, que aquesta consola no admet (ofereix {supported}); l'aparença no es carrega.",
+      "by": "human"
+    },
+    "panel.skin.view-error": {
+      "text": "La vista de l'aparença ha fallat: {message}. Torneu-la a carregar, o suprimiu l'aparença si continua fallant.",
+      "by": "human"
+    },
+    "panel.skin.view-lint": {
+      "text": "La vista {file} utilitza la paraula no permesa {word}; suprimiu-la i torneu a carregar l'aparença.",
+      "by": "human"
+    },
+    "panel.modgui.not-found": {
+      "text": "No s'ha trobat cap MOD GUI per importar a {file} ({detail}); no s'ha escrit res.",
+      "by": "human"
+    },
+    "panel.modgui.ttl-invalid": {
+      "text": "El {file} del paquet no es llegeix com a TTL vàlid ({detail}); corregiu-lo i torneu a importar.",
+      "by": "human"
+    },
+    "panel.modgui.no-licence": {
+      "text": "{file} no declara cap llicència ({detail}); afegiu-ne una al seu paquet abans de poder importar el seu MOD GUI.",
+      "by": "human"
+    },
+    "panel.modgui.licence-unmapped": {
+      "text": "La llicència de {file} no és cap que aquest importador associï a un identificador SPDX ({detail}); afegiu l'associació o canvieu la llicència.",
+      "by": "human"
+    },
+    "panel.modgui.licence-refused": {
+      "text": "La llicència de {file} queda fora de la llista permesa ({detail}); el MOD GUI no s'importa.",
+      "by": "human"
+    },
+    "panel.modgui.unknown-property": {
+      "text": "{file} conté una propietat desconeguda ({detail}); suprimiu-la o corregiu-la abans d'importar.",
+      "by": "human"
+    },
+    "panel.modgui.port-unknown": {
+      "text": "{file} anomena un port que no és cap dels ports propis del plugin ({detail}); corregiu el símbol i torneu a importar.",
+      "by": "human"
+    },
+    "panel.modgui.image-not-found": {
+      "text": "{file} anomena una imatge que no és als recursos del paquet ({detail}); afegiu el fitxer o corregiu la referència.",
+      "by": "human"
+    },
+    "panel.modgui.path-escape": {
+      "text": "{file} anomena un camí que es resol fora del paquet ({detail}); no s'importa res de fora del paquet.",
+      "by": "human"
+    },
+    "panel.modgui.target-exists": {
+      "text": "{file} ja existeix ({detail}); suprimiu-lo primer per importar-hi a sobre.",
+      "by": "human"
+    },
+    "panel.skin.modgui-licence": {
+      "text": "L'script de MOD GUI de {plugin} es descarta: la seva llicència {licence} falta o no és permesa.",
+      "by": "human"
+    },
+    "panel.describe.no-controls": {
+      "text": "{plugin} no té cap control que un panell pugui mostrar, així que no té panell ({message}).",
+      "by": "human"
+    },
+    "panel.describe.family-not-backed": {
+      "text": "Els controls de {plugin} no porten el que necessita aquesta família de panell ({message}); trieu-ne una altra o cap.",
+      "by": "human"
+    },
+    "panel.describe.layout-invalid": {
+      "text": "El panell declarat per a {plugin} no es pot disposar ({message}); corregiu-ne la declaració.",
+      "by": "human"
+    },
+    "panel.describe.override-unavailable": {
+      "text": "No s'han aplicat les {layers} capes de personalització de {plugin}: aquest amfitrió no pot llegir personalitzacions.",
+      "by": "human"
+    },
+    "panel.describe.override-refused": {
+      "text": "S'ha refusat la capa de personalització {layer} ({name}) de {plugin}: {message}. Les capes de sota encara s'apliquen.",
+      "by": "human"
+    },
+    "panel.describe.override-dropped": {
+      "text": "A la capa de personalització {layer} ({name}) de {plugin}, s'ha descartat l'entrada de {control}: {message}.",
+      "by": "human"
+    },
+    "panel.describe.role-dropped": {
+      "text": "El rol {entry} de {symbol} de {plugin} no es mostra ({reason}); el control es queda a la seva pàgina.",
+      "by": "human"
+    },
+    "panel.describe.skin-dropped": {
+      "text": "S'ha descartat l'entrada {entry} de {field} de l'aparença per a {plugin} ({reason}); la resta de l'aparença encara s'aplica.",
+      "by": "human"
+    },
+    "panel.describe.meter-refused": {
+      "text": "S'ha deixat fora el mesurador {symbol} de {plugin}: {reason}.",
+      "by": "human"
+    },
+    "panel.describe.param-unserved": {
+      "text": "El paràmetre {symbol} de {plugin} no se serveix: el seu rang {range} no és ni un camí ni un text.",
+      "by": "human"
+    },
+    "panel.describe.bars-too-few": {
+      "text": "Un grup de barres de {plugin} té massa pocs controls per dibuixar-los com a barres ({message}); es dibuixen com a botons.",
+      "by": "human"
+    },
+    "panel.describe.bars-not-travel": {
+      "text": "Un grup de barres de {plugin} conté un control que no pot ser una barra ({message}); corregiu el grup a la declaració del panell.",
+      "by": "human"
+    },
+    "panel.describe.bars-facts-differ": {
+      "text": "Els controls d'un grup de barres de {plugin} difereixen en rang, pas, unitat o escala ({message}); les barres els han de compartir.",
+      "by": "human"
+    },
+    "panel.describe.bars-labels-not-series": {
+      "text": "Les etiquetes d'un grup de barres de {plugin} no formen una sola sèrie ({message}); canvieu-ne el nom o dividiu el grup.",
+      "by": "human"
+    },
+    "panel.describe.bars-unknown-control": {
+      "text": "Un grup de barres de {plugin} anomena un control que el plugin no té ({message}); corregiu el símbol.",
+      "by": "human"
+    },
+    "panel.describe.easy-refused": {
+      "text": "S'ha refusat la llista Easy de {plugin} ({message}); la pàgina Easy pren la regla en lloc seu.",
+      "by": "human"
+    }
   }
 }
