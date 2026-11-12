@@ -1,3 +1,24 @@
+omx-panel (0.13.3) unstable; urgency=medium
+
+  * The meaning each panel role plays is read from the roleMeanings items the
+    installed packages declare in their contract directories
+    (omx-plugins-contract 0.19.3 installs omx-plugins'); omx-panel keeps no
+    list of its own, a role no package declares plays none, and one declared
+    twice is refused.
+  * A level meter of the descriptor's meters[] is the transfer curve's
+    operating point whether or not it names its measurement: clap.meters/1
+    meters as plugin-hostd 0.20.3 describes them state none.
+  * Runs beside plugin-hostd 0.20.3: plugin-hostd-contract and the
+    recommended plugin-hostd >= 0.20.3 and < 0.21, omx-contract-data
+    >= 3.13.0 and < 4, the recommended omx-plugins-contract >= 0.19.3 and
+    < 0.20.
+  * tools/modgui-test.sh and tools/modgui-gen.mjs fail with the reason when
+    the panel layout cannot be read (plugin-hostd's LV2 table not installed);
+    both read that as no meters, so a MOD GUI was written without its meter
+    frames and the test passed it (#11).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 11 Nov 2026 19:30:00 +0100
+
 omx-panel (0.13.2) unstable; urgency=medium
 
   * tools/modgui-test.sh holds each meter frame the generator draws to the

@@ -6,7 +6,10 @@
  *
  *   - the meanings: omx-contract's closed list of control meanings, `$defs.meaning` of its installed schema
  *     (`<datadir>/omx-contract.schema.json`, installed by omx-contract-data; `$OMX_CONTRACT_SCHEMA` stands in),
- *     `unknown` aside; and the panel roles that play them, `meaningOfRole`;
+ *     `unknown` aside; and the meaning each panel role plays, `meaningOfRole`: the `roleMeanings` items the installed
+ *     packages declare in their contract directories (omx-contract docs/contract-dir.md, "A package's role meanings";
+ *     omx-plugins-contract installs omx-plugins'; `$OMX_ROLE_MEANINGS`, a `:` list of files holding such items, stands
+ *     in), never a list of this package's own;
  *   - the unit tokens: the token of a descriptor unit is the LV2 unit a face writes for it, plugin-hostd's
  *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`, installed by
  *     plugin-hostd-contract; `$PLUGIN_HOSTD_TABLES`, a directory holding lv2.json, stands in), or the name of a unit
@@ -79,19 +82,55 @@ export const meanings = once(() => {
   return Object.freeze(list.filter((m) => m !== 'unknown'));
 });
 
-/** A panel role -> the descriptor meaning it plays, where the two names differ. A role whose name is
- * a meaning plays that meaning; a role in neither has no meaning word and is bound only by a panel. */
-export const MEANING_OF_ROLE = Object.freeze({
-  mix: 'wetDryRatio', time: 'delay', cutoff: 'cutoffFrequency',
-  band_freq: 'frequency', band_gain: 'gain', band_q: 'q',
-  hpf_freq: 'lowCut', low_cut: 'lowCut', lpf_freq: 'highCut', high_cut: 'highCut',
-  hpf_slope: 'slope', lpf_slope: 'slope', key_listen: 'listen',
+/** A `roleMeanings` item's rows into `into` (role -> { meaning, from }); a role a second item declares is refused, as
+ * omx-contract refuses it (`contract.role.duplicate`): a role has one owner. */
+function addRoleMeanings(into, file) {
+  let doc;
+  try {
+    doc = JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return;
+  }
+  for (const [name, item] of Object.entries(doc ?? {})) {
+    if (item?.kind !== 'roleMeanings' || typeof item.roles !== 'object') continue;
+    for (const row of Object.values(item.roles)) {
+      if (typeof row?.role !== 'string' || typeof row.meaning !== 'string') continue;
+      const had = into.get(row.role);
+      if (had) throw new Error(`vocabulary: contract.role.duplicate: role '${row.role}' is declared by ${had.from} and by ${name} (${file}); a role has one owner`);
+      into.set(row.role, { meaning: row.meaning, from: `${name} (${file})` });
+    }
+  }
+}
+
+/** The JSON files of every package of every contract directory: where an installed package's items are. */
+function contractFiles() {
+  const files = [];
+  for (const dir of contractDirs()) {
+    const major = join(dir, '3');
+    if (!existsSync(major)) continue;
+    for (const pkg of readdirSync(major, { withFileTypes: true })) {
+      if (!pkg.isDirectory()) continue;
+      const at = join(major, pkg.name);
+      for (const f of readdirSync(at)) if (f.endsWith('.json')) files.push(join(at, f));
+    }
+  }
+  return files;
+}
+
+/** Every role the installed packages declare, with the meaning it plays: `$OMX_ROLE_MEANINGS`, else the contract
+ * directories. No package declaring one leaves it empty, and every role then plays none. */
+export const roleMeanings = once(() => {
+  const table = new Map();
+  const named = process.env.OMX_ROLE_MEANINGS;
+  for (const file of named ? named.split(':').filter(Boolean) : contractFiles()) addRoleMeanings(table, file);
+  return table;
 });
 
-/** The meaning role `role` plays, or undefined when the descriptor has no word for it. */
+/** The meaning role `role` plays, or undefined: a role no package declares, one declared `unknown`, or one whose meaning
+ * the installed schema does not list plays none, whatever its name (a role is looked up, never read as a meaning). */
 export function meaningOfRole(role) {
-  const m = MEANING_OF_ROLE[role] ?? role;
-  return meanings().includes(m) ? m : undefined;
+  const m = roleMeanings().get(role)?.meaning;
+  return m !== undefined && meanings().includes(m) ? m : undefined;
 }
 
 /** The file of plugin-hostd's LV2 table: in `$PLUGIN_HOSTD_TABLES`, else in the first contract directory holding

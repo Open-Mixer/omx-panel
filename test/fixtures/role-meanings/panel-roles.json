@@ -1,0 +1,233 @@
+{
+  "OMX_PANEL_TEST_ROLE_MEANINGS": {
+    "kind": "roleMeanings",
+    "since": "0.13.2",
+    "doc": "The meaning each role of the panel families plays, for the suite: what a package of panels declares (omx-plugins-contract installs ours), standing in for it so omx-panel builds and tests with nothing of omx-plugins.",
+    "roles": {
+      "algorithm": {
+        "role": "algorithm",
+        "meaning": "algorithm"
+      },
+      "attack": {
+        "role": "attack",
+        "meaning": "attack"
+      },
+      "band_freq": {
+        "role": "band_freq",
+        "meaning": "frequency"
+      },
+      "band_gain": {
+        "role": "band_gain",
+        "meaning": "gain"
+      },
+      "band_on": {
+        "role": "band_on",
+        "meaning": "unknown"
+      },
+      "band_q": {
+        "role": "band_q",
+        "meaning": "q"
+      },
+      "band_type": {
+        "role": "band_type",
+        "meaning": "unknown"
+      },
+      "ceiling": {
+        "role": "ceiling",
+        "meaning": "ceiling"
+      },
+      "cutoff": {
+        "role": "cutoff",
+        "meaning": "cutoffFrequency"
+      },
+      "damping": {
+        "role": "damping",
+        "meaning": "damping"
+      },
+      "decay": {
+        "role": "decay",
+        "meaning": "decay"
+      },
+      "depth": {
+        "role": "depth",
+        "meaning": "depth"
+      },
+      "division": {
+        "role": "division",
+        "meaning": "division"
+      },
+      "drive": {
+        "role": "drive",
+        "meaning": "drive"
+      },
+      "feedback": {
+        "role": "feedback",
+        "meaning": "feedback"
+      },
+      "filter_type": {
+        "role": "filter_type",
+        "meaning": "unknown"
+      },
+      "fine": {
+        "role": "fine",
+        "meaning": "fine"
+      },
+      "frequency": {
+        "role": "frequency",
+        "meaning": "frequency"
+      },
+      "high_cut": {
+        "role": "high_cut",
+        "meaning": "highCut"
+      },
+      "hold": {
+        "role": "hold",
+        "meaning": "hold"
+      },
+      "hpf_freq": {
+        "role": "hpf_freq",
+        "meaning": "lowCut"
+      },
+      "hpf_on": {
+        "role": "hpf_on",
+        "meaning": "unknown"
+      },
+      "hpf_slope": {
+        "role": "hpf_slope",
+        "meaning": "slope"
+      },
+      "hysteresis": {
+        "role": "hysteresis",
+        "meaning": "hysteresis"
+      },
+      "key_listen": {
+        "role": "key_listen",
+        "meaning": "listen"
+      },
+      "knee": {
+        "role": "knee",
+        "meaning": "knee"
+      },
+      "knee_end": {
+        "role": "knee_end",
+        "meaning": "unknown"
+      },
+      "knee_start": {
+        "role": "knee_start",
+        "meaning": "unknown"
+      },
+      "listen": {
+        "role": "listen",
+        "meaning": "listen"
+      },
+      "lookahead": {
+        "role": "lookahead",
+        "meaning": "lookahead"
+      },
+      "low_cut": {
+        "role": "low_cut",
+        "meaning": "lowCut"
+      },
+      "lpf_freq": {
+        "role": "lpf_freq",
+        "meaning": "highCut"
+      },
+      "lpf_on": {
+        "role": "lpf_on",
+        "meaning": "unknown"
+      },
+      "lpf_slope": {
+        "role": "lpf_slope",
+        "meaning": "slope"
+      },
+      "makeup": {
+        "role": "makeup",
+        "meaning": "makeup"
+      },
+      "mix": {
+        "role": "mix",
+        "meaning": "wetDryRatio"
+      },
+      "mode": {
+        "role": "mode",
+        "meaning": "mode"
+      },
+      "model": {
+        "role": "model",
+        "meaning": "model"
+      },
+      "output": {
+        "role": "output",
+        "meaning": "output"
+      },
+      "pingpong": {
+        "role": "pingpong",
+        "meaning": "pingpong"
+      },
+      "predelay": {
+        "role": "predelay",
+        "meaning": "predelay"
+      },
+      "range": {
+        "role": "range",
+        "meaning": "range"
+      },
+      "rate": {
+        "role": "rate",
+        "meaning": "rate"
+      },
+      "ratio": {
+        "role": "ratio",
+        "meaning": "ratio"
+      },
+      "release": {
+        "role": "release",
+        "meaning": "release"
+      },
+      "resonance": {
+        "role": "resonance",
+        "meaning": "resonance"
+      },
+      "shape": {
+        "role": "shape",
+        "meaning": "shape"
+      },
+      "shift": {
+        "role": "shift",
+        "meaning": "shift"
+      },
+      "size": {
+        "role": "size",
+        "meaning": "size"
+      },
+      "spread": {
+        "role": "spread",
+        "meaning": "spread"
+      },
+      "sync": {
+        "role": "sync",
+        "meaning": "sync"
+      },
+      "threshold": {
+        "role": "threshold",
+        "meaning": "threshold"
+      },
+      "time": {
+        "role": "time",
+        "meaning": "delay"
+      },
+      "tone": {
+        "role": "tone",
+        "meaning": "tone"
+      },
+      "voices": {
+        "role": "voices",
+        "meaning": "unknown"
+      },
+      "width": {
+        "role": "width",
+        "meaning": "width"
+      }
+    }
+  }
+}
