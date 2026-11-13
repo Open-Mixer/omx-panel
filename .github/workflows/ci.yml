@@ -193,6 +193,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # ruling D25: the DEB builds on the oldest suite of the release set, bookworm only when OMX_RELEASE_MATRIX is full
+    env:
+      DEB_SUITE: ${{ vars.OMX_RELEASE_MATRIX == 'full' && 'bookworm' || 'trixie' }}
     steps:
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
@@ -212,9 +215,9 @@ jobs:
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
-      - name: The DEB (bookworm)
+      - name: The DEB (the release set's oldest suite)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
             curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
@@ -231,7 +234,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q cpio binutils
             tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
             tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
       - uses: actions/upload-artifact@v4
@@ -268,7 +271,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [bookworm, trixie]
+        # ruling D25: the release set's suites, bookworm only when OMX_RELEASE_MATRIX is full
+        suite: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["bookworm", "trixie"]' || '["trixie"]') }}
     container:
       image: debian:${{ matrix.suite }}
     steps:
@@ -292,7 +296,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['fedora:44', 'debian:bookworm']
+        # ruling D25: the release set's cells; bookworm (a full cell) only when OMX_RELEASE_MATRIX is full
+        image: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["fedora:44", "debian:bookworm", "debian:trixie"]' || '["fedora:44", "debian:trixie"]') }}
     container:
       image: ${{ matrix.image }}
     steps:
