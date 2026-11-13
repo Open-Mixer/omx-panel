@@ -105,6 +105,15 @@ describe('the override file (§6.3)', () => {
     assert.equal(parseSkinOverride(file({}), DESC.plugin).ok, true);
   });
 
+  it('gives override-invalid a reason word, never a sentence, naming why (docs/skin-package.md)', () => {
+    const reasons = [
+      parseSkinOverride('{', DESC.plugin),
+      parseSkinOverride('[]', DESC.plugin),
+      parseSkinOverride(file({ schema: 2 }), DESC.plugin),
+    ].map((r) => (r.ok ? 'ok' : r.refusal.args?.['reason']));
+    assert.deepEqual(reasons, ['parse-error', 'not-object', 'schema']);
+  });
+
   it('takes a modgui entry under modgui/ as the opt-in, and refuses one escaping it or beside a view (§6.7)', () => {
     const got = parseSkinOverride(file({ modgui: { entry: 'modgui/icon-x.html' } }), DESC.plugin);
     assert.deepEqual(got.ok && got.override.modgui, { entry: 'modgui/icon-x.html' });

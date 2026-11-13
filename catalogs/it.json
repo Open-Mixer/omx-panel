@@ -33,8 +33,8 @@
     "panel.skin.api-mismatch": { "text": "Questo skin dichiara l'API {declared}, che questa console non supporta (serve {supported}); lo skin non viene caricato.", "by": "machine", "model": "draft-prose", "source": "192aef3f6089c428a49377ad97ee3b1517d62321c94226a485a8d9e1b87f1b67" },
     "panel.skin.modgui-licence": { "text": "Lo script MOD GUI per {plugin} è scartato: la sua licenza {licence} è mancante o non consentita.", "by": "machine", "model": "draft-prose", "source": "772bcf9e050394d8a5c6be509cc9982f73fc8858726f20afecd344acba2284aa" },
     "panel.skin.override-entry-dropped": { "text": "L'entry {entry} per {plugin} in {field} è stato scartato ({reason}); il resto dell'override si applica comunque.", "by": "machine", "model": "draft-prose", "source": "5c9604e417a4f6fc6cb686cd65b9b28e150eeee4dfe408b382068c7083fce028" },
-    "panel.skin.override-invalid": { "text": "L'override per {plugin} non è valido in {field}; correggi skin.json e ricarica lo skin.", "by": "machine", "model": "draft-prose", "source": "eab6928c6a32766a7c0347a00fa5480523e70ef3c63965d2c4732e63d3eba787" },
-    "panel.skin.view-error": { "text": "La view dello skin è fallita: {message}. Ricaricala, o rimuovi lo skin se continua a fallire.", "by": "machine", "model": "draft-prose", "source": "0244e35396bf647ce54d605cc4e811ec2c76aacfc6a95956eb1233dfd81db8c3" },
+    "panel.skin.override-invalid": { "text": "L'override per {plugin} non è valido in {field} ({reason}); correggi skin.json e ricarica lo skin.", "by": "machine", "model": "draft-prose", "source": "ffd3a9cc7df6fa8701f33dbbf8b5950becd7d1447348f3c4690d7b74f7fa398c" },
+    "panel.skin.view-error": { "text": "La voce {field} {entry} non è nel pacchetto; ricaricala, o rimuovi lo skin se continua a fallire.", "by": "machine", "model": "draft-prose", "source": "e7003667e92f7c0e4370ca823589ad180b557ce4ab56aed32967b4b30b57da4c" },
     "panel.skin.view-lint": { "text": "La view {file} usa la parola non consentita {word}; rimuovila e ricarica lo skin.", "by": "machine", "model": "draft-prose", "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84" }
   }
 }
