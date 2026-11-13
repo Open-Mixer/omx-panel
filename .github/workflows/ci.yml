@@ -42,6 +42,13 @@ jobs:
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
+      # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
+      # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
+      - name: Every omx package comes from the channel
+        run: |
+          set -euo pipefail
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
+          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - name: Install the real MOD bundles the importer proof reads
         # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
         # bundle reads them where they are installed, and no MOD file is copied into this tree.
@@ -89,6 +96,13 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+      # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
+      # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
+      - name: Every omx package comes from the channel
+        run: |
+          set -euo pipefail
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
+          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
@@ -116,6 +130,13 @@ jobs:
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+      # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
+      # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
+      - name: Every omx package comes from the channel
+        run: |
+          set -euo pipefail
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
+          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
       - name: The tree, the renderer, playwright-core and omx-dsp's twin
         run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.0 <0.33'
@@ -145,6 +166,13 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+      # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
+      # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
+      - name: Every omx package comes from the channel
+        run: |
+          set -euo pipefail
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
+          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - name: pugl and nanovg, from their packaging
         uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
         with:
@@ -301,6 +329,13 @@ jobs:
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.18.0' 'omx-contract < 4' 'omx-contract-data >= 3.18.0'
+      # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
+      # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
+      - name: Every omx package comes from the channel
+        run: |
+          set -euo pipefail
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
+          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: Open-Mixer/.github/.github/actions/langpacks@openmixer-v1
         with:
           name: omx-panel
