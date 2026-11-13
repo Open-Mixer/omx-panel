@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
 # tools/runtime-install-check.sh <omx-panel.rpm | omx-panel.deb>: the package as a runtime install takes it, in a
-# clean Fedora or Debian container with the FreeMixer channel configured:
+# clean Fedora or Debian container with the OpenMixer channel configured:
 #
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no

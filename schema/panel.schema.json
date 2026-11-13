@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/FreeMixer/omx-panel/schema/panel.schema.json",
+  "$id": "https://github.com/Open-Mixer/omx-panel/schema/panel.schema.json",
   "title": "The panel's declared lists",
   "description": "What a declared panel names from this package: the widgets a control is drawn with, the roles that repeat by index and the rule that shows a control by another control's value. A plugin's own declaration schema references these $defs; tools/modgui-gen.mjs and tools/panel-description.mjs read them.",
   "$defs": {

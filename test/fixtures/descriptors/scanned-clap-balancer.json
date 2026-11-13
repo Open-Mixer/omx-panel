@@ -146,7 +146,7 @@
         "equalizer",
         "stereo"
       ],
-      "clap_plugin_descriptor.url": "https://github.com/FreeMixer/omx-plugins",
+      "clap_plugin_descriptor.url": "https://github.com/Open-Mixer/omx-plugins",
       "clap_plugin_remote_controls.get": [
         {
           "id": 0,

@@ -35,13 +35,13 @@ test:
 
 FREEMIXER_DOTGITHUB ?= ../freemixer-dotgithub
 
-# Every file a comment can be written in opens with its licence and copyright: FreeMixer/.github's spdx-check, from a
+# Every file a comment can be written in opens with its licence and copyright: Open-Mixer/.github's spdx-check, from a
 # checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
 spdx:
 	$(FREEMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
-# FreeMixer/.github's private-refs check, from a checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
+# Open-Mixer/.github's private-refs check, from a checkout of it (FREEMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
 # runs it through the public-sources-check workflow.
 public-sources:
 	$(FREEMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
