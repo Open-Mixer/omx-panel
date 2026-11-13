@@ -5,11 +5,12 @@
     "skinOverrideInvalid": {
       "code": "panel.skin.override-invalid",
       "text": {
-        "en": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin."
+        "en": "The override for {plugin} is invalid at {field} ({reason}); fix skin.json and reload the skin."
       },
       "args": [
         "plugin",
-        "field"
+        "field",
+        "reason"
       ]
     },
     "skinOverrideEntryDropped": {
@@ -37,10 +38,11 @@
     "skinViewError": {
       "code": "panel.skin.view-error",
       "text": {
-        "en": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing."
+        "en": "The {field} entry {entry} is not in the package; reload it, or remove the skin if it keeps failing."
       },
       "args": [
-        "message"
+        "field",
+        "entry"
       ]
     },
     "skinViewLint": {
