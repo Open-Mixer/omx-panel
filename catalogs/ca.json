@@ -4,7 +4,7 @@
   "owner": "omx-panel",
   "messages": {
     "panel.skin.override-invalid": {
-      "text": "La personalització de {plugin} no és vàlida a {field}; corregiu skin.json i torneu a carregar l'aparença.",
+      "text": "La personalització de {plugin} no és vàlida a {field} ({reason}); corregiu skin.json i torneu a carregar l'aparença.",
       "by": "human"
     },
     "panel.skin.override-entry-dropped": {
@@ -16,7 +16,7 @@
       "by": "human"
     },
     "panel.skin.view-error": {
-      "text": "La vista de l'aparença ha fallat: {message}. Torneu-la a carregar, o suprimiu l'aparença si continua fallant.",
+      "text": "L'entrada {field} {entry} no és al paquet; torneu-la a carregar, o suprimiu l'aparença si continua fallant.",
       "by": "human"
     },
     "panel.skin.view-lint": {

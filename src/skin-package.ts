@@ -175,14 +175,16 @@ export const checkSkinRoles: SkinRoleCheck = (family, roles, params) => {
 
 /** The refusal codes of the skin package and its importer, each with named arguments (docs/skin-package.md). */
 export const SKIN_REFUSAL_CODES = [
-  /** `skin.json` does not parse or fails the one schema (§6.3): `args.plugin`, `args.field` the first field that broke it. */
+  /** `skin.json` is absent or does not parse or fails the one schema (§6.3): `args.plugin`, `args.field` the first
+   * field that broke it (or `json` for the document itself), `args.reason` why, as a word (`SkinOverrideInvalidReason`). */
   'panel.skin.override-invalid',
   /** One override entry names what the plugin's parameters cannot take: that entry is left out, the rest stands.
    * `args.plugin`, `args.field`, `args.entry`, `args.reason` (the drop's own code). */
   'panel.skin.override-entry-dropped',
   /** A view declares a skin-API version §7.2 does not accept; it is never imported. `args.declared`, `args.supported`. */
   'panel.skin.api-mismatch',
-  /** A view failed to import, threw on mount or render, or raised an uncaught error naming the package. `args.message`. */
+  /** An override's `view` or `modgui` entry is not in the package: `args.field` (`view` or `modgui`), `args.entry`
+   * the entry it named. */
   'panel.skin.view-error',
   /** A view names a word §7.3's lint refuses: `args.word`, in `args.file`. An accident catcher, not a security control. */
   'panel.skin.view-lint',
@@ -421,17 +423,21 @@ function schemaFault(o: Record<string, unknown>, dirId: string): string | null {
   return null;
 }
 
+/** Why `panel.skin.override-invalid` was raised (docs/skin-package.md "Refusals"): `missing` is the console's own,
+ * for a directory with no override file at all; this module never returns it. */
+export type SkinOverrideInvalidReason = 'missing' | 'parse-error' | 'not-object' | 'schema';
+
 /** The override file's text, parsed and schema-checked against the directory's decoded id (§6.3). */
 export function parseSkinOverride(text: string, dirId: string): { readonly ok: true; readonly override: SkinOverride } | { readonly ok: false; readonly refusal: Refusal } {
   let o: unknown;
   try {
     o = JSON.parse(text);
-  } catch (e) {
-    return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', detail: (e as Error).message } } };
+  } catch {
+    return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', reason: 'parse-error' } } };
   }
-  if (!isObj(o)) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', detail: 'not an object' } } };
+  if (!isObj(o)) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: 'json', reason: 'not-object' } } };
   const fault = schemaFault(o, dirId);
-  if (fault) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: fault, detail: `the ${fault} field fails the schema` } } };
+  if (fault) return { ok: false, refusal: { code: 'panel.skin.override-invalid', args: { plugin: dirId, field: fault, reason: 'schema' } } };
   return { ok: true, override: o as unknown as SkinOverride };
 }
 
