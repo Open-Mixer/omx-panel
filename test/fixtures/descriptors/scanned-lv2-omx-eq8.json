@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "$schema": "https://github.com/Open-Mixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
   "requires": {"omx-contract-schema": ">= 3.0.0"},
   "origin": "scanned",
   "plugin": {"id": "urn:openmixer:eq8", "format": "lv2", "uri": "urn:openmixer:eq8", "name": "omx eq8", "doc": "The OpenMixer console's channel EQ, 8-band form: 8 parametric bands (bell, shelves, notch, all-pass) and a high-pass and a low-pass filter at 12 or 24 dB/oct, stereo, zero latency; every band ships off, so a racked instance is a wire.", "features": ["audio-effect"]},
@@ -63,7 +63,7 @@
     "lv2:binary": "omx-eq8.lv2/omx-eq8.so",
     "lv2:microVersion": "1",
     "lv2:minorVersion": "19",
-    "lv2:project": "https://github.com/FreeMixer/omx-plugins",
+    "lv2:project": "https://github.com/Open-Mixer/omx-plugins",
     "rdf:type": ["lv2:ParaEQPlugin", "lv2:Plugin"],
     "port:8/units:unit": "urn:openmixer:unit#dBoct",
     "port:11/units:unit": "urn:openmixer:unit#dBoct"

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "$schema": "https://github.com/Open-Mixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
   "requires": {
     "omx-contract-schema": ">= 3.4.0"
   },
@@ -1055,7 +1055,7 @@
         "equalizer",
         "stereo"
       ],
-      "clap_plugin_descriptor.url": "https://github.com/FreeMixer/omx-plugins",
+      "clap_plugin_descriptor.url": "https://github.com/Open-Mixer/omx-plugins",
       "clap_plugin_remote_controls.get": [
         {
           "id": 0,
