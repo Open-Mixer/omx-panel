@@ -27,14 +27,37 @@ jobs:
         with:
           sparse-checkout: .github/workflows
       - uses: Open-Mixer/.github/.github/actions/fedora-cells@openmixer-v1
+  # the Fedora cells the tests, the renderer jobs, catalogs, the RPM build and its runtime install run: check-matrix's
+  # answer (rule 11-10: fc45 beside fc44; the quick set while a release wave is open, the whole matrix declared here
+  # otherwise)
+  checks:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    outputs:
+      rpm: ${{ steps.m.outputs.rpm }}
+      rpm-count: ${{ steps.m.outputs.rpm-count }}
+    steps:
+      - id: m
+        uses: Open-Mixer/.github/.github/actions/check-matrix@openmixer-v1
+        with:
+          wave: ${{ vars.OMX_RELEASE_MATRIX }}
+          rpm-releases: '["44", "45"]'
+          rpm-arches: '["x86_64"]'
+
 
   test:
+    needs: checks
+    if: needs.checks.outputs.rpm-count != '0'
     # the private development copy runs on OpenMixer's own runners (hosted runners are refused there); the public
     # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     container:
-      image: fedora:44
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install node
         run: |
@@ -94,9 +117,15 @@ jobs:
   # The panel renderer (docs/renderer.md): the C library and its command built with warnings as errors, then the golden
   # images and the parity with the MOD GUI face, which read the built tree and the installed vocabulary.
   renderer:
+    needs: checks
+    if: needs.checks.outputs.rpm-count != '0'
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     container:
-      image: fedora:44
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install the compiler, cJSON and node
         run: |
@@ -127,9 +156,15 @@ jobs:
   # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and
   # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5).
   meter-surfaces:
+    needs: checks
+    if: needs.checks.outputs.rpm-count != '0'
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     container:
-      image: fedora:44
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
         run: |
@@ -155,7 +190,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: meter-surfaces
+          name: meter-surfaces-fc${{ matrix.cell.fedora }}-${{ matrix.cell.arch }}
           path: meter-surfaces.json
 
   # The renderer's window (WINDOW=1): pugl and NanoVG on OpenGL, drawn under Xvfb on Mesa's software GL and held to the
@@ -163,9 +198,15 @@ jobs:
   # Open-Mixer/.github's packaging at the commit that adds them, until the channel serves them; then they are installed
   # from it like the rest.
   renderer-window:
+    needs: checks
+    if: needs.checks.outputs.rpm-count != '0'
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     container:
-      image: fedora:44
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install the compiler, cJSON, node, OpenGL and Xvfb
         run: |
@@ -198,11 +239,16 @@ jobs:
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.
-  packages:
-    name: build the RPM and the DEB
-    if: github.event_name == 'workflow_dispatch'
+  packages-rpm:
+    name: build the RPM (${{ matrix.cell.image }})
+    needs: checks
+    if: github.event_name == 'workflow_dispatch' && needs.checks.outputs.rpm-count != '0'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     steps:
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
@@ -212,9 +258,9 @@ jobs:
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
       # reads are the test job's
-      - name: The RPM (fedora:44)
+      - name: The RPM (${{ matrix.cell.image }})
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w ${{ matrix.cell.image }} bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
               "omx-contract-devel >= 3.13.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
@@ -222,6 +268,30 @@ jobs:
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
+      - name: The renderer's library in its packages
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w ${{ matrix.cell.image }} bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omx-panel-rpms-fc${{ matrix.cell.fedora }}-${{ matrix.cell.arch }}
+          path: out/
+          if-no-files-found: error
+          retention-days: 7
+
+  packages:
+    name: build the DEB (bookworm)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: The source tarball the spec names
+        run: |
+          v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
+          mkdir -p src out
+          git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       - name: The DEB (bookworm)
         run: |
           docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
@@ -238,15 +308,12 @@ jobs:
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
-            dnf install -y -q cpio binutils
-            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
           docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
             tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
       - uses: actions/upload-artifact@v4
         with:
-          name: omx-panel-packages
+          name: omx-panel-debs-bookworm-amd64
           path: out/
           if-no-files-found: error
           retention-days: 7
@@ -295,21 +362,28 @@ jobs:
         run: tools/deb-lint-check.sh "$PWD/out-deb"
 
   runtime-install:
-    name: runtime install (${{ matrix.image }})
-    needs: packages
+    name: runtime install (${{ matrix.cell.image }})
+    needs: [checks, packages-rpm, packages]
+    if: ${{ !cancelled() && needs.packages.result == 'success' && needs.packages-rpm.result == 'success' }}
     runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        image: ['fedora:44', 'debian:bookworm']
+        # check-matrix's Fedora cells, and bookworm, the suite the DEB is built in
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
+        include:
+          - cell: { image: 'debian:bookworm', suite: bookworm, arch: amd64 }
     container:
-      image: ${{ matrix.image }}
+      image: ${{ matrix.cell.image }}
+    env:
+      # the cell's packages, as packages-rpm and packages name them
+      ARTIFACT: ${{ matrix.cell.fedora && format('omx-panel-rpms-fc{0}-{1}', matrix.cell.fedora, matrix.cell.arch) || 'omx-panel-debs-bookworm-amd64' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: omx-panel-packages
+          name: ${{ env.ARTIFACT }}
           path: out
       - name: The OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
@@ -328,11 +402,17 @@ jobs:
   # gate (translate --check, tools/catalogs-gate.sh): a listed language with no catalog, a missing key or a stale entry
   # is red
   catalogs:
-    name: language packs and catalogs
+    needs: checks
+    if: needs.checks.outputs.rpm-count != '0'
+    name: language packs and catalogs (${{ matrix.cell.image }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.rpm) }}
     container:
-      image: fedora:44
+      image: ${{ matrix.cell.image }}
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
