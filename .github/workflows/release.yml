@@ -61,7 +61,7 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.6' 'plugin-hostd-contract < 0.21'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
