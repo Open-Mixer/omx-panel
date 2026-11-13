@@ -23,7 +23,7 @@ comes from Zynthian's sources and what is still to be seen on one.
 ## Where it ran
 
 A Fedora 44 container (the `openmixer-worker` image, whose packages the commands below upgrade), the Fedora
-repositories and the FreeMixer channel enabled. The image also carries a copr repository, which the
+repositories and the OpenMixer channel enabled. The image also carries a copr repository, which the
 installs leave out so that every plugin comes from Fedora itself. As root:
 
 ```
