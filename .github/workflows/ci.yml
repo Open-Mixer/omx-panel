@@ -38,9 +38,9 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
-          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' \
+          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.6' 'plugin-hostd-contract < 0.21' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       - name: Install the real MOD bundles the importer proof reads
         # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
@@ -88,7 +88,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.6' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
@@ -115,7 +115,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.6' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - uses: actions/checkout@v4
       - name: The tree, the renderer, playwright-core and omx-dsp's twin
         run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.0 <0.33'
@@ -144,7 +144,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.6' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       - name: pugl and nanovg, from their packaging
         uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
         with:
@@ -179,7 +179,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.13.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
+              "omx-contract-devel >= 3.18.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
@@ -300,7 +300,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.16.0' 'omx-contract < 4' 'omx-contract-data >= 3.16.0'
+      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.18.0' 'omx-contract < 4' 'omx-contract-data >= 3.18.0'
       - uses: Open-Mixer/.github/.github/actions/langpacks@openmixer-v1
         with:
           name: omx-panel
