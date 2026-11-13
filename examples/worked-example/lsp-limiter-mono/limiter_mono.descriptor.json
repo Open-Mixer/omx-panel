@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/Open-Mixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
   "requires": {"omx-contract-schema": ">= 3.0.0"},
   "origin": "scanned",
   "plugin": {"id": "in.lsp-plug.limiter_mono", "format": "clap", "name": "Limiter Mono", "vendor": "LSP CLAP", "version": "1.0.33", "doc": "This plugin implements a limiter with flexible configuration. In most cases it acts as a brick-wall limiter but there are several settings for which is acts as an compressor with extreme settings, so the output signal may exceed the limiter's threshold. It prevents input signal from raising over the specified Threshold.", "features": ["audio-effect"]},
