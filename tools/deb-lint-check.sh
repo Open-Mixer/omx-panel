@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# Build the DEB from this tree and lint it the way the release build does (FreeMixer/.github build-deb.sh):
+# Build the DEB from this tree and lint it the way the release build does (Open-Mixer/.github build-deb.sh):
 # lintian --fail-on error,warning. The suite is the test job's, so the build skips it (nocheck). #85
 #
 #   tools/deb-lint-check.sh [output dir]

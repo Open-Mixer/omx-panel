@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   test:
-    # the private development copy runs on FreeMixer's own runners (hosted runners are refused there); the public
+    # the private development copy runs on OpenMixer's own runners (hosted runners are refused there); the public
     # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
@@ -311,7 +311,7 @@ jobs:
           if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
           bash tools/runtime-install-check.sh "$PWD/$pkg"
 
-  # the checks every FreeMixer repository runs on what it publishes: commit messages, private references, and no
+  # the checks every OpenMixer repository runs on what it publishes: commit messages, private references, and no
   # local copy of either (Open-Mixer/.github's public-sources-check)
 
   # one pack per listed language from the spec and debian/control, and the catalogs through omx-contract's release

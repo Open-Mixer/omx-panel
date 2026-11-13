@@ -63,7 +63,7 @@
     "lv2:binary": "omx-eq8.lv2/omx-eq8.so",
     "lv2:microVersion": "1",
     "lv2:minorVersion": "19",
-    "lv2:project": "https://github.com/FreeMixer/omx-plugins",
+    "lv2:project": "https://github.com/Open-Mixer/omx-plugins",
     "rdf:type": ["lv2:ParaEQPlugin", "lv2:Plugin"],
     "port:8/units:unit": "urn:openmixer:unit#dBoct",
     "port:11/units:unit": "urn:openmixer:unit#dBoct"
