@@ -1,8 +1,8 @@
 omx-panel (0.13.8) unstable; urgency=medium
 
   * Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
-    hostd and plugin-hostd-contract >= 0.20.4 and below 0.21 (were 0.20.3):
-    every floor the version served in every quick cell, with its ceiling (D30). The
+    hostd and plugin-hostd-contract >= 0.20.7 and below 0.21 (were 0.20.3):
+    every floor its newest version, served or released before it in the same pass, with its ceiling (D30). The
     jobs' dnf lines, three of them still at 3.13.0, state the same.
   * Contract files keep the $schema the floor's reader reads.
   * The organisation's name: FreeMixer becomes Open-Mixer and OpenMixer; an

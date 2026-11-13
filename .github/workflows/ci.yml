@@ -40,7 +40,7 @@ jobs:
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
-          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' \
+          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
@@ -95,7 +95,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -129,7 +129,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -165,7 +165,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.4' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.18.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
