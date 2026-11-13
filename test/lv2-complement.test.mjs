@@ -605,7 +605,16 @@ describe('lilv loads the written bundle in place of the installed one, and the i
 import json, sys, lilv
 w = lilv.World(); w.load_all()
 n = lambda u: w.new_uri(u)
-out = {"all": sorted(str(p.get_uri()) for p in w.get_all_plugins())}
+# python3-lilv 0.24.26 (Debian trixie, Python 3.13): Collection.__iter__ hands back an Iter that has no
+# __iter__ of its own, so "for x in a_collection" raises "'Iter' object is not iterable". begin/is_end/next
+# are the bindings' own iterator (lilv_plugins_begin et al. under them) and read the same on 0.24.26, 0.26.x
+# (Fedora) and every version between: walk a collection with those, never with Python's for/iter/next sugar.
+def items(collection):
+    collected, it = [], collection.begin()
+    while not it.is_end():
+        collected.append(it.next())
+    return collected
+out = {"all": sorted(str(p.get_uri()) for p in items(w.get_all_plugins()))}
 for uri in sys.argv[1:]:
     p = w.get_all_plugins()[n(uri)]
     v = lambda pred: w.get(p.get_uri(), n("${LV2}" + pred), None)
