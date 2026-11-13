@@ -31,8 +31,6 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make nodejs npm dnf5-plugins python3-lilv lilv-devel
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-        with:
-          staging: 'true'
       - uses: actions/checkout@v4
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -95,8 +93,6 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config cjson-devel nodejs npm dnf5-plugins python3-lilv
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-        with:
-          staging: 'true'
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
@@ -131,8 +127,6 @@ jobs:
             python3-lilv chromium python3-tkinter python3-pillow xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-        with:
-          staging: 'true'
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
@@ -169,8 +163,6 @@ jobs:
             python3-lilv mesa-libGL-devel mesa-dri-drivers xorg-x11-server-Xvfb xorg-x11-xauth
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-        with:
-          staging: 'true'
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
@@ -336,8 +328,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-        with:
-          staging: 'true'
       - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.16.0' 'omx-contract < 4' 'omx-contract-data >= 3.16.0'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
