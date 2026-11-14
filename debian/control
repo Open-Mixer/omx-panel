@@ -8,12 +8,12 @@ Build-Depends: debhelper-compat (= 13),
                pkgconf,
                nodejs (>= 18),
                npm,
-               omx-contract-data (>= 3.16.0~) <!nocheck>,
+               omx-contract-data (>= 3.18.0~) <!nocheck>,
                omx-contract-data (<< 4~) <!nocheck>,
-               plugin-hostd-contract (>= 0.20.3~) <!nocheck>,
+               plugin-hostd-contract (>= 0.20.7~) <!nocheck>,
                plugin-hostd-contract (<< 0.21~) <!nocheck>,
                libcjson-dev,
-               libomx-contract-dev (>= 3.13.0~), libomx-contract-dev (<< 4~),
+               libomx-contract-dev (>= 3.18.0~), libomx-contract-dev (<< 4~),
                libomxdsp-dev (>= 0.32.0~), libomxdsp-dev (<< 0.33~)
 Standards-Version: 4.6.2
 Homepage: https://github.com/Open-Mixer/omx-panel
@@ -22,8 +22,8 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data (>= 3.16.0~), omx-contract-data (<< 4~), plugin-hostd-contract (>= 0.20.3~), plugin-hostd-contract (<< 0.21~), ${misc:Depends}
-Recommends: plugin-hostd (>= 0.20.3~), plugin-hostd (<< 0.21~), omx-plugins-contract (>= 0.19.3~), omx-plugins-contract (<< 0.20~)
+Depends: nodejs (>= 18), omx-contract-data (>= 3.18.0~), omx-contract-data (<< 4~), plugin-hostd-contract (>= 0.20.7~), plugin-hostd-contract (<< 0.21~), ${misc:Depends}
+Recommends: plugin-hostd (>= 0.20.7~), plugin-hostd (<< 0.21~), omx-plugins-contract (>= 0.19.3~), omx-plugins-contract (<< 0.20~)
 # omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
 Suggests: python3-lilv
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
