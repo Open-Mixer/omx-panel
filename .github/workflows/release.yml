@@ -149,6 +149,7 @@ jobs:
           path: |
             pack/*.tgz
             pack/*-vendored.tar.gz
+          retention-days: ${{ (startsWith(github.ref, 'refs/tags/')) && 30 || 2 }}
 
   attach:
     name: Attach the npm tarball to the GitHub release
