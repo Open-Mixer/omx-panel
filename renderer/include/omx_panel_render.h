@@ -131,15 +131,29 @@ bool omx_panel_view_set_stems(omx_panel_view_t *view, uint32_t display, const do
  * False, changing nothing, for an index with no curve or no log axis, or a frequency that is not above zero or a value not finite. */
 bool omx_panel_view_set_marks(omx_panel_view_t *view, uint32_t display, const double *freq, const double *depth, const char *letters, uint32_t n);
 
-/** The spectrum of display `display`, an `eq_response`: `n` bands at their centres in Hz (above zero, ascending), each with its level
- * and its peak in dBFS (finite, or -INFINITY for silence, drawn as nothing), on the level window [db_min, db_max] with a graticule
- * line every grid_db, as the host declares them (omx-dsp's RTA_LEVEL_DB_MIN/MAX and RTA_LEVEL_GRID_DB). While a spectrum is set the
- * display is drawn on the console analyser's axes: the curve's log frequency axis, ONE dB graticule (the level window's), the
- * spectrum under the curve and the marks, and the curve's gain parked with 0 dB at the window's middle. n == 0 clears it and the
- * display returns to its own curve axis. False, changing nothing, for an index with no log axis, an hz not above zero or not
- * ascending, a non-finite window, db_min >= db_max or grid_db <= 0. The values are copied. */
-bool omx_panel_view_set_spectrum(omx_panel_view_t *view, uint32_t display, const double *hz, const double *db, const double *peak_db,
-                                 uint32_t n, double db_min, double db_max, double grid_db);
+/** The console's tap modes: which of the two taps of a spectrum is shown. PRE is what a processor is given, POST what it gives. */
+typedef enum omx_panel_tap_mode {
+  OMX_PANEL_TAP_PRE = 0,
+  OMX_PANEL_TAP_POST = 1,
+  OMX_PANEL_TAP_BOTH = 2,
+} omx_panel_tap_mode_t;
+
+/** The spectrum of display `display`, an `eq_response`: `n` bands at their centres in Hz (above zero, ascending) and, per tap the
+ * mode shows, each band's level in dBFS (finite, or -INFINITY for silence, drawn as nothing); `peak_db` is the peak of the FILLED
+ * tap (PRE in OMX_PANEL_TAP_PRE, POST otherwise), for the clip tick. A tap the mode does not show may be NULL. PRE and POST fill
+ * the one tap they show; BOTH fills POST and draws PRE as a dim reference line; with `delta` (BOTH only) the two are full-strength
+ * lines and the gap between them is filled as the console's pre-to-post delta, a wedge per pair of neighbouring bands in the
+ * boost or the cut colour role, its opacity from 45 % to 90 % with its strength (omx-dsp's omx_rta_band_delta: the deadband,
+ * the sign and the strength are its). The level window is [db_min, db_max] with a graticule line every grid_db, as the host
+ * declares them (omx-dsp's RTA_LEVEL_DB_MIN/MAX and RTA_LEVEL_GRID_DB). While a spectrum is set the display is drawn on the
+ * console analyser's axes: the curve's log frequency axis, ONE dB graticule (the level window's), the spectrum under the curve
+ * and the marks, and the curve's gain parked with 0 dB at the window's middle. n == 0 clears it and the display returns to its
+ * own curve axis. False, changing nothing, for an index with no log axis, an hz not above zero or not ascending, a mode outside
+ * the three, a tap the mode shows given as NULL, `delta` without OMX_PANEL_TAP_BOTH, a non-finite window, db_min >= db_max or
+ * grid_db <= 0. The values are copied. */
+bool omx_panel_view_set_spectrum(omx_panel_view_t *view, uint32_t display, const double *hz, const double *pre_db,
+                                 const double *post_db, const double *peak_db, uint32_t n, omx_panel_tap_mode_t mode,
+                                 bool delta, double db_min, double db_max, double grid_db);
 
 /** A governing control's integer value. A control the description shows only for certain values of another (its
  * `visibleWhen` and `mask`, a declared panel's visibleWhen) is shown while bit `value` of its mask is set: a hidden
