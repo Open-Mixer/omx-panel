@@ -13,6 +13,15 @@
   `tools/rta-console-reference.mjs`).
 - 0.13.8: the renderer builds against omx-dsp >= 0.32.2 < 0.33, the analyser in C and its twins: the floor Zynthian's
   single-trace RTA reads (released the minute omx-dsp 0.32.2 publishes).
+- 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
+  scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
+  `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its
+  family; a control the panel binds to a role serves the role's meaning where the descriptor states none; a meaning the
+  descriptor does state still has to agree with the role, or the role is named and not bound
+  (`panel.describe.role-dropped`). `--panel` also reads the panel a plugin serves, `org.openmixer.panel-description/1` as
+  omx-clap-scan --json prints it and plugin-hostd-probe panel copies it (`tools/panel-served.mjs`): its tables name
+  parameters by id, and are read as the declared form over the descriptor's keys; plugin-hostd stays a host that copies
+  bytes.
 - 0.13.7: the DEBs build again. 0.13.6's failed lintian --fail-on warning (script-not-executable): tools/gesture-words.mjs ships as a command now, executable, its declaration without the shebang, and the build refuses a shipped module with a shebang that is not a listed command.
 - 0.13.6: a host that is not JavaScript reads the gesture word names through the library (`omx_panel_word_name`,
   generated from schema/gestures.json) and the compare format, slots and ring bound through `omx-panel compare describe`
