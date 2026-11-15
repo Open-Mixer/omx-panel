@@ -1,3 +1,18 @@
+omx-panel (0.13.8) unstable; urgency=medium
+
+  * The spectrum layer: omx_panel_view_set_spectrum gives an eq_response a
+    measured spectrum (the bands' centres, levels and peaks in dBFS on the
+    level window the host declares), drawn on the console analyser's axes:
+    the log frequency axis the bands and the curve share, one dB graticule,
+    the trace's area in the meter gradient, the trace, a clip tick where a
+    peak reaches the top, the curve parked with 0 dB at the window's middle;
+    the state file's "spectrum" for omx-panel-render; a new gradient-area
+    primitive in both backends. Held to the console's own scene within 1 px.
+  * The renderer builds against omx-dsp >= 0.32.2 < 0.33 (the analyser in C
+    and its twins): the floor Zynthian's single-trace RTA reads.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 15 Nov 2026 15:10:00 +0000
+
 omx-panel (0.13.7) unstable; urgency=medium
 
   * tools/gesture-words.mjs ships as a command: executable, its declaration

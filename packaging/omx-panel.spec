@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.7
+Version: 0.13.8
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -212,6 +212,18 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
+- The spectrum layer: omx_panel_view_set_spectrum gives an eq_response a
+  measured spectrum (the bands' centres, levels and peaks in dBFS on the
+  level window the host declares), drawn on the console analyser's axes:
+  the log frequency axis the bands and the curve share, one dB graticule,
+  the trace's area in the meter gradient, the trace, a clip tick where a
+  peak reaches the top, the curve parked with 0 dB at the window's middle;
+  the state file's "spectrum" for omx-panel-render; a new gradient-area
+  primitive in both backends. Held to the console's own scene within 1 px.
+- The renderer builds against omx-dsp >= 0.32.2 < 0.33 (the analyser in C
+  and its twins): the floor Zynthian's single-trace RTA reads.
+
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
 - tools/gesture-words.mjs ships as a command: executable, its declaration
   without the shebang. 0.13.6's DEBs failed lintian --fail-on warning
