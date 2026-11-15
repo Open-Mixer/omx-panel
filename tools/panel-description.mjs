@@ -21,6 +21,7 @@ import { createHash } from 'node:crypto';
 import { easyOf } from './easy.mjs';
 import { barsOf } from './bars.mjs';
 import { shapesOf } from './meaning-infer.mjs';
+import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
 import { meaningOfRole, servedToken } from './vocabulary.mjs';
 
@@ -201,6 +202,9 @@ function portsOf(ports = []) {
  * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
  */
 export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false } = {}) {
+  // the panel a plugin serves (plugin-hostd-probe panel: omx-clap-scan's object, parameters by id) is read as the
+  // declared form over this descriptor's keys (tools/panel-served.mjs, #43)
+  if (panel && isServedPanel(panel)) panel = declaredFromServed(panel, descriptor, { where, keyOf, indexedRoles: INDEXED_ROLES });
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
