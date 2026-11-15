@@ -14,7 +14,8 @@ omx-panel modgui --descriptor <file> | --installed <package>/<name>
   omx-contract's contract directory (`<contractdir>/3/<package>/plugins/<name>.json`).
 - `--panel` names a JSON file holding the declared panel: `family`, `sections` (each `key`, `label`, `controls` by
   symbol) and, optionally, `widgets` (symbol to `knob`, `fader`, `switch` or `selector`, the list in
-  `schema/panel.schema.json`) and `easy` (the controls of the Easy face). With none, the sections are the descriptor's groups, laid out by
+  `schema/panel.schema.json`) and `easy` (the controls of the Easy face); or the panel the plugin serves, as
+  `plugin-hostd-probe panel` prints it (panel-layout.md, "Meanings and roles"). With none, the sections are the descriptor's groups, laid out by
   `tools/panel-description.mjs`, and the family the one their meanings make.
 - `--out` is the LV2 bundle the files go into: `modgui.ttl` and `modgui/`. `--stem` names the files
   (`icon-<stem>.html`, `stylesheet-<stem>.css`, `screenshot-<stem>.png`, `thumbnail-<stem>.png`); it defaults to

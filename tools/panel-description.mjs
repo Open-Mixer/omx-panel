@@ -20,7 +20,7 @@
 import { createHash } from 'node:crypto';
 import { easyOf } from './easy.mjs';
 import { barsOf } from './bars.mjs';
-import { shapesOf } from './meaning-infer.mjs';
+import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
 import { meaningOfRole, servedToken } from './vocabulary.mjs';
@@ -128,8 +128,18 @@ export const FAMILY_MEANINGS = {
  * no declared family, an effect takes the first family whose meanings it carries; an instrument, or a
  * plugin no family fits, is none.
  */
-export function familyOf(controls, declared, features = []) {
-  const have = new Set(controls.map((c) => c.meaning).filter(Boolean));
+export function familyOf(controls, declared, features = [], roles = {}) {
+  const have = new Set(controls.filter(statesMeaning).map((c) => c.meaning));
+  // a declared panel's roles back the family too (#43): a control the panel binds to a role, whose own meaning the
+  // descriptor leaves unstated (a scan writes `unknown`), carries the role's meaning; a stated meaning is the descriptor's
+  for (const [role, syms] of Object.entries(roles ?? {})) {
+    const m = meaningOfRole(role);
+    if (!m) continue;
+    for (const sym of [syms].flat()) {
+      const c = controls.find((x) => keyOf(x) === sym);
+      if (c && !statesMeaning(c)) have.add(m);
+    }
+  }
   if (declared !== undefined) {
     // the declaration's family is one of the extension's (the schema's $defs.family is the same closed
     // set); a family the extension has no place for is none: no house view
@@ -219,7 +229,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     return s;
   };
 
-  const { family, needs } = forced !== undefined ? { family: forced } : familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features);
+  const { family, needs } = forced !== undefined ? { family: forced } : familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features, panel?.roles);
   // a declared family stands on its controls' meanings: a transient designer is no compressor
   if (needs) {
     const have = [...new Set(all.map((c) => c.meaning).filter(Boolean))];
@@ -276,22 +286,35 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   const table = ROLES[family];
   const roles = [], unpublished = [];
   // `extra` is what an inference states about a role it binds: `inferred`, the `token` it reads the control in, a band's `shape`
+  // `extra` is what an inference states about a role it binds (`inferred`, the `token` it reads the control in, a band's
+  // `shape`), kept on the row; `declared` marks a declared panel's binding and is not
   const bind = (role, index, sym, extra = {}) => {
+    const { declared = false, ...rest } = extra;
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = extra.token ?? unitToken(unit);
+    const token = rest.token ?? unitToken(unit);
+    const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
+    // a declared role over a control whose descriptor states another meaning (#43): the words disagree, and the role is named, not bound
+    else if (declared && plays && statesMeaning(c) && c.meaning !== plays) unpublished.push({ role, symbol: sym, why: `the descriptor says it means ${c.meaning}, not ${plays}, the ${role} role's` });
     else {
       // a band-type role names the shape of each of its choice values, from the choice's own labels
-      const shapes = extra.shapes ?? (role === 'band_type' ? shapesOf(c) : undefined);
-      roles.push({ role, index, symbol: sym, param: c.id, unit, ...extra, ...(shapes ? { shapes } : {}) });
+      const shapes = rest.shapes ?? (role === 'band_type' ? shapesOf(c) : undefined);
+      roles.push({ role, index, symbol: sym, param: c.id, unit, ...rest, ...(shapes ? { shapes } : {}) });
     }
   };
   if (panel) {
     // an indexed role (an EQ band's) names every band's symbol in order: one row per band, its index the band's
-    for (const [role, syms] of Object.entries(panel.roles ?? {})) [syms].flat().forEach((sym, index) => bind(role, index, sym));
+    for (const [role, syms] of Object.entries(panel.roles ?? {})) [syms].flat().forEach((sym, index) => bind(role, index, sym, { declared: true }));
+    // a control the panel binds to a role, whose own meaning the descriptor leaves unstated (a scan's `unknown`), serves
+    // the role's meaning (#43): the panel's declaration over the scan's unknown; a stated meaning stays the descriptor's
+    for (const r of roles) {
+      const c = controls.find((x) => x.symbol === r.symbol);
+      const m = meaningOfRole(r.role);
+      if (c && m && !statesMeaning({ meaning: c.meaning })) c.meaning = m;
+    }
   } else {
     // each meaning plays the one role of the family it names; an indexed role takes every control of
     // its meaning, any other its first, and a second is named
