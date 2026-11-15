@@ -1,3 +1,15 @@
+omx-panel (0.14.0) unstable; urgency=medium
+
+  * The spectrum takes both taps, the console's modes and the delta:
+    omx_panel_view_set_spectrum gets PRE and POST levels, the tap mode (pre,
+    post, both) and the delta switch. BOTH draws PRE as a dim reference line
+    under POST filled; with the delta, two full-strength lines and each
+    wedge of omx-dsp's omx_rta_band_delta in the eq-delta boost or cut role.
+  * BREAKING: the changed signature moves the shared library's soname to
+    libomx-panel-render.so.1 and the library package to libomx-panel-render1.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 15 Nov 2026 16:13:31 +0000
+
 omx-panel (0.13.8) unstable; urgency=medium
 
   * The spectrum layer: omx_panel_view_set_spectrum gives an eq_response a

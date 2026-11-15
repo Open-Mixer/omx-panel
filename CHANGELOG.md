@@ -4,6 +4,15 @@
 
 ## Unreleased
 
+- 0.14.0: the spectrum takes both taps, the console's modes and the delta (#41): `omx_panel_view_set_spectrum(view, display,
+  hz, pre_db, post_db, peak_db, n, mode, delta, db_min, db_max, grid_db)` with `omx_panel_tap_mode_t` PRE, POST or BOTH.
+  PRE or POST alone is filled as in 0.13.8 (its pictures unchanged); BOTH draws PRE as a dim reference line under POST
+  filled; with the delta the two are full-strength lines and each wedge of omx-dsp's `omx_rta_band_delta` is filled in
+  the `--eq-delta-boost` or `--eq-delta-cut` role at 45 to 90 percent with its strength. A strip primitive in the raster
+  and in NanoVG; the state file's `"spectrum"` reads `"pre"`, `"post"`, `"mode"` and `"delta"`.
+- 0.14.0: BREAKING, the signature of `omx_panel_view_set_spectrum` changed, so the shared library is
+  `libomx-panel-render.so.1` (version node `OMX_PANEL_RENDER_1`) and the DEB library package `libomx-panel-render1`; no
+  .so.0 is kept. A host loading the renderer by soname moves to .so.1 and to the new call in the same release.
 - 0.13.8: the spectrum layer (#41, #42): `omx_panel_view_set_spectrum` gives an `eq_response` a measured spectrum (the
   bands' centres, levels and peaks in dBFS on the level window the host declares, `-INFINITY` silence), drawn on the
   console analyser's axes: the log frequency axis the bands and the curve share, ONE dB graticule, the trace's area in

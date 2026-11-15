@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.8
+Version: 0.14.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -212,6 +212,14 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
+- The spectrum takes both taps, the console's modes and the delta:
+  omx_panel_view_set_spectrum gets PRE and POST levels, the tap mode (pre,
+  post, both) and the delta switch; BOTH draws PRE as a dim reference line
+  under POST filled; with the delta, two full-strength lines and each wedge
+  of omx-dsp's omx_rta_band_delta in the eq-delta boost or cut role.
+- BREAKING: the changed signature moves the shared library's soname to
+  libomx-panel-render.so.1.
 * Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
 - The spectrum layer: omx_panel_view_set_spectrum gives an eq_response a
   measured spectrum (the bands' centres, levels and peaks in dBFS on the
