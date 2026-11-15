@@ -5,7 +5,10 @@
 ## Unreleased
 
 - 0.13.9: built against omx-contract >= 3.19.0 and below 4, the 3.19.0 pass's newest, with its ceiling (D30); the jobs' dnf
-  lines state the same.
+  lines state the same. Built against omx-dsp >= 0.32.3 and below 0.33 (was 0.32.0). The renderer's spectrum layer, on
+  the console analyser's axes, a single trace (#42); the renderer tests remove their scratch directories at exit (#46);
+  the soname check reads readelf in the C locale (#47). A sync drop-in's post step exits 0 when its opt-in unit is
+  disabled (34acf1f, plugin-qualify#56). The organisation's name (#29); an ordinary CI run builds against the channel (#30).
 - 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
   scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
   `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its

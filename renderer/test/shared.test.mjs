@@ -33,6 +33,7 @@ test('nothing else is exported', () => {
 });
 
 test('the soname is libomx-panel-render.so.0', () => {
-  const dyn = execFileSync('readelf', ['-d', SO], { encoding: 'utf8' });
+  // readelf translates its labels ('Library soname') under the caller's locale: read them in C
+  const dyn = execFileSync('readelf', ['-d', SO], { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });
   assert.match(dyn, /\(SONAME\)\s+Library soname: \[libomx-panel-render\.so\.0\]/);
 });

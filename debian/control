@@ -14,7 +14,7 @@ Build-Depends: debhelper-compat (= 13),
                plugin-hostd-contract (<< 0.21~) <!nocheck>,
                libcjson-dev,
                libomx-contract-dev (>= 3.19.0~), libomx-contract-dev (<< 4~),
-               libomxdsp-dev (>= 0.32.0~), libomxdsp-dev (<< 0.33~)
+               libomxdsp-dev (>= 0.32.3~), libomxdsp-dev (<< 0.33~)
 Standards-Version: 4.6.2
 Homepage: https://github.com/Open-Mixer/omx-panel
 Rules-Requires-Root: no

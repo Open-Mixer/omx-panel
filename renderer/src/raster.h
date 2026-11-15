@@ -28,6 +28,10 @@ double omx_snap(double v);
 void omx_round_rect(omx_canvas *c, double x, double y, double w, double h, double r, omx_rgb rgb);
 void omx_disc(omx_canvas *c, double cx, double cy, double r, omx_rgb rgb);
 void omx_segment(omx_canvas *c, double ax, double ay, double bx, double by, double hw, omx_rgb rgb);
+/** The area under the polyline (xs ascending) down to base_y, in the vertical gradient of `nstops` colours at the fractions `t`
+ * of y0..y1 (flat beyond), laid at `alpha`; supersampled as the shapes are. */
+void omx_fill_under(omx_canvas *c, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
+                    const omx_rgb *stops, size_t nstops, double alpha);
 
 /* ------------------------------------------------------------------------------------- text */
 

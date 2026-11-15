@@ -38,7 +38,7 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 BuildRequires: (omx-contract-devel >= 3.19.0 with omx-contract-devel < 4)
-BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
+BuildRequires: (pkgconfig(omxdsp) >= 0.32.3 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
@@ -219,8 +219,20 @@ English source sentence.
 - describe --panel: a declared panel's roles back its family over a scan's
   unknown meanings, and the served panel is read as the declared form (#44,
   #43).
-- CI: every omx package comes from the channel, never staging (#31); explicit
-  artifact retention (#36); the commit-message checkout reads
+- Built against omx-dsp >= 0.32.3 and below 0.33 (was 0.32.0): the renderer's
+  spectrum layer reads omx-dsp's analyser axes. The jobs' dnf lines and the
+  renderer's OMXDSP_FLOOR state the same.
+- renderer: the spectrum layer, on the console analyser's axes, a single trace
+  (#42); the renderer tests remove their scratch directories at exit and
+  renderer-check counts what they leave (#46); the soname check reads readelf
+  in the C locale (#47).
+- systemd: a sync drop-in's post step exits 0 when its opt-in unit is
+  disabled, so plugin-qualify-sync.service no longer shows a failed step after
+  every good sync (34acf1f, plugin-qualify#56).
+- The organisation's name: FreeMixer becomes Open-Mixer and OpenMixer (#29).
+- CI: an ordinary run builds against the channel, not the staging channel
+  (#30), and every omx package comes from the channel, never staging (#31);
+  explicit artifact retention (#36); the commit-message checkout reads
   OPENMIXER_DOTGITHUB (#33).
 
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
