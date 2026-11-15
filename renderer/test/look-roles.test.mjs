@@ -31,7 +31,8 @@ function dataWith(tokens) {
 const DRAWN = [...readFileSync(join(ROOT, 'renderer/src/view.c'), 'utf8').matchAll(/\{\s*"(--[a-z0-9-]+)"\s*,\s*&v->col/g)].map((m) => m[1]);
 
 /** omx-delay (the face, its sections, a switch), dyn-curve (a curve's frame, rim and body, points or none) and dyn-curve as an
- * eq_response with a spectrum (the meter gradient and the clip tick: the console analyser's parity bands). */
+ * eq_response with a spectrum: POST alone (the meter gradient and the clip tick) and both taps with the delta (its boost and cut
+ * roles), the console analyser's parity bands. */
 const PANELS = ['omx-delay', 'dyn-curve'].map((name) => {
   const fx = FIXTURES.find((f) => f.name === name), dir = scratch();
   return { name, description: descriptionFile(fx, dir), state: stateFile(fx, dir) };
@@ -43,10 +44,15 @@ const PANELS = ['omx-delay', 'dyn-curve'].map((name) => {
   d.displays[0].kind = 'eq_response';
   const st = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
   st.curves = { 0: { x: ref.input.curve.map((p) => p.hz), y: ref.input.curve.map((p) => p.gain) } }, st.marks = {};
-  st.spectrum = { 0: { hz: b.map((x) => x.hz), db: b.map((x) => x.db), peak: b.map((x) => x.peakDb), dbMin: ref.window.dbMin,
-    dbMax: ref.window.dbMax, gridDb: ref.window.gridDb } };
-  writeFileSync(join(dir, 'eq-spectrum.layout.json'), JSON.stringify(d)), writeFileSync(join(dir, 'eq-spectrum.state.json'), JSON.stringify(st));
-  PANELS.push({ name: 'eq-spectrum', description: join(dir, 'eq-spectrum.layout.json'), state: join(dir, 'eq-spectrum.state.json') });
+  const one = { hz: b.map((x) => x.hz), post: b.map((x) => x.db), peak: b.map((x) => x.peakDb), dbMin: ref.window.dbMin,
+    dbMax: ref.window.dbMax, gridDb: ref.window.gridDb };
+  writeFileSync(join(dir, 'eq-spectrum.layout.json'), JSON.stringify(d));
+  // POST alone (the meter gradient, the clip tick) and both taps with the delta (the boost and the cut roles)
+  for (const [name, spectrum] of [['eq-spectrum', { ...one, mode: 'post' }],
+    ['eq-delta', { ...one, pre: ref.input.pre.map((x) => x.db), mode: 'both', delta: true }]]) {
+    writeFileSync(join(dir, `${name}.state.json`), JSON.stringify({ ...st, spectrum: { 0: spectrum } }));
+    PANELS.push({ name, description: join(dir, 'eq-spectrum.layout.json'), state: join(dir, `${name}.state.json`) });
+  }
 }
 
 test('the role list read_look walks is the role file\'s, in its order', () => {
@@ -57,7 +63,7 @@ test('the role list read_look walks is the role file\'s, in its order', () => {
 
 test('a look short of a role the renderer does not draw is refused, naming the role', () => {
   const p = PANELS[0];
-  for (const missing of ['--origin-room-mode', '--eq-delta-cut']) {
+  for (const missing of ['--origin-room-mode', '--state-bypass']) {
     const tokens = { ...LOOK.tokens };
     delete tokens[missing];
     const r = spawnSync(CLI, ['--description', p.description, '--data', dataWith(tokens), '--state', p.state, '--raw', join(scratch(), 'x.raw')], { encoding: 'utf8' });
