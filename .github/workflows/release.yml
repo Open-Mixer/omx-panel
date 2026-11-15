@@ -84,7 +84,7 @@ jobs:
         run: |
           git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
           git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q v1
-      - run: make check FREEMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
+      - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |
           prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)
