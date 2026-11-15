@@ -194,7 +194,7 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 | `selector` | a choice |
 | `meter` | a read-only travel in a level unit (`dB`, `dBFS`, `dBTP`, `dBu`, `LUFS`, `LU`) |
 | `display` | any other read-only control |
-| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`) |
+| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`; `delay-taps` and `decay-envelope`, the two words of the `time_response` display) |
 | `xy` | no descriptor word names a pair of controls yet; nothing takes it |
 
 ### Meters
