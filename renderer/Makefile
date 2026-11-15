@@ -35,7 +35,7 @@ B := build
 LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/raster.o
 # the shared library, for a surface that loads the renderer at run time (Zynthian's Tk panel, through ctypes): the same
 # objects, the C API its only exported symbols. SOVERSION moves when the API breaks.
-SOVERSION := 0
+SOVERSION := 1
 SONAME := libomx-panel-render.so.$(SOVERSION)
 
 # WINDOW=1 adds the window (pugl and NanoVG on OpenGL): libomx-panel-window.a, its header and pkg-config file, and

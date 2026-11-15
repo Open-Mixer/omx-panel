@@ -64,7 +64,7 @@ Summary: The omx-panel renderer, a library that draws a panel description into a
 Requires: omx-panel%{?_isa} = %{version}-%{release}
 
 %description -n omx-panel-render
-libomx-panel-render.so.0 draws a panel description in the omx look into a CPU
+libomx-panel-render.so.1 draws a panel description in the omx look into a CPU
 pixel buffer and answers input with the one gesture vocabulary. A surface loads
 it at run time (Zynthian's panel view); its look, geometry and fonts are
 omx-panel's.
@@ -118,7 +118,7 @@ make test
 
 %files -n omx-panel-render
 %license LICENSE
-%{_libdir}/libomx-panel-render.so.0
+%{_libdir}/libomx-panel-render.so.1
 
 %files -n omx-panel-render-devel
 %{_libdir}/libomx-panel-render.so

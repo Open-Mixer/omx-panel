@@ -223,8 +223,8 @@ jobs:
               libcjson-dev libomx-contract-dev libomxdsp-dev
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /w/out/'
-      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
+            cp /b/omx-panel_*.deb /b/libomx-panel-render1_*.deb /b/libomx-panel-render-dev_*.deb /w/out/'
+      # the renderer's library package carries libomx-panel-render.so.1 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
         run: |
@@ -233,7 +233,7 @@ jobs:
             tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
           docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
-            tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
+            tools/render-package-check.sh --self-test out/libomx-panel-render1_*.deb out/omx-panel_*_all.deb'
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-packages
