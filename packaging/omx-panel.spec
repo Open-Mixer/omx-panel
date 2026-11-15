@@ -223,6 +223,9 @@ English source sentence.
   primitive in both backends. Held to the console's own scene within 1 px.
 - The renderer builds against omx-dsp >= 0.32.2 < 0.33 (the analyser in C
   and its twins): the floor Zynthian's single-trace RTA reads.
+- describe given a plugin's own panel takes each parameter's role from the
+  panel's declaration in place of a scan's unknown meaning, and reads the
+  panel a plugin serves (plugin-hostd-probe panel) as the declared form.
 
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
 - tools/gesture-words.mjs ships as a command: executable, its declaration
