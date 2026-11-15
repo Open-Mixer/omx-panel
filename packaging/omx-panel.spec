@@ -38,7 +38,7 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 BuildRequires: (omx-contract-devel >= 3.18.0 with omx-contract-devel < 4)
-BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
+BuildRequires: (pkgconfig(omxdsp) >= 0.32.3 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
