@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
  *
- * draw.h — the primitives a backend gives the view: a rounded rectangle, a disc, a round-capped segment and a line of
- * text, in device px with straight colours. The CPU raster is one backend (view.c, a buffer), NanoVG the other
+ * draw.h — the primitives a backend gives the view: a rounded rectangle, a disc, a round-capped segment, the gradient
+ * area under a polyline, the strip between two segments and a line of text, in device px with straight colours. The CPU raster is one backend (view.c, a buffer), NanoVG the other
  * (window.c, a window); the layout and the widgets are view.c's, once. Internal.
  */
 #ifndef OMX_PANEL_DRAW_H
@@ -16,6 +16,13 @@ typedef struct omx_draw {
   void (*round_rect)(void *ctx, double x, double y, double w, double h, double r, omx_rgb rgb);
   void (*disc)(void *ctx, double cx, double cy, double r, omx_rgb rgb);
   void (*segment)(void *ctx, double ax, double ay, double bx, double by, double hw, omx_rgb rgb);
+  /* the area under a polyline (`xs` ascending) down to `base_y`, painted in a vertical gradient: `nstops` colours at the
+   * fractions `t` (ascending, 0..1) of the span y0..y1, held flat beyond it, laid at `alpha` */
+  void (*fill_under)(void *ctx, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
+                     const omx_rgb *stops, size_t nstops, double alpha);
+  /* the strip between two segments over [ax, bx]: one from (ax, a0) to (bx, b0), the other from (ax, a1) to (bx, b1), in one
+   * colour laid at `alpha`; where the segments cross, the two triangles they make */
+  void (*strip)(void *ctx, double ax, double bx, double a0, double a1, double b0, double b1, omx_rgb rgb, double alpha);
   /* `cps` already cut to fit; `x` the left edge, the centre or the right edge by `align`, `y` the baseline */
   void (*text)(void *ctx, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align align);
 } omx_draw;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * The shared library (build/libomx-panel-render.so.0, what a surface loads at run time) exports every function the header
+ * The shared library (build/libomx-panel-render.so.1, what a surface loads at run time) exports every function the header
  * declares and nothing else, under its soname. An arm drops a function from the export map and the first check goes red; an
  * arm exports `*` and the second does.
  */
@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 const HERE = new URL('..', import.meta.url).pathname;
-const SO = join(HERE, 'build', 'libomx-panel-render.so.0');
+const SO = join(HERE, 'build', 'libomx-panel-render.so.1');
 
 const declared = [...readFileSync(join(HERE, 'include', 'omx_panel_render.h'), 'utf8').matchAll(/\b(omx_panel_[a-z_]+)\s*\(/g)]
   .map((m) => m[1]);
@@ -32,7 +32,7 @@ test('nothing else is exported', () => {
   assert.deepEqual(extra, []);
 });
 
-test('the soname is libomx-panel-render.so.0', () => {
+test('the soname is libomx-panel-render.so.1', () => {
   const dyn = execFileSync('readelf', ['-d', SO], { encoding: 'utf8' });
-  assert.match(dyn, /\(SONAME\)\s+Library soname: \[libomx-panel-render\.so\.0\]/);
+  assert.match(dyn, /\(SONAME\)\s+Library soname: \[libomx-panel-render\.so\.1\]/);
 });

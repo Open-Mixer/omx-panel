@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.7
+Version: 0.13.8
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -38,7 +38,7 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 BuildRequires: (omx-contract-devel >= 3.16.0 with omx-contract-devel < 4)
-BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
+BuildRequires: (pkgconfig(omxdsp) >= 0.32.2 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
@@ -64,7 +64,7 @@ Summary: The omx-panel renderer, a library that draws a panel description into a
 Requires: omx-panel%{?_isa} = %{version}-%{release}
 
 %description -n omx-panel-render
-libomx-panel-render.so.0 draws a panel description in the omx look into a CPU
+libomx-panel-render.so.1 draws a panel description in the omx look into a CPU
 pixel buffer and answers input with the one gesture vocabulary. A surface loads
 it at run time (Zynthian's panel view); its look, geometry and fonts are
 omx-panel's.
@@ -118,7 +118,7 @@ make test
 
 %files -n omx-panel-render
 %license LICENSE
-%{_libdir}/libomx-panel-render.so.0
+%{_libdir}/libomx-panel-render.so.1
 
 %files -n omx-panel-render-devel
 %{_libdir}/libomx-panel-render.so
@@ -212,6 +212,21 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
+- The spectrum layer: omx_panel_view_set_spectrum gives an eq_response a
+  measured spectrum (the bands' centres, levels and peaks in dBFS on the
+  level window the host declares), drawn on the console analyser's axes:
+  the log frequency axis the bands and the curve share, one dB graticule,
+  the trace's area in the meter gradient, the trace, a clip tick where a
+  peak reaches the top, the curve parked with 0 dB at the window's middle;
+  the state file's "spectrum" for omx-panel-render; a new gradient-area
+  primitive in both backends. Held to the console's own scene within 1 px.
+- The renderer builds against omx-dsp >= 0.32.2 < 0.33 (the analyser in C
+  and its twins): the floor Zynthian's single-trace RTA reads.
+- describe given a plugin's own panel takes each parameter's role from the
+  panel's declaration in place of a scan's unknown meaning, and reads the
+  panel a plugin serves (plugin-hostd-probe panel) as the declared form.
+
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
 - tools/gesture-words.mjs ships as a command: executable, its declaration
   without the shebang. 0.13.6's DEBs failed lintian --fail-on warning

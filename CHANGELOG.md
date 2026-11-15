@@ -4,6 +4,15 @@
 
 ## Unreleased
 
+- 0.13.8: the spectrum layer (#41, #42): `omx_panel_view_set_spectrum` gives an `eq_response` a measured spectrum (the
+  bands' centres, levels and peaks in dBFS on the level window the host declares, `-INFINITY` silence), drawn on the
+  console analyser's axes: the log frequency axis the bands and the curve share, ONE dB graticule, the trace's area in
+  the meter gradient at 0.34, the trace, a clip tick where a peak reaches the top, then the curve parked with 0 dB at the
+  window's middle and its marks; `n == 0` clears it. The state file's `"spectrum"` for `omx-panel-render`; a gradient-area
+  primitive in the raster and in NanoVG. Held to the console's own scene within 1 px (`test/fixtures/rta/console-scene.json`,
+  `tools/rta-console-reference.mjs`).
+- 0.13.8: the renderer builds against omx-dsp >= 0.32.2 < 0.33, the analyser in C and its twins: the floor Zynthian's
+  single-trace RTA reads (released the minute omx-dsp 0.32.2 publishes).
 - 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
   scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
   `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its

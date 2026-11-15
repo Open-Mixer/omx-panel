@@ -23,8 +23,8 @@ VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 DEPS := libcjson omx-contract
 # The meter's view law is omx-dsp's (contract 7.9): the marker's hold and fall by elapsed time are omx_meter_view_step() of
 # <omxdsp/mix/omx_meter_view.h> and its rate OMX_METER_VIEW_FALL_DB_PER_SECOND, header-only, from omx-dsp-devel at or above
-# 0.32.0 and below 0.33 (pkg-config omxdsp); no number of the law is copied here.
-OMXDSP_FLOOR := 0.32.0
+# 0.32.2 and below 0.33 (pkg-config omxdsp); no number of the law is copied here.
+OMXDSP_FLOOR := 0.32.2
 OMXDSP_CEILING := 0.33
 # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
 CFLAGS ?= -O2 -g
@@ -35,7 +35,7 @@ B := build
 LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/raster.o
 # the shared library, for a surface that loads the renderer at run time (Zynthian's Tk panel, through ctypes): the same
 # objects, the C API its only exported symbols. SOVERSION moves when the API breaks.
-SOVERSION := 0
+SOVERSION := 1
 SONAME := libomx-panel-render.so.$(SOVERSION)
 
 # WINDOW=1 adds the window (pugl and NanoVG on OpenGL): libomx-panel-window.a, its header and pkg-config file, and

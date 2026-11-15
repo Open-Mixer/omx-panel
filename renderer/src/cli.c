@@ -202,6 +202,45 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
     }
     free(f), free(dp), free(l);
   }
+  /* "spectrum": {"<display index>": {"hz": [...], "pre": [...], "post": [...], "peak": [...], "mode": "pre"|"post"|"both",
+   * "delta": true|false, "dbMin", "dbMax", "gridDb"}}: a null level is silence, a tap left out is none (NULL), "delta" false by
+   * default; a mode that is none of the three is passed on as one, for the renderer to refuse */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "spectrum")) {
+    cJSON *hs = cJSON_GetObjectItemCaseSensitive(it, "hz"), *mn = cJSON_GetObjectItemCaseSensitive(it, "dbMin"),
+          *mx = cJSON_GetObjectItemCaseSensitive(it, "dbMax"), *gd = cJSON_GetObjectItemCaseSensitive(it, "gridDb"),
+          *md = cJSON_GetObjectItemCaseSensitive(it, "mode"), *dl = cJSON_GetObjectItemCaseSensitive(it, "delta");
+    const char *names[3] = {"pre", "post", "peak"};
+    int n = cJSON_IsArray(hs) ? cJSON_GetArraySize(hs) : -1;
+    int good = n >= 0 && cJSON_IsNumber(mn) && cJSON_IsNumber(mx) && cJSON_IsNumber(gd) && cJSON_IsString(md) && (!dl || cJSON_IsBool(dl));
+    double *h = malloc((size_t)(n > 0 ? n : 1) * sizeof *h), *lv[3] = {NULL, NULL, NULL};
+    good = good && h;
+    for (int k = 0; good && k < n; k++) {
+      cJSON *e = cJSON_GetArrayItem(hs, k);
+      good = cJSON_IsNumber(e);
+      if (good) h[k] = e->valuedouble;
+    }
+    for (int t = 0; good && t < 3; t++) {
+      cJSON *arr = cJSON_GetObjectItemCaseSensitive(it, names[t]);
+      if (!arr) continue;
+      lv[t] = malloc((size_t)(n > 0 ? n : 1) * sizeof *lv[t]);
+      good = lv[t] && cJSON_IsArray(arr) && cJSON_GetArraySize(arr) == n;
+      for (int k = 0; good && k < n; k++) {
+        cJSON *l = cJSON_GetArrayItem(arr, k);
+        good = cJSON_IsNumber(l) || cJSON_IsNull(l);
+        if (good) lv[t][k] = cJSON_IsNull(l) ? -INFINITY : l->valuedouble;
+      }
+    }
+    omx_panel_tap_mode_t mode = (omx_panel_tap_mode_t)3;
+    if (good && !strcmp(md->valuestring, "pre")) mode = OMX_PANEL_TAP_PRE;
+    else if (good && !strcmp(md->valuestring, "post")) mode = OMX_PANEL_TAP_POST;
+    else if (good && !strcmp(md->valuestring, "both")) mode = OMX_PANEL_TAP_BOTH;
+    if (!good || !omx_panel_view_set_spectrum(v, (uint32_t)strtoul(it->string, NULL, 10), h, lv[0], lv[1], lv[2], (uint32_t)n, mode,
+                                              cJSON_IsTrue(dl), mn->valuedouble, mx->valuedouble, gd->valuedouble)) {
+      fprintf(stderr, "omx-panel-render: state's spectrum '%s' is no spectrum of an eq curve of the panel or its values are refused\n", it->string);
+      ok = 0;
+    }
+    free(h), free(lv[0]), free(lv[1]), free(lv[2]);
+  }
   cJSON_Delete(root);
   return ok;
 }
