@@ -2,14 +2,13 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
  * rta-console-reference.mjs — the console analyser's picture of one fixed spectrum and EQ curve, as geometry, for the renderer's
- * spectrum parity test (renderer/test/spectrum.test.mjs). It runs the console's own scene builder (openmixer's
- * packages/web-ui/app/utils/render/rtaScene.ts `buildRtaScene`, line mode, the bands as its POST trace (the level after the
- * plugin, as a reader on an instance's outputs measures it), the meter gradient, the EQ curve on, no tilt) from an
- * openmixer checkout, bundled with that checkout's esbuild, and writes what the parity reads: every coordinate as a fraction of
- * the plot (x of its width, y of its height), so the fixture does not depend on omx-panel's layout. The test never needs
- * openmixer: the fixture is committed, with the commit it was made from.
+ * spectrum parity test (renderer/test/spectrum.test.mjs). It runs the console's own RTA scene builder (line mode, the bands as
+ * its POST trace (the level after the plugin, as a reader on an instance's outputs measures it), the meter gradient, the EQ curve
+ * on, no tilt) from a console checkout, bundled with that checkout's esbuild, and writes what the parity reads: every coordinate
+ * as a fraction of the plot (x of its width, y of its height), so the fixture does not depend on omx-panel's layout. The test
+ * never needs the console's source: the fixture is committed, with the commit it was made from.
  *
- *   node tools/rta-console-reference.mjs <openmixer checkout> [--out test/fixtures/rta/console-scene.json]
+ *   node tools/rta-console-reference.mjs <console checkout> [--out test/fixtures/rta/console-scene.json]
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readdirSync } from 'node:fs';
@@ -75,7 +74,7 @@ const curve = lines.find((p) => p.dash);
 const area = s.prims.find((p) => p.kind === 'area');
 const ticks = s.prims.filter((p) => p.kind === 'rect' && p.h === 4);
 const fixture = {
-  source: { repo: 'openmixer', commit, file: 'packages/web-ui/app/utils/render/rtaScene.ts', fn: 'buildRtaScene',
+  source: { scene: "the console's RTA scene builder", commit,
     mode: 'line', meterColour: true, tilt: 0, eqCurve: 'on' },
   window: { ...window, fMax: fmx },
   input: { bands: BANDS, curve: CURVE },

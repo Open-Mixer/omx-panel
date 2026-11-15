@@ -622,8 +622,8 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   free(cps);
 }
 
-/* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (openmixer's rtaScene.ts,
- * line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
+/* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (its scene
+ * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
  * from the top and a label on each line inside the window; under it the trace's area to the foot in the meter gradient (red at
  * the top, amber at 0.18, green from 0.5 down) at 0.34, then the trace, a clip tick at the top over each band whose peak reaches
  * the top, then the curve, a gain parked with 0 dB at the window's middle, and its marks on the same axis. A silent band

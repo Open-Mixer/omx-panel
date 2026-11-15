@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * The spectrum layer (omx_panel_view_set_spectrum; openmixer's spec 2026-11-15-zynthian-rta-from-a-jack-reader.md §5): while a
+ * The spectrum layer (omx_panel_view_set_spectrum; the Zynthian RTA's renderer part): while a
  * spectrum is set an eq_response is drawn on the console analyser's axes, the log frequency axis the bands and the curve share,
  * ONE dB graticule (the level window's, a line every grid_db), the spectrum in the console's line look under the curve, and the
  * curve, a gain, parked with 0 dB at the window's middle. Held against the console's own picture of the same bands and curve
- * (test/fixtures/rta/console-scene.json, made by tools/rta-console-reference.mjs from openmixer's buildRtaScene): every stroke
+ * (test/fixtures/rta/console-scene.json, made by tools/rta-console-reference.mjs from the console's RTA scene builder): every stroke
  * pixel within 1 px of the console's, both ways, and the graticule's rows within 1 px. n == 0 gives the display its own curve
  * axis back, exactly. Refused input changes nothing. The goldens: renderer/test/golden/eq-spectrum-<size>@<scale>x.png.
  */

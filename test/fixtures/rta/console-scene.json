@@ -1,9 +1,7 @@
 {
  "source": {
-  "repo": "openmixer",
+  "scene": "the console's RTA scene builder",
   "commit": "43e6572d5465e3d8f3af97758921e0bbea408e84",
-  "file": "packages/web-ui/app/utils/render/rtaScene.ts",
-  "fn": "buildRtaScene",
   "mode": "line",
   "meterColour": true,
   "tilt": 0,
