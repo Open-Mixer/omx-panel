@@ -10,7 +10,7 @@
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "stems": {"<display>": [{"x", "y", "shade", "letter"}]}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
@@ -201,6 +201,26 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
       ok = 0;
     }
     free(f), free(dp), free(l);
+  }
+  /* "stems": {"<display index>": [{"x", "y", "shade", "letter"}, ...]}, the taps of a time_response: ms, dB, 0..1, one letter */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "stems")) {
+    int n = cJSON_IsArray(it) ? cJSON_GetArraySize(it) : -1;
+    double *sx = malloc((size_t)(n > 0 ? n : 1) * sizeof *sx), *sy = malloc((size_t)(n > 0 ? n : 1) * sizeof *sy),
+           *sh = malloc((size_t)(n > 0 ? n : 1) * sizeof *sh);
+    char *l = malloc((size_t)(n > 0 ? n : 1));
+    int good = n >= 0 && sx && sy && sh && l;
+    for (int k = 0; good && k < n; k++) {
+      cJSON *m = cJSON_GetArrayItem(it, k), *xx = cJSON_GetObjectItemCaseSensitive(m, "x"), *yy = cJSON_GetObjectItemCaseSensitive(m, "y"),
+            *ss = cJSON_GetObjectItemCaseSensitive(m, "shade");
+      const char *le = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(m, "letter"));
+      good = cJSON_IsNumber(xx) && cJSON_IsNumber(yy) && cJSON_IsNumber(ss) && le && le[0] && !le[1];
+      if (good) sx[k] = xx->valuedouble, sy[k] = yy->valuedouble, sh[k] = ss->valuedouble, l[k] = le[0];
+    }
+    if (!good || !omx_panel_view_set_stems(v, (uint32_t)strtoul(it->string, NULL, 10), sx, sy, sh, l, (uint32_t)n)) {
+      fprintf(stderr, "omx-panel-render: state's stems '%s' are no stems of a time response of the panel or are refused\n", it->string);
+      ok = 0;
+    }
+    free(sx), free(sy), free(sh), free(l);
   }
   /* "spectrum": {"<display index>": {"hz": [...], "db": [...], "peak": [...], "dbMin", "dbMax", "gridDb"}}, a null level is silence */
   cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "spectrum")) {

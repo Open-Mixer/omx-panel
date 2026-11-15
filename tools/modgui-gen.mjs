@@ -145,8 +145,9 @@ export class NothingToDraw extends Error {
   code = 'MODGUI_NOTHING_TO_DRAW';
 }
 
-/** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. */
-const CURVES = ['eq_response', 'transfer_curve'];
+/** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. A time_response
+ * draws its frame and word; its stems and envelope are the renderer's (omx_panel_view_set_stems) until the twin answers the kind. */
+const CURVES = ['eq_response', 'transfer_curve', 'time_response'];
 
 /**
  * The curve function of omx-dsp, its TypeScript twin (`@openmixer/omx-dsp`, `curvePoints`): never vendored here. A tree that does not

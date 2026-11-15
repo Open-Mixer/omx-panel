@@ -4,6 +4,14 @@
 
 ## Unreleased
 
+- The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
+  section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
+  end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve
+  (`omx_panel_view_set_curve`) and the stems as `omx_panel_view_set_stems` (one per tap: time, level, shade, leg letter), each
+  array when present. The closed forms of the delay and reverb families name it, the served panel reads it back to the family's
+  graph word, the skin schema lists it. `describe` refuses a graph word that names no display kind by name: it used to drop the
+  display in silence, which is how the reverb's picture went missing. omx-plugins' omx-reverb joins the fixtures.
+
 - 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
   scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
   `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its

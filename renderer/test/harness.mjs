@@ -30,6 +30,8 @@ export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'om
 
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
+  // the reverb's declared panel: its decay-envelope is a time_response display, the frame and the word until a host sets the envelope
+  { name: 'omx-reverb', descriptor: 'test/fixtures/omx-reverb/omx-reverb.descriptor.json', panel: 'test/fixtures/omx-reverb/omx-reverb.panel.json', stem: 'omx-reverb' },
   // a bar group (nine drawbars by their footage, a section of its own) beside two knobs: the rule finds the run, the renderer and the MOD GUI draw it as a row of faders
   { name: 'organ', descriptor: 'test/fixtures/organ/organ.descriptor.json', stem: 'organ' },
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
