@@ -10,6 +10,7 @@
 #                                 nanovg-devel, GL)
 #   make check                    the golden images and the parity with the MOD GUI face; with WINDOW=1 and a display
 #                                 (xvfb-run make WINDOW=1 check) the window held to the buffer by structure too
+#                                 (each test's scratch dir in TMPDIR is removed at exit; OMX_PANEL_KEEP_SCRATCH=1 keeps it)
 #   make install PREFIX=... DESTDIR=...
 
 PREFIX ?= /usr/local
