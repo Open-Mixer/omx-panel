@@ -728,8 +728,10 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
     double qx = ix + (c->stem_x[k] / xmax) * iw, qy = iy + ih - ((c->stem_y[k] - lo) / (hi - lo)) * ih;
     d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->body, col->accent, c->stem_shade[k]));
     if (c->stem_letter[k] != ' ') {
+      /* the letter's baseline sits 3 px over the stem's top; a stem at the ceiling would put it over the frame, so it is
+       * held to the frame's top (the text is baseline-aligned: the glyph occupies the size above the baseline) */
       char one[2] = {c->stem_letter[k], 0};
-      text(d, font, one, 0, w, qx, qy - 3 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->ink, OMX_ALIGN_CENTRE);
     }
   }
 }

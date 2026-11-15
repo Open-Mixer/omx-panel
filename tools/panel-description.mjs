@@ -84,8 +84,8 @@ export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
 export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
 
-/** A section `graph` -> the display the extension names for it; a graph with none here is the
- * renderer's own (delay taps, a decay envelope, an LFO). */
+/** A section `graph` -> the display the extension names for it; a graph word with none here is
+ * refused by name when the panel is described (a declaration error, never a silent drop). */
 export const DISPLAY_OF_GRAPH = {
   'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve',
   // the time response (the processing-view spec, amendment 2026-09-16h): a delay's tap train and a reverb's decay envelope

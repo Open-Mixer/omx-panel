@@ -110,6 +110,65 @@ test('a level above 0 dB raises the window to the next 6 dB; the stems and the e
   assert.ok(near(px, at(0, 0, 200, -60, 6)), 'the envelope starts at 0 dB on the same window');
 });
 
+test('one tap only, at 0 ms: the axis end falls back to 1 ms and the stem stands at the left edge', () => {
+  const dir = scratch();
+  const { desc, state } = withData(dir, { stems: { 0: [{ x: 0, y: -6, shade: 1, letter: ' ' }] } });
+  const px = strokes(render(desc, state), FRAME);
+  const [x, top] = at(0, -6, 1);
+  const col = column(px, x);
+  assert.ok(col.length > 0, 'the one stem is drawn, at the left edge');
+  assert.ok(Math.abs(Math.min(...col.map(([, y]) => y)) - top) <= 2, 'it reaches −6 dB');
+  assert.equal(px.filter(([qx]) => qx > x + 3).length, 0, 'nothing else is drawn');
+});
+
+test('32 taps: the last one sets the axis end, at the right edge', () => {
+  const dir = scratch();
+  const stems = Array.from({ length: 32 }, (_, k) => ({ x: 10 * k, y: -1.5 * k, shade: 1, letter: ' ' }));
+  const { desc, state } = withData(dir, { stems: { 0: stems } });
+  const px = strokes(render(desc, state), FRAME);
+  const [xLast, topLast] = at(310, -46.5, 310);
+  const col = column(px, xLast);
+  assert.ok(col.length > 0, 'the 32nd stem stands at the right edge');
+  assert.ok(Math.abs(Math.min(...col.map(([, y]) => y)) - topLast) <= 2, 'at its own level');
+  const [xMid, topMid] = at(150, -22.5, 310);
+  assert.ok(Math.abs(Math.min(...column(px, xMid).map(([, y]) => y)) - topMid) <= 2, 'the 16th stands half way, on the same axis');
+});
+
+test('an envelope that falls past −60 dB is held at the floor', () => {
+  const dir = scratch();
+  // a point at −90 dB is drawn AT the floor, never under it: the polyline's end is held to −60 dB at 300 ms, so the
+  // line from 0 dB passes −30 dB half way, at 150 ms (a host that wants the knee at 200 ms sends the point there)
+  const { desc, state } = withData(dir, { curves: { 0: { x: [0, 300], y: [0, -90] } } });
+  const px = strokes(render(desc, state), FRAME);
+  assert.ok(near(px, at(0, 0, 300)), 'starts at 0 dB');
+  assert.ok(near(px, at(150, -30, 300)), 'half way down at 150 ms');
+  assert.ok(near(px, at(300, -60, 300), 2.5), 'the end on the floor at 300 ms, not below it');
+  assert.equal(px.filter(([, y]) => y > inner.iy + inner.ih + 1).length, 0, 'nothing is drawn under the floor');
+});
+
+test('a stem at or below −60 dB is not drawn', () => {
+  const dir = scratch();
+  const stems = [{ x: 0, y: -6, shade: 1, letter: ' ' }, { x: 100, y: -60, shade: 1, letter: 'L' }, { x: 200, y: -72, shade: 1, letter: 'R' }, { x: 300, y: -6, shade: 1, letter: ' ' }];
+  const { desc, state } = withData(dir, { stems: { 0: stems } });
+  const px = strokes(render(desc, state), FRAME);
+  assert.ok(column(px, at(300, -6, 300)[0]).length > 0, 'the last audible tap sets the axis and is drawn');
+  assert.equal(column(px, at(100, -60, 300)[0]).length, 0, 'the −60 dB stem is not there');
+  assert.equal(column(px, at(200, -72, 300)[0]).length, 0, 'the −72 dB stem is not there');
+});
+
+test('a leg letter over a stem at the ceiling is held inside the frame', () => {
+  const dir = scratch();
+  const { desc, state } = withData(dir, { stems: { 0: [{ x: 0, y: -6, shade: 1, letter: ' ' }, { x: 100, y: 0, shade: 1, letter: 'L' }] } });
+  const img = render(desc, state);
+  // ink above the frame's top edge would be the letter spilling out: the band over the section's curve frame stays the panel's own
+  const spill = [];
+  for (let y = FRAME.y - 8; y < FRAME.y + 1; y++) for (let x = FRAME.x; x < FRAME.x + FRAME.w; x++) {
+    const i = (y * img.w + x) * 4;
+    if (img.data[i] > 200 && img.data[i + 1] > 200 && img.data[i + 2] > 200) spill.push([x, y]);
+  }
+  assert.deepEqual(spill, [], 'no ink over the frame');
+});
+
 test('a refused stem or envelope changes nothing and the panel is not drawn', () => {
   const dir = scratch();
   for (const bad of [
