@@ -30,11 +30,24 @@ function dataWith(tokens) {
 /** The roles view.c's read_look maps onto what it draws. */
 const DRAWN = [...readFileSync(join(ROOT, 'renderer/src/view.c'), 'utf8').matchAll(/\{\s*"(--[a-z0-9-]+)"\s*,\s*&v->col/g)].map((m) => m[1]);
 
-/** omx-delay (the face, its sections, a switch) and dyn-curve (a curve's frame, rim and body, points or none). */
+/** omx-delay (the face, its sections, a switch), dyn-curve (a curve's frame, rim and body, points or none) and dyn-curve as an
+ * eq_response with a spectrum (the meter gradient and the clip tick: the console analyser's parity bands). */
 const PANELS = ['omx-delay', 'dyn-curve'].map((name) => {
   const fx = FIXTURES.find((f) => f.name === name), dir = scratch();
   return { name, description: descriptionFile(fx, dir), state: stateFile(fx, dir) };
 });
+{
+  const fx = FIXTURES.find((f) => f.name === 'dyn-curve'), dir = scratch();
+  const ref = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/rta/console-scene.json'), 'utf8')), b = ref.input.bands;
+  const d = JSON.parse(readFileSync(descriptionFile(fx, dir), 'utf8'));
+  d.displays[0].kind = 'eq_response';
+  const st = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
+  st.curves = { 0: { x: ref.input.curve.map((p) => p.hz), y: ref.input.curve.map((p) => p.gain) } }, st.marks = {};
+  st.spectrum = { 0: { hz: b.map((x) => x.hz), db: b.map((x) => x.db), peak: b.map((x) => x.peakDb), dbMin: ref.window.dbMin,
+    dbMax: ref.window.dbMax, gridDb: ref.window.gridDb } };
+  writeFileSync(join(dir, 'eq-spectrum.layout.json'), JSON.stringify(d)), writeFileSync(join(dir, 'eq-spectrum.state.json'), JSON.stringify(st));
+  PANELS.push({ name: 'eq-spectrum', description: join(dir, 'eq-spectrum.layout.json'), state: join(dir, 'eq-spectrum.state.json') });
+}
 
 test('the role list read_look walks is the role file\'s, in its order', () => {
   const header = readFileSync(join(ROOT, 'renderer/src/look_roles.h'), 'utf8');
@@ -44,7 +57,7 @@ test('the role list read_look walks is the role file\'s, in its order', () => {
 
 test('a look short of a role the renderer does not draw is refused, naming the role', () => {
   const p = PANELS[0];
-  for (const missing of ['--origin-room-mode', '--meter-red']) {
+  for (const missing of ['--origin-room-mode', '--eq-delta-cut']) {
     const tokens = { ...LOOK.tokens };
     delete tokens[missing];
     const r = spawnSync(CLI, ['--description', p.description, '--data', dataWith(tokens), '--state', p.state, '--raw', join(scratch(), 'x.raw')], { encoding: 'utf8' });
