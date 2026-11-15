@@ -17,7 +17,7 @@
  *
  *   node renderer/test/meter-surfaces.mjs [--browser <chromium>] [--no-tk] [--json <file>] [--sabotage browser-fall|tk-fall]
  *
- * Needs the built tree and renderer (make renderer), playwright-core and @openmixer/omx-dsp (>= 0.32.0 < 0.33) importable, a
+ * Needs the built tree and renderer (make renderer), playwright-core and @openmixer/omx-dsp (>= 0.32.2 < 0.33) importable, a
  * Chromium, python3 with tkinter and Pillow, and an X display for Tk (xvfb-run).
  */
 import { execFileSync } from 'node:child_process';

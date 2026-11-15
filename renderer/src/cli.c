@@ -202,6 +202,29 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
     }
     free(f), free(dp), free(l);
   }
+  /* "spectrum": {"<display index>": {"hz": [...], "db": [...], "peak": [...], "dbMin", "dbMax", "gridDb"}}, a null level is silence */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "spectrum")) {
+    cJSON *hs = cJSON_GetObjectItemCaseSensitive(it, "hz"), *ds = cJSON_GetObjectItemCaseSensitive(it, "db"),
+          *ps = cJSON_GetObjectItemCaseSensitive(it, "peak"), *mn = cJSON_GetObjectItemCaseSensitive(it, "dbMin"),
+          *mx = cJSON_GetObjectItemCaseSensitive(it, "dbMax"), *gd = cJSON_GetObjectItemCaseSensitive(it, "gridDb");
+    int n = cJSON_IsArray(hs) ? cJSON_GetArraySize(hs) : -1;
+    double *h = malloc((size_t)(n > 0 ? n : 1) * sizeof *h), *d = malloc((size_t)(n > 0 ? n : 1) * sizeof *d),
+           *pk = malloc((size_t)(n > 0 ? n : 1) * sizeof *pk);
+    int good = n >= 0 && h && d && pk && cJSON_IsArray(ds) && cJSON_GetArraySize(ds) == n && cJSON_IsArray(ps) &&
+               cJSON_GetArraySize(ps) == n && cJSON_IsNumber(mn) && cJSON_IsNumber(mx) && cJSON_IsNumber(gd);
+    for (int k = 0; good && k < n; k++) {
+      cJSON *e = cJSON_GetArrayItem(hs, k), *l = cJSON_GetArrayItem(ds, k), *q = cJSON_GetArrayItem(ps, k);
+      good = cJSON_IsNumber(e) && (cJSON_IsNumber(l) || cJSON_IsNull(l)) && (cJSON_IsNumber(q) || cJSON_IsNull(q));
+      if (good)
+        h[k] = e->valuedouble, d[k] = cJSON_IsNull(l) ? -INFINITY : l->valuedouble, pk[k] = cJSON_IsNull(q) ? -INFINITY : q->valuedouble;
+    }
+    if (!good || !omx_panel_view_set_spectrum(v, (uint32_t)strtoul(it->string, NULL, 10), h, d, pk, (uint32_t)n, mn->valuedouble,
+                                              mx->valuedouble, gd->valuedouble)) {
+      fprintf(stderr, "omx-panel-render: state's spectrum '%s' is no spectrum of an eq curve of the panel or its values are refused\n", it->string);
+      ok = 0;
+    }
+    free(h), free(d), free(pk);
+  }
   cJSON_Delete(root);
   return ok;
 }
