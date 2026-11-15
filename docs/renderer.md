@@ -43,6 +43,18 @@ controls: a frame, the basis word (`exact` or `modelled`) in its caption place, 
 `eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
 and output on one span and the unity line. A display with no points draws the frame and the word alone. `omx_panel_view_set_marks` gives an `eq_response` its marks, one per band a planter owns (frequency, depth, the planter's letter): a disc on the curve and the letter above it; the renderer infers none. The state file's `"marks"` is `{"<display index>": [{"freq", "depth", "letter"}]}`.
 
+`omx_panel_view_set_spectrum` gives an `eq_response` a measured spectrum: the bands' centres, levels and peaks in dBFS
+(`-INFINITY` is silence, drawn as nothing) on the level window the host declares, with a graticule line every `grid_db`.
+While one is set the display is drawn on the console analyser's axes, as its line mode draws them: the log frequency axis
+the bands and the curve share; ONE dB graticule, the level window's, labelled; the trace's area to the foot in the meter
+gradient (red at the top, amber at 0.18, green from 0.5 down) at 0.34, the trace, and a clip tick over each band whose peak
+reaches the top of the window; then the curve, a gain, parked with 0 dB at the window's middle, and its marks on the same
+axis. `n == 0` clears it and the display returns to its own curve axis, exactly. The parity test
+(`renderer/test/spectrum.test.mjs`) holds the strokes and the graticule within 1 px of the console's own scene for the same
+bands and curve (`test/fixtures/rta/console-scene.json`, made by `tools/rta-console-reference.mjs` from an openmixer
+checkout). The state file's `"spectrum"` is `{"<display index>": {"hz", "db", "peak", "dbMin", "dbMax", "gridDb"}}`, a null
+level for silence.
+
 The parity of a surface that draws with another rasteriser is held in `renderer/test/harness.mjs`: `strokeParity` (every stroke pixel of the curve layer within 1 px for the console, 2 px for Tk, of the other's, both ways), `barHeights` and `barParity` (heights within a pixel, count, order and labels equal as text). The state file of
 `omx-panel-render` gives them as `"curves": {"<display index>": {"x": [...], "y": [...]}}`.
 
