@@ -114,6 +114,30 @@ void omx_fill_under(omx_canvas *c, const double *xs, const double *ys, size_t n,
   }
 }
 
+void omx_strip(omx_canvas *c, double ax, double bx, double a0, double a1, double b0, double b1, omx_rgb rgb, double alpha) {
+  if (!(bx > ax) || !(alpha > 0)) return;
+  int X0 = (int)maxd(0, floor(ax)), X1 = (int)mind(c->w, ceil(bx));
+  int Y0 = (int)maxd(0, floor(mind(mind(a0, a1), mind(b0, b1)))), Y1 = (int)mind(c->h, ceil(maxd(maxd(a0, a1), maxd(b0, b1))));
+  for (int x = X0; x < X1; x++) {
+    double top[SS], bot[SS];
+    int in[SS];
+    for (int sx = 0; sx < SS; sx++) { /* the two segments' y under each sample column */
+      double px = x + (sx + 0.5) / SS, u = (px - ax) / (bx - ax);
+      in[sx] = px >= ax && px <= bx;
+      double y0 = a0 + u * (b0 - a0), y1 = a1 + u * (b1 - a1);
+      top[sx] = mind(y0, y1), bot[sx] = maxd(y0, y1);
+    }
+    for (int y = Y0; y < Y1; y++) {
+      int hits = 0;
+      for (int sy = 0; sy < SS; sy++) {
+        double py = y + (sy + 0.5) / SS;
+        for (int sx = 0; sx < SS; sx++) hits += in[sx] && py >= top[sx] && py <= bot[sx];
+      }
+      if (hits) blend(c, x, y, rgb, alpha * hits / (SS * SS));
+    }
+  }
+}
+
 struct rr { double x, y, w, h, r; };
 static int in_rr(const void *v, double px, double py) {
   const struct rr *s = v;
