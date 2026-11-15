@@ -62,8 +62,9 @@ WINDOW ?= 0
 renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
+# run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
 renderer-check: build
-	$(MAKE) -C renderer check WINDOW=$(WINDOW)
+	sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
 
 # a host that is not JavaScript reads the gesture word names and the compare values from what the panel ships (#23):
 # the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)
