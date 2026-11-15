@@ -21,8 +21,7 @@
  * Chromium, python3 with tkinter and Pillow, and an X display for Tk (xvfb-run).
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { FIXTURES, RENDERER, ROOT, descriptionFile, render, scratch, stateFile } from './harness.mjs';
@@ -185,7 +184,7 @@ ${strip(modgui.emitStylesheet(p, modgui.loadLook(), 'meter-surfaces'))}</style><
 }
 
 function tkLeg() {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-meter-tk-'));
+  const dir = scratch('omx-meter-tk-');
   const job = {
     w: Math.round(lay.w), h: Math.round(lay.h), band: lay.band, meters, ticks: stream.ticks, vectors,
     law: { ...law, fallDbPerSecond: sabotage === 'tk-fall' ? 2 * law.fallDbPerSecond : law.fallDbPerSecond },
