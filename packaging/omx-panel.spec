@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.7
+Version: 0.13.9
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -22,7 +22,7 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: (omx-contract-data >= 3.16.0 with omx-contract-data < 4)
+BuildRequires: (omx-contract-data >= 3.19.0 with omx-contract-data < 4)
 BuildRequires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
@@ -37,12 +37,12 @@ BuildRequires: systemd-rpm-macros
 # the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
-BuildRequires: (omx-contract-devel >= 3.16.0 with omx-contract-devel < 4)
+BuildRequires: (omx-contract-devel >= 3.19.0 with omx-contract-devel < 4)
 BuildRequires: (pkgconfig(omxdsp) >= 0.32.0 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: (omx-contract-data >= 3.16.0 with omx-contract-data < 4)
+Requires: (omx-contract-data >= 3.19.0 with omx-contract-data < 4)
 Requires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
 # the descriptors of omx-plugins' plugins, for modgui --installed
 Recommends: (omx-plugins-contract >= 0.19.3 with omx-plugins-contract < 0.20)
@@ -212,6 +212,17 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.9-1
+- Built against omx-contract >= 3.19.0 and below 4 (was 3.13.0 to 3.16.0 by
+  package), the 3.19.0 pass's newest, with its ceiling (D30). The jobs' dnf
+  lines state the same.
+- describe --panel: a declared panel's roles back its family over a scan's
+  unknown meanings, and the served panel is read as the declared form (#44,
+  #43).
+- CI: every omx package comes from the channel, never staging (#31); explicit
+  artifact retention (#36); the commit-message checkout reads
+  OPENMIXER_DOTGITHUB (#33).
+
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
 - tools/gesture-words.mjs ships as a command: executable, its declaration
   without the shebang. 0.13.6's DEBs failed lintian --fail-on warning

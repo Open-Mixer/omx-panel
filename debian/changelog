@@ -1,3 +1,17 @@
+omx-panel (0.13.9) unstable; urgency=medium
+
+  * Built against omx-contract >= 3.19.0 and below 4 (was 3.13.0 to 3.16.0
+    by package), the 3.19.0 pass's newest, with its ceiling (D30). The jobs'
+    dnf lines state the same.
+  * describe --panel: a declared panel's roles back its family over a scan's
+    unknown meanings, and the served panel is read as the declared form
+    (#44, #43).
+  * CI: every omx package comes from the channel, never staging (#31);
+    explicit artifact retention (#36); the commit-message checkout reads
+    OPENMIXER_DOTGITHUB (#33).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 15 Nov 2026 16:30:00 +0100
+
 omx-panel (0.13.7) unstable; urgency=medium
 
   * tools/gesture-words.mjs ships as a command: executable, its declaration

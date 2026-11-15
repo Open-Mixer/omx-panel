@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 0.13.9: built against omx-contract >= 3.19.0 and below 4, the 3.19.0 pass's newest, with its ceiling (D30); the jobs' dnf
+  lines state the same.
 - 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
   scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
   `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its
