@@ -88,6 +88,8 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, u
 
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
+bool omx_panel_view_draw_dirty(omx_panel_view_t *view, const omx_panel_buffer_t *buffer,
+                               omx_panel_rect_t *rects, size_t cap, size_t *count);
 ```
 
 A view is made from four inputs held in memory: the description, the look, the geometry and the font
@@ -121,6 +123,41 @@ A control a declared panel shows only for certain values of another (the descrip
 control's integer value: its come-up value (`visibleWhen.default`) until the host gives one with
 `omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
 leaves with none takes no space, so the panel is drawn exactly as one without them.
+
+## Dirty rectangles
+
+A drag moves one control, and redrawing the whole panel for it costs 14 to 25 ms at 1024 x 416 on a Raspberry Pi 5 (measured with
+0.13.7), more than one display frame. `omx_panel_view_draw_dirty` draws into the buffer the last draw went into and repaints only
+what changed, then names the rectangles it repainted, so the host converts and blits only those.
+
+- **What marks a rectangle.** The view remembers, for every element of the panel (the head, each section, each control's cell, each
+  display, the meters band, each meter in it), the box it filled and a signature of every value its drawing reads: a control's reading
+  and text, a selector's option, a meter's bar and marker, a display's points, stems, marks and spectrum, the title. An element whose
+  signature or box changed is repainted, and its old box too where it moved (a control a governing value hid, the one that took its
+  place). One changed control reports its cell and nothing else; nothing changed reports none.
+- **The bleed.** A rectangle is the element's box grown by what its pixels can reach beyond it (anti-aliased edges, a glyph's overhang,
+  a mark's letter above its disc): 4 logical px, 8 for a display (`BLEED`, `BLEED_DISPLAY` in `view.c`). The same number decides which
+  elements a repaint reaches, so a pixel an element drew is always repainted with it.
+- **A repaint is a full draw of that rectangle.** Each rectangle is cleared to transparent and the panel drawn into it through a clip, the
+  elements that cannot reach it skipped, the others cut by the clip, the colours premultiplied at the end as a full draw does. Every byte
+  outside the rectangles is left as the last draw left it, and the buffer equals a full draw of the same state byte for byte
+  (`renderer/test/dirty.test.mjs`).
+- **A full draw stands** for the first frame, a buffer that is not the last draw's (another address, size, stride, scale or pixel format),
+  a resize, and a panel whose overall size changed (a governing value that grew or shrank it): the whole buffer is drawn and reported as
+  one rectangle. The look is read when the view is made, so it never changes under one. `omx_panel_view_draw` always draws the whole
+  buffer, and a host that did not keep the last draw's bytes calls it.
+- **More changes than rectangles.** Up to `cap` rectangles are written; past that the pair whose covering rectangle adds the least area is
+  merged until `cap` remain, so a change is never dropped. Rectangles that meet are merged first.
+
+`omx-panel-render --steps <script.json> --steps-out <dir>` is the test's front door: the view is drawn in full, then each state object of
+the script is applied and drawn dirty into the same buffer; per step it writes the buffer before, after, and a full draw of the same state
+by a view made anew, and prints the step's rectangles.
+
+### Frame budget
+
+One drag frame at 1024 x 416 on the Raspberry Pi 5, covering the input, the draw, the conversion and the blit, has a p99 of at most
+16.7 ms, one frame of a 60 Hz display. The figure is declared once, in `schema/frame-budget.json`, and a host's measurement reads it
+from there instead of carrying its own (zynthian-ui's `tests/pi/blit_per_frame_on_the_pi.py`).
 
 ## Meters
 
