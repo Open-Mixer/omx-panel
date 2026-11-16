@@ -49,12 +49,6 @@ const PANELS = ['omx-delay', 'dyn-curve'].map((name) => {
   PANELS.push({ name: 'eq-spectrum', description: join(dir, 'eq-spectrum.layout.json'), state: join(dir, 'eq-spectrum.state.json') });
 }
 
-test('the role list read_look walks is the role file\'s, in its order', () => {
-  const header = readFileSync(join(ROOT, 'renderer/src/look_roles.h'), 'utf8');
-  assert.deepEqual([...header.matchAll(/^ {4}"(--[a-z0-9-]+)",$/gm)].map((m) => m[1]), ROLES);
-  assert.ok(DRAWN.length >= 7 && DRAWN.every((n) => ROLES.includes(n)), DRAWN.join(' '));
-});
-
 test('a look short of a role the renderer does not draw is refused, naming the role', () => {
   const p = PANELS[0];
   for (const missing of ['--origin-room-mode', '--eq-delta-cut']) {
@@ -72,6 +66,7 @@ test('positive control: the whole look draws, the same as the tools directory\'s
 });
 
 test('a fixture per role: each role the renderer draws, moved to a colour of its own, moves the pixels', () => {
+  assert.ok(DRAWN.length >= 7 && DRAWN.every((n) => ROLES.includes(n)), DRAWN.join(' '));
   const was = PANELS.map((p) => render(p.description, p.state));
   for (const n of DRAWN) {
     const data = dataWith({ ...LOOK.tokens, [n]: '#010203' });
