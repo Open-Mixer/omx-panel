@@ -170,7 +170,7 @@ export const RULES = [
 /**
  * @typedef {{ symbol: string, name: string, index: number, control: boolean, input: boolean,
  *   designation?: string, unit?: string, unitLabel?: string, group?: string, notOnGui?: boolean,
- *   kind?: 'toggle' | 'choice' | 'travel', min?: number, max?: number, options?: number }} Port
+ *   kind?: 'toggle' | 'choice' | 'travel', min?: number, max?: number, options?: number, integer?: boolean }} Port
  * @typedef {{ symbol?: string, name?: string, displayPriority?: number }} OwnGroup
  * @typedef {{ uri: string, ports: Port[], groups?: Record<string, OwnGroup> }} PluginPorts
  * @typedef {{ ports: { symbol: string, index: number, name?: string }[] }} ModguiLayout
@@ -706,6 +706,7 @@ export function readPluginPorts(triples, uri) {
       const points = all(k, `${LV2}scalePoint`).length;
       port.kind = props.has(`${LV2}toggled`) ? 'toggle' : props.has(`${LV2}enumeration`) ? 'choice' : 'travel';
       if (port.kind === 'choice') port.options = points;
+      if (props.has(`${LV2}integer`)) port.integer = true;
       for (const [field, p] of [['min', 'minimum'], ['max', 'maximum']]) {
         const n = Number(val(`${LV2}${p}`)?.v);
         if (Number.isFinite(n)) port[field] = n;

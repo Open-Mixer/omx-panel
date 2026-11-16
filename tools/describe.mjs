@@ -25,11 +25,13 @@
  * - the DISPLAYS of a derived panel are the family's closed form on the section holding its required roles, each with its
  *   `basis`: `exact` only when an authored descriptor declares it, else `modelled`;
  * - the ROLES carry `unit` (the contract token), `inferred`, a band's `shape` and a band-type role's `shapes`;
- * - the SECTIONS carry `bars` (tools/bars.mjs), a view of the panel that stays out of the fingerprint;
+ * - the SECTIONS carry `bars` (tools/bars.mjs), a view of the panel that stays out of the fingerprint, and the one that holds a
+ *   repeated group its `matrix` (tools/group-model.mjs `matrixOf`, docs/group-model.md), another view; a matrix section has no bars;
  * - the skin applies last of the derivation, by `applySkinOverride` (its sections, its `easy`), and the PAGES are cut after it by
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
+import { controlsOfDescriptor, inferGroupModel, matrixOf, placeMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
 import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
@@ -299,9 +301,51 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     description = applied.description;
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin, field: d.field, entry: d.entry, reason: d.reason }));
   }
+  // the group model (docs/group-model.md): the section that holds a repeated group carries its matrix, over the sections as
+  // the skin left them, so no surface re-derives it
+  description = withMatrices(description, effective, panel, layout, servedOf);
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
   description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
   return withLayout ? { description, refusals, layout } : { description, refusals };
+}
+
+/**
+ * The description with each repeated group's matrix on the section that holds its instances (`matrix: matrixOf(g)`, every
+ * symbol as the description serves it, `count` with the widget it is drawn as). The controls the matrix places belong to
+ * that section: the other sections of the group are folded into it, and the sections the edges were taken from keep the
+ * rest. A group the description cannot place whole is left as it is.
+ */
+function withMatrices(description, effective, panel, layout, servedOf) {
+  const inLayout = new Set(layout.controls.map((c) => c.symbol));
+  const { groups } = inferGroupModel(controlsOfDescriptor(effective, panel ? { panel } : {}).filter((c) => inLayout.has(c.symbol)));
+  const keyOf_ = new Map([...servedOf].map(([key, served]) => [served, key]));
+  const served = (key) => servedOf.get(key) ?? key;
+  let { sections, controls } = description;
+  for (const g of groups) {
+    if (g.kind !== 'repeated') continue;
+    const placed = placeMatrix(g, sections.map((s) => ({ id: s.key, symbols: controls.filter((c) => c.section === s.key).map((c) => keyOf_.get(c.symbol) ?? c.symbol) })));
+    if (!placed) continue;
+    const m = matrixOf(g);
+    // the served shape (docs/group-model.md): `heads` are the instances and edges, `rows` the parameters, `cells[row][head]`, whatever the orientation
+    const [hs, ls] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
+    const cells = ls.map((_, l) => hs.map((_h, h) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l])).map((sym) => (sym === null ? null : served(sym))));
+    const countDefault = g.count ? description.params.find((x) => x.symbol === served(g.count.symbol))?.default : undefined;
+    const matrix = {
+      orientation: m.orientation,
+      heads: hs.map((h) => ({ label: h.label, on: h.on ? { symbol: served(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
+      rows: ls.map((l) => ({ label: l.label })),
+      cells,
+      ...(g.count ? { count: { symbol: served(g.count.symbol), default: countDefault ?? null } } : {}),
+    };
+    controls = controls.map((c) => (placed.members.has(keyOf_.get(c.symbol) ?? c.symbol) ? { ...c, section: placed.home, ...(g.count && (keyOf_.get(c.symbol) ?? c.symbol) === g.count.symbol ? { widget: 'auto' } : {}) } : c));
+    // a section the group emptied goes, unless a display or a meter stands on it
+    const stood = new Set([...description.displays.map((d) => d.section), ...description.meters.map((x) => x.section)]);
+    sections = sections.flatMap((s) => {
+      if (s.key === placed.home) { const { bars: _bars, ...own } = s; return [{ ...own, matrix }]; }
+      return controls.some((c) => c.section === s.key) || stood.has(s.key) || !(placed.folded.includes(s.key) || placed.donors.includes(s.key)) ? [s] : [];
+    });
+  }
+  return { ...description, sections, controls };
 }
 
 /** The layout of a plugin with no control to lay out but path or text parameters: one plain section for them, family

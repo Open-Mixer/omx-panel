@@ -46,7 +46,8 @@ in-process call, and it already shells out to `omx-panel` for it.
 
 ## The model
 
-`inferGroupModel(controls)` returns `{ groups }`, in the order of each group's first control (`index`). A group is:
+`inferGroupModel(controls)` returns `{ groups }`, in the order of each group's first control (`index`); the controls an EQ
+took as its edges do not count, so omx-strip's EQ stays after its Gate though its HPF sits before it. A group is:
 
 - `kind: 'list'`: `parameters`, its controls' symbols in index order. A list that was a candidate repeat and failed a
   check carries `reason` (a code of the table below) and `detail` (the evidence, for a reader).
@@ -56,7 +57,8 @@ in-process call, and it already shells out to `omx-panel` for it.
     (`off` for a bypass or a mute), or null;
   - `rows`: the parameters every instance holds, in drawing order, each `{ key, label, role }`;
   - `parameters`: the group's own controls that belong to no instance (an EQ's master on, its band count), a plain list;
-  - `family`: `'eq'` or null; `edges` (an EQ only): its filters and shelves, each `{ edge, label, on, parameters }`.
+  - `family`: `'eq'` or null; `edges` (an EQ only): its filters and shelves, each `{ edge, label, on, parameters }`;
+  - `count`: `{ symbol }` or null, the control that sets how many instances are live (S10).
 - both: `key`, `label` (the declared group's label, null for a plugin's undeclared controls) and `source`:
   `declared`, `indexed` or `none`.
 
@@ -85,10 +87,18 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
 - **S4, matched across instances (source c).** A parameter (a stem every instance holds) has the same kind in every
   instance, the same unit, and, unless its unit is hertz or it is a toggle, the same range (a choice: the same number of
   options). A frequency may span another range per band. *Tests: "S4: kind / unit / range mismatch is refused", one each.*
-- **S5, the parameters.** A stem every instance holds is a row. A stem only some instances hold is no row: its controls
-  join the group's own `parameters` (Calf's three split frequencies between four bands). The words of a row's label are
-  its first instance's name less the number and less the words every parameter of that instance shares ("Band 1 Gain" ->
-  "Gain"). *Test: the Calf multiband compressor in the corpus.*
+- **S5, the parameters.** A stem every instance holds is a row. A stem held by all but one instance is a row too, **with an
+  empty cell** for the instance that lacks it (omx-delay's `tap1Factor` .. `tap3Factor`: tap 1 plays at the delay's own
+  time and has no factor), provided each control it holds is that instance's own: its name prints the one number the
+  instance's other names print (the number it prints, or none where the instance prints none). That is what keeps Calf's
+  three crossover frequencies (`freq0` .. `freq2`, "Split 1/2", held by three of four bands, each naming two numbers)
+  out of the rows: they sit between bands, not in one. A stem held by fewer instances is no row either. The controls of
+  every stem that is no row join the group's own `parameters`. A row held by all but one instance obeys S4 over the
+  instances that hold it, and the existing `ragged-instances` check counts it among the controls it is not a row of
+  (so a group of mostly such stems is still refused). The words of a row's label are its first holding instance's name
+  less the number and less the words every complete parameter of that instance shares ("Band 1 Gain" -> "Gain"); such a
+  row is drawn after the rows every instance holds. *Tests: the Calf multiband compressor in the corpus (its crossovers
+  stay the group's own); omx-delay in the corpus (the Taps matrix's Time row, tap 0's cell empty); "S5: ...".*
 - **S6, the head.** A toggle whose remaining words are none, or only `on`, `enable(d)`, `active`, `power` or a section
   word ("EQ 1", "Section 1", "Band 1 On"), is the instance's head with sense `on`; else a toggle of `bypass`, `mute` or
   `off` is the head with sense `off`. A head is not a row. *Tests: omx-eq8's `b1_on`, fil4's `sec1`, Calf's `bypass0`.*
@@ -98,13 +108,27 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
 - **S8, the EQ.** A repeated group is an EQ (`family: 'eq'`) when its rows hold a frequency (unit hertz, or a word
   `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `bandwidth`, `resonance`)
   or a type. Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
-  edges below align with the bands.
+  edges below align with the bands. **A role a control's words claim wins over a role its unit claims**: a dB control
+  that is not called `gain` (`threshold`, `range`) is no gain while another control of the band is, and keeps its own
+  stem as its row key (omx-dyneq's `gain1` is the gain row; `threshold1` and `range1` are rows of their own, not three
+  candidates for `gain` that key none). Where no control's words claim the role, the unit's claim stands (the
+  `gain`-less EQ whose one dB control is its gain). *Tests: omx-dyneq in the corpus; "S8: ...".*
 - **S9, the EQ's edges.** An EQ's high-pass, low shelf, high shelf and low-pass are found by the words its control names
   open with (`HPF`, `Highpass`, `Low cut`; `Lowshelf`; `Highshelf`; `LPF`, `Lowpass`, `High cut`): among the EQ's own
-  `parameters`, and in a declared group that holds that one edge and nothing else (omx-eq8's `HPF` and `LPF`). A declared
-  group that holds an edge beside anything else is the plugin's own section and stays a list (omx-strip's `Filters`,
-  which holds its master switch). An edge has a frequency, or it is no edge. *Tests: omx-eq8, x42 fil4; omx-strip's
-  Filters stays a list.*
+  `parameters`, and in **any list group of the plugin**, whatever else that group holds: **every control whose name
+  opens with an edge word is taken**, and the remainder stays that group's own list. The high-pass is the EQ's first
+  column and the low-pass its last on every plugin (the owner's rule for every grouped drawing; the audio order is
+  unchanged). omx-strip's `Filters` group (`filterOn`, `hpfOn`, `hpfFreq`, `hpfSlope`, `lpfOn`, `lpfFreq`, `lpfSlope`)
+  gives the EQ its HPF (head `hpfOn`, rows `freq`, `slope`) and its LPF, and keeps `filterOn` as a list of one. An edge
+  has a frequency, or it is no edge and its controls stay where they were. *Tests: omx-eq8, x42 fil4, omx-strip in the
+  corpus (HPF first, LPF last); "S9: ...".*
+- **S10, the count.** A repeated group's own parameter that sets how many of its instances are live is the group's
+  `count: { symbol }`. It is a whole-number travel (step 1) from 0 or 1, whose maximum is the number of instances, and
+  whose name holds a word the group is called by (the instances' shared word or the group's label), singular or plural:
+  omx-strip's `eqBands` ("EQ Bands", 1..32, over `EQ 1` .. `EQ 32`), omx-delay's `fxDelayTaps` ("Taps", 1..4, over
+  `Tap 1` .. `Tap 4`). Anything else a group holds of its own is no count (Calf's `mode`). A count is inferred; no
+  descriptor declares one. The control stays among the group's `parameters`. *Tests: omx-strip and omx-delay in the
+  corpus; "S10: ...".*
 
 ## Uncertain: a reason, and a plain list
 
@@ -115,7 +139,7 @@ of these codes. The checks run in this order; the first that fails names the lis
 |---|---|---|
 | `two-indices` | more than half its numbered controls carry two numbers in their symbol (`mix_3_5`): a grid of two indices | x42 matrixmixer (corpus) |
 | `declared-index-conflict` | a declared instance's symbol numbers are not its number nor one less, by one offset | "S2: ..." |
-| `ragged-instances` | more of its numbered controls sit in stems some instances lack than in stems all hold | AMS advenv (corpus) |
+| `ragged-instances` | more of its numbered controls sit in stems some instances lack than in stems all hold (a stem held by all but one, which S5 makes a row, is still a stem some instances lack here) | AMS advenv (corpus) |
 | `one-parameter` | fewer than two stems are held by every instance: a row of one repeated control (`tools/bars.mjs`'s business) | "one-parameter" |
 | `index-gap` | the instance numbers of an indexed group are not consecutive (1, 2, 4) | "index-gap" |
 | `kind-mismatch` | a parameter is a toggle in one instance and a travel or a choice in another | "S4: kind" |
@@ -144,6 +168,18 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   rows, else `rows` (one row per instance, the parameters across). *Test: the Calf multiband compressor (4 bands, 8
   parameters: rows).*
 - **L5, the group's own parameters** (`parameters`) are a plain list drawn before the matrix.
+- **L6, the count.** A group that has a `count` (S10) is drawn with **only its first `count` instances**, at the count
+  port's current value: the instances are counted in ascending instance number, an instance beyond the count is hidden
+  and **leaves no gap** (the next column closes up), and the edges (HPF, LPF, shelves) are always drawn. `matrixOf(g,
+  { values })` applies it (`values[count.symbol]`, a value left out showing every instance); a surface that draws live
+  reads each head's `ordinal` (its place among the instances, null for an edge) and shows it while `ordinal < value`.
+  **The count control itself is drawn as a selector**: a port that is an enumeration, or a whole number of few points,
+  is a selector and never a knob; the count is one whatever its range (`eqBands` 1..32 is a selector of 32 options).
+  The MOD GUI face is static: it draws the first `count` instances at the count port's come-up value (omx-strip: 4 of 32;
+  omx-delay: 1 of 4), and an instance beyond it is not on the face, its ports not among the pedal's. A plugin whose declared panel already
+  governs each instance by a `visibleWhen` rule on the count keeps that live rule instead: its instances stay on the face,
+  hidden by the rule. *Tests: "L6: ..."
+  (library); modgui-gen's omx-strip and omx-delay faces.*
 
 ## The corpus
 
@@ -154,22 +190,41 @@ existed. `test/group-model.test.mjs` compares each in full.
 | plugin | input | expected |
 |---|---|---|
 | omx-eq8, omx-eq16, omx-eq32 | descriptor | one EQ, declared: HPF, bands 1..N, LPF as columns; rows type, slope, freq, gain, q |
-| omx-strip | descriptor | its EQ indexed: 32 columns `EQ 1` .. `EQ 32` headed by `eqN On`, rows type, freq, gain, q; `eqOn` and `eqBands` its own; Input, Filters, Gate, Comp, Order lists |
+| omx-strip | descriptor | its EQ indexed: HPF, 32 columns `EQ 1` .. `EQ 32` headed by `eqN On`, LPF (heads `hpfOn`, `lpfOn`; rows type, slope, freq, gain, q); `eqOn` and `eqBands` its own, `eqBands` its count; Filters a list of `filterOn`; Input, Gate, Comp, Order lists |
+| omx-dyneq | descriptor | one EQ, declared: Band 1..6 as columns headed by `bandOnN`; rows type, freq, gain, q (each the one control called that), then dynMode, threshold, ratio, range, attack, release, listen under their own stems; `mixPct` in Output |
+| omx-delay | descriptor | its Taps indexed: Tap 1..4 as columns, rows Gain, Pan, then Time (tap 1's cell empty); `fxDelayTaps` its own and its count; not an EQ |
 | x42 fil4 (mono) | TTL | one EQ, indexed: Highpass, Lowshelf, Section 1..4, Highshelf, Lowpass; rows freq, gain, q |
 | LSP para-equalizer x8 mono | TTL | one EQ, indexed: Band 0..7 (its names count from 0), no head (it has no on toggle), ten rows |
 | Calf multiband compressor | TTL | four bands as rows (L4), headed by their bypass (sense off); the split frequencies its own |
 | x42 matrixmixer (ambiguous) | TTL | a list, `two-indices` |
 | AMS advenv (ambiguous) | TTL | a list, `ragged-instances` |
 
+## The served description carries the model
+
+`omx-panel describe` serves the model, so no surface re-derives it (the console, the C renderer of omx-panel#62, the
+Zynthian builder read the description). A section that carries a repeated group has `matrix`, `matrixOf(g)` with every
+symbol as the description serves it and in one shape whatever the orientation: `{ orientation, heads, rows, cells,
+count? }`. `heads` are the instances and the edges along one axis, each `{ label, on: { symbol, sense } | null, edge }`
+(`edge` is `hpf`, `lowshelf`, `highshelf`, `lpf`, or null for an instance), `rows` the parameters, each `{ label }`,
+`cells[row][head]` a served symbol or null (`orientation` says only whether the surface lays the heads out as columns or
+as rows), and `count: { symbol, default }` when the group has one (S10): the surface draws the first `count` non-edge heads
+at the count port's value (`default` when it holds none), closed up, the edges kept (L6); the count control is drawn as a
+selector. The library's own `matrixOf` keeps the keys, roles and ordinals the description leaves out. The section is the first that holds the group's instances;
+the controls the matrix places (the edges, taken from beside the EQ, among them) are that section's, and a section the
+group emptied is left out of `sections`. A group the description cannot place whole (a member it does not serve, or an
+instance section that holds another plugin control beside the group) carries no matrix and is drawn as before. *Tests:
+`test/describe-group-model.test.mjs`: omx-eq8 carries it; omx-strip's carries HPF first and LPF last.*
+
 ## The consumers
 
-- **modgui-gen** (`tools/modgui-gen.mjs` `withRepeats`): the sections that together hold exactly one repeated group's
-  controls are drawn as one section laid out by `matrixOf`, its own parameters flowed above the matrix; a section that
-  holds anything else beside the group, or only part of it (an Easy section took some), is drawn as before. *Test:
-  `test/modgui-group-model.test.mjs`.*
+- **modgui-gen** (`tools/modgui-gen.mjs` `withRepeats`): the sections that hold a repeated group's instances and own
+  parameters, when they hold nothing else, are drawn as one section laid out by `matrixOf` (at the count's come-up value,
+  L6), its own parameters flowed above the matrix, the count drawn as a selector; the edges are taken from whatever
+  section holds them, which keeps the rest of its controls (omx-strip's Filters keeps `filterOn`). A group some of whose
+  controls are not drawn (an Easy section took them), or whose instance section holds anything else beside the group, is
+  drawn as before. *Test: `test/modgui-group-model.test.mjs`.*
 - **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it reads a
-  section's `matrix` from the description and draws it (omx-panel#62; docs/renderer.md), inferring no group. Its fixtures
-  (`test/fixtures/repeats/`) carry the field until the served description does.
+  section's served `matrix` and draws it (omx-panel#62; docs/renderer.md), inferring no group.
 - **the console**: the served panel description carries the model; the processing view draws a repeated group by
   `matrixOf` (a follow-up in openmixer, linked from omx-panel#61).
 - **the Zynthian builder**: a page never cuts inside an instance, and an instance is one screen (a follow-up in
