@@ -252,7 +252,10 @@ the on/off or places a caption: each reads the served matrix and maps its symbol
 renderer draws) carries the SAME merged section: the section is the first that holds the group's instances, titled
 `title`; the controls the matrix places (the edges, taken from beside the EQ, among them) are that section's, each
 control's `section` index and `sectionKey` and each display's and meter's say so; a section the group emptied is left out.
-That holds for every grouped plugin the description can place whole, omx-eq8 included. A group the description cannot
+The sections are merged by ONE rule, `mergedSections(placed, sections, { idOf, holdsAfter })` (after `placeMatrix`): the
+home section becomes the matrix's, and a folded or donor section stays only while it still holds something once the group's
+members (and, on the face, a folded section's displays) have moved; the description, its `--layout` and the MOD GUI face
+all apply it, none merges on its own. That holds for every grouped plugin the description can place whole, omx-eq8 included. A group the description cannot
 place whole (a member it does not serve, or an instance section that holds another plugin control beside the group)
 carries no matrix and is drawn as before. *Tests: `test/describe-group-model.test.mjs`, `test/group-model-served.test.mjs`.*
 
