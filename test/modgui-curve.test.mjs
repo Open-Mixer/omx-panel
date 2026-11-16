@@ -10,6 +10,7 @@ import { generateModgui, resolvePanel, curveGeometry, STATIC_CURVE } from '../to
 import { panelLayout } from '../tools/panel-description.mjs';
 
 const twin = await import('@openmixer/omx-dsp').then((m) => m, () => null);
+if (!twin && process.env.OMX_PANEL_DSP === 'required') throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
 const opts = twin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' };
 const read = (f) => JSON.parse(readFileSync(new URL(`./fixtures/${f}`, import.meta.url), 'utf8'));
 const eq = () => [read('eq-marks/eq.descriptor.json'), read('eq-marks/eq.panel.json')];

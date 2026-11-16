@@ -26,6 +26,9 @@ const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 /** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`, not yet released): a fixture that draws a curve needs it, and
  * is skipped without it unless OMX_PANEL_DSP=required. */
 export const HAVE_TWIN = await import('@openmixer/omx-dsp').then(() => true, () => false);
+/** OMX_PANEL_DSP=required (the CI jobs set it): a missing twin is a failure of the whole file, never a skip. */
+export const TWIN_REQUIRED = process.env.OMX_PANEL_DSP === 'required';
+if (TWIN_REQUIRED && !HAVE_TWIN) throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
 export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' } : {});
 
 export const FIXTURES = [
