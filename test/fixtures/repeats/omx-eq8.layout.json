@@ -5,58 +5,88 @@
   {
    "key": "hpf",
    "labelKey": null,
-   "label": "Bands",
+   "label": "Bands / Band 1",
    "matrix": {
     "orientation": "columns",
     "heads": [
      {
       "label": "HPF",
-      "on": "hpf_on",
+      "on": {
+       "symbol": "hpf_on",
+       "sense": "on"
+      },
       "edge": "hpf"
      },
      {
       "label": "Band 1",
-      "on": "b1_on",
+      "on": {
+       "symbol": "b1_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 2",
-      "on": "b2_on",
+      "on": {
+       "symbol": "b2_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 3",
-      "on": "b3_on",
+      "on": {
+       "symbol": "b3_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 4",
-      "on": "b4_on",
+      "on": {
+       "symbol": "b4_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 5",
-      "on": "b5_on",
+      "on": {
+       "symbol": "b5_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 6",
-      "on": "b6_on",
+      "on": {
+       "symbol": "b6_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 7",
-      "on": "b7_on",
+      "on": {
+       "symbol": "b7_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "Band 8",
-      "on": "b8_on",
+      "on": {
+       "symbol": "b8_on",
+       "sense": "on"
+      },
       "edge": null
      },
      {
       "label": "LPF",
-      "on": "lpf_on",
+      "on": {
+       "symbol": "lpf_on",
+       "sense": "on"
+      },
       "edge": "lpf"
      }
     ],

@@ -259,7 +259,11 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
           goto bad;
         }
         m->heads[k].label = dup(lab), m->heads[k].on = -1, m->heads[k].edge = cJSON_IsString(edge) && *edge->valuestring;
-        if (on && !cJSON_IsNull(on)) PLACE(cJSON_GetStringValue(on), lab, m->heads[k].on);
+        if (on && !cJSON_IsNull(on)) {
+          /* the served head's on/off is { symbol, sense } */
+          const char *onsym = cJSON_GetStringValue(cJSON_IsObject(on) ? cJSON_GetObjectItemCaseSensitive(on, "symbol") : on);
+          PLACE(onsym, lab, m->heads[k].on);
+        }
       }
       for (size_t r = 0; r < m->nrows; r++) {
         const char *lab = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetArrayItem(rows, (int)r), "label"));
@@ -281,11 +285,12 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         cJSON *def = cJSON_GetObjectItemCaseSensitive(cnt, "default");
         for (size_t j = 0; sym && j < v->ncontrols; j++)
           if (strcmp(v->controls[j].symbol, sym) == 0 && v->controls[j].section == (int)sec && !v->controls[j].placed) m->count_ctl = (int)j;
-        if (m->count_ctl < 0 || !cJSON_IsNumber(def)) {
-          fail(err, n, "description: a matrix's count '%s' is no control of its section outside the matrix, or has no default%s", sym ? sym : "(not a string)", NULL);
+        if (m->count_ctl < 0 || (def && !cJSON_IsNull(def) && !cJSON_IsNumber(def))) {
+          fail(err, n, "description: a matrix's count '%s' is no control of its section outside the matrix, or its default is not a number%s", sym ? sym : "(not a string)", NULL);
           goto bad;
         }
-        m->count = (int64_t)def->valuedouble;
+        /* a served count may carry no default (null): every instance is drawn until the host gives the value */
+        m->count = cJSON_IsNumber(def) ? (int64_t)def->valuedouble : (int64_t)m->nheads;
       }
     }
     apply_counts(v);

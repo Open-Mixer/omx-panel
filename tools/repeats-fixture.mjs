@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
  * tools/repeats-fixture.mjs <descriptor> [<panel>] — a panel description as `omx-panel layout` writes it, with the sections of
- * the plugin's repeated group merged into one that carries `matrix` (the group model's matrixOf: docs/renderer.md). The test
+ * the plugin's repeated group merged into one that carries `matrix` (the matrix `omx-panel describe` serves: docs/renderer.md). The test
  * fixtures test/fixtures/repeats/<name>.layout.json are its output, kept until the served description carries the field itself
  * (omx-panel#61); writing them here keeps the matrix the library's and no test's.
  */
@@ -10,7 +10,6 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { controlsOfDescriptor, inferGroupModel, matrixOf, memberSymbols } from './group-model.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const [descriptorFile, panelFile] = process.argv.slice(2);
@@ -19,24 +18,20 @@ const descriptor = JSON.parse(readFileSync(descriptorFile, 'utf8'));
 const panel = panelFile ? JSON.parse(readFileSync(panelFile, 'utf8')) : undefined;
 const layout = JSON.parse(execFileSync(process.execPath, [join(ROOT, 'dist', 'bin', 'omx-panel.mjs'), 'layout', '--descriptor', descriptorFile, ...(panelFile ? ['--panel', panelFile] : [])], { encoding: 'utf8' }));
 
-const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, panel ? { panel } : {}));
-const g = groups.find((x) => x.kind === 'repeated');
-if (!g) throw new Error('no repeated group');
-const members = new Set(memberSymbols(g));
+// the matrix is the one `omx-panel describe` SERVES on the section that holds the group (docs/group-model.md): read, never derived here
+const served = JSON.parse(execFileSync(process.execPath, [join(ROOT, 'dist', 'bin', 'omx-panel.mjs'), 'describe', '--descriptor', descriptorFile, ...(panelFile ? ['--panel', panelFile] : [])], { encoding: 'utf8' })).description;
+const matrix = served.sections.find((x) => x.matrix)?.matrix;
+if (!matrix) throw new Error('the served description carries no matrix');
+const members = new Set([...matrix.heads.flatMap((h) => (h.on ? [h.on.symbol] : [])), ...matrix.cells.flat().filter(Boolean), ...(matrix.count ? [matrix.count.symbol] : [])]);
 const touched = [...new Set(layout.controls.filter((c) => members.has(c.symbol)).map((c) => c.section))].sort((a, b) => a - b);
 const inTouched = layout.controls.filter((c) => touched.includes(c.section)).map((c) => c.symbol);
-if (inTouched.some((s) => !members.has(s))) throw new Error('the group shares its sections with other controls');
-
-const m = matrixOf(g);
-const columns = m.orientation === 'columns';
-const heads = (columns ? m.columns : m.rows).map((h) => ({ label: h.label, on: h.on ? h.on.symbol : null, edge: h.edge ?? null }));
-const rows = (columns ? m.rows : m.columns).map((r) => ({ label: r.label }));
-const cells = columns ? m.cells : rows.map((_, r) => heads.map((_, h) => m.cells[h][r]));
+if (inTouched.some((sym) => !members.has(sym) && sym !== matrix.count?.symbol)) throw new Error('the group shares its sections with other controls');
+const g = { label: served.sections.find((x) => x.matrix).label };
 
 const host = touched[0];
 const sectionAt = (i) => (touched.includes(i) ? host : i - touched.filter((t) => t < i && t !== host).length);
 const old = layout.sections;
-layout.sections = old.flatMap((s, i) => (i === host ? [{ ...s, label: g.label ?? s.label, matrix: { orientation: m.orientation, heads, rows, cells } }] : touched.includes(i) ? [] : [s]));
+layout.sections = old.flatMap((s, i) => (i === host ? [{ ...s, label: g.label ?? s.label, matrix }] : touched.includes(i) ? [] : [s]));
 const keyOf = (i) => layout.sections[sectionAt(i)].key;
 for (const c of layout.controls) {
   c.sectionKey = keyOf(c.section);

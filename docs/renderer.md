@@ -39,7 +39,7 @@ its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives eac
 
 A section of a repeated group (an EQ's bands, a multiband compressor's bands: [group-model.md](group-model.md)) carries `matrix`,
 the group model's `matrixOf` as the served description gives it (omx-panel#61): `{ orientation, heads, rows, cells, count? }`.
-`heads` are the instances, in drawing order, each `{ label, on, edge }` (`on` the symbol of its on/off control or null, `edge`
+`heads` are the instances, in drawing order, each `{ label, on, edge }` (`on` its on/off control as `{ symbol, sense }` or null, `edge`
 the EQ filter's name for a high-pass, shelf or low-pass, else null); `rows` are the parameters, each `{ label }`; `cells[row][head]`
 is a control's symbol or null. The renderer reads it and infers no group, reorders, wraps or transposes nothing. It draws, in
 the section's box: the curve rows, then the section's other controls (those no head or cell names) flowed in rows of
@@ -52,7 +52,7 @@ parameters, in `rows`) and never narrower, whatever width a host gives: a smalle
 matrix. The EQ is `columns`, its high-pass the first column and its low-pass the last: the order is of the drawing, the audio
 order is the plugin's.
 
-`count: { symbol, default }` names the control that says how many instances the plugin runs (an EQ's band count). Only the first
+`count: { symbol, default }` (`default` null when the control has none: every instance is drawn until the host gives a value) names the control that says how many instances the plugin runs (an EQ's band count). Only the first
 `count` heads that have no `edge` are drawn, with every head that has one, closed up in order: a hidden head's controls take no
 cell, are not drawn and have no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the
 host gives one with `omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section.

@@ -47,7 +47,7 @@ for (const c of CASES) {
     const headed = mx.heads.some((h) => h.on) ? 1 : 0;
     const grid = (head, row) => (mx.orientation === 'columns' ? [head, row + headed] : [row + headed, head]); // (column, row) of the grid
     const placed = [
-      ...mx.heads.flatMap((h, hi) => (h.on ? [[h.on, mx.orientation === 'columns' ? [hi, 0] : [0, hi]]] : [])),
+      ...mx.heads.flatMap((h, hi) => (h.on ? [[h.on.symbol, mx.orientation === 'columns' ? [hi, 0] : [0, hi]]] : [])),
       ...mx.cells.flatMap((line, ri) => line.flatMap((sym, hi) => (sym ? [[sym, grid(hi, ri)]] : []))),
     ];
     const [first, [c0, r0]] = placed[0];

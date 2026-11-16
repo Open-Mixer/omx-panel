@@ -5,28 +5,40 @@
   {
    "key": "band_1",
    "labelKey": null,
-   "label": "Band",
+   "label": "Band 1",
    "matrix": {
     "orientation": "rows",
     "heads": [
      {
       "label": "Band 1",
-      "on": "b1_bypass",
+      "on": {
+       "symbol": "b1_bypass",
+       "sense": "off"
+      },
       "edge": null
      },
      {
       "label": "Band 2",
-      "on": "b2_bypass",
+      "on": {
+       "symbol": "b2_bypass",
+       "sense": "off"
+      },
       "edge": null
      },
      {
       "label": "Band 3",
-      "on": "b3_bypass",
+      "on": {
+       "symbol": "b3_bypass",
+       "sense": "off"
+      },
       "edge": null
      },
      {
       "label": "Band 4",
-      "on": "b4_bypass",
+      "on": {
+       "symbol": "b4_bypass",
+       "sense": "off"
+      },
       "edge": null
      }
     ],
