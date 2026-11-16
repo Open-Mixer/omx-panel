@@ -32,7 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { controlsOfDescriptor, inferGroupModel, matrixOf, placeMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, drawnHeads, inferGroupModel, placeMatrix, servedMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -340,12 +340,12 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
 }
 
 /**
- * A repeated group's controls (docs/group-model.md) drawn as one section: its own parameters first, then the group's matrix,
- * each cell at its row and column, never flowed. The section is where the group's instances were; the edges (an EQ's
- * high-pass and low-pass) are taken from whatever section holds them, which keeps the rest of its controls. The
- * instances beyond the group's count are not drawn, at the count's come-up value, and the count is a selector (L6). A group
- * some of whose controls are not drawn (an Easy section took them), or whose instance section holds anything else beside
- * the group, is left as it is.
+ * A repeated group's controls (docs/group-model.md) drawn as one section: its own parameters first, then the group's SERVED
+ * matrix (group-model.mjs `servedMatrix`, the one `omx-panel describe` serves), read as given: the heads `drawnHeads` keeps
+ * at the count's come-up value (L6), each cell at its row and column, never flowed. The section is where the group's
+ * instances were, titled by the matrix; the edges (an EQ's high-pass and low-pass) are taken from whatever section holds
+ * them, which keeps the rest of its controls. The count is a selector. A group some of whose controls are not drawn (an Easy
+ * section took them), or whose instance section holds anything else beside the group, is left as it is.
  */
 export function withRepeats(descriptor, declared, sections) {
   const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, declared ? { panel: declared } : {}));
@@ -357,22 +357,16 @@ export function withRepeats(descriptor, declared, sections) {
     const drawn = new Map(out.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
     const count = g.count ? drawn.get(g.count.symbol) : undefined;
     if (count && count.widget !== 'selector') Object.assign(count, { widget: 'selector', options: optionsOf({ min: count.min, max: count.max }) });
-    // a plugin whose panel already shows each instance by a visibleWhen rule on the count keeps that live mechanism: its
-    // instances stay on the face, hidden by their rule; only a count nothing governs truncates the static face (L6)
-    const governed = g.instances.some((i) => Object.values(i.parameters).some((sym) => drawn.get(sym)?.visibleWhen));
-    const m = matrixOf(g, count && !governed ? { values: { [g.count.symbol]: count.def } } : {});
-    const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
-    const cell = (h, l) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l]);
-    // a cell's control is named by its row (the column's header names the band); a head toggle by its column
-    const matrix = {
-      orientation: m.orientation,
-      heads: heads.map((h) => ({ label: h.label, on: h.on ? { ...drawn.get(h.on.symbol), name: h.label } : null })),
-      lines: lines.map((l, li) => ({ label: l.label, cells: heads.map((_, hi) => { const sym = cell(hi, li); return sym ? { ...drawn.get(sym), name: l.label } : null; }) })),
-    };
-    // the controls the matrix places and the group's own parameters; an instance the count leaves out is not on the face
-    const placedControls = [...matrix.heads.map((h) => h.on), ...matrix.lines.flatMap((l) => l.cells)].filter(Boolean);
     const homeSection = out[placed.home];
-    const merged = { key: homeSection.key, label: g.label ?? homeSection.label, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
+    // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
+    const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
+    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // count leaves out is not on the face
+    const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
+      const sym = matrix.cells[li][h];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+    }));
+    const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
     const folded = new Set(placed.folded);
     const donors = new Set(placed.donors);
     out = out.flatMap((s, i) => {
@@ -387,26 +381,26 @@ export function withRepeats(descriptor, declared, sections) {
 }
 
 /**
- * A matrix section's grid: the head row (or column) when any instance has an on/off, then one row (or column) per
- * parameter; every control, the heads among them, at its cell. A head with no toggle is a caption at its cell.
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
  */
-function matrixCells(mx, top) {
+function matrixCells(s, top) {
   const g = GEOMETRY;
-  const headed = mx.heads.some((h) => h.on) ? 1 : 0;
-  // the on/off is the column's LAST row (L3, the owner's order); a head with no toggle is a caption in that row's place
-  const last = mx.lines.length;
-  const at = (hi, li) => (mx.orientation === 'columns'
-    ? { x: g.sectionPad + hi * g.cellW, y: top + li * g.cellH }
-    : { x: g.sectionPad + li * g.cellW, y: top + hi * g.cellH });
+  const mx = s.matrix;
+  const heads = drawnHeads(mx);
+  const by = new Map(s.controls.map((k) => [k.symbol, k]));
+  const at = (col, li) => (mx.orientation === 'columns'
+    ? { x: g.sectionPad + col * g.cellW, y: top + li * g.cellH }
+    : { x: g.sectionPad + li * g.cellW, y: top + col * g.cellH });
   const controls = [];
   const captions = [];
-  mx.heads.forEach((h, hi) => {
-    if (h.on) controls.push({ ...h.on, ...at(hi, last) });
-    else captions.push({ text: h.label, ...at(hi, headed ? last : 0) });
-  });
-  mx.lines.forEach((l, li) => l.cells.forEach((k, hi) => { if (k) controls.push({ ...k, ...at(hi, li) }); }));
-  const across = mx.orientation === 'columns' ? mx.heads.length : mx.lines.length + headed;
-  const down = mx.orientation === 'columns' ? mx.lines.length + headed : mx.heads.length;
+  heads.forEach((h, col) => mx.rows.forEach((r, li) => {
+    const sym = mx.cells[li][h];
+    if (sym) controls.push({ ...by.get(sym), ...at(col, li) });
+    else if (r.head) captions.push({ text: mx.heads[h].label, ...at(col, li) });
+  }));
+  const across = mx.orientation === 'columns' ? heads.length : mx.rows.length;
+  const down = mx.orientation === 'columns' ? mx.rows.length : heads.length;
   return { controls, captions, across, down };
 }
 
@@ -414,18 +408,18 @@ function matrixCells(mx, top) {
 export function layout(panel) {
   const g = GEOMETRY;
   // a curve row needs a width of its own: three cells; a matrix is as wide as its columns
-  const across = (s) => (s.matrix ? matrixCells(s.matrix, 0).across : 0);
-  const flowedCount = (s) => (s.matrix ? s.controls.length - matrixCells(s.matrix, 0).controls.length : s.controls.length);
+  const across = (s) => (s.matrix ? matrixCells(s, 0).across : 0);
+  const flowedCount = (s) => (s.matrix ? s.controls.length - matrixCells(s, 0).controls.length : s.controls.length);
   const most = Math.max(Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(flowedCount(s), s.displays.length > 0 ? 3 : 0)))), ...panel.sections.map(across));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const inGrid = new Set(s.matrix ? [...s.matrix.heads.map((h) => h.on?.symbol), ...s.matrix.lines.flatMap((l) => l.cells.map((k) => k?.symbol))].filter(Boolean) : []);
+    const inGrid = new Set(s.matrix ? s.matrix.cells.flat().filter(Boolean) : []);
     const flowed = s.controls.filter((k) => !inGrid.has(k.symbol));
     const rows = Math.ceil(flowed.length / ROW_CONTROLS);
     const curves = s.displays.length * (g.curveH + g.curveGap);
     const top = g.sectionTitleH + curves + rows * g.cellH;
-    const grid = s.matrix ? matrixCells(s.matrix, top) : { controls: [], captions: [], down: 0 };
+    const grid = s.matrix ? matrixCells(s, top) : { controls: [], captions: [], down: 0 };
     const h = top + grid.down * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,

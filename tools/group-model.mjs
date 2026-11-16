@@ -504,15 +504,65 @@ export function placeMatrix(g, sections) {
   return { home: home[0].id, folded: home.slice(1).map((s) => s.id), donors: donors.map((s) => s.id), members };
 }
 
-/** L7: how many of a matrix's columns (at most all of them) a surface `width` wide shows at `column` each: as many as fit, at least one. */
-export function visibleColumns(m, { width, column }) {
-  const heads = m.orientation === 'columns' ? m.columns.length : m.rows.length;
-  return Math.min(heads, Math.max(1, Math.floor(width / column)));
+/**
+ * The served matrix (docs/group-model.md, "The served matrix"): the ONE shape `omx-panel describe` serves and every surface
+ * (the console, modgui-gen, the C renderer, the Zynthian builder) reads and never recomputes. `heads` are every instance and
+ * edge along one axis, `rows` the parameters in the owner's order then the head row (always last: `On` when any head has
+ * an on/off, else a caption row labelled ''), `cells[row][head]` a symbol as `symbolOf` gives it, or null; `title` the
+ * group's label (else `title`, the label of the section that holds it); `count` only where no visibleWhen rule governs the
+ * instances (`governs(symbol)`): such a group keeps every instance's cell and its rules hide them live.
+ * @param {Group} g a repeated group of inferGroupModel's
+ * @param {{ symbolOf?: (s: string) => string, governs?: (s: string) => boolean, title?: string, countDefault?: number | null }} [options]
+ */
+export function servedMatrix(g, { symbolOf = (x) => x, governs = () => false, title, countDefault = null } = {}) {
+  const m = matrixOf(g);
+  const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
+  const at = (h, l) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l]);
+  const sym = (x) => (x === null ? null : symbolOf(x));
+  const headed = heads.some((h) => h.on);
+  const governed = g.count && g.instances.some((i) => Object.values(i.parameters).some((x) => governs(x)));
+  return {
+    orientation: m.orientation,
+    title: g.label ?? title ?? null,
+    heads: heads.map((h) => ({ label: h.label, on: h.on ? { symbol: symbolOf(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
+    rows: [...lines.map((l) => ({ label: l.label })), { label: headed ? 'On' : '', head: true }],
+    cells: [...lines.map((_, l) => heads.map((_h, h) => sym(at(h, l)))), heads.map((h) => (h.on ? symbolOf(h.on.symbol) : null))],
+    ...(g.count && !governed ? { count: { symbol: symbolOf(g.count.symbol), default: countDefault ?? null } } : {}),
+  };
 }
 
-/** L7: the column `n` (clamped) an encoder surface edits: its head and its cells in row order, an empty cell null. */
-export function selectedColumn(m, n) {
-  const heads = m.orientation === 'columns' ? m.columns : m.rows;
-  const at = Math.min(heads.length - 1, Math.max(0, Math.trunc(n)));
-  return { ...heads[at], index: at, cells: m.orientation === 'columns' ? m.cells.map((r) => r[at]) : m.cells[at] };
+/**
+ * L6 on a served matrix: the indices of the heads a surface draws with the count at `value` (the served `count.default`
+ * when left out): every edge, and the first `value` instances in order; every head when the matrix has no count or the
+ * value is not a number.
+ */
+export function drawnHeads(served, value = served.count?.default) {
+  const live = served.count ? Number(value ?? NaN) : NaN;
+  let instance = 0;
+  const out = [];
+  served.heads.forEach((h, i) => {
+    const keep = h.edge || !Number.isFinite(live) || instance < live;
+    if (!h.edge) instance++;
+    if (keep) out.push(i);
+  });
+  return out;
+}
+
+/**
+ * L7, the visible-column rule, the one every language applies (the C renderer's omx_panel_view_visible_columns answers the
+ * same vector, test/fixtures/group-model/visible-columns.json): of a SERVED matrix, how many columns a surface `width` wide
+ * shows at `column` each: as many as fit, at least one, at most the columns it is drawn with (the drawn heads in `columns`;
+ * the rows, the head row among them, in `rows`).
+ */
+export function visibleColumns(served, { width, column, count } = {}) {
+  const across = served.orientation === 'columns' ? drawnHeads(served, count).length : served.rows.length;
+  return Math.min(across, Math.max(1, Math.floor(width / column)));
+}
+
+/** L7: the drawn head `n` (clamped) an encoder surface edits: its head and its cells in row order (the head row last), an empty cell null. */
+export function selectedColumn(served, n, { count } = {}) {
+  const drawn = drawnHeads(served, count);
+  const at = Math.min(drawn.length - 1, Math.max(0, Math.trunc(n)));
+  const h = drawn[at];
+  return { ...served.heads[h], index: at, cells: served.cells.map((r) => r[h]) };
 }

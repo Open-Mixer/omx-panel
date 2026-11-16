@@ -9,10 +9,10 @@ aligned matrix instead of stacked sections whose controls wrap wherever a row ru
 (`@openmixer/omx-panel/group-model`) is the one place that decides it (omx-panel#61). No surface infers a repeat on its own.
 
 ```js
-import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, matrixOf } from '@openmixer/omx-panel/group-model';
+import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, servedMatrix } from '@openmixer/omx-panel/group-model';
 
 const { groups } = inferGroupModel(controlsOfDescriptor(descriptor));     // or controlsOfLv2(triples, uri)
-for (const g of groups) if (g.kind === 'repeated') draw(matrixOf(g));     // else draw g.parameters as a list
+for (const g of groups) if (g.kind === 'repeated') draw(servedMatrix(g)); // else draw g.parameters as a list
 ```
 
 ## What exists, and what this extends
@@ -25,7 +25,7 @@ for (const g of groups) if (g.kind === 'repeated') draw(matrixOf(g));     // els
 | the panel's sections | `tools/panel-description.mjs:219` `panelLayout` | the served sections, from a declared panel or from the descriptor's `group` paths | nothing about repeats: a section is a list |
 | the MOD GUI's layout | `tools/modgui-gen.mjs:340` `layout` | sections stacked top to bottom, each section's controls flowed into rows of `rowControls` (8) | the same parameter lands at a different place in each band |
 | the console | its web UI's level 2 view (`level2Sections`) and its EQ house view | the served sections as lists, one per section; the EQ house view's per-band roles, a hand-written table for one family | any other repeat, and any plugin the house view does not know |
-| the Zynthian builder | zynthian-ui `zyngine/zynthian_engine_plugin_hostd.py:1044` `panel_layout` (lane/zynthian-pages); `zyngine/zynthian_lv2.py:1006` and `zynthian_engine.py:681` on the jalv path | omx-panel's pages through `omx-panel describe --pages`; else lilv's `pg:group`, cut into screens of four | a band as one screen; a page cut inside a band |
+| the Zynthian builder | zynthian-ui's plugin-hostd engine (`panel_layout`); `zynthian_lv2.py` and `zynthian_engine.py` on the jalv path | omx-panel's pages through `omx-panel describe --pages`; else lilv's `pg:group`, cut into screens of four | a band as one screen; a page cut inside a band |
 
 The model reuses `group-infer.mjs`'s name tokens and section words and its LV2 reader; it does not restate them.
 
@@ -165,9 +165,12 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   `slope`), `q`, `type`, then the rest in the first instance's order, and last the column's on/off (L3). *Tests: omx-eq8, omx-eq16, omx-eq32, x42 fil4, LSP
   para-equalizer, omx-strip; "L2: an EQ of more rows than bands is still columns".*
 - **L3, the head.** Each column (each row, transposed) carries its label and its on/off (`on`) as its head, which is its
-  state, not a parameter row of `matrixOf`; a surface DRAWS the on/off as the column's last row, and the served matrix
-  (below) ends its `rows` with that row, `{ label: 'On', head: true }`, its cells the heads' `on` symbols (the same
-  control: drawn once, there). *Test: the corpus' `heads`.*
+  state, not a parameter row of `matrixOf`. The served matrix (below) ends its `rows` with ONE head row, `{ label: 'On',
+  head: true }` when any head has an on/off, else `{ label: '', head: true }`: its cells are the heads' `on` symbols (the
+  same controls as `heads[].on`, drawn once, there, each named by its head's label), and a head with no on/off (omx-delay's
+  taps, the LSP para-equalizer's bands) has its **caption**, its label, drawn in its own cell of that row. The head row is
+  always the last and always a row of its own: a caption never overprints a parameter's row. *Tests: the corpus' `heads`;
+  `test/group-model-served.test.mjs`.*
 - **L4, any other repeat takes the orientation that fits.** `columns` when there are at least as many instances as
   rows, else `rows` (one row per instance, the parameters across). *Test: the Calf multiband compressor (4 bands, 8
   parameters: rows).*
@@ -175,8 +178,8 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
 - **L6, the count.** A group that has a `count` (S10) is drawn with **only its first `count` instances**, at the count
   port's current value: the instances are counted in ascending instance number, an instance beyond the count is hidden
   and **leaves no gap** (the next column closes up), and the edges (HPF, LPF, shelves) are always drawn. `matrixOf(g,
-  { values })` applies it (`values[count.symbol]`, a value left out showing every instance); a surface that draws live
-  reads each head's `ordinal` (its place among the instances, null for an edge) and shows it while `ordinal < value`.
+  { values })` applies it in the library; a surface applies it to the served matrix with `drawnHeads(served, value)` (the
+  edges, and the non-edge heads while their place among the instances is below `value`), live as the value moves.
   **The count control itself is drawn as a selector**: a port that is an enumeration, or a whole number of few points,
   is a selector and never a knob; the count is one whatever its range (`eqBands` 1..32 is a selector of 32 options).
   The MOD GUI face is static: it draws the first `count` instances at the count port's come-up value (omx-strip: 4 of 32;
@@ -188,12 +191,17 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
 - **L7, the owner's drawing rule for an EQ, every surface.** An EQ is one matrix: a column per band, left to right, HPF
   first and LPF last; each column's controls stacked vertically, every column in the same row order, a control a band lacks
   an empty cell, so row `r` is the same parameter in every column (the HPF's gain cell is empty and its `freq` sits on the
-  band's `freq` row). A surface shows **as many columns as fit**: `visibleColumns(matrix, { width, column })` is
-  `max(1, floor(width / column))` columns, never one band per screen while more fit; a surface that cannot show them all
-  scrolls whole columns. An encoder surface (Zynthian) shows the whole matrix and its encoders edit the **selected
-  column**: `selectedColumn(matrix, n)` is the column `n` clamped to the matrix (one knob picks `n`), and the encoders
-  of the surface are that column's rows in row order, an empty cell leaving its encoder idle. The head toggle (`on`) is
-  the column's header in this model; a surface that stacks it draws it as the column's last row. *Tests: "L7: ...".*
+  band's `freq` row). A surface shows **as many columns as fit**, the one rule every language applies to the SERVED
+  matrix: `visibleColumns(served, { width, column, count })` is `min(across, max(1, floor(width / column)))`, where
+  `across` is the number of columns the matrix is drawn with: in `columns` the heads drawn (`drawnHeads`: every edge, and
+  the first `count` instances when the matrix has a `count`, `count` defaulting to the served `count.default`, every
+  instance with none), in `rows` the served `rows` (the head row among them: it is a column there). Never one band per
+  screen while more fit; a surface that cannot show them all scrolls whole columns. An encoder surface (Zynthian) shows the
+  whole matrix and its encoders edit the **selected column**: `selectedColumn(served, n, { count })` is the drawn head `n`
+  clamped to them (one knob picks `n`), its cells in row order (the head row last), an empty cell leaving its encoder idle.
+  Both take the served matrix and never throw on it. **The C renderer applies the same rule** (`omx_panel_view_visible_columns`),
+  and one test vector, `test/fixtures/group-model/visible-columns.json` (a served matrix, a width, a column, a count, the
+  answer), is read by the JS tests and by the renderer's, so the two cannot drift. *Tests: "L7: ..."; the vector.*
 
 ## The corpus
 
@@ -213,33 +221,55 @@ existed. `test/group-model.test.mjs` compares each in full.
 | x42 matrixmixer (ambiguous) | TTL | a list, `two-indices` |
 | AMS advenv (ambiguous) | TTL | a list, `ragged-instances` |
 
-## The served description carries the model
+## The served matrix: one function, served once, read everywhere
 
-`omx-panel describe` serves the model, so no surface re-derives it (the console, the C renderer of omx-panel#62, the
-Zynthian builder read the description). A section that carries a repeated group has `matrix`, `matrixOf(g)` with every
-symbol as the description serves it and in one shape whatever the orientation: `{ orientation, heads, rows, cells,
-count? }`. `heads` are the instances and the edges along one axis, each `{ label, on: { symbol, sense } | null, edge }`
-(`edge` is `hpf`, `lowshelf`, `highshelf`, `lpf`, or null for an instance), `rows` the parameters, each `{ label }`,
-`cells[row][head]` a served symbol or null (`orientation` says only whether the surface lays the heads out as columns or
-as rows), and `count: { symbol, default }` when the group has one (S10): the surface draws the first `count` non-edge heads
-at the count port's value (`default` when it holds none), closed up, the edges kept (L6); the count control is drawn as a
-selector. The library's own `matrixOf` keeps the keys, roles and ordinals the description leaves out. The section is the first that holds the group's instances;
-the controls the matrix places (the edges, taken from beside the EQ, among them) are that section's, and a section the
-group emptied is left out of `sections`. A group the description cannot place whole (a member it does not serve, or an
-instance section that holds another plugin control beside the group) carries no matrix and is drawn as before. *Tests:
-`test/describe-group-model.test.mjs`: omx-eq8 carries it; omx-strip's carries HPF first and LPF last.*
+`servedMatrix(g, { symbolOf, governs, title })` in this library is the ONE place the served shape is made; `omx-panel
+describe` serves its result and every surface reads it (the console, the MOD GUI generator, the C renderer of
+omx-panel#62, the Zynthian builder). No surface calls `matrixOf` to draw, re-derives the heads, re-orders the rows, moves
+the on/off or places a caption: each reads the served matrix and maps its symbols to what it draws.
+
+```
+{ orientation: 'columns' | 'rows', title,
+  heads: [{ label, on: { symbol, sense } | null, edge: 'hpf' | 'lowshelf' | 'highshelf' | 'lpf' | null }],
+  rows:  [{ label }, ..., { label: 'On' | '', head: true }],
+  cells: [[symbol | null per head] per row],
+  count?: { symbol, default } }
+```
+
+- `heads` are the instances and the edges along one axis, every instance (a count closes them up only where it is drawn,
+  L6); `rows` the parameters in the owner's order (L2), then the head row, always last (L3); `cells[row][head]` a symbol as
+  `symbolOf` gives it (the served symbol in a description; the layout's own in `--layout`), or null; `orientation` says
+  only whether the heads are laid out as columns or as rows.
+- `title` is the group's label (the declared group's: omx-eq8's `Bands`), else the label of the section that holds it: the
+  section that carries the matrix is titled by it, in the description, in `--layout` and on the MOD GUI face alike.
+- `count: { symbol, default }` when the group has a count (S10) that no `visibleWhen` rule already governs: the surface
+  draws `drawnHeads(served, value)`, the first `value` non-edge heads at the count port's value (`default` when it holds
+  none, every instance when that is null), closed up, the edges kept (L6); the count control is drawn as a selector. A group
+  whose instances a declared panel governs by `visibleWhen` on the count (`governs(symbol)`) is served with no `count`:
+  its rules hide the instances live, and every instance keeps its cell.
+
+`omx-panel describe` gives the section that holds a repeated group `matrix`, and `omx-panel describe --layout` (what the
+renderer draws) carries the SAME merged section: the section is the first that holds the group's instances, titled
+`title`; the controls the matrix places (the edges, taken from beside the EQ, among them) are that section's, each
+control's `section` index and `sectionKey` and each display's and meter's say so; a section the group emptied is left out.
+That holds for every grouped plugin the description can place whole, omx-eq8 included. A group the description cannot
+place whole (a member it does not serve, or an instance section that holds another plugin control beside the group)
+carries no matrix and is drawn as before. *Tests: `test/describe-group-model.test.mjs`, `test/group-model-served.test.mjs`.*
 
 ## The consumers
 
-- **modgui-gen** (`tools/modgui-gen.mjs` `withRepeats`): the sections that hold a repeated group's instances and own
-  parameters, when they hold nothing else, are drawn as one section laid out by `matrixOf` (at the count's come-up value,
-  L6), its own parameters flowed above the matrix, the count drawn as a selector; the edges are taken from whatever
-  section holds them, which keeps the rest of its controls (omx-strip's Filters keeps `filterOn`). A group some of whose
-  controls are not drawn (an Easy section took them), or whose instance section holds anything else beside the group, is
-  drawn as before. *Test: `test/modgui-group-model.test.mjs`.*
-- **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it reads a
-  section's served `matrix` and draws it (omx-panel#62; docs/renderer.md), inferring no group.
-- **the console**: the served panel description carries the model; the processing view draws a repeated group by
-  `matrixOf` (a follow-up in openmixer, linked from omx-panel#61).
+- **modgui-gen** (`tools/modgui-gen.mjs` `withRepeats`): places the group (`placeMatrix`), takes `servedMatrix(g)` and draws
+  it as given: the heads `drawnHeads` keeps at the count's come-up value (L6), each cell at its row and column, the head row
+  last, a head's caption in its head-row cell, the section titled `title`, its own parameters flowed above the matrix, the
+  count drawn as a selector. A group some of whose controls are not drawn (an Easy section took them), or whose instance
+  section holds anything else beside the group, is drawn as before. *Test: `test/modgui-group-model.test.mjs`.*
+- **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it reads
+  the served matrix from `omx-panel describe --layout` and draws it (omx-panel#62; docs/renderer.md), inferring no group.
+- **the console**: the served panel description carries the model; the processing view draws a repeated group by its
+  served `matrix` (a follow-up in openmixer, linked from omx-panel#61).
 - **the Zynthian builder**: a page never cuts inside an instance, and an instance is one screen (a follow-up in
   zynthian-ui, linked from omx-panel#61).
+
+The unit tokens (`unitToken`) stay this library's own for now: `vocabulary.mjs`'s `unitTokenOf` reads the installed
+contract's unit table and throws without it, while the group model reads LV2 unit URIs with no contract installed; moving
+them is the vocabulary lane's.

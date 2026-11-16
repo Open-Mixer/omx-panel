@@ -33,7 +33,7 @@ test('omx-eq8: one section carries the matrix, HPF first, the bands, LPF last, i
   assert.deepEqual(m.heads[0].on, { symbol: 'hpf_on', sense: 'on' });
   assert.deepEqual(m.heads[1].on, { symbol: 'b1_on', sense: 'on' });
   assert.deepEqual(m.rows.map((r) => r.label), ['Frequency', 'Gain', 'Q', 'Type', 'On']);
-  assert.deepEqual(Object.keys(m).sort(), ['cells', 'heads', 'orientation', 'rows']);
+  assert.deepEqual(Object.keys(m).sort(), ['cells', 'heads', 'orientation', 'rows', 'title']);
   const freq = m.rows.findIndex((r) => r.label === 'Frequency');
   const onRow = m.cells.at(-1);
   assert.deepEqual(m.rows.at(-1), { label: 'On', head: true });
