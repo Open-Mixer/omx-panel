@@ -27,7 +27,10 @@ for (const g of groups) if (g.kind === 'repeated') draw(servedMatrix(g)); // els
 | the console | its web UI's level 2 view (`level2Sections`) and its EQ house view | the served sections as lists, one per section; the EQ house view's per-band roles, a hand-written table for one family | any other repeat, and any plugin the house view does not know |
 | the Zynthian builder | zynthian-ui's plugin-hostd engine (`panel_layout`); `zynthian_lv2.py` and `zynthian_engine.py` on the jalv path | omx-panel's pages through `omx-panel describe --pages`; else lilv's `pg:group`, cut into screens of four | a band as one screen; a page cut inside a band |
 
-The model reuses `group-infer.mjs`'s name tokens and section words and its LV2 reader; it does not restate them.
+The model reuses `group-infer.mjs`'s name tokens and section words and its LV2 reader; it does not restate them. The EQ's role words
+(frequency, gain, Q, type, slope) and edge words (high-pass, low shelf, high shelf, low-pass) are ONE table,
+`EQ_WORDS` in `tools/meaning-infer.mjs`, which owns them: the band inference there and the group model's rows (S8) and edges
+(S9) both read it, and neither keeps a list of its own (omx-panel#75).
 
 ## Where it lives, and why
 
