@@ -37,9 +37,12 @@ export const FIXTURES = [
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
   { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
   // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
-  { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
+  { name: 'eq-marks', description: 'test/fixtures/repeats/eq-marks.layout.json', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
   // a compressor with the descriptor's meters word: the band below the sections, a frame with the range and the unit
   { name: 'meters', descriptor: 'test/fixtures/meters/meters.descriptor.json', panel: 'test/fixtures/meters/meters.panel.json', stem: 'meters' },
+  // a repeated group (docs/group-model.md): an EQ's bands as columns, HPF first and LPF last; a compressor's four bands as rows
+  { name: 'omx-eq8', description: 'test/fixtures/repeats/omx-eq8.layout.json', descriptor: 'test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json', stem: 'omx-eq8', needsTwin: true },
+  { name: 'mbc', description: 'test/fixtures/repeats/mbc.layout.json', descriptor: 'test/fixtures/repeats/mbc.descriptor.json', stem: 'mbc' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
@@ -62,6 +65,13 @@ export function face(fx, scale) {
 
 /** The fixture's panel description, as `omx-panel layout` writes it, in a file. */
 export function descriptionFile(fx, dir) {
+  // a fixture that names its `description` draws that file: a layout whose repeated group is one section carrying `matrix`
+  // (test/fixtures/repeats, tools/repeats-fixture.mjs), until the served description carries the field itself (#61)
+  if (fx.description) {
+    const kept = join(dir, `${fx.name}.layout.json`);
+    writeFileSync(kept, readFileSync(join(ROOT, fx.description)));
+    return kept;
+  }
   const args = [OMX_PANEL, 'layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
   const file = join(dir, `${fx.name}.layout.json`);
   writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8' }));
