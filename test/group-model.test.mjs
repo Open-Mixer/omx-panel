@@ -228,9 +228,9 @@ test('L7: rows align across bands, a missing control an empty cell; the columns 
   assert.equal(m.cells[freq][0], 'hpf_freq');
   assert.ok(m.cells.every((row) => row.length === m.columns.length));
   assert.deepEqual(m.cells[freq].slice(1), ['b1_freq', 'b2_freq', 'b3_freq']);
-  assert.equal(visibleColumns(m, { width: 700, column: 72 }), 9);
+  assert.equal(visibleColumns(m, { width: 700, column: 72 }), 4);
   assert.equal(visibleColumns(m, { width: 100, column: 72 }), 1);
-  assert.equal(visibleColumns(m, { width: 144, column: 72 }), 2);
+  assert.equal(visibleColumns(m, { width: 216, column: 72 }), 3);
   assert.equal(selectedColumn(m, 2).key, m.columns[2].key);
   assert.equal(selectedColumn(m, 99).key, m.columns.at(-1).key);
   assert.deepEqual(selectedColumn(m, 0).cells, m.cells.map((r) => r[0]));

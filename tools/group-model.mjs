@@ -499,3 +499,16 @@ export function placeMatrix(g, sections) {
   const donors = sections.filter((s) => !home.includes(s) && holds(s, members));
   return { home: home[0].id, folded: home.slice(1).map((s) => s.id), donors: donors.map((s) => s.id), members };
 }
+
+/** L7: how many of a matrix's columns (at most all of them) a surface `width` wide shows at `column` each: as many as fit, at least one. */
+export function visibleColumns(m, { width, column }) {
+  const heads = m.orientation === 'columns' ? m.columns.length : m.rows.length;
+  return Math.min(heads, Math.max(1, Math.floor(width / column)));
+}
+
+/** L7: the column `n` (clamped) an encoder surface edits: its head and its cells in row order, an empty cell null. */
+export function selectedColumn(m, n) {
+  const heads = m.orientation === 'columns' ? m.columns : m.rows;
+  const at = Math.min(heads.length - 1, Math.max(0, Math.trunc(n)));
+  return { ...heads[at], index: at, cells: m.orientation === 'columns' ? m.cells.map((r) => r[at]) : m.cells[at] };
+}
