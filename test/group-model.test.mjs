@@ -217,3 +217,21 @@ test('L6: only the first `count` instances are drawn, no gap, the edges always; 
   assert.deepEqual(two.cells[0].length, 3);
   assert.deepEqual(matrixOf(g).columns.map((x) => x.ordinal), [null, 0, 1, 2, 3]);
 });
+
+test('L7: rows align across bands, a missing control an empty cell; the columns fill the width; one knob selects the column', async () => {
+  const { visibleColumns, selectedColumn } = await import('../dist/tools/group-model.mjs');
+  const g = only([...bands(3, EQ), c('hpf_freq', 'HPF Freq', 100, { unit: 'hz', min: 20, max: 1000 }), c('hpf_on', 'HPF', 101, { kind: 'toggle' })]);
+  const m = matrixOf(g);
+  const gain = m.rows.findIndex((r) => r.key === 'gain');
+  const freq = m.rows.findIndex((r) => r.key === 'freq');
+  assert.equal(m.cells[gain][0], null, 'the HPF has no gain');
+  assert.equal(m.cells[freq][0], 'hpf_freq');
+  assert.ok(m.cells.every((row) => row.length === m.columns.length));
+  assert.deepEqual(m.cells[freq].slice(1), ['b1_freq', 'b2_freq', 'b3_freq']);
+  assert.equal(visibleColumns(m, { width: 700, column: 72 }), 9);
+  assert.equal(visibleColumns(m, { width: 100, column: 72 }), 1);
+  assert.equal(visibleColumns(m, { width: 144, column: 72 }), 2);
+  assert.equal(selectedColumn(m, 2).key, m.columns[2].key);
+  assert.equal(selectedColumn(m, 99).key, m.columns.at(-1).key);
+  assert.deepEqual(selectedColumn(m, 0).cells, m.cells.map((r) => r[0]));
+});
