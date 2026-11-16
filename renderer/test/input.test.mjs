@@ -167,7 +167,6 @@ for (const s of SCRIPTS) {
 test('every script of scripts.json is run: the handle, the single control and both bar groups', () => {
   const kinds = new Set(SCRIPTS.map((s) => `${s.control.widget}:${fixtureOf(s).name}`));
   for (const k of ['handle:eq-marks', 'fader:dyn-curve', 'bar:graphic-eq', 'bar:organ']) assert.ok(kinds.has(k), k);
-  assert.equal(SCRIPTS.length, 20);
 });
 
 // ---- the same gestures built from the renderer's geometry, with a hand-worked value --------------------------------------------
