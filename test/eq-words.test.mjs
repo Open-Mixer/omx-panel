@@ -46,3 +46,15 @@ test('every edge word of the table is that edge for the group model and that sha
     }
   }
 });
+
+test('a band holding both a Bandwidth and a Q: the Q is its Q (the strong words, q, quality, resonance, win over a bandwidth)', () => {
+  const t = (symbol, name, unit, min, max, def) => ({ symbol, name, kind: 'travel', travel: { min, max, unit, default: def } });
+  const v = infer.inferBands([
+    t('b1_freq', 'Band 1 Frequency', 'Hz', 20, 20000, 1000),
+    t('b1_gain', 'Band 1 Gain', 'dB', -18, 18, 0),
+    t('b1_bw', 'Band 1 Bandwidth', '', 0.1, 4, 1),
+    t('b1_q', 'Band 1 Q', '', 0.1, 10, 0.7),
+  ]);
+  assert.equal(v.outcome, 'inferred');
+  assert.equal(v.roles.find((r) => r.role === 'band_q')?.symbol, 'b1_q');
+});
