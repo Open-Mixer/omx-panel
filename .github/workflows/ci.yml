@@ -55,17 +55,6 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
-      # the drift check (OMX_CONSOLE_TOKENS_PATH is the repository variable naming where the console keeps its tokens.css): the console's tokens.css at its CURRENT ref (main, or $OMX_CONSOLE_REF while a wave is on its integration branch),
-      # held against the pin's values; a moved token is red until the pin follows (tools/look-pin.mjs --write)
-      - name: The console's tokens.css at its current ref
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/openmixer
-          ref: ${{ vars.OMX_CONSOLE_REF || 'main' }}
-          token: ${{ secrets.OMX_CONSOLE_READ_TOKEN || github.token }}
-          sparse-checkout: ${{ vars.OMX_CONSOLE_TOKENS_PATH }}
-          sparse-checkout-cone-mode: false
-          path: console
       - id: handback-install
         name: Install the build and the validator's dependency, and omx-dsp's curve twin
         # the curve function (curvePoints) lives in omx-dsp's TypeScript twin, not in omx-contract-data: the contract carries the
@@ -80,8 +69,6 @@ jobs:
           OMX_PANEL_LILV: required
           # the twin is installed above: its absence fails the curve proofs, never skips them
           OMX_PANEL_DSP: required
-          # the pin's values against the console's tokens.css at its current ref (test/modgui-no-retyped-look.test.mjs): unset fails in CI
-          OPENMIXER_TOKENS_CSS: ${{ github.workspace }}/console/${{ vars.OMX_CONSOLE_TOKENS_PATH }}
         run: make test
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
@@ -90,7 +77,7 @@ jobs:
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
       - id: handback-look
-        name: look.json and the renderer's role list are what the colour roles give
+        name: look.json and the renderer's role list are what the colour roles give, and the console pin hashes to its own seal
         run: make look
       - name: The renderer's gesture word names and omx_panel_word_t are what gestures.json gives (#23)
         run: node tools/gesture-words.mjs --check

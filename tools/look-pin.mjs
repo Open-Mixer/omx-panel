@@ -9,7 +9,9 @@
  * copy, which tools/look.mjs writes into tools/look.json. A release check hands this script the file at the pinned commit
  * (`--check <tokens.css>`, or $OPENMIXER_TOKENS_CSS) and it fails when the file's hash or any pinned value differs.
  *
- * `--drift <tokens.css>` is the CI check: the file at the console's CURRENT ref, the values only (OPENMIXER_TOKENS_CSS in the test).
+ * `--self` is the CI check: the pin's values hash to its own seal (`source.valuesSha256`), so no value is edited without a re-pin; it needs
+ * neither the console nor a network. `--drift <tokens.css>` is the by-hand check against the console's tokens.css as it is now (values only);
+ * the console's own repository checks the public pin against its tokens.css.
  *
  * Usage: `node tools/look-pin.mjs --write <tokens.css> <commit>` re-pins (then `node tools/look.mjs`);
  *        `node tools/look-pin.mjs --check <tokens.css>` verifies the pin against that file.
@@ -29,6 +31,8 @@ export const BASE = ['--knob-pointer', '--fader-cap-line', '--cap-legend'];
 /** The hardware metal a finish block sets, and the finishes of the console (aluminium is the default, the bare `:root`). */
 export const FINISH_KEYS = ['--knob-face', '--knob-edge', '--knob-cap-hi', '--knob-knurl', '--fader-cap', '--fader-cap-ridge', '--fader-cap-groove', '--btn-face', '--toggle-face', '--screw'];
 export const FINISHES = ['aluminium', 'graphite', 'black'];
+/** The console's text ink on a LIGHT plate (its light theme's `--ink` and `--ink-dim`): the vintage enclosure is a light plate, and its text is set in these. */
+export const LIGHT_INK = ['--ink', '--ink-dim'];
 export const loadPin = (file = PIN_JSON) => JSON.parse(readFileSync(file, 'utf8'));
 
 const first = (css, re, what) => {
@@ -65,19 +69,27 @@ export function extractDefaultFinish(css) {
   return first(css, /:root\s*,\s*:root\[data-finish="([a-z]+)"\]/, 'default finish block (:root, :root[data-finish="…"])');
 }
 
+/** The light theme's text inks, read out of `css`: `:root[data-theme="light"] { … }`. */
+export function extractLight(css) {
+  const m = /:root\[data-theme="light"\]\s*\{([^}]*)\}/.exec(css);
+  if (!m) throw new Error('look-pin: tokens.css has no light theme block');
+  return Object.fromEntries(LIGHT_INK.map((k) => [k, declOf(m[1], k, 'the light theme')]));
+}
+
 /** Everything the pin keeps, read out of `css`: the glass, the relief, the base paint and every finish. */
 export function extractPin(css) {
   return {
     tokens: extractTokens(css),
     relief: Object.fromEntries(RELIEF.map((k) => [k, tokenOf(css, k)])),
     base: Object.fromEntries(BASE.map((k) => [k, tokenOf(css, k)])),
+    light: extractLight(css),
     defaultFinish: extractDefaultFinish(css),
     finish: extractFinishes(css),
   };
 }
 
 /** The flat map a `{console:--token}` names: the glass, the relief and the base paint. */
-export const consoleTokens = (pin = loadPin()) => ({ ...pin.tokens, ...pin.relief, ...pin.base });
+export const consoleTokens = (pin = loadPin()) => ({ ...pin.tokens, ...pin.relief, ...pin.base, '--ink-light': pin.light['--ink'], '--ink-dim-light': pin.light['--ink-dim'] });
 /** The metal `{finish:--token}` names, in the finish `name`. */
 export const finishTokens = (name, pin = loadPin()) => {
   if (!pin.finish[name]) throw new Error(`look-pin: the console has no finish '${name}' (${Object.keys(pin.finish).join(', ')})`);
@@ -86,10 +98,21 @@ export const finishTokens = (name, pin = loadPin()) => {
 
 const sha = (text) => createHash('sha256').update(text).digest('hex');
 
+/** The sha-256 of the pin's VALUES (everything but `source`), the pin's own seal: a value edited by hand, without a re-pin, no longer matches it. */
+export const valuesSha = (pin) => { const { $comment, source, ...values } = pin; return sha(JSON.stringify(values)); };
+
+/** The faults of the pin against ITSELF, as sentences, or none: its values hash to the seal a re-pin wrote (`source.valuesSha256`). Needs no console and no network. */
+export function checkSelf(pin = loadPin()) {
+  if (!pin.source?.valuesSha256) return ['the pin carries no source.valuesSha256: re-pin with --write'];
+  const have = valuesSha(pin);
+  return have === pin.source.valuesSha256 ? [] : [`the pin's values hash ${have} and its seal says ${pin.source.valuesSha256}: a value was edited without a re-pin`];
+}
+
 /** Where a pinned token lives, for a sentence: a `[section, finish?, key]` of every value the pin keeps. */
 export function pinnedValues(pin) {
   const out = [];
   for (const s of ['tokens', 'relief', 'base']) for (const [k, v] of Object.entries(pin[s] ?? {})) out.push({ id: k, value: v });
+  for (const [k, v] of Object.entries(pin.light ?? {})) out.push({ id: `light:${k}`, value: v });
   for (const [f, block] of Object.entries(pin.finish ?? {})) for (const [k, v] of Object.entries(block)) out.push({ id: `${f}:${k}`, value: v });
   return out;
 }
@@ -112,13 +135,25 @@ export function checkPin(css, pin = loadPin()) {
 
 function main(argv) {
   const [mode, file, commit] = argv;
-  if (!['--write', '--check', '--drift'].includes(mode) || !file || (mode === '--write' && !commit)) {
-    console.error('usage: look-pin.mjs --write <tokens.css> <commit> | --check <tokens.css> | --drift <tokens.css>');
+  if (!['--write', '--check', '--drift', '--self'].includes(mode) || (mode !== '--self' && !file) || (mode === '--write' && !commit)) {
+    console.error('usage: look-pin.mjs --write <tokens.css> <commit> | --check <tokens.css> | --drift <tokens.css> | --self');
     process.exit(2);
+  }
+  if (mode === '--self') {
+    // CI's check: the pin is self-consistent, no console needed
+    const faults = checkSelf();
+    if (faults.length) {
+      console.error(`look-pin: ${faults.join('; ')}`);
+      process.exit(1);
+    }
+    console.log('look-pin: tools/look/console-vintage.json hashes to its own seal');
+    return;
   }
   const css = readFileSync(file, 'utf8');
   if (mode === '--write') {
-    const pin = { $comment: 'GENERATED — the console\'s vintage glass, pinned. Re-pin: `node tools/look-pin.mjs --write <tokens.css> <commit>`, then `node tools/look.mjs`.', source: { project: 'the OpenMixer console, its tokens.css (vintage dark theme)', commit, sha256: sha(css) }, ...extractPin(css) };
+    const values = extractPin(css);
+    const pin = { $comment: 'GENERATED — the console\'s vintage glass, pinned. Re-pin: `node tools/look-pin.mjs --write <tokens.css> <commit>`, then `node tools/look.mjs`.', source: { project: 'the OpenMixer console, its tokens.css (vintage dark theme)', commit, sha256: sha(css), valuesSha256: '' }, ...values };
+    pin.source.valuesSha256 = valuesSha(pin);
     writeFileSync(PIN_JSON, `${JSON.stringify(pin, null, 2)}\n`);
     console.log(`look-pin: pinned ${commit}`);
     return;

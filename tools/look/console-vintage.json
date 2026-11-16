@@ -3,7 +3,8 @@
   "source": {
     "project": "the OpenMixer console, its tokens.css (vintage dark theme)",
     "commit": "67b4d542aaf661c9d01e78f578024cf8103393b8",
-    "sha256": "7dcacd1fecf8012494b5e073d412e514661c6fe4a04c682a4a26b20a35f8f256"
+    "sha256": "7dcacd1fecf8012494b5e073d412e514661c6fe4a04c682a4a26b20a35f8f256",
+    "valuesSha256": "7a60e01ceb21525ab46f4d631503990d30eb2dd54070d2963e9392266c215781"
   },
   "tokens": {
     "--glass": "#05070a",
@@ -21,6 +22,10 @@
     "--knob-pointer": "#f4efe2",
     "--fader-cap-line": "#f0e8d6",
     "--cap-legend": "#e6dcc4"
+  },
+  "light": {
+    "--ink": "#11171d",
+    "--ink-dim": "#3a3b3c"
   },
   "defaultFinish": "aluminium",
   "finish": {

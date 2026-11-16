@@ -56,7 +56,8 @@ test('a pinned value that differs from tokens.css goes red: every token of every
   assert.deepEqual(diffPin(css), [], 'the pin renders to a tokens.css it matches');
   for (const r of MAP) for (const ref of r.tokens) {
     const [kind, name] = ref.split(':');
-    const id = kind === 'console' ? name : `${pin.defaultFinish}:${name}`;
+    // `--ink-light` is the pin's light theme ink (`light:--ink`), the rest are keyed by their own name
+    const id = kind === 'console' ? name.replace(/^(--ink(?:-dim)?)-light$/, 'light:$1') : `${pin.defaultFinish}:${name}`;
     const want = pinnedValues(pin).find((e) => e.id === id);
     assert.ok(want, `${ref} is not in the pin's value list`);
     const moved = pinCss(pin, { [id]: '#123456' });
@@ -108,5 +109,5 @@ function pinCss(p, moved = {}) {
   const base = [...Object.entries(p.tokens), ...Object.entries(p.relief), ...Object.entries(p.base)];
   const decl = (kvs, prefix = '') => kvs.map(([k, val]) => `  ${k}: ${v(prefix + k, val)};`).join('\n');
   const finish = (name) => `:root${name === p.defaultFinish ? ', :root' : ''}[data-finish="${name}"] {\n${decl(Object.entries(p.finish[name]), `${name}:`)}\n}`;
-  return [`:root {\n${decl(base.filter(([k]) => k !== '--accent'))}\n}`, `:root, :root[data-accent="orange"] { --accent: ${v('--accent', p.tokens['--accent'])}; }`, ...Object.keys(p.finish).map(finish)].join('\n');
+  return [`:root {\n${decl(base.filter(([k]) => k !== '--accent'))}\n}`, `:root, :root[data-accent="orange"] { --accent: ${v('--accent', p.tokens['--accent'])}; }`, ...Object.keys(p.finish).map(finish), `:root[data-theme="light"] {\n${decl(Object.entries(p.light), 'light:')}\n}`].join('\n');
 }

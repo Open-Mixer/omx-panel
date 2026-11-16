@@ -48,6 +48,7 @@ public-sources:
 
 look:
 	node tools/look.mjs --check
+	node tools/look-pin.mjs --self
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:

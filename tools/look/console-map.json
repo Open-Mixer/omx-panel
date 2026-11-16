@@ -200,11 +200,11 @@
     },
     {
       "id": "legend-ink",
-      "console": "the console's glass and its button face: the darkest ink the console prints",
+      "console": "the console's light theme ink and ink-dim: the text it sets on a light plate",
       "modgui": "the section title, a control's label and its value on the cream enclosure",
       "tokens": [
-        "console:--glass",
-        "finish:--btn-face"
+        "console:--ink-light",
+        "console:--ink-dim-light"
       ],
       "via": [
         "--t-section",

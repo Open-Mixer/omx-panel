@@ -65,7 +65,9 @@
       "--inset-track": "inset 0 0 0 1px rgba(0,0,0,.6), inset 0 2px 6px rgba(0,0,0,.55)",
       "--knob-pointer": "#f4efe2",
       "--fader-cap-line": "#f0e8d6",
-      "--cap-legend": "#e6dcc4"
+      "--cap-legend": "#e6dcc4",
+      "--ink-light": "#11171d",
+      "--ink-dim-light": "#3a3b3c"
     },
     "finish": {
       "aluminium": {
@@ -130,9 +132,9 @@
       "--knob": "knob-vintage.svg",
       "--t-brand": "#e6dcc4",
       "--t-label": "#f3ead4",
-      "--t-section": "#3b4046",
-      "--t-control": "#05070a",
-      "--t-value": "#05070a",
+      "--t-section": "#3a3b3c",
+      "--t-control": "#11171d",
+      "--t-value": "#11171d",
       "--t-key": "#e6dcc4",
       "--t-list-sel": "{--accent}",
       "--t-screen": "#e9dfc6",

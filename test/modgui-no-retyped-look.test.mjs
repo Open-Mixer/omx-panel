@@ -4,14 +4,14 @@
 //   1. a colour literal in the vintage look is allowed only in the rows of the owner's mock (tools/look/console-map.json, ownerMock,
 //      each row's `via`): the enclosure, the label plate, the LED; every other colour is a pinned placeholder;
 //   2. the console's default finish is read from its tokens.css (the block that is the bare `:root` too), never named in the tree;
-//   3. the drift check: the pin's values against the console's tokens.css at its CURRENT ref (CI hands it as $OPENMIXER_TOKENS_CSS),
-//      and a token moved in a fixture tokens.css is red.
+//   3. the pin is sealed: its values hash to the seal a re-pin wrote (CI needs no console), a value edited by hand is red, and a token
+//      moved in a fixture tokens.css is red in the drift diff.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { checkPin, diffPin, extractDefaultFinish, extractPin, extractTokens, loadPin } from '../tools/look-pin.mjs';
+import { checkPin, checkSelf, diffPin, extractDefaultFinish, extractPin, extractTokens, loadPin } from '../tools/look-pin.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
@@ -46,7 +46,7 @@ function pinCss(p, { moved = {}, defaultFinish = p.defaultFinish } = {}) {
   const base = [...Object.entries(p.tokens), ...Object.entries(p.relief), ...Object.entries(p.base)];
   const decl = (kvs, prefix = '') => kvs.map(([k, val]) => `  ${k}: ${v(prefix + k, val)};`).join('\n');
   const finish = (name) => `:root${name === defaultFinish ? ', :root' : ''}[data-finish="${name}"] {\n${decl(Object.entries(p.finish[name]), `${name}:`)}\n}`;
-  return [`:root {\n${decl(base.filter(([k]) => k !== '--accent'))}\n}`, `:root, :root[data-accent="orange"] { --accent: ${v('--accent', p.tokens['--accent'])}; }`, ...Object.keys(p.finish).map(finish)].join('\n');
+  return [`:root {\n${decl(base.filter(([k]) => k !== '--accent'))}\n}`, `:root, :root[data-accent="orange"] { --accent: ${v('--accent', p.tokens['--accent'])}; }`, ...Object.keys(p.finish).map(finish), `:root[data-theme="light"] {\n${decl(Object.entries(p.light), 'light:')}\n}`].join('\n');
 }
 
 test('the default finish is the console\'s: read from the block that is the bare :root, in the pin and in the looks', () => {
@@ -67,19 +67,30 @@ test('drift: a token moved in a tokens.css is red, naming it; the unmoved file i
   assert.equal(extractTokens(moved)['--accent'], '#123456');
 });
 
-test('the console\'s tokens.css at its current ref (CI: $OPENMIXER_TOKENS_CSS) still holds every pinned value', (t) => {
-  const file = process.env.OPENMIXER_TOKENS_CSS;
-  if (!file) {
-    if (process.env.CI) assert.fail('CI gives the console\'s tokens.css at its current ref as $OPENMIXER_TOKENS_CSS');
-    t.skip('no $OPENMIXER_TOKENS_CSS: the drift is checked where the console is at hand');
-    return;
-  }
-  assert.deepEqual(diffPin(readFileSync(file, 'utf8')), [], 're-pin: node tools/look-pin.mjs --write <tokens.css> <commit>, then node tools/look.mjs');
+test('the pin is self-consistent: its values hash to the seal a re-pin wrote, and a value edited by hand is red (CI has no console)', () => {
+  assert.deepEqual(checkSelf(pin), []);
+  const edited = structuredClone(pin);
+  edited.tokens['--accent'] = '#123456';
+  assert.match(checkSelf(edited).join(';'), /edited without a re-pin/);
+  const edited2 = structuredClone(pin);
+  edited2.finish.aluminium['--screw'] = '#123456';
+  assert.match(checkSelf(edited2).join(';'), /edited without a re-pin/);
+  const unsealed = structuredClone(pin);
+  delete unsealed.source.valuesSha256;
+  assert.match(checkSelf(unsealed).join(';'), /no source.valuesSha256/);
 });
 
-test('the hash of the pinned commit\'s file is the release check\'s ($OPENMIXER_TOKENS_CSS_PINNED), apart from the drift', (t) => {
-  const file = process.env.OPENMIXER_TOKENS_CSS_PINNED;
-  if (!file) { t.skip('no $OPENMIXER_TOKENS_CSS_PINNED'); return; }
-  const css = readFileSync(file, 'utf8');
-  assert.deepEqual(checkPin(css), []);
+test('the pin is the console\'s tokens.css at the pinned commit when that file is at hand: hash and values (by hand: look-pin.mjs --check)', () => {
+  // the file lives in a private repository, so no test reads it; the by-hand check and the console's own check do. What a test can hold:
+  // a tokens.css rendered from the pin hashes to nothing the pin claims (the seal is over the values, not the console's bytes), and the
+  // values of that rendering are the pin's.
+  assert.deepEqual(diffPin(pinCss(pin)), []);
+  assert.notEqual(checkPin(pinCss(pin)).join(';'), '', 'a rendering is not the console\'s file: its hash is not the pinned one');
+});
+
+test('the vintage text on the light enclosure is set in the console\'s light-theme inks, not in glass or button metal', () => {
+  for (const k of ['--t-section', '--t-control', '--t-value']) assert.match(LOOKS.vintage[k], /^\{console:--ink(-dim)?-light\}$/, k);
+  const v = JSON.parse(read('tools/look.json')).looks.vintage;
+  assert.equal(v['--t-control'], pin.light['--ink']);
+  assert.equal(v['--t-section'], pin.light['--ink-dim']);
 });

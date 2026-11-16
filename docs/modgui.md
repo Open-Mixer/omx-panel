@@ -131,7 +131,7 @@ plate, the red LED) and reads no pinned token. Those rows are the ONLY place a v
 | `footswitch` | the finish's metal cap (knob cap-hi to face, knurl at the edge) | .omx-bypass, the footswitch | `finish:--knob-cap-hi`, `finish:--knob-face`, `finish:--knob-knurl`, `console:--shadow-1` |
 | `section-relief` | a panel's --shadow-1 relief | .omx-section | `console:--shadow-1` |
 | `vu-bezel` | the console's Meter: the meter sits in recessed glass | .omx-vu, the needle VU's bezel | `console:--glass` |
-| `legend-ink` | the console's glass and its button face: the darkest ink the console prints | the section title, a control's label and its value on the cream enclosure | `console:--glass`, `finish:--btn-face` |
+| `legend-ink` | the console's light theme ink and ink-dim: the text it sets on a light plate | the section title, a control's label and its value on the cream enclosure | `console:--ink-light`, `console:--ink-dim-light` |
 | `brand-ink` | --cap-legend: the cream legend printed on a cap | .omx-brand on the label plate | `console:--cap-legend` |
 | `key-state` | the accent a lit key wears, the glass a held key sinks to | a pressed and a held key (--key-pressed-bg, --key-held-bg) | `console:--accent`, `console:--glass` |
 | `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
@@ -140,7 +140,7 @@ plate, the red LED) and reads no pinned token. Those rows are the ONLY place a v
 
 **What the pin keeps** (`tools/look/console-vintage.json`, read from `tokens.css` at one commit with its sha-256, by
 `node tools/look-pin.mjs --write <tokens.css> <commit>`, verified by `--check` and `$OPENMIXER_TOKENS_CSS` in the test): the glass, its
-grid, the legend and the accent (`tokens`); the RELIEF the console draws depth with (`relief`: `--shade`, `--shadow-1`, `--shadow-2`,
+grid, the legend and the accent (`tokens`); the light theme's two text inks (`light`: `--ink`, `--ink-dim`, the text on a light plate such as the cream enclosure); the RELIEF the console draws depth with (`relief`: `--shade`, `--shadow-1`, `--shadow-2`,
 `--inset-track`); the base control paint no finish changes (`base`: `--knob-pointer`, `--fader-cap-line`, `--cap-legend`); and the three
 FINISH blocks (`finish`: aluminium, graphite, black; the metal a knob, a fader cap, a button cap, a toggle and a screw are made of),
 aluminium being the default (`defaultFinish`, the console's default `data-finish`). `tools/look.mjs` writes them into `tools/look.json`
