@@ -22,6 +22,9 @@ const REQUIRED = process.env.OMX_PANEL_WINDOW_REQUIRED === '1';
 const ACCENT_NEAR = 60;
 /** The accent's centre in a cell may move this far, in logical px; its amount by this ratio either way. */
 const CENTRE_PX = 1;
+/** A cell's widget part: the cell less the scribble strip on its foot, whose text is set in the accent and is measured by the text check, not as the widget's accent. */
+const SCRIBBLE_H = JSON.parse(readFileSync(join(DATA, 'look/geometry.json'), 'utf8')).geometry.scribbleH;
+const widgetPart = (r, scale) => [r[0], r[1], r[2], r[3] - SCRIBBLE_H * scale];
 const AMOUNT_RATIO = 1.6;
 /** A block of BLOCK x BLOCK logical px is the same when its mean colour moves by at most BLOCK_MEAN; this share must be. */
 const BLOCK = 8;
@@ -105,7 +108,7 @@ for (const fx of FIXTURES) {
       const window = render(desc, state, { scale, window: true });
       assert.equal(`${window.w}x${window.h}`, `${buffer.w}x${buffer.h}`);
       rects(desc, { scale, size: [buffer.w, buffer.h] }).forEach((r, i) => {
-        const a = accentIn(buffer, r), b = accentIn(window, r);
+        const wr = widgetPart(r, scale), a = accentIn(buffer, wr), b = accentIn(window, wr);
         assert.equal(a.n > 0, b.n > 0, `control ${i}: the accent is ${a.n ? '' : 'not '}in the buffer's cell and ${b.n ? '' : 'not '}in the window's`);
         if (!a.n) return;
         const d = Math.hypot(a.x - b.x, a.y - b.y) / scale;

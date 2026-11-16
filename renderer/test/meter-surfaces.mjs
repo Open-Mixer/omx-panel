@@ -147,7 +147,7 @@ async function browserLeg(executablePath) {
   const { chromium } = await import('playwright-core');
   const strip = (s) => s.replace(/\{\{\{c?ns\}\}\}/g, '').replace(/\{\{#([^}]+)\}\}[\s\S]*?\{\{\/\1\}\}/g, '').replace(/\{\{[^}]*\}\}/g, '');
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:${look['--surface']}}
-${strip(modgui.emitStylesheet(p, modgui.loadLook('console'), 'meter-surfaces'))}</style></head><body>${strip(modgui.emitTemplate(p, lay, 'meter-surfaces'))}</body></html>`;
+${strip(modgui.emitStylesheet(p, modgui.loadLook('console'), 'meter-surfaces'))}</style></head><body>${strip(modgui.emitTemplate(p, lay, 'meter-surfaces', 'console'))}</body></html>`;
   const browser = await chromium.launch({ executablePath, args: ['--no-sandbox', '--force-device-scale-factor=1', '--font-render-hinting=none'] });
   const page = await browser.newPage({ viewport: { width: lay.w + 40, height: lay.h + 40 }, deviceScaleFactor: 1 });
   await page.setContent(html);

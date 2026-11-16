@@ -6,11 +6,11 @@
  * pixel for pixel, at the generator's own scales, and against the screenshots it committed.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { modgui, skipWithoutTwin, CLI, DATA, FIXTURES, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
+import { modgui, skipWithoutTwin, CLI, DATA, FIXTURES, RENDERER, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
 
 for (const fx of FIXTURES) {
   for (const scale of [1, 0.5, 2]) {
@@ -24,15 +24,21 @@ for (const fx of FIXTURES) {
     });
   }
   if (fx.screenshot) {
-    // the committed screenshot wears the generator's default (vintage) look, which the renderer does not draw: the flat look's screenshot is
-    // written by the generator the way a bundle gets it, and read back as the file
-    test(`${fx.name}: the MOD GUI screenshot the generator writes for the flat look is what the renderer draws`, skipWithoutTwin(fx), () => {
+    // The bundle the repository commits wears the generator's default (vintage) look, which the renderer does not draw. The flat look's
+    // screenshot of the same fixture is COMMITTED here (golden/modgui-<fixture>-flat.png), written by the generator and held both ways:
+    // the generator's output must be the committed file byte for byte (a drift guard: rewrite it with OMX_PANEL_RENDER_UPDATE=1 after a
+    // change meant to move it), and the renderer must draw the committed file pixel for pixel.
+    test(`${fx.name}: the committed flat-look MOD GUI screenshot is what the generator writes and what the renderer draws`, skipWithoutTwin(fx), () => {
       const dir = scratch();
+      const file = join(RENDERER, 'test', 'golden', `modgui-${fx.name}-flat.png`);
       const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));
       const panel = fx.panel ? JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')) : undefined;
-      const files = new Map(modgui.generateModgui(descriptor, { panel, stem: fx.stem, source: 'parity', look: 'console' }));
-      const shot = decodePng(files.get(`modgui/screenshot-${fx.stem}.png`));
-      const d = compare(render(descriptionFile(fx, dir), stateFile(fx, dir)), shot);
+      const written = new Map(modgui.generateModgui(descriptor, { panel, stem: fx.stem, source: 'parity', look: 'console' })).get(`modgui/screenshot-${fx.stem}.png`);
+      if (process.env.OMX_PANEL_RENDER_UPDATE === '1') writeFileSync(file, written);
+      assert.ok(existsSync(file), `no committed shot ${file}: write it with OMX_PANEL_RENDER_UPDATE=1`);
+      const committed = readFileSync(file);
+      assert.ok(Buffer.from(written).equals(committed), 'the generator no longer writes the committed shot: rewrite it with OMX_PANEL_RENDER_UPDATE=1 and look at it');
+      const d = compare(render(descriptionFile(fx, dir), stateFile(fx, dir)), decodePng(committed));
       assert.ok(d.sameSize && d.exact, `${d.off} pixels differ, by up to ${d.worst}`);
     });
   }
