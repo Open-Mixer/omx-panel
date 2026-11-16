@@ -27,3 +27,12 @@ test('make renderer-check points $OMX_ROLE_MEANINGS at the tree\'s stand-in unle
   const recipe = /^renderer-check:.*\n((?:\t.*\n|.*\\\n)+)/m.exec(make)?.[1] ?? '';
   assert.match(recipe, /OMX_ROLE_MEANINGS="\$\$\{OMX_ROLE_MEANINGS:-\$\(CURDIR\)\/test\/fixtures\/role-meanings\/panel-roles\.json\}"/);
 });
+
+test('every CI step that runs a renderer test script with node, outside make renderer-check, names $OMX_ROLE_MEANINGS', () => {
+  const ci = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+  // each step: from its `- name:` or `- uses:` to the next
+  const steps = ci.split(/\n(?=\s+- (?:name|uses):)/);
+  const direct = steps.filter((s) => /\brun:.*\bnode renderer\/test\/\S+\.mjs/.test(s));
+  assert.ok(direct.length > 0, 'the meter-surfaces step runs renderer/test/meter-surfaces.mjs with node');
+  for (const s of direct) assert.match(s, /OMX_ROLE_MEANINGS:\s*\S*test\/fixtures\/role-meanings\/panel-roles\.json/, `step without the vocabulary:\n${s.trim()}`);
+});
