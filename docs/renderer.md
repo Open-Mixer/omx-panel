@@ -40,16 +40,20 @@ its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives eac
 A section of a repeated group (an EQ's bands, a multiband compressor's bands: [group-model.md](group-model.md)) carries `matrix`,
 the group model's `matrixOf` as the served description gives it (omx-panel#61): `{ orientation, heads, rows, cells, count? }`.
 `heads` are the instances, in drawing order, each `{ label, on, edge }` (`on` its on/off control as `{ symbol, sense }` or null, `edge`
-the EQ filter's name for a high-pass, shelf or low-pass, else null); `rows` are the parameters, each `{ label }`; `cells[row][head]`
+the EQ filter's name for a high-pass, shelf or low-pass, else null); `rows` are the parameters, each `{ label }`, in the owner's EQ order (freq, gain with the high-pass's and low-pass's slope on that row, q, type, the rest) and last, when any head has an on/off, the head row `{ label: 'On', head: true }`; `cells[row][head]`
 is a control's symbol or null. The renderer reads it and infers no group, reorders, wraps or transposes nothing. It draws, in
 the section's box: the curve rows, then the section's other controls (those no head or cell names) flowed in rows of
 `rowControls` as any section's, then the matrix. In `columns` each head is a column, left to right, and each parameter a row;
-in `rows` each head is a row and each parameter a column. When any head has an on/off, the head's row (column) comes first: its
-on/off is the control there, named by the head's label, and a head with none is its label drawn in the cell's name place. Each
+in `rows` each head is a row and each parameter a column. The head row is a row of the matrix like any other and the last one: its cells are the heads'
+`on` symbols, the same controls as `heads[].on`, drawn ONCE, there, each named by its head's label; a head with no on/off has its
+label drawn in that row's name place (in the first row when no head has an on/off, as the face). A head row whose cells differ from
+the heads' `on`, a second head row, or a head with an on/off and no head row is refused. Each
 cell is the control of the parameter's row (column) at the head's column (row), named by the parameter's label; a null cell is
 empty and nothing moves into it (a stem one instance lacks is a row with an empty cell). A matrix is as wide as its heads (its
 parameters, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it does not wrap a
-matrix. The EQ is `columns`, its high-pass the first column and its low-pass the last: the order is of the drawing, the audio
+matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns`: `max(1, floor(width / (cellW x scale)))`,
+at most the matrix's columns (the instances the count closed up not counted; the parameters, in `rows`), 0 with no matrix: a host that cannot show them
+all scrolls whole columns, and the command's `--visible-columns <width>` prints it. The EQ is `columns`, its high-pass the first column and its low-pass the last: the order is of the drawing, the audio
 order is the plugin's.
 
 `count: { symbol, default }` (`default` null when the control has none: every instance is drawn until the host gives a value) names the control that says how many instances the plugin runs (an EQ's band count). Only the first
