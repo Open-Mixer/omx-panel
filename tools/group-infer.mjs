@@ -169,7 +169,8 @@ export const RULES = [
 
 /**
  * @typedef {{ symbol: string, name: string, index: number, control: boolean, input: boolean,
- *   designation?: string, unit?: string, unitLabel?: string, group?: string, notOnGui?: boolean }} Port
+ *   designation?: string, unit?: string, unitLabel?: string, group?: string, notOnGui?: boolean,
+ *   kind?: 'toggle' | 'choice' | 'travel', min?: number, max?: number, options?: number }} Port
  * @typedef {{ symbol?: string, name?: string, displayPriority?: number }} OwnGroup
  * @typedef {{ uri: string, ports: Port[], groups?: Record<string, OwnGroup> }} PluginPorts
  * @typedef {{ ports: { symbol: string, index: number, name?: string }[] }} ModguiLayout
@@ -698,7 +699,18 @@ export function readPluginPorts(triples, uri) {
         groups[port.group] = g;
       }
     }
-    if (all(k, `${LV2}portProperty`).some((t) => t.v === `${PPROPS}notOnGUI`)) port.notOnGui = true;
+    const props = new Set(all(k, `${LV2}portProperty`).map((t) => t.v));
+    if (props.has(`${PPROPS}notOnGUI`)) port.notOnGui = true;
+    // the control's kind and travel, which docs/group-model.md matches across the instances of a repeated group
+    if (port.control) {
+      const points = all(k, `${LV2}scalePoint`).length;
+      port.kind = props.has(`${LV2}toggled`) ? 'toggle' : props.has(`${LV2}enumeration`) ? 'choice' : 'travel';
+      if (port.kind === 'choice') port.options = points;
+      for (const [field, p] of [['min', 'minimum'], ['max', 'maximum']]) {
+        const n = Number(val(`${LV2}${p}`)?.v);
+        if (Number.isFinite(n)) port[field] = n;
+      }
+    }
     return port;
   });
   return { uri, ports: ports.sort((a, b) => a.index - b.index), groups };
