@@ -1,0 +1,443 @@
+{
+ "input": "omx-plugins/omx-strip.descriptor.json",
+ "uri": null,
+ "groups": [
+  {
+   "key": "Input",
+   "label": "Input",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "trimOn",
+    "trimDb"
+   ]
+  },
+  {
+   "key": "Filters",
+   "label": "Filters",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "filterOn",
+    "hpfOn",
+    "hpfFreq",
+    "hpfSlope",
+    "lpfOn",
+    "lpfFreq",
+    "lpfSlope"
+   ]
+  },
+  {
+   "key": "Gate",
+   "label": "Gate",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "gateOn",
+    "gateThreshold",
+    "gateRatio",
+    "gateRange",
+    "gateAttack",
+    "gateRelease",
+    "gateKneeStart",
+    "gateKneeEnd",
+    "gateHold",
+    "gateHysteresis"
+   ]
+  },
+  {
+   "key": "EQ",
+   "label": "EQ",
+   "kind": "repeated",
+   "source": "indexed",
+   "family": "eq",
+   "parameters": [
+    "eqOn",
+    "eqBands"
+   ],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "EQ#1",
+     "label": "EQ 1",
+     "on": "eq1On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#2",
+     "label": "EQ 2",
+     "on": "eq2On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#3",
+     "label": "EQ 3",
+     "on": "eq3On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#4",
+     "label": "EQ 4",
+     "on": "eq4On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#5",
+     "label": "EQ 5",
+     "on": "eq5On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#6",
+     "label": "EQ 6",
+     "on": "eq6On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#7",
+     "label": "EQ 7",
+     "on": "eq7On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#8",
+     "label": "EQ 8",
+     "on": "eq8On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#9",
+     "label": "EQ 9",
+     "on": "eq9On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#10",
+     "label": "EQ 10",
+     "on": "eq10On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#11",
+     "label": "EQ 11",
+     "on": "eq11On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#12",
+     "label": "EQ 12",
+     "on": "eq12On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#13",
+     "label": "EQ 13",
+     "on": "eq13On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#14",
+     "label": "EQ 14",
+     "on": "eq14On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#15",
+     "label": "EQ 15",
+     "on": "eq15On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#16",
+     "label": "EQ 16",
+     "on": "eq16On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#17",
+     "label": "EQ 17",
+     "on": "eq17On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#18",
+     "label": "EQ 18",
+     "on": "eq18On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#19",
+     "label": "EQ 19",
+     "on": "eq19On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#20",
+     "label": "EQ 20",
+     "on": "eq20On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#21",
+     "label": "EQ 21",
+     "on": "eq21On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#22",
+     "label": "EQ 22",
+     "on": "eq22On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#23",
+     "label": "EQ 23",
+     "on": "eq23On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#24",
+     "label": "EQ 24",
+     "on": "eq24On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#25",
+     "label": "EQ 25",
+     "on": "eq25On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#26",
+     "label": "EQ 26",
+     "on": "eq26On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#27",
+     "label": "EQ 27",
+     "on": "eq27On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#28",
+     "label": "EQ 28",
+     "on": "eq28On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#29",
+     "label": "EQ 29",
+     "on": "eq29On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#30",
+     "label": "EQ 30",
+     "on": "eq30On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#31",
+     "label": "EQ 31",
+     "on": "eq31On",
+     "sense": "on"
+    },
+    {
+     "key": "EQ#32",
+     "label": "EQ 32",
+     "on": "eq32On",
+     "sense": "on"
+    }
+   ],
+   "lines": [
+    {
+     "key": "type",
+     "label": "Type"
+    },
+    {
+     "key": "freq",
+     "label": "Freq"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "q",
+     "label": "Q"
+    }
+   ],
+   "cells": [
+    [
+     "eq1Type",
+     "eq2Type",
+     "eq3Type",
+     "eq4Type",
+     "eq5Type",
+     "eq6Type",
+     "eq7Type",
+     "eq8Type",
+     "eq9Type",
+     "eq10Type",
+     "eq11Type",
+     "eq12Type",
+     "eq13Type",
+     "eq14Type",
+     "eq15Type",
+     "eq16Type",
+     "eq17Type",
+     "eq18Type",
+     "eq19Type",
+     "eq20Type",
+     "eq21Type",
+     "eq22Type",
+     "eq23Type",
+     "eq24Type",
+     "eq25Type",
+     "eq26Type",
+     "eq27Type",
+     "eq28Type",
+     "eq29Type",
+     "eq30Type",
+     "eq31Type",
+     "eq32Type"
+    ],
+    [
+     "eq1Freq",
+     "eq2Freq",
+     "eq3Freq",
+     "eq4Freq",
+     "eq5Freq",
+     "eq6Freq",
+     "eq7Freq",
+     "eq8Freq",
+     "eq9Freq",
+     "eq10Freq",
+     "eq11Freq",
+     "eq12Freq",
+     "eq13Freq",
+     "eq14Freq",
+     "eq15Freq",
+     "eq16Freq",
+     "eq17Freq",
+     "eq18Freq",
+     "eq19Freq",
+     "eq20Freq",
+     "eq21Freq",
+     "eq22Freq",
+     "eq23Freq",
+     "eq24Freq",
+     "eq25Freq",
+     "eq26Freq",
+     "eq27Freq",
+     "eq28Freq",
+     "eq29Freq",
+     "eq30Freq",
+     "eq31Freq",
+     "eq32Freq"
+    ],
+    [
+     "eq1Gain",
+     "eq2Gain",
+     "eq3Gain",
+     "eq4Gain",
+     "eq5Gain",
+     "eq6Gain",
+     "eq7Gain",
+     "eq8Gain",
+     "eq9Gain",
+     "eq10Gain",
+     "eq11Gain",
+     "eq12Gain",
+     "eq13Gain",
+     "eq14Gain",
+     "eq15Gain",
+     "eq16Gain",
+     "eq17Gain",
+     "eq18Gain",
+     "eq19Gain",
+     "eq20Gain",
+     "eq21Gain",
+     "eq22Gain",
+     "eq23Gain",
+     "eq24Gain",
+     "eq25Gain",
+     "eq26Gain",
+     "eq27Gain",
+     "eq28Gain",
+     "eq29Gain",
+     "eq30Gain",
+     "eq31Gain",
+     "eq32Gain"
+    ],
+    [
+     "eq1Q",
+     "eq2Q",
+     "eq3Q",
+     "eq4Q",
+     "eq5Q",
+     "eq6Q",
+     "eq7Q",
+     "eq8Q",
+     "eq9Q",
+     "eq10Q",
+     "eq11Q",
+     "eq12Q",
+     "eq13Q",
+     "eq14Q",
+     "eq15Q",
+     "eq16Q",
+     "eq17Q",
+     "eq18Q",
+     "eq19Q",
+     "eq20Q",
+     "eq21Q",
+     "eq22Q",
+     "eq23Q",
+     "eq24Q",
+     "eq25Q",
+     "eq26Q",
+     "eq27Q",
+     "eq28Q",
+     "eq29Q",
+     "eq30Q",
+     "eq31Q",
+     "eq32Q"
+    ]
+   ]
+  },
+  {
+   "key": "Comp",
+   "label": "Comp",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "compOn",
+    "compThreshold",
+    "compRatio",
+    "compKnee",
+    "compAttack",
+    "compRelease",
+    "compMakeup",
+    "compKind",
+    "compMix",
+    "compDetectorOversampling"
+   ]
+  },
+  {
+   "key": "Order",
+   "label": "Order",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "order"
+   ]
+  }
+ ]
+}
