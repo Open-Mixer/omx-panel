@@ -91,6 +91,7 @@ typedef struct {
   int *cell;
   int count_ctl;        /* the control that says how many instances run, -1 for none */
   int64_t count;        /* its value: the description's default until the host gives one */
+  int head_row;         /* the row (the last) that is the heads' on/off, drawn once from heads[].on; -1 for none */
 } matrix;
 
 typedef struct {
