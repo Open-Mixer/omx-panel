@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- The vintage look's knob, ONE drawing, in the console's own metal: Encoder.vue's cap (a radial cap-hi to face gradient, a rim in
+  <!-- The vintage look's knob, ONE drawing, in the console's own metal: the console's Encoder's cap (a radial cap-hi to face gradient, a rim in
        the edge colour, a knurled edge, a carved pointer between a shaded and a lit groove wall) and its silkscreened tick ring. Every
        colour is a pinned-token placeholder: the console's pinned tokens (tools/look-pin.mjs) in the look's finish,
        aluminium by default, never retyped. {angle} is the frame's, from -135 to +135 degrees. tools/svg-knob.mjs reads the subset. -->

@@ -115,22 +115,22 @@ plate, the red LED) and reads no pinned token.
 
 | Row | Console element | MOD GUI element | Pinned tokens |
 |---|---|---|---|
-| `knob-cap` | Encoder.vue .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (tools/look/knob-vintage.svg) | `finish:--knob-cap-hi`, `finish:--knob-face` |
-| `knob-rim` | Encoder.vue .cap stroke: the rim | knob film strip, the rim | `finish:--knob-edge` |
-| `knob-knurl` | Encoder.vue .knurl: the knurled edge | knob film strip, the teeth ring | `finish:--knob-knurl` |
-| `knob-pointer` | Encoder.vue .needle with its groove-shade and groove-lit walls | knob film strip, the carved pointer | `console:--knob-pointer`, `finish:--knob-knurl`, `finish:--knob-cap-hi` |
-| `knob-silk` | Encoder.vue .silk: the 270-degree tick ring printed on the panel | knob film strip, the tick ring | `console:--legend` |
-| `knob-shadow` | Encoder.vue .cap drop-shadow(--shadow-1) | knob film strip, the drop shadow | `console:--shade` |
-| `fader-cap` | FaderCap.vue: ridges, groove, cream centre line, --shadow-2 | fader film strip (tools/look/fader-vintage.svg) | `finish:--fader-cap`, `finish:--fader-cap-ridge`, `finish:--fader-cap-groove`, `console:--fader-cap-line`, `console:--shade` |
+| `knob-cap` | the console's Encoder .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (tools/look/knob-vintage.svg) | `finish:--knob-cap-hi`, `finish:--knob-face` |
+| `knob-rim` | the console's Encoder .cap stroke: the rim | knob film strip, the rim | `finish:--knob-edge` |
+| `knob-knurl` | the console's Encoder .knurl: the knurled edge | knob film strip, the teeth ring | `finish:--knob-knurl` |
+| `knob-pointer` | the console's Encoder .needle with its groove-shade and groove-lit walls | knob film strip, the carved pointer | `console:--knob-pointer`, `finish:--knob-knurl`, `finish:--knob-cap-hi` |
+| `knob-silk` | the console's Encoder .silk: the 270-degree tick ring printed on the panel | knob film strip, the tick ring | `console:--legend` |
+| `knob-shadow` | the console's Encoder .cap drop-shadow(--shadow-1) | knob film strip, the drop shadow | `console:--shade` |
+| `fader-cap` | the console's FaderCap: ridges, groove, cream centre line, --shadow-2 | fader film strip (tools/look/fader-vintage.svg) | `finish:--fader-cap`, `finish:--fader-cap-ridge`, `finish:--fader-cap-groove`, `console:--fader-cap-line`, `console:--shade` |
 | `screw` | --screw: the panel's screw heads | .omx-pedal::before and ::after | `finish:--screw`, `finish:--knob-cap-hi`, `console:--shadow-1` |
 | `glass` | GLASS_WELL (utils/glass.ts): --glass under --glass-grid in the inset track, on every display | .omx-curve, .omx-meter-frame, .omx-display-image | `console:--glass`, `console:--glass-grid`, `console:--inset-track` |
 | `scribble` | StripHead scribble strip: glass well, the accent lit | .omx-scribble | `console:--glass`, `console:--accent`, `console:--inset-track` |
-| `curve` | EqCurve.vue and DynGraph.vue: the trace in the accent, the legend | .omx-curve-line and the curve's text | `console:--accent`, `console:--legend` |
+| `curve` | the console's EqCurve and the console's DynGraph: the trace in the accent, the legend | .omx-curve-line and the curve's text | `console:--accent`, `console:--legend` |
 | `button-cap` | lamp.ts off: a cap in the finish's metal (--btn-face) with its cream legend | .omx-selector-image and the look keys | `finish:--btn-face`, `console:--cap-legend`, `finish:--knob-cap-hi`, `console:--shadow-1` |
-| `toggle` | ToggleSwitch.vue: a thumb in --toggle-face on a recessed track | .omx-switch-image and its thumb | `finish:--toggle-face`, `console:--glass`, `console:--inset-track` |
+| `toggle` | the console's ToggleSwitch: a thumb in --toggle-face on a recessed track | .omx-switch-image and its thumb | `finish:--toggle-face`, `console:--glass`, `console:--inset-track` |
 | `footswitch` | the finish's metal cap (knob cap-hi to face, knurl at the edge) | .omx-bypass, the footswitch | `finish:--knob-cap-hi`, `finish:--knob-face`, `finish:--knob-knurl`, `console:--shadow-1` |
 | `section-relief` | a panel's --shadow-1 relief | .omx-section | `console:--shadow-1` |
-| `vu-bezel` | Meter.vue: the meter sits in recessed glass | .omx-vu, the needle VU's bezel | `console:--glass` |
+| `vu-bezel` | the console's Meter: the meter sits in recessed glass | .omx-vu, the needle VU's bezel | `console:--glass` |
 | `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
 | `label-plate` | none: the owner's mock, the dark label plate and its serif title | .omx-head and .omx-label | none (the owner's mock) |
 | `bypass-led` | none: the owner's mock, the red bypass LED | .omx-bypass-light | none (the owner's mock) |
@@ -145,7 +145,7 @@ aluminium being the default (`defaultFinish`, the console's default `data-finish
 
 **The metal knob and fader.** The vintage knob and fader film strips are generated from `tools/look/knob-vintage.svg` and
 `tools/look/fader-vintage.svg` through `tools/svg-knob.mjs`; every colour in them is a pinned placeholder, so a re-pin or another
-finish re-draws them with no hand drawing and no binary in the tree. The knob is Encoder.vue's: a radial cap-hi to face cap, an edge
+finish re-draws them with no hand drawing and no binary in the tree. The knob is the console's Encoder's: a radial cap-hi to face cap, an edge
 rim, a knurled ring, a pointer between a shaded and a lit groove wall, the silkscreened tick ring and the drop shadow.
 
 **3d is its own look.** Four roles tell `3d` from the console's flat look, each held by a test: raised sections (a gradient plate under
