@@ -37,6 +37,29 @@ for now; an xy pad gets its own drawing when a description carries what it needs
 A section's `bars` (a bar group, [panel-layout.md](panel-layout.md) "Bars") is a row of faders: each control of a run is drawn as a fader,
 its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives each bar's rectangle for hit-testing as for every control.
 
+A section of a repeated group (an EQ's bands, a multiband compressor's bands: [group-model.md](group-model.md)) carries `matrix`,
+the group model's `matrixOf` as the served description gives it (omx-panel#61): `{ orientation, heads, rows, cells, count? }`.
+`heads` are the instances, in drawing order, each `{ label, on, edge }` (`on` the symbol of its on/off control or null, `edge`
+the EQ filter's name for a high-pass, shelf or low-pass, else null); `rows` are the parameters, each `{ label }`; `cells[row][head]`
+is a control's symbol or null. The renderer reads it and infers no group, reorders, wraps or transposes nothing. It draws, in
+the section's box: the curve rows, then the section's other controls (those no head or cell names) flowed in rows of
+`rowControls` as any section's, then the matrix. In `columns` each head is a column, left to right, and each parameter a row;
+in `rows` each head is a row and each parameter a column. When any head has an on/off, the head's row (column) comes first: its
+on/off is the control there, named by the head's label, and a head with none is its label drawn in the cell's name place. Each
+cell is the control of the parameter's row (column) at the head's column (row), named by the parameter's label; a null cell is
+empty and nothing moves into it (a stem one instance lacks is a row with an empty cell). A matrix is as wide as its heads (its
+parameters, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it does not wrap a
+matrix. The EQ is `columns`, its high-pass the first column and its low-pass the last: the order is of the drawing, the audio
+order is the plugin's.
+
+`count: { symbol, default }` names the control that says how many instances the plugin runs (an EQ's band count). Only the first
+`count` heads that have no `edge` are drawn, with every head that has one, closed up in order: a hidden head's controls take no
+cell, are not drawn and have no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the
+host gives one with `omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section.
+A hidden control of a drawn head keeps its cell empty. A `matrix` that is not an object, names a control that is not there or
+not in its section, places one twice, has a `cells` row of another length than `heads`, or whose `orientation` is neither word is
+refused by message, as `bars` is. A section with no `matrix`, and a description with none, is laid out as before.
+
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
 (`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
