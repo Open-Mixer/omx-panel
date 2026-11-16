@@ -346,7 +346,6 @@ jobs:
           name: omx-panel
           owner: omx-panel
           spec: packaging/omx-panel.spec
-          moved: ca:0.13.6
           gate: tools/catalogs-gate.sh
 
   public-sources:

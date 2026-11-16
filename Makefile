@@ -33,15 +33,15 @@ check: build spdx public-sources look copies
 test:
 	npm test
 
-OPENMIXER_DOTGITHUB ?= $(or $(FREEMIXER_DOTGITHUB),../freemixer-dotgithub)
+OPENMIXER_DOTGITHUB ?= ../openmixer-dotgithub
 
 # Every file a comment can be written in opens with its licence and copyright: Open-Mixer/.github's spdx-check, from a
-# checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
+# checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI runs the action.
 spdx:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
-# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
+# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI
 # runs it through the public-sources-check workflow.
 public-sources:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .

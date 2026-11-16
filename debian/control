@@ -62,8 +62,6 @@ Package: omx-panel-l10n-ca
 Section: localization
 Architecture: all
 Depends: omx-panel (= ${source:Version}), ${misc:Depends}
-Breaks: omx-panel (<< 0.13.6~)
-Replaces: omx-panel (<< 0.13.6~)
 Description: ca catalog of omx-panel's codes
  The sentences of omx-panel's codes in the language ca, read by every surface
  that shows them on a host in that locale; without it a surface shows the
