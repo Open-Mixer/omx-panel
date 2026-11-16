@@ -59,6 +59,26 @@ function fillShape(c, box, inside, rgb) {
   }
 }
 
+/**
+ * Fill the box by the fraction of its samples `inside` accepts, each pixel coloured by `colourAt(x, y)` at its centre:
+ * `[r, g, b, a]`, `a` 0..1. The gradients of tools/svg-knob.mjs are painted with it.
+ */
+export function paint(c, box, inside, colourAt) {
+  const x0 = Math.max(0, Math.floor(box[0])), y0 = Math.max(0, Math.floor(box[1]));
+  const x1 = Math.min(c.w, Math.ceil(box[2])), y1 = Math.min(c.h, Math.ceil(box[3]));
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      let n = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) if (inside(x + (sx + 0.5) / SS, y + (sy + 0.5) / SS)) n++;
+      }
+      if (n === 0) continue;
+      const [r, g, b, a] = colourAt(x + 0.5, y + 0.5);
+      blend(c, x, y, [Math.round(r), Math.round(g), Math.round(b)], (n / (SS * SS)) * a);
+    }
+  }
+}
+
 /** A rectangle with rounded corners of radius `r`. */
 export function roundRect(c, x, y, w, h, r, rgb) {
   [x, y, w, h, r] = [x, y, w, h, r].map(snap);

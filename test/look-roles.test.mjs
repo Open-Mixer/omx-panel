@@ -165,9 +165,9 @@ test('positive control: the ratchet sees the reads it judges (--accent in the ge
 
 test('arm: a hex colour, an rgb() and a named colour in the generator are red; so is a token that is no role', () => {
   const gen = text('tools/modgui-gen.mjs');
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
   assert.match(surfaceFaults('g', gen.replace("tok['--accent']", "tok['--tab-line']"), NAMES).join('\n'), /reads --tab-line, which is no role/);
 });
 
@@ -186,11 +186,11 @@ const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 /** The MOD GUI of omx-delay, every file it writes, at `look`. */
 function modguiAt(look) {
   const out = generateModgui(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay', source: 'look-roles test' }, look);
-  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look.tokens), renderFaderFilm(look.tokens)]);
+  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look), renderFaderFilm(look)]);
 }
 
-test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws', () => {
-  const base = loadLook();
+test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws (the console look reads them all)', () => {
+  const base = loadLook('console');
   const drawn = [...new Set(reads('tools/modgui-gen.mjs', text('tools/modgui-gen.mjs')))].filter((n) => NAMES.includes(n));
   assert.ok(drawn.length >= 7, `the MOD GUI reads ${drawn.join(' ')}`);
   const was = modguiAt(base);

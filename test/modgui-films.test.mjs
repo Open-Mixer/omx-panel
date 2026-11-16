@@ -35,7 +35,7 @@ test('the committed omx-delay bundle carries no film strip and is fresh under --
 test('--no-films --check names a film strip that came back as EXTRA', () => {
   const out = bundle();
   mkdirSync(join(out, 'modgui/knobs'), { recursive: true });
-  writeFileSync(join(out, KNOB), renderFilm(loadLook().tokens));
+  writeFileSync(join(out, KNOB), renderFilm(loadLook()));
   const r = cli('--check', '--no-films', ...args(out));
   assert.equal(r.status, 1);
   assert.match(r.stderr, /EXTRA .*omx-knob\.png/);
@@ -48,7 +48,7 @@ test('--films-only writes the knob strip, the render of the look, and touches no
   writeFileSync(css, 'a marker only --films-only leaves in place');
   const r = cli('--films-only', ...args(out));
   assert.equal(r.status, 0, r.stderr);
-  assert.ok(readFileSync(join(out, KNOB)).equals(renderFilm(loadLook().tokens)));
+  assert.ok(readFileSync(join(out, KNOB)).equals(renderFilm(loadLook())));
   assert.equal(existsSync(join(out, FADER)), false, 'no fader drawn, no fader strip');
   assert.equal(readFileSync(css, 'utf8'), 'a marker only --films-only leaves in place');
   writeFileSync(css, original);
@@ -61,7 +61,7 @@ test('--films-only writes the fader strip when the panel draws a fader', () => {
   const panel = JSON.parse(readFileSync(join(FIX, 'omx-delay.panel.json'), 'utf8'));
   writeFileSync(panelFile, JSON.stringify({ ...panel, widgets: { mix: 'fader' } }));
   assert.equal(cli('--films-only', ...args(out, panelFile)).status, 0);
-  assert.ok(readFileSync(join(out, FADER)).equals(renderFaderFilm(loadLook().tokens)));
+  assert.ok(readFileSync(join(out, FADER)).equals(renderFaderFilm(loadLook())));
 });
 
 test('--no-films and --films-only together are a usage error', () => {

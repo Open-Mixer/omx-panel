@@ -1,0 +1,14 @@
+{
+  "$comment": "GENERATED — the console's vintage glass, pinned. Re-pin: `node tools/look-pin.mjs --write <tokens.css> <commit>`, then `node tools/look.mjs`.",
+  "source": {
+    "project": "the OpenMixer console, its tokens.css (vintage dark theme)",
+    "commit": "67b4d542aaf661c9d01e78f578024cf8103393b8",
+    "sha256": "7dcacd1fecf8012494b5e073d412e514661c6fe4a04c682a4a26b20a35f8f256"
+  },
+  "tokens": {
+    "--glass": "#05070a",
+    "--glass-grid": "rgba(233,223,198,.10)",
+    "--legend": "#e9dfc6",
+    "--accent": "#e8732c"
+  }
+}

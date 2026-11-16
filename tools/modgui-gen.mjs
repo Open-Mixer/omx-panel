@@ -34,6 +34,7 @@ import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
+import { paintScene, parseSvg, readKnobSvg, renderSvgFilm, resolveSvg } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -366,9 +367,30 @@ export function layout(panel) {
   return { w: sectionW + 2 * g.pad, h: bottom + g.pad, sections, band };
 }
 
-/** The look: tools/look.json, every colour a plain #rrggbb. */
-export function loadLook() {
-  const look = JSON.parse(readFileSync(LOOK_JSON, 'utf8'));
+const LOOK_FILE = JSON.parse(readFileSync(LOOK_JSON, 'utf8'));
+/** The setting that chooses a look, schema/modgui-looks.json: its name, values, default, environment variable and flag. */
+export const LOOK_SETTING = Object.freeze(LOOK_FILE.setting);
+/** The looks the MOD GUI wears, and the one it wears when none is named. */
+export const LOOKS = Object.freeze(Object.keys(LOOK_FILE.looks));
+export const DEFAULT_LOOK = LOOK_SETTING.default;
+/** The tokens every look sets, the one schema of the looks. */
+export const LOOK_KEYS = Object.freeze(Object.keys(Object.values(LOOK_FILE.looks)[0]));
+
+/** An unknown look: refused by its name. */
+export class UnknownLook extends Error {
+  code = 'MODGUI_UNKNOWN_LOOK';
+}
+
+/** `text` with every `{--role}` it names set to the role's colour in `tokens`; `{--enclosure}` is left for the plugin. */
+const withRoles = (text, tokens) => String(text).replace(/\{(--[a-z0-9-]+)\}/g, (m, k) => (k === '--enclosure' ? m : tokens[k] ?? m));
+
+/**
+ * The look `name` (the default one when none is named): tools/look.json, every colour a plain #rrggbb, and the look's
+ * own tokens, `depth`, each with its colour roles set.
+ */
+export function loadLook(name = DEFAULT_LOOK) {
+  if (!LOOKS.includes(name)) throw new UnknownLook(`modgui-gen: no look '${name}': the ${LOOK_SETTING.name} setting is one of ${LOOKS.join(', ')} (default ${DEFAULT_LOOK})`);
+  const look = LOOK_FILE;
   const tokens = {};
   for (const k of LOOK_TOKENS) {
     const v = look.tokens?.[k];
@@ -378,8 +400,23 @@ export function loadLook() {
   }
   const fontFile = resolve(TOOLS, tokens['--font-file']);
   if (!fontFile.startsWith(`${TOOLS}${sep}`)) throw new Error(`modgui-gen: --font-file '${tokens['--font-file']}' leaves tools/`);
-  return { theme: look.theme, personality: look.personality, tokens, font: parseFont(readFileSync(fontFile)) };
+  // the look's own tokens, as declared: a colour role in them (`{--accent}`) is set from `tokens` where they are worn (depthOf), so a moved role moves them
+  const depth = { ...look.looks[name] };
+  return { name, theme: look.theme, personality: look.personality, tokens, depth, font: parseFont(readFileSync(fontFile)) };
 }
+
+/** The plugin's enclosure colour in `look`: the palette's entry its name picks (a one-colour palette is its colour). */
+export function enclosureOf(look, stem) {
+  const palette = withRoles(look.depth['--enclosure'], look.tokens).split(',');
+  return palette[[...String(stem)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7) % palette.length];
+}
+
+/** A look's token `k` for plugin `stem`: its colour roles and its enclosure set. */
+const depthOf = (look, stem, k) => withRoles(look.depth[k], look.tokens).replace(/\{--enclosure\}/g, enclosureOf(look, stem));
+/** Every token of `look` as worn by plugin `stem`: roles and enclosure set. */
+export const wornDepth = (look, stem = 'omx-delay') => Object.fromEntries(LOOK_KEYS.map((k) => [k, depthOf(look, stem, k)]));
+/** ` prop: value;` for a token that draws something, nothing for `none`. */
+const decl = (prop, v) => (v === 'none' ? '' : ` ${prop}: ${v};`);
 
 /** The literal colours and font the face wears. */
 export const lookTokens = () => loadLook().tokens;
@@ -387,7 +424,13 @@ export const lookTokens = () => loadLook().tokens;
 // ------------------------------------------------------------------------------------ drawing
 
 /** One knob at travel fraction `f`: rim, body, pointer over a 270° sweep from the lower left. */
-function drawKnob(c, cx, cy, r, f, col) {
+function drawKnob(c, cx, cy, r, f, col, look) {
+  // a look with a knob drawing wears it, scaled to this knob: the same SVG the film strip is made from
+  if (look && look.depth['--knob'] !== 'flat') {
+    const k = (2 * r) / GEOMETRY.knob, angle = -135 + 270 * Math.min(1, Math.max(0, f));
+    paintScene(c, parseSvg(resolveSvg(readKnobSvg(look.depth['--knob']), look.tokens, angle)), cx - 24 * k, cy - 24 * k, k);
+    return;
+  }
   disc(c, cx, cy, r, col.rim);
   disc(c, cx, cy, r - Math.max(1, r * 0.08), col.body);
   const th = (-135 + 270 * Math.min(1, Math.max(0, f))) * (Math.PI / 180);
@@ -421,7 +464,7 @@ function drawDisplay(c, x, y, w, h, col) {
 }
 
 function drawSwitch(c, x, y, w, h, on, col) {
-  roundRect(c, x, y, w, h, h / 2, on ? col.accent : col.body);
+  roundRect(c, x, y, w, h, h / 2, on ? col.pressed : col.body);
   const r = h / 2 - h * 0.15;
   disc(c, on ? x + w - h / 2 : x + h / 2, y + h / 2, r, on ? col.ink : col.inkDim);
 }
@@ -430,6 +473,16 @@ const palette = (tok) => ({
   surface: rgbOf(tok['--surface']), section: rgbOf(tok['--surface-2']), body: rgbOf(tok['--surface-3']),
   rim: rgbOf(tok['--border-strong']), ink: rgbOf(tok['--ink']), inkDim: rgbOf(tok['--ink-dim']), accent: rgbOf(tok['--accent']),
 });
+
+/** The first #rrggbb a look token names, as [r, g, b]; the plugin's enclosure where it names that. */
+const hexOf = (look, stem, k) => rgbOf(/#[0-9a-f]{6}/i.exec(depthOf(look, stem, k).replace(/\{--enclosure\}/g, enclosureOf(look, stem)))?.[0] ?? look.tokens['--surface']);
+
+/** The face's colours in `look`: the roles' palette, with the look's own plates and text colours over it. */
+function faceColours(look, stem) {
+  const h = (k) => hexOf(look, stem, k);
+  return { ...palette(look.tokens), body: h('--key-bg'), screen: h('--screen-bg'), pressed: h('--key-pressed-bg'),
+    tx: { brand: h('--t-brand'), label: h('--t-label'), section: h('--t-section'), control: h('--t-control'), value: h('--t-value'), key: h('--t-key'), screen: h('--t-screen'), screenDim: h('--t-screen-dim'), curve: h('--curve-line'), scribbleBg: h('--scribble-bg'), scribble: h('--scribble-ink') } };
+}
 
 /** Text sizes and baselines, in px at scale 1: the template's 10 px small text and 14 px title. */
 const TEXT = Object.freeze(FACE.text);
@@ -449,32 +502,40 @@ export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}`;
 
 /** The face at `scale`, every control at its declared default. */
 export function renderFace(lay, look, scale) {
-  const g = GEOMETRY, tok = look.tokens, font = look.font, col = palette(tok), s = scale;
+  const g = GEOMETRY, tok = look.tokens, font = look.font, col = faceColours(look, lay.stem), tx = col.tx, s = scale;
   const c = canvas(Math.round(lay.w * s), Math.round(lay.h * s));
-  roundRect(c, 0, 0, lay.w * s, lay.h * s, g.radius * s, col.rim);
-  roundRect(c, s, s, (lay.w - 2) * s, (lay.h - 2) * s, (g.radius - 1) * s, col.surface);
-  roundRect(c, s, (g.headH - 2) * s, (lay.w - 2) * s, 2 * s, 0, col.accent);
-  disc(c, (lay.w - g.pad - 10) * s, (g.headH / 2) * s, 5 * s, col.accent);
+  const radius = look.depth['--body-radius'] === 'none' ? g.radius : Number(look.depth['--body-radius']);
+  roundRect(c, 0, 0, lay.w * s, lay.h * s, radius * s, col.rim);
+  // the body is the look's first colour (the plugin's enclosure in vintage); a look with a head plate sets it dark over the top
+  const bodyHex = look.depth['--body-bg'].includes('{--enclosure}') ? enclosureOf(look, lay.stem) : /#[0-9a-f]{6}/i.exec(depthOf(look, lay.stem, '--body-bg'))?.[0] ?? tok['--surface'];
+  roundRect(c, s, s, (lay.w - 2) * s, (lay.h - 2) * s, (radius - 1) * s, rgbOf(bodyHex));
+  if (look.depth['--screws'] !== 'none') for (const sx of [9, lay.w - 18]) disc(c, (sx + 4.5) * s, 13.5 * s, 4.5 * s, hexOf(look, lay.stem, '--screws'));
+  if (look.depth['--head-bg'] !== 'none') {
+    const [it, il] = look.depth['--head-inset'] === 'none' ? [0, 0] : look.depth['--head-inset'].split(' ').map((v) => parseFloat(v));
+    roundRect(c, (1 + il) * s, (1 + it) * s, (lay.w - 2 - 2 * il) * s, (g.headH - 1 - it) * s, (il ? 4 : radius - 1) * s, hexOf(look, lay.stem, '--head-bg'));
+  }
+  if (look.depth['--head-rule'] !== 'none') roundRect(c, s, (g.headH - 2) * s, (lay.w - 2) * s, 2 * s, 0, hexOf(look, lay.stem, '--head-rule'));
+  disc(c, (lay.w - g.pad - 10) * s, (g.headH / 2) * s, 5 * s, hexOf(look, lay.stem, '--led-on-bg'));
   const headW = (lay.w - 2 * g.pad - 24) * s;
-  drawText(c, font, fitText(font, lay.brand.toUpperCase(), TEXT.brand * s, headW), g.pad * s, TEXT.brandBase * s, TEXT.brand * s, col.inkDim);
-  drawText(c, font, fitText(font, lay.name, TEXT.title * s, headW), g.pad * s, TEXT.titleBase * s, TEXT.title * s, col.ink);
+  drawText(c, font, fitText(font, lay.brand.toUpperCase(), TEXT.brand * s, headW), g.pad * s, TEXT.brandBase * s, TEXT.brand * s, tx.brand);
+  drawText(c, font, fitText(font, lay.name, TEXT.title * s, headW), g.pad * s, TEXT.titleBase * s, TEXT.title * s, tx.label);
   for (const sec of lay.sections) {
-    roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, col.section);
-    drawText(c, font, fitText(font, sec.label.toUpperCase(), TEXT.small * s, (sec.w - 2 * g.sectionPad) * s), (sec.x + g.sectionPad) * s, (sec.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
+    if (look.depth['--section-bg'] !== 'none') roundRect(c, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g.sectionRadius * s, hexOf(look, lay.stem, '--section-bg'));
+    drawText(c, font, fitText(font, sec.label.toUpperCase(), TEXT.small * s, (sec.w - 2 * g.sectionPad) * s), (sec.x + g.sectionPad) * s, (sec.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
     // the curves: a frame with the basis word in the caption place; the points are drawn when a build has them (a host's curve is its own)
     sec.displays.forEach((dsp, m) => {
       const cx = (sec.x + g.sectionPad) * s, cy = (sec.y + g.sectionTitleH + m * (g.curveH + g.curveGap)) * s, cw = (sec.w - 2 * g.sectionPad) * s, ch = g.curveH * s;
       roundRect(c, cx, cy, cw, ch, Math.min(4, ch / 4), col.rim);
-      roundRect(c, cx + 1, cy + 1, cw - 2, ch - 2, Math.min(3, ch / 4), col.body);
-      drawText(c, font, fitText(font, dsp.basis, TEXT.small * s, cw - 12 * s), cx + 6 * s, cy + ch - 5 * s, TEXT.small * s, col.inkDim);
+      roundRect(c, cx + 1, cy + 1, cw - 2, ch - 2, Math.min(3, ch / 4), col.screen);
+      drawText(c, font, fitText(font, dsp.basis, TEXT.small * s, cw - 12 * s), cx + 6 * s, cy + ch - 5 * s, TEXT.small * s, tx.screenDim);
       const geo = curveGeometry(dsp.curve, dsp.kind, cw, ch, s);
       if (!geo) return;
       const [ax, ay, bx, by] = geo.axis;
       segment(c, cx + ax, cy + ay, cx + bx, cy + by, Math.max(0.5, 0.5 * s), col.rim);
-      for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), col.accent);
+      for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), tx.curve);
       for (const m of geo.marks) {
-        disc(c, cx + m.at[0], cy + m.at[1], Math.max(2, 2.5 * s), col.ink);
-        drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
+        disc(c, cx + m.at[0], cy + m.at[1], Math.max(2, 2.5 * s), tx.screen);
+        drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, tx.screen, 'centre');
       }
     });
     for (const k of sec.controls) {
@@ -491,28 +552,31 @@ export function renderFace(lay, look, scale) {
       } else if (k.widget === 'fader') {
         drawFader(c, (x + g.cellW / 2) * s, (y + g.knobTop) * s, g.knob * s, travelFraction(k, k.def), col);
       } else {
-        drawKnob(c, (x + g.cellW / 2) * s, (y + g.knobTop + g.knob / 2) * s, (g.knob / 2) * s, travelFraction(k, k.def), col);
+        drawKnob(c, (x + g.cellW / 2) * s, (y + g.knobTop + g.knob / 2) * s, (g.knob / 2) * s, travelFraction(k, k.def), col, look);
       }
       const mid = (x + g.cellW / 2) * s, fit = (g.cellW - 4) * s;
-      drawText(c, font, fitText(font, k.bar ?? k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+      drawText(c, font, fitText(font, k.bar ?? k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, tx.control, 'centre');
       if (k.widget === 'selector') {
         const shown = fitText(font, valueText(k), TEXT.small * s, (g.selectorW - 8) * s);
-        drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, col.ink, 'centre');
+        drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, tx.key, 'centre');
       } else if (k.widget !== 'display') {
-        drawText(c, font, fitText(font, valueText(k), TEXT.small * s, fit), mid, (y + TEXT.valueBase) * s, TEXT.small * s, col.ink, 'centre');
+        // the scribble strip: a recessed well the value is set in (the MOD GUI binds it to the port; the raster shows the default)
+        const sw = g.scribbleW * s;
+        roundRect(c, mid - sw / 2, (y + g.cellH - g.scribbleH) * s, sw, g.scribbleH * s, 3 * s, tx.scribbleBg);
+        drawText(c, font, fitText(font, valueText(k), TEXT.small * s, sw - 4 * s), mid, (y + TEXT.valueBase) * s, TEXT.small * s, tx.scribble, 'centre');
       }
     }
   }
   // the meters band: each a frame with its caption (label, range, unit); no reading, so no bar and no marker
   if (lay.band) {
     const b = lay.band;
-    roundRect(c, b.x * s, b.y * s, b.w * s, b.h * s, g.sectionRadius * s, col.section);
-    drawText(c, font, fitText(font, 'METERS', TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, col.inkDim);
+    if (look.depth['--section-bg'] !== 'none') roundRect(c, b.x * s, b.y * s, b.w * s, b.h * s, g.sectionRadius * s, hexOf(look, lay.stem, '--section-bg'));
+    drawText(c, font, fitText(font, 'METERS', TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
     b.meters.forEach((m, row) => {
       const mx = (b.x + g.sectionPad) * s, my = (b.y + g.sectionTitleH + row * (g.meterH + g.meterGap)) * s, mw = (b.w - 2 * g.sectionPad) * s, mh = g.meterH * s;
       roundRect(c, mx, my, mw, mh, Math.min(4, mh / 4), col.rim);
-      roundRect(c, mx + 1, my + 1, mw - 2, mh - 2, Math.min(3, mh / 4), col.body);
-      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s), mx + 6 * s, my + 12 * s, TEXT.small * s, col.inkDim);
+      roundRect(c, mx + 1, my + 1, mw - 2, mh - 2, Math.min(3, mh / 4), col.screen);
+      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s), mx + 6 * s, my + 12 * s, TEXT.small * s, tx.screenDim);
     });
   }
 
@@ -520,16 +584,18 @@ export function renderFace(lay, look, scale) {
 }
 
 /** MOD's film strip: `filmFrames` square frames left to right, the knob from minimum to maximum. */
-export function renderFilm(tok) {
-  const g = GEOMETRY, col = palette(tok), n = g.filmFrames;
+export function renderFilm(look) {
+  const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
+  // a look with a knob drawing: one SVG, a frame per step (tools/svg-knob.mjs); the console's is the flat knob
+  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--knob']), look.tokens, n, g.knob);
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawKnob(c, i * g.knob + g.knob / 2, g.knob / 2, g.knob / 2 - 1, i / (n - 1), col);
   return encodePng(c, g.knob);
 }
 
 /** The fader's film strip: the same square frames, the fader from minimum to maximum. */
-export function renderFaderFilm(tok) {
-  const g = GEOMETRY, col = palette(tok), n = g.filmFrames;
+export function renderFaderFilm(look) {
+  const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawFader(c, i * g.knob + g.knob / 2, 0, g.knob, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -618,7 +684,8 @@ export function emitTemplate(panel, lay, source) {
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
     return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
                 ${image}
-                <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>
+                <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>${k.widget === 'selector' ? '' : `
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"></div>`}
             </div>`;
   };
   // a curve's stroke, its axis and its marks, a static SVG in the frame's own px: the geometry the raster draws
@@ -668,46 +735,59 @@ ${jacks('output')}
  * border: a border takes a pixel of layout and would set every box of the face 1 px right and down of the raster's (renderFace). */
 export function emitStylesheet(panel, look, source) {
   const g = GEOMETRY, f = files(panel.stem), tok = look.tokens;
+  const D = (k) => depthOf(look, panel.stem, k);
+  const bodyRadius = D('--body-radius') === 'none' ? g.radius : Number(D('--body-radius'));
+  const inset = D('--head-inset') === 'none' ? null : D('--head-inset').split(' ');
+  const held = D('--key-held-bg') !== 'none', lift = look.name === 'console' ? '' : ' transform: translateY(1px);';
   const P = '.omx-pedal{{{cns}}}';
   const film = `/resources/${relative(MODGUI_DIR, f.film)}{{{ns}}}`;
   const faderFilm = `/resources/${relative(MODGUI_DIR, f.faderFilm)}{{{ns}}}`;
   return `/*
 ${banner(' * ', source).join('\n')}
- * Colours and font: the OpenMixer console's ${look.theme} theme, resolved in tools/look.json.
+ * Colours and font: the OpenMixer console's ${look.theme} theme, resolved in tools/look.json.${look.name === 'console' ? '' : `\n * Look: ${look.name} (the ${LOOK_SETTING.name} setting).`}
  */
-${P} { position: relative; box-sizing: border-box; background: ${tok['--surface']}; box-shadow: inset 0 0 0 1px ${tok['--border-strong']}; border-radius: ${g.radius}px; color: ${tok['--ink']}; font-family: ${tok['--font-ui']}; }
-${P} .omx-head { position: absolute; left: 0; right: 0; top: 0; border-bottom: 2px solid ${tok['--accent']}; }
-${P} .omx-brand { position: absolute; left: ${g.pad}px; top: 5px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: ${tok['--ink-dim']}; }
-${P} .omx-label { position: absolute; left: ${g.pad}px; top: 17px; font-size: 14px; font-weight: 600; }
-${P} .omx-bypass { position: absolute; right: ${g.pad}px; top: ${g.headH / 2 - 10}px; width: 20px; height: 20px; cursor: pointer; }
-${P} .omx-bypass-light { width: 10px; height: 10px; margin: 5px; border-radius: 50%; background: ${tok['--surface-3']}; }
-${P} .omx-bypass-light.on { background: ${tok['--accent']}; }
-${P} .omx-section { position: absolute; box-sizing: border-box; background: ${tok['--surface-2']}; border-radius: ${g.sectionRadius}px; }
-${P} .omx-section-title { margin: 0; padding: 3px ${g.sectionPad}px; height: ${g.sectionTitleH}px; box-sizing: border-box; font-size: 10px; font-weight: 600; text-transform: uppercase; color: ${tok['--ink-dim']}; }
+${P} { position: relative; box-sizing: border-box; background: ${D('--body-bg')}; box-shadow: ${D('--body-shadow')}; border-radius: ${bodyRadius}px; color: ${D('--t-label')}; font-family: ${tok['--font-ui']}; }
+${P} .omx-head { position: absolute; left: ${inset ? inset[1] : 0}; right: ${inset ? inset[1] : 0}; top: ${inset ? inset[0] : 0};${decl('background', D('--head-bg'))}${D('--head-bg') === 'none' ? '' : inset ? ' border-radius: 4px;' : ` border-radius: ${bodyRadius}px ${bodyRadius}px 0 0;`}${D('--head-rule') === 'none' ? '' : ` border-bottom: 2px solid ${D('--head-rule')};`} }
+${D('--screws') === 'none' ? '' : `${P}::before, ${P}::after { content: ''; position: absolute; top: 9px; width: 9px; height: 9px; border-radius: 50%; background: ${D('--screws')};${decl('box-shadow', D('--screws-shadow'))} }
+${P}::before { left: 9px; }
+${P}::after { right: 9px; }
+`}
+${P} .omx-brand { position: absolute; left: ${g.pad}px; top: 5px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: ${D('--t-brand')}; }
+${P} .omx-label { position: absolute; left: ${g.pad}px; top: 17px; font-size: 14px; font-weight: 600;${decl('font-family', D('--label-font'))} }
+${P} .omx-bypass { position: absolute; right: ${g.pad}px; top: ${g.headH / 2 - 10}px; width: 20px; height: 20px; cursor: pointer;${D('--bypass-bg') === 'none' ? '' : ` border-radius: 50%;${decl('background', D('--bypass-bg'))}${decl('box-shadow', D('--bypass-shadow'))}`} }
+${P} .omx-bypass-light { width: 10px; height: 10px; margin: 5px; border-radius: 50%; background: ${D('--led-off')};${D('--led-left') === 'none' ? '' : ` position: absolute; left: ${D('--led-left')}; top: 0;`} }
+${P} .omx-bypass-light.on { background: ${D('--led-on-bg')};${decl('box-shadow', D('--led-on-shadow'))} }
+${P} .omx-section { position: absolute; box-sizing: border-box; background: ${D('--section-bg')}; border-radius: ${g.sectionRadius}px;${decl('box-shadow', D('--section-shadow'))} }
+${P} .omx-section-title { margin: 0; padding: 3px ${g.sectionPad}px; height: ${g.sectionTitleH}px; box-sizing: border-box; font-size: 10px; font-weight: 600; text-transform: uppercase; color: ${D('--t-section')}; }
 ${P} .omx-control { position: absolute; width: ${g.cellW}px; height: ${g.cellH}px; text-align: center; }
 ${P} .omx-knob-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${film}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
 ${draws(panel, 'fader') ? `${P} .omx-fader-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${faderFilm}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
-` : ''}${P} .omx-switch-image { position: relative; width: ${g.switchW}px; height: ${g.switchH}px; margin: ${g.switchTop}px auto ${g.knob + g.knobTop - g.switchTop - g.switchH}px; border-radius: ${g.switchH / 2}px; background: ${tok['--surface-3']}; cursor: pointer; }
+` : ''}${P} .omx-switch-image { position: relative; width: ${g.switchW}px; height: ${g.switchH}px; margin: ${g.switchTop}px auto ${g.knob + g.knobTop - g.switchTop - g.switchH}px; border-radius: ${g.switchH / 2}px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
 ${P} .omx-switch-image::after { content: ''; position: absolute; top: 3px; left: 3px; width: ${g.switchH - 6}px; height: ${g.switchH - 6}px; border-radius: 50%; background: ${tok['--ink-dim']}; }
-${P} .omx-switch-image.on { background: ${tok['--accent']}; }
+${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
+${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
+` : ''}
 ${P} .omx-switch-image.on::after { left: ${g.switchW - g.switchH + 3}px; background: ${tok['--ink']}; }
-${P} .omx-control-title { display: block; margin-top: 6px; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-${draws(panel, 'selector') ? `${P} .omx-selector-image { position: relative; box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; cursor: pointer; }
-${P} .omx-selector-value { font-size: 10px; line-height: ${g.selectorH - 2}px; color: ${tok['--ink']}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+${P} .omx-scribble { position: absolute; left: ${(g.cellW - g.scribbleW) / 2}px; top: ${g.cellH - g.scribbleH}px; box-sizing: border-box; width: ${g.scribbleW}px; height: ${g.scribbleH}px; border-radius: 3px; background: ${D('--scribble-bg')}; color: ${D('--scribble-ink')};${decl('text-shadow', D('--scribble-glow'))}${decl('box-shadow', D('--scribble-shadow'))} font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 10px; line-height: ${g.scribbleH}px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+${P} .omx-scribble::after { content: attr(data-unit); margin-left: 0.3em; }
+${draws(panel, 'selector') ? `${P} .omx-selector-image { position: relative; box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
+${held ? `${P} .omx-selector-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
+` : ''}${P} .omx-selector-value { font-size: 10px; line-height: ${g.selectorH - 2}px; color: ${D('--t-key')}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 ${P} .omx-selector-list { display: none; position: absolute; left: 0; top: ${g.selectorH}px; z-index: 10; min-width: 100%; background: ${tok['--surface-3']}; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; }
 ${P} .omx-selector-image.selecting .omx-selector-list, ${P} .omx-selector-image.open .omx-selector-list { display: block; }
 ${P} .omx-selector-option { padding: 2px 6px; font-size: 10px; text-align: left; white-space: nowrap; }
-${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
-` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-selector-option.selected { color: ${D('--t-list-sel')}; }
+` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ${P} .omx-curve-plot { position: absolute; left: 0; top: 0; }
 ${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
-${P} .omx-curve-line { stroke: ${tok['--accent']}; stroke-width: 1.5; stroke-linejoin: round; }
-${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
-${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
-${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
-` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
-${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${tok['--ink-dim']}; white-space: nowrap; overflow: hidden; }
-` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
+${P} .omx-curve-line { stroke: ${D('--curve-line')}; stroke-width: 1.5; stroke-linejoin: round; }
+${P} .omx-curve-plot circle { fill: ${D('--t-screen')}; }
+${P} .omx-curve-plot text { fill: ${D('--t-screen')}; font-size: 10px; }
+${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${D('--t-screen-dim')}; }
+` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
+${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-screen-dim')}; white-space: nowrap; overflow: hidden; }
+` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ` : ''}`;
 }
 
@@ -738,12 +818,14 @@ function (event, funcs) {
 
 /** Every file of a descriptor's modgui, as [path relative to the LV2 bundle, bytes], in a fixed order. `source`
  * is what the banner names the files were made from. */
-export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false }, look = loadLook()) {
+export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false, look: named }, wornLook) {
+  // the look: an object (a caller's own), else the one `named` (the default look when neither is given)
+  const look = wornLook ?? (named && typeof named === 'object' ? named : loadLook(named));
   // every colour role, whether this face draws it or not: a look short of one is no look of the role file's
-  const short = LOOK_TOKENS.filter((k) => typeof look.tokens?.[k] !== 'string' || !look.tokens[k]);
+  const short = [...LOOK_TOKENS.filter((k) => typeof look.tokens?.[k] !== 'string' || !look.tokens[k]), ...LOOK_KEYS.filter((k) => typeof look.depth?.[k] !== 'string' || !look.depth[k])];
   if (short.length) throw new Error(`modgui-gen: the look sets no ${short.join(', ')}`);
   const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst });
-  const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem };
+  const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem, stem: panel.stem };
   const f = files(panel.stem);
   return [
     [MODGUI_TTL, Buffer.from(emitModguiTtl(panel, source))],
@@ -751,8 +833,8 @@ export function generateModgui(descriptor, { panel: declared, stem, source, easy
     [f.stylesheet, Buffer.from(emitStylesheet(panel, look, source))],
     [f.screenshot, renderFace(lay, look, 1)],
     [f.thumbnail, renderFace(lay, look, GEOMETRY.thumbScale)],
-    [f.film, renderFilm(look.tokens)],
-    ...(draws(panel, 'fader') ? [[f.faderFilm, renderFaderFilm(look.tokens)]] : []),
+    [f.film, renderFilm(look)],
+    ...(draws(panel, 'fader') ? [[f.faderFilm, renderFaderFilm(look)]] : []),
     ...(governs(panel) ? [[f.script, Buffer.from(emitScript(source))]] : []),
   ];
 }
@@ -783,7 +865,7 @@ export function withModguiSeeAlso(text, uri) {
   return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] [--look <vintage|console|3d>] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -806,7 +888,14 @@ export function main(argv) {
   const panel = panelFile ? JSON.parse(readFileSync(panelFile, 'utf8')) : undefined;
   const stem = opt('--stem') ?? basename(resolve(out), '.lv2');
   const source = opt('--source') ?? `${shownIn(descriptorFile)}${panelFile ? ` and ${shownIn(panelFile)}` : ''} and tools/look.json`;
-  const look = loadLook();
+  let look;
+  try {
+    look = loadLook(opt('--look') ?? process.env[LOOK_SETTING.env] ?? DEFAULT_LOOK);
+  } catch (err) {
+    if (err.code !== 'MODGUI_UNKNOWN_LOOK') throw err;
+    console.error(err.message);
+    process.exit(2);
+  }
   let stale = 0;
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));

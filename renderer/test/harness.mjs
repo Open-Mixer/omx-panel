@@ -57,7 +57,7 @@ export function resolved(fx) {
 /** The MOD GUI generator's face of the fixture at `scale`, as pixels. */
 export function face(fx, scale) {
   const p = resolved(fx);
-  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook(), scale));
+  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook('console'), scale));
 }
 
 /** The fixture's panel description, as `omx-panel layout` writes it, in a file. */

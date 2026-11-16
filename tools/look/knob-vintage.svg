@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- The vintage look's knob, ONE drawing: a chunky black pedal knob with a soft drop shadow, a dark ring, a domed cap and a
+       white pointer (the owner's reference: cap #4a4a4a to #151515, pointer #f3efe3). {angle} is the frame's, from -135 to
+       +135 degrees. tools/svg-knob.mjs reads the subset used here. Drawn here, from nothing else. -->
+  <defs>
+    <radialGradient id="cap" cx="0.4" cy="0.3" r="0.7">
+      <stop offset="0" stop-color="#4a4a4a"/>
+      <stop offset="1" stop-color="#151515"/>
+    </radialGradient>
+    <radialGradient id="shine" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="24.5" cy="27" r="21.5" fill="#000000" fill-opacity="0.45"/>
+  <circle cx="24" cy="24" r="23" fill="#000000" fill-opacity="0.25"/>
+  <circle cx="24" cy="24" r="20.5" fill="url(#cap)"/>
+  <ellipse cx="20" cy="14" rx="9" ry="5" fill="url(#shine)"/>
+  <g transform="rotate({angle} 24 24)">
+    <line x1="24" y1="8.5" x2="24" y2="19" stroke="#f3efe3" stroke-width="3.2"/>
+  </g>
+</svg>

@@ -11,8 +11,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { contrastTable, textRules } from '../tools/look-contrast.mjs';
-import { DEFAULT_LOOK, GEOMETRY, LOOK_KEYS, LOOKS, LOOK_SETTING, generateModgui, loadLook, renderFilm } from '../tools/modgui-gen.mjs';
+import { contrastTable, FLOOR, textRules } from '../tools/look-contrast.mjs';
+import { DEFAULT_LOOK, GEOMETRY, LOOK_KEYS, LOOKS, LOOK_SETTING, generateModgui, loadLook, renderFilm, wornDepth } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
@@ -38,9 +38,9 @@ for (const name of ['vintage', 'console', '3d']) {
     const look = loadLook(name);
     const text = css(name);
     for (const k of LOOK_KEYS) {
-      const v = look.depth[k];
+      const v = wornDepth(look)[k];
       // a token that is `none` draws nothing; every other one is in the CSS, resolved
-      if (v === 'none' || k === '--knob' || k === '--enclosure') continue;
+      if (v === 'none' || k === '--knob' || k === '--enclosure' || v.includes('{') || ['--t-list-sel', '--head-inset', '--body-radius', '--control-caps'].includes(k)) continue; // the selector's own rule: omx-delay draws no selector
       assert.ok(text.includes(v), `${name}: ${k} = ${v} is not in the stylesheet`);
     }
   });
@@ -57,7 +57,7 @@ for (const name of ['vintage', 'console', '3d']) {
 }
 
 test('the default look is vintage', () => {
-  assert.ok(css().includes(loadLook('vintage').depth['--key-pressed-shadow']));
+  assert.ok(css().includes(wornDepth(loadLook('vintage'))['--key-pressed-shadow']));
   assert.deepEqual(gen().map(([, b]) => Buffer.from(b)), gen('vintage').map(([, b]) => Buffer.from(b)));
   assert.notEqual(css('vintage'), css('console'));
   assert.notEqual(css('3d'), css('console'));
@@ -85,10 +85,14 @@ test('a look short of a token is refused by that token', () => {
   assert.throws(() => gen({ ...base, depth }), /--section-shadow/);
 });
 
-test('contrast: no text/background pair of any look falls below the console\'s', () => {
+test('contrast: no pair of the console or 3d falls below today\'s, and every pair of every look clears 4.5:1', () => {
   const rows = contrastTable();
-  assert.ok(rows.length >= 3 * 8, `${rows.length} rows`);
-  for (const r of rows) assert.ok(r.after >= r.before - 1e-9, `${r.look} ${r.rule}: ${r.after.toFixed(2)} < ${r.before.toFixed(2)}`);
+  assert.ok(rows.length >= 3 * 10, `${rows.length} rows`);
+  for (const r of rows) {
+    assert.ok(Number.isFinite(r.after), `${r.look} ${r.rule}: no ratio`);
+    assert.ok(r.after >= FLOOR - 1e-9, `${r.look} ${r.rule}: ${r.after.toFixed(2)} is under ${FLOOR}:1`);
+    if (r.look !== 'vintage') assert.ok(r.after >= r.before - 1e-9, `${r.look} ${r.rule}: ${r.after.toFixed(2)} < today's ${r.before.toFixed(2)}`);
+  }
 });
 
 test('contrast: every text colour the stylesheet sets is in the table', () => {
