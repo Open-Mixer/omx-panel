@@ -112,8 +112,10 @@ test('the EQ curve includes the HPF\'s roll-off when its roles are declared', ne
   const d = read('../eq-marks/eq.descriptor.json');
   const panel = read('../eq-marks/eq.panel.json');
   const filt = (on) => ({
-    controls: [...d.controls, { symbol: 'hf', id: 'hf', name: 'HPF Hz', kind: 'travel', travel: { min: 20, max: 2000, default: 400, unit: 'Hz' }, meaning: 'frequency' }],
-    panel: on ? { ...panel, sections: [{ ...panel.sections[0], controls: [...panel.sections[0].controls, 'hf'] }], roles: { ...panel.roles, hpf_freq: 'hf' } } : { ...panel, sections: [{ ...panel.sections[0], controls: [...panel.sections[0].controls, 'hf'] }] },
+    controls: [...d.controls,
+      { symbol: 'hf', id: 'hf', name: 'HPF Hz', kind: 'travel', travel: { min: 20, max: 2000, default: 400, unit: 'Hz' } },
+      { symbol: 'hs', id: 'hs', name: 'HPF slope', kind: 'travel', travel: { min: 12, max: 24, default: 24, step: 12, unit: 'dB' } }],
+    panel: { ...panel, sections: [{ ...panel.sections[0], controls: [...panel.sections[0].controls, 'hf', 'hs'] }], roles: on ? { ...panel.roles, hpf_freq: 'hf', hpf_slope: 'hs' } : panel.roles },
   });
   const poly = (on) => {
     const { controls, panel: p } = filt(on);

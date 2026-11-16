@@ -169,6 +169,7 @@ export function emitLook(doc = loadRoles(), looks = loadLooks()) {
     ...Object.fromEntries(LOOK_AXES.map((a) => [a, doc.look[a]])),
     tokens,
     setting: looks.setting,
+    tierSetting: looks.tierSetting,
     looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => loadPin().tokens[t])]))])),
   };
   return `${JSON.stringify(look, null, 2)}\n`;

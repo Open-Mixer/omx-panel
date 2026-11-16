@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- Tiers and edge bands: a control's `tier` (`panel.tiers`, easy or advanced, default advanced; the `modgui-tier` setting, `--tier`, `$OMX_MODGUI_TIER`, default advanced; Easy draws only the easy controls) and a section's `edges` (an EQ's first band is the plugin's HPF, its last the LPF; the curve carries their roll-off). Declared in `schema/panel.schema.json`.
+
 - The MOD GUI has three looks, the `modgui-look` setting (values `vintage`, `console`, `3d`; default `vintage`;
   `omx-panel modgui --look <name>`, else `$OMX_MODGUI_LOOK`; an unknown look is refused by name, exit 2). Declared once in
   `schema/modgui-looks.json` and emitted into `tools/look.json`. `vintage` is the owner's reference (cream enclosure, dark label

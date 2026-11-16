@@ -247,15 +247,64 @@ function easyFirst(panel, easy) {
   return { ...panel, sections: [{ key: 'easy', label: EASY_PAGE, controls: easy }, ...rest] };
 }
 
+/**
+ * A declared panel as one tier of the MOD GUI draws it: the sections' edge bands moved into place (an EQ's first and last
+ * band are the controls another section lists, [HPF] [bands] [LPF]) and, for `easy`, only the controls the panel's `tiers` name
+ * easy (a plugin that names none draws them all: nothing says easy). Returns the panel to draw, the panel as the layout reads
+ * it (the declared lists, none of `tiers` or `edges`) and each edge control's band label.
+ */
+export function shapeDeclared(declared, tier, where) {
+  if (!TIERS.includes(tier)) throw new UnknownTier(`modgui-gen: no tier '${tier}': the ${TIER_SETTING.name} setting is one of ${TIERS.join(', ')} (default ${DEFAULT_TIER})`);
+  const listed = new Set(declared.sections.flatMap((s) => s.controls));
+  const tiers = declared.tiers ?? {};
+  for (const [symbol, t] of Object.entries(tiers)) {
+    if (!TIERS.includes(t)) throw new Error(`${where}: tiers gives '${symbol}' the tier '${t}', none of ${TIERS.join(', ')}`);
+    if (!listed.has(symbol)) throw new Error(`${where}: tiers names '${symbol}', which the panel does not draw`);
+  }
+  const sections = declared.sections.map((s) => ({ ...s, controls: [...s.controls] }));
+  const emptied = new Set();
+  const bands = {};
+  for (const sec of sections) {
+    if (!sec.edges) continue;
+    const ends = { first: [], last: [] };
+    for (const [end, band] of Object.entries(sec.edges)) {
+      const from = sections.find((x) => x.key === band.from);
+      if (!from || from === sec) throw new Error(`${where}: section '${sec.key}' takes its ${end} band from '${band.from}', which is no other section`);
+      for (const c of band.controls) {
+        if (sec.controls.includes(c)) throw new Error(`${where}: '${c}' is in two sections (edge band '${band.label}' of '${sec.key}')`);
+        if (!from.controls.includes(c)) throw new Error(`${where}: edge band '${band.label}' of '${sec.key}' names '${c}', which section '${band.from}' does not list`);
+        from.controls.splice(from.controls.indexOf(c), 1);
+        bands[c] = band.label;
+      }
+      ends[end] = band.controls;
+      emptied.add(from.key);
+    }
+    sec.controls = [...ends.first, ...sec.controls, ...ends.last];
+  }
+  let kept = sections.map(({ edges: _edges, ...s }) => s).filter((s) => s.controls.length > 0 || !emptied.has(s.key));
+  const hasEasy = Object.values(tiers).includes('easy');
+  const dropped = new Set();
+  if (tier === 'easy' && hasEasy) {
+    kept = kept.map((s) => ({ ...s, controls: s.controls.filter((c) => (tiers[c] ?? 'advanced') === 'easy' || (dropped.add(c), false)) })).filter((s) => s.controls.length > 0);
+  }
+  const without = (o) => (o === undefined ? undefined : Object.fromEntries(Object.entries(o).filter(([k]) => !dropped.has(k))));
+  const { tiers: _t, ...rest } = declared;
+  const panel = { ...rest, sections: kept, ...(declared.visibleWhen ? { visibleWhen: without(declared.visibleWhen) } : {}), ...(declared.widgets ? { widgets: without(declared.widgets) } : {}) };
+  const layoutPanel = { ...rest, sections: declared.sections.map(({ edges: _e, ...s }) => s) };
+  return { panel, layoutPanel, bands };
+}
+
 /** The panel of a descriptor, resolved: each section with its controls, each control its descriptor control's
  * symbol, name and travel. `stem` names the files. */
-export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst = false }) {
+export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst = false, tier = DEFAULT_TIER }) {
   const plugin = descriptor.plugin ?? {};
   const uri = plugin.format === 'lv2' ? plugin.id : plugin.uri;
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
+  const shaped = declared ? shapeDeclared(declared, tier, `modgui-gen: '${stem}'`) : null;
+  declared = shaped?.layoutPanel;
   let panel;
   try {
-    panel = panelOf(descriptor, declared, wantEasyFirst);
+    panel = panelOf(descriptor, shaped?.panel, wantEasyFirst);
   } catch (err) {
     throw err.code === 'panel.describe.no-controls' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
@@ -293,7 +342,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...shownBy(symbol) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
@@ -341,16 +390,26 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
 export function layout(panel) {
   const g = GEOMETRY;
   // a curve row needs a width of its own: three cells
-  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(s.controls.length, s.displays.length > 0 ? 3 : 0))));
+  // an edge band (the filters of an EQ) is a row of its own; the other controls flow on
+  const place = (controls) => {
+    let col = 0, row = 0, prev;
+    return { at: controls.map((c) => {
+      if (col > 0 && (col === ROW_CONTROLS || (c.band ?? '') !== (prev ?? ''))) col = 0, row++;
+      prev = c.band;
+      return { col: col++, row };
+    }), rows: controls.length === 0 ? 0 : row + 1 };
+  };
+  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(Math.min(s.controls.length, ROW_CONTROLS), s.displays.length > 0 ? 3 : 0))));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const rows = Math.ceil(s.controls.length / ROW_CONTROLS);
+    const grid = place(s.controls);
+    const rows = grid.rows;
     const curves = s.displays.length * (g.curveH + g.curveGap);
     const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + grid.at[j].col * g.cellW, y: g.sectionTitleH + curves + grid.at[j].row * g.cellH })),
     };
     y += h + g.sectionGap;
     return sec;
@@ -373,6 +432,15 @@ export const LOOK_SETTING = Object.freeze(LOOK_FILE.setting);
 /** The looks the MOD GUI wears, and the one it wears when none is named. */
 export const LOOKS = Object.freeze(Object.keys(LOOK_FILE.looks));
 export const DEFAULT_LOOK = LOOK_SETTING.default;
+/** The setting that chooses the tier the MOD GUI is generated for (MOD has no live switch): `modgui-tier`, easy or advanced, default advanced. */
+export const TIER_SETTING = Object.freeze(LOOK_FILE.tierSetting);
+export const TIERS = Object.freeze(TIER_SETTING.values);
+export const DEFAULT_TIER = TIER_SETTING.default;
+
+/** An unknown tier: refused by its name. */
+export class UnknownTier extends Error {
+  code = 'MODGUI_UNKNOWN_TIER';
+}
 /** The tokens every look sets, the one schema of the looks. */
 export const LOOK_KEYS = Object.freeze(Object.keys(Object.values(LOOK_FILE.looks)[0]));
 
@@ -659,6 +727,7 @@ ${ports}        ] ;
 export function emitTemplate(panel, lay, source) {
   const g = GEOMETRY;
   // a governed control names its governing port and the mask of the values that show it; the script reads them
+  const band = (k) => (k.band ? ` data-band="${esc(k.band)}"` : '');
   const vis = (k) => (k.visibleWhen ? ` data-visible-port="${k.visibleWhen.symbol}" data-visible-mask="${k.visibleWhen.mask.toString(16)}"` : '');
   const at = (k) => `left:${k.x}px;top:${k.y}px${k.shown ? '' : ';display:none'}`;
   const control = (k) => {
@@ -670,7 +739,7 @@ export function emitTemplate(panel, lay, source) {
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
     }
-    const data = `data-symbol="${k.symbol}" data-min="${k.min}" data-max="${k.max}" data-default="${k.def}"`;
+    const data = `data-symbol="${k.symbol}" data-min="${k.min}" data-max="${k.max}" data-default="${k.def}"${band(k)}`;
     // a selector is MOD's custom-select over the port's values: the shown value and one option each
     const options = (k.options ?? []).map((o) => `\n                    <div class="omx-selector-option" mod-role="enumeration-option" mod-port-value="${o.value}">${esc(o.label)}</div>`).join('');
     const image = k.widget === 'switch'
@@ -818,13 +887,13 @@ function (event, funcs) {
 
 /** Every file of a descriptor's modgui, as [path relative to the LV2 bundle, bytes], in a fixed order. `source`
  * is what the banner names the files were made from. */
-export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false, look: named }, wornLook) {
+export function generateModgui(descriptor, { panel: declared, stem, source, easyFirst: wantEasyFirst = false, look: named, tier }, wornLook) {
   // the look: an object (a caller's own), else the one `named` (the default look when neither is given)
   const look = wornLook ?? (named && typeof named === 'object' ? named : loadLook(named));
   // every colour role, whether this face draws it or not: a look short of one is no look of the role file's
   const short = [...LOOK_TOKENS.filter((k) => typeof look.tokens?.[k] !== 'string' || !look.tokens[k]), ...LOOK_KEYS.filter((k) => typeof look.depth?.[k] !== 'string' || !look.depth[k])];
   if (short.length) throw new Error(`modgui-gen: the look sets no ${short.join(', ')}`);
-  const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst });
+  const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst, ...(tier ? { tier } : {}) });
   const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem, stem: panel.stem };
   const f = files(panel.stem);
   return [
@@ -865,7 +934,7 @@ export function withModguiSeeAlso(text, uri) {
   return `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}\n<${uri}> <${SEE_ALSO}> <${MODGUI_TTL}> .\n`;
 }
 
-const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] [--look <vintage|console|3d>] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
+const USAGE = 'usage: modgui-gen.mjs [--check|--emit-stdout] [--no-films|--films-only] [--look <vintage|console|3d>] [--tier <easy|advanced>] (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--stem <name>] [--source <text>]\n       exit 0 made or fresh, 1 stale (--check) or a refusal by code (MODGUI_CHOICE_NO_VALUES), 2 usage, 3 nothing to draw (no visible control); a trigger control is left off the face and named on stderr';
 
 export function main(argv) {
   const check = argv.includes('--check');
@@ -896,6 +965,12 @@ export function main(argv) {
     console.error(err.message);
     process.exit(2);
   }
+  let tier;
+  tier = opt('--tier') ?? process.env[TIER_SETTING.env] ?? DEFAULT_TIER;
+  if (!TIERS.includes(tier)) {
+    console.error(`modgui-gen: no tier '${tier}': the ${TIER_SETTING.name} setting is one of ${TIERS.join(', ')} (default ${DEFAULT_TIER})`);
+    process.exit(2);
+  }
   let stale = 0;
   const dir = resolve(out);
   const shown = (p) => relative(process.cwd(), join(dir, p));
@@ -910,7 +985,7 @@ export function main(argv) {
   }
   let made;
   try {
-    made = generateModgui(descriptor, { panel, stem, source, easyFirst: argv.includes('--easy-first') }, look);
+    made = generateModgui(descriptor, { panel, stem, source, easyFirst: argv.includes('--easy-first'), tier }, look);
   } catch (err) {
     if (err.code === 'MODGUI_CHOICE_NO_VALUES') {
       console.error(`${err.code}: ${err.message}`);

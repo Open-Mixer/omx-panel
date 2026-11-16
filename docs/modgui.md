@@ -103,3 +103,17 @@ frames of 48 px, left to right, minimum to maximum, MOD's horizontal sprite. `to
 with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so the strips need no external tool. `node
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
 `vintage` clears 4.5:1 on every pair.
+
+## Tiers and edge bands
+
+A plugin declares each control's tier in its panel block, `tiers` (symbol to `easy` or `advanced`; a control that names none is
+advanced). MOD has no live switch, so the MOD GUI is generated for one tier: the `modgui-tier` setting (values `easy`, `advanced`,
+default `advanced`), `omx-panel modgui --tier <name>`, else `$OMX_MODGUI_TIER`, beside `--look`. Easy draws the easy controls and
+leaves the advanced ones out; Advanced draws every control. A plugin that names no easy control draws everything in Easy (nothing
+says easy, so nothing disappears). An unknown tier is refused by name (exit 2).
+
+A section may declare `edges`: its first and last band, borrowed from another section's controls. An EQ draws the plugin's high-pass
+as its first band and its low-pass as its last, `[HPF] [Band 1..N] [LPF]`, each edge band on a row of its own with `data-band` on its
+controls. Only the drawing moves: the audio order is the plugin's, and an `Order` control the plugin declares (set advanced) shows
+it. The section's curve carries the filters' roll-off when the panel's `roles` bind `hpf_freq`/`hpf_slope` and `lpf_freq`/`lpf_slope`
+(omx-dsp's twin draws them in the response).

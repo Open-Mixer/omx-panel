@@ -41,6 +41,16 @@
     "env": "OMX_MODGUI_LOOK",
     "flag": "--look"
   },
+  "tierSetting": {
+    "name": "modgui-tier",
+    "values": [
+      "easy",
+      "advanced"
+    ],
+    "default": "advanced",
+    "env": "OMX_MODGUI_TIER",
+    "flag": "--tier"
+  },
   "looks": {
     "vintage": {
       "--enclosure": "#e9dfc7",
