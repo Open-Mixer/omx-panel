@@ -2,8 +2,8 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # The panel renderer
 
-One C library draws a plugin's panel from its panel description, the document `omx-panel layout` writes
-([panel-layout.md](panel-layout.md)). Every place a panel is shown draws through it:
+One C library draws a plugin's panel from its panel description, the document `omx-panel describe --layout` serves
+([panel-layout.md](panel-layout.md)): the layout, the family's displays and a repeated group's served matrix. Every place a panel is shown draws through it:
 
 - a plugin window in a DAW (CLAP `clap.gui`) or in omx-clap-host;
 - a host-embedded inline view, at whatever size the host gives;
@@ -73,6 +73,12 @@ The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multib
 --layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
 tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
 and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
+
+The layout reads the role vocabulary ([panel-layout.md](panel-layout.md), "Meanings and roles"): with none, no role plays a
+meaning, omx-eq8 derives no curve, and its goldens would be drawn without one. So the renderer's tests read the vocabulary as
+the JavaScript suite does, with nothing of omx-plugins: `make renderer-check` points `$OMX_ROLE_MEANINGS` at this tree's
+stand-in, `test/fixtures/role-meanings/panel-roles.json`, unless the caller names one, and a test run whose vocabulary
+declares no role FAILS, naming `$OMX_ROLE_MEANINGS`, before it draws anything.
 
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
