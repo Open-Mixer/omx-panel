@@ -68,7 +68,7 @@ function roleOf(c) {
 }
 
 /** Role affix tokens stripped to derive a band's group key (longest first). */
-const AFFIX = {
+export const AFFIX = {
   freq: ['frequency', 'freq', 'hz', 'f'],
   gain: ['boost', 'gain', 'level', 'cut', 'g'],
   q: ['bandwidth', 'resonance', 'quality', 'width', 'bw', 'q', 'w'],

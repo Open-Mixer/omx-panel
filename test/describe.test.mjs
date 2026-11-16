@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { candidatesOf, describe, DESCRIBE_CODES, familyRule } from '../dist/tools/describe.mjs';
-import { inferBands, shapesOf } from '../dist/tools/meaning-infer.mjs';
+import { AFFIX, inferBands, shapesOf } from '../dist/tools/meaning-infer.mjs';
 
 const travel = (name, meaning, t = {}, extra = {}) => ({ name, kind: 'travel', ...(meaning ? { meaning } : {}), travel: { min: 0, max: 1, unit: 'unknown', scale: 'linear', default: 0, ...t }, ...extra });
 const dyn = (names = ['threshold', 'ratio', 'attack', 'release']) => names.map((n) => travel(n, n, { min: n === 'ratio' ? 1 : -60, max: n === 'ratio' ? 20 : 0, unit: n === 'ratio' ? 'ratio' : n === 'threshold' ? 'dB' : 'ms' }));
@@ -119,6 +119,46 @@ test('a descriptor word beats the inference: a control with a meaning is read as
   const { description } = describe(descriptor(controls, lv2('lv2:EQPlugin')));
   assert.equal(description.family, 'eq');
   assert.ok(description.roles.every((r) => r.inferred === undefined));
+});
+// every role word of the table (AFFIX) is read as its role and keyed to its band: a band built on each word, beside a
+// frequency (and a gain) of the same band, carries that word's control as the role's. The Q words weak (a bandwidth) and
+// strong (a Q) are taken in both orders: the strong one is the band's Q.
+const bandOn = (role, word, extra = {}) => {
+  const meta = {
+    freq: { name: 'Freq', travel: { min: 20, max: 20000, unit: 'Hz' } },
+    gain: { name: 'Gain', travel: { min: -18, max: 18, unit: 'dB' } },
+    q: { name: 'Width', travel: { min: 0.1, max: 4, unit: 'oct' } },
+    type: { name: 'Filter type', kind: 'choice', ids: ['bell'], labels: ['Bell'], values: [0], default: 'bell' },
+    enable: { name: 'On', kind: 'toggle' },
+  }[role];
+  return named({ ...(meta.kind ? meta : travel(meta.name, undefined, meta.travel)), ...extra }, `${word}_1`);
+};
+const FREQ_1 = named(travel('Freq 1', undefined, { min: 20, max: 20000, unit: 'Hz' }), 'f_1');
+const GAIN_1 = named(travel('Gain 1', undefined, { min: -18, max: 18, unit: 'dB' }), 'g_1');
+const partners = (role) => [role === 'freq' ? null : FREQ_1, role === 'gain' ? null : GAIN_1].filter(Boolean);
+const BAND_ROLE = { freq: 'band_freq', gain: 'band_gain', q: 'band_q', type: 'band_type', enable: 'band_on' };
+for (const [role, words] of Object.entries(AFFIX)) {
+  for (const word of words) {
+    test(`the role word "${word}" makes its control the band's ${role}, keyed with a frequency of the same band`, () => {
+      const v = inferBands([bandOn(role, word), ...partners(role)]);
+      assert.equal(v.outcome, 'inferred');
+      assert.equal(v.roles.find((r) => r.role === BAND_ROLE[role])?.symbol, `${word}_1`);
+    });
+  }
+}
+test('every weak Q word (bandwidth, bw, width, w) beside every strong one (q, quality, resonance), in either order, yields the strong one', () => {
+  const STRONG = ['q', 'quality', 'resonance'];
+  const weak = AFFIX.q.filter((w) => !STRONG.includes(w));
+  assert.deepEqual(weak, ['bandwidth', 'width', 'bw', 'w']);
+  for (const w of weak) {
+    for (const s of STRONG) {
+      const wc = bandOn('q', w), sc = bandOn('q', s, { travel: { min: 0.1, max: 10, unit: 'unknown', scale: 'linear', default: 0.7 }, name: s === 'q' ? 'Q' : s });
+      for (const order of [[wc, sc], [sc, wc]]) {
+        const v = inferBands([FREQ_1, GAIN_1, ...order]);
+        assert.equal(v.roles.find((r) => r.role === 'band_q')?.symbol, `${s}_1`, `${w} beside ${s}`);
+      }
+    }
+  }
 });
 test('a band whose shape no parameter selects carries it on band_freq; a high-pass with no gain is the head filter', () => {
   const controls = [
