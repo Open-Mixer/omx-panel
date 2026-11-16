@@ -31,7 +31,7 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
-import { controlsOfDescriptor, inferGroupModel, placeMatrix, servedMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
 import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
@@ -341,11 +341,12 @@ function withMatrices(description, effective, panel, layout, servedOf) {
     });
     // a section the group emptied goes, unless a display or a meter stands on it
     const stood = new Set([...description.displays.map((d) => d.section), ...description.meters.map((x) => x.section)]);
-    const gone = (s) => !controls.some((c) => c.section === s.key) && !stood.has(s.key) && (placed.folded.includes(s.key) || placed.donors.includes(s.key));
     const titled = (s) => (s.label === matrix.title ? {} : { label: matrix.title, labelKey: s.labelKey === null ? null : '' });
-    sections = sections.flatMap((s) => {
-      if (s.key === placed.home) { const { bars: _bars, ...own } = s; return [{ ...own, ...titled(s), matrix }]; }
-      return gone(s) ? [] : [s];
+    const holdsAfter = (s) => controls.some((c) => c.section === s.key) || stood.has(s.key);
+    sections = mergedSections(placed, sections, { idOf: (s) => s.key, holdsAfter }).map(({ section: s, home: isHome }) => {
+      if (!isHome) return s;
+      const { bars: _bars, ...own } = s;
+      return { ...own, ...titled(s), matrix };
     });
     lay = mergeLayout(lay, placed, new Set(sections.map((s) => s.key)), servedMatrix(g, options), titled);
   }
@@ -356,8 +357,8 @@ function withMatrices(description, effective, panel, layout, servedOf) {
  * kept, the home titled and carrying `matrix`, every index that named a section renumbered. */
 function mergeLayout(layout, placed, keep, matrix, titled) {
   const old = layout.sections;
-  const sections = old.filter((s) => keep.has(s.key)).map((s) => {
-    if (s.key !== placed.home) return s;
+  const sections = mergedSections(placed, old, { idOf: (s) => s.key, holdsAfter: (s) => keep.has(s.key) }).map(({ section: s, home: isHome }) => {
+    if (!isHome) return s;
     const { bars: _bars, ...own } = s;
     return { ...own, ...titled(s), matrix };
   });

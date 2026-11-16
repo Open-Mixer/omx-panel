@@ -532,6 +532,21 @@ export function servedMatrix(g, { symbolOf = (x) => x, governs = () => false, ti
 }
 
 /**
+ * The ONE section merge after `placeMatrix` (docs/group-model.md, "The served matrix"): `sections` in drawing order, each
+ * `{ section, home }` kept: the home is the matrix's section; a folded or donor section stays only while `holdsAfter(s)`
+ * (it still holds something once the group's members have moved); every other section stays as it is. The description,
+ * its `--layout` and the MOD GUI face all merge by it.
+ */
+export function mergedSections(placed, sections, { idOf, holdsAfter }) {
+  return sections.flatMap((section) => {
+    const id = idOf(section);
+    if (id === placed.home) return [{ section, home: true }];
+    if (placed.folded.includes(id) || placed.donors.includes(id)) return holdsAfter(section) ? [{ section, home: false }] : [];
+    return [{ section, home: false }];
+  });
+}
+
+/**
  * L6 on a served matrix: the indices of the heads a surface draws with the count at `value` (the served `count.default`
  * when left out): every edge, and the first `value` instances in order; every head when the matrix has no count or the
  * value is not a number.
