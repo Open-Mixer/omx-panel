@@ -105,18 +105,18 @@ test('omx-panel vocabulary reads each source where the lookup puts it, and fails
   assert.match(missing.stdout, /^FAIL descriptor omx-plugins\/omx-nothing vocabulary: no descriptor omx-plugins\/omx-nothing is installed/m);
 });
 
-test('the unit codes are omx-contract\'s sheet; a stale omx-plugins param-units.json beside it is never read', () => {
+test('the unit codes are the sheet any package of the merged contract directory declares', () => {
   const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
   const dir = contractDir({
     'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13, midiNote: 24, dbu: 0x101 }) },
-    'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 99 }) },
+    'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR },
   });
   const set = { OMX_CONTRACT_PATH: dir, PKG_CONFIG: NO_PKG_CONFIG };
   assert.equal(lookup('v.paramUnitsFile()', set), join(dir, '3/omx-contract/param-contract.json'));
   assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13], ['MIDINOTE', 24], ['DBU', 0x101]]);
-  // a directory with only omx-plugins' sheet (omx-contract before 3.6.0) has no units: the read refuses and names the fix
-  const old = contractDir({ 'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 13 }) } });
-  const r = command([], { OMX_CONTRACT_PATH: old, PKG_CONFIG: NO_PKG_CONFIG });
+  // a directory that declares no sheet has no units: the read refuses and names the fix
+  const none = contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
+  const r = command([], { OMX_CONTRACT_PATH: none, PKG_CONFIG: NO_PKG_CONFIG });
   assert.match(r.stdout, /^FAIL param-contract .*install omx-contract-data \(>= 3\.6\.0\)/m);
 });
 
