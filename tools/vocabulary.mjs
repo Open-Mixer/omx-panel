@@ -191,6 +191,11 @@ export function unitTokenOf(unit) {
   return (paramUnits().get(name) ?? 0) >= VENDOR_BLOCK ? name.toLowerCase() : undefined;
 }
 
+/** A filter slope's unit as omx-dsp's kernels and omx-plugins' declarations spell it (`"unit": "dB/oct"`): neither plugin-hostd's LV2 table nor
+ * omx-contract's param-contract units name a per-octave unit, so a choice declared in it (the panel's `choiceUnits`) is read as the
+ * dB of a slope, the token the curve twin takes for `hpf_slope` and `lpf_slope`. */
+export const SLOPE_UNITS = Object.freeze({ 'dB/oct': 'db' });
+
 /** The token of a unit the param-contract extension serves (one with a code in the unit table, or "" for none), else undefined. */
 export function servedToken(unit) {
   if (unit === '') return 'none';

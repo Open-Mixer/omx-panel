@@ -33,6 +33,7 @@ import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
+import { SLOPE_UNITS } from './vocabulary.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { paintScene, parseSvg, readKnobSvg, renderSvgFilm, resolveSvg } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -172,7 +173,7 @@ function curveTerms(descriptor, x) {
   return x.roles.filter((r) => roles.has(r.role)).map((r) => {
     const value = valueOf(control(r.symbol));
     return {
-      role: r.role, index: r.index, value, unit: r.token ?? unitTokenOf(r.unit),
+      role: r.role, index: r.index, value, unit: r.token ?? (/^(hpf|lpf)_slope$/.test(r.role) ? SLOPE_UNITS[r.unit] : undefined) ?? unitTokenOf(r.unit),
       ...(r.shape ? { shape: r.shape } : {}),
       ...(r.role === 'band_type' && r.shapes ? { shape: r.shapes[value] } : {}),
       ...(r.origin ? { origin: r.origin } : {}),

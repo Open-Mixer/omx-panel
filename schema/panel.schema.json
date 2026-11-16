@@ -55,7 +55,7 @@
       "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
       "additionalProperties": { "type": "string", "minLength": 1 },
       "title": "Choice units",
-      "description": "The unit of a CHOICE's values, by parameter symbol: one unit for the choice, as the descriptor gives a travel its `unit` (a descriptor has no word for it). A filter slope that is a choice of 12 and 24 declares `dB`, so the section's curve takes its roll-off in dB per octave. The same declaration as the panel description's `choiceUnits` extras (tools/panel-description.mjs, panelLayout); a surface that reads a declared panel passes it on. A choice left out has no unit."
+      "description": "The unit of a CHOICE's values, by parameter symbol: one unit for the choice, as the descriptor gives a travel its `unit` (a descriptor has no word for it). A filter slope that is a choice of 12 and 24 declares `dB/oct` (or `dB`), so the section's curve takes its roll-off in dB per octave. The same declaration as the panel description's `choiceUnits` extras (tools/panel-description.mjs, panelLayout); a surface that reads a declared panel passes it on. A choice left out has no unit."
     },
     "sectionEdges": {
       "type": "object",

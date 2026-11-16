@@ -117,5 +117,5 @@ as its first band and its low-pass as its last, `[HPF] [Band 1..N] [LPF]`, each 
 controls. Only the drawing moves: the audio order is the plugin's, and an `Order` control the plugin declares (set advanced) shows
 it. The section's curve carries the filters' roll-off when the panel's `roles` bind `hpf_freq`/`hpf_slope` and `lpf_freq`/`lpf_slope`
 (omx-dsp's twin draws them in the response).
-A slope that is a choice (12 or 24) has no unit in a descriptor: the panel declares it, `choiceUnits` (symbol to unit, `dB` for a slope), the
+A slope that is a choice (12 or 24) has no unit in a descriptor: the panel declares it, `choiceUnits` (symbol to unit, `dB/oct` or `dB` for a slope), the
 panel description's own extras shape, and the MOD GUI passes it to the twin, so the choice is a valid slope term (`test/modgui-choice-units.test.mjs`).
