@@ -4,6 +4,14 @@
 
 ## Unreleased
 
+- 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
+  This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
+  omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the
+  declared form (both below); and fixes: the commit-msg hook takes the current stub from the checker's release line,
+  artifact retention is explicit (30 days on a tag, 2 otherwise), the Makefile names the shared checks' checkout through
+  OPENMIXER_DOTGITHUB, the renderer tests remove their scratch directories and read readelf in the C locale, debian/control
+  floors libomx-contract-dev as the spec floors omx-contract-devel, and the omx-eq8 fixture matches the installed file
+  apart from its version lines.
 - The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
   section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
   end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve

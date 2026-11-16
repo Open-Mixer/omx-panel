@@ -16,6 +16,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
 
+/**
+ * A release dry run stamps debian/changelog with a snapshot version, `<base>~git<digits>.<hex>`; the suffix is accepted
+ * on the SAME base version only (the base is compared with package.json's), a different base stays red.
+ */
+const SNAPSHOT = /~git\d+\.[0-9a-f]+$/;
+
 /** Each file's stated version, by where it states it. */
 export function statedVersions(files) {
   const lock = JSON.parse(files['package-lock.json']);
@@ -26,7 +32,7 @@ export function statedVersions(files) {
     'package-lock.json packages[""]': lock.packages?.['']?.version,
     'spec Version': /^Version:\s*(\S+)/m.exec(spec)?.[1],
     'spec %changelog': /^%changelog\s*\n\*[^\n]* - ([^\s-]+)-\d+/m.exec(spec)?.[1],
-    'debian/changelog': /^omx-panel \(([^)-]+)(?:-[^)]*)?\)/.exec(files['debian/changelog'])?.[1],
+    'debian/changelog': /^omx-panel \(([^)-]+)(?:-[^)]*)?\)/.exec(files['debian/changelog'])?.[1]?.replace(SNAPSHOT, ''),
   };
 }
 
@@ -57,4 +63,25 @@ test('a lone bump of any one file is refused (the check reads each file, it does
     const stated = Object.values(statedVersions(lone));
     assert.ok(new Set(stated).size > 1, `a lone bump of ${f} leaves every file agreeing`);
   }
+});
+
+const snapshotted = (files, version) => ({
+  ...files,
+  'debian/changelog': files['debian/changelog'].replace(/^omx-panel \([^)]*\)/m, `omx-panel (${version})`),
+});
+const agrees = (files) => new Set(Object.values(statedVersions(files))).size === 1;
+
+test('a dry-run snapshot changelog version on the same base agrees', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  assert.ok(agrees(snapshotted(files, `${version}~git1794847849.97013d6`)));
+});
+
+test('a snapshot suffix on a different base stays red, and so does a bare different base', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  const next = version.replace(/\d+$/, (n) => String(Number(n) + 1));
+  assert.ok(!agrees(snapshotted(files, `${next}~git1794847849.97013d6`)));
+  assert.ok(!agrees(snapshotted(files, next)));
+  assert.ok(!agrees(snapshotted(files, `${version}~gitnotdigits.zz`)));
 });
