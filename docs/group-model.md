@@ -167,9 +167,9 @@ existed. `test/group-model.test.mjs` compares each in full.
   controls are drawn as one section laid out by `matrixOf`, its own parameters flowed above the matrix; a section that
   holds anything else beside the group, or only part of it (an Easy section took some), is drawn as before. *Test:
   `test/modgui-group-model.test.mjs`.*
-- **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it draws
-  the same matrix from the description (omx-panel#62). Until it does, the eq-marks parity fixture differs from the face,
-  and modgui-gen's consumer does not merge alone.
+- **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it reads a
+  section's `matrix` from the description and draws it (omx-panel#62; docs/renderer.md), inferring no group. Its fixtures
+  (`test/fixtures/repeats/`) carry the field until the served description does.
 - **the console**: the served panel description carries the model; the processing view draws a repeated group by
   `matrixOf` (a follow-up in openmixer, linked from omx-panel#61).
 - **the Zynthian builder**: a page never cuts inside an instance, and an instance is one screen (a follow-up in

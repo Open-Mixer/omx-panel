@@ -115,6 +115,8 @@ bad:
   return 0;
 }
 
+static void apply_counts(omx_panel_view_t *v);
+
 static int read_description(omx_panel_view_t *v, const char *json, char *err, size_t n) {
   cJSON *root = cJSON_Parse(json);
   cJSON *secs = cJSON_GetObjectItemCaseSensitive(root, "sections"), *ctls = cJSON_GetObjectItemCaseSensitive(root, "controls");
@@ -199,6 +201,94 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         v->controls[at].bar = dup(lab);
       }
     }
+  }
+  /* the repeated groups: a section's `matrix` is the group model's matrixOf as the description carries it (docs/renderer.md);
+   * read as given, never inferred here */
+  {
+    size_t si = 0;
+    cJSON_ArrayForEach(it, secs) {
+      cJSON *mx = cJSON_GetObjectItemCaseSensitive(it, "matrix");
+      size_t sec = si++;
+      if (!mx || cJSON_IsNull(mx)) continue;
+      if (!cJSON_IsObject(mx)) {
+        fail(err, n, "description: a section's matrix is not an object%s%s", NULL, NULL);
+        goto bad;
+      }
+      const char *ori = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(mx, "orientation"));
+      cJSON *heads = cJSON_GetObjectItemCaseSensitive(mx, "heads"), *rows = cJSON_GetObjectItemCaseSensitive(mx, "rows"),
+            *cells = cJSON_GetObjectItemCaseSensitive(mx, "cells"), *cnt = cJSON_GetObjectItemCaseSensitive(mx, "count");
+      if (!ori || (strcmp(ori, "columns") && strcmp(ori, "rows"))) {
+        fail(err, n, "description: a matrix's orientation is neither columns nor rows%s%s", NULL, NULL);
+        goto bad;
+      }
+      if (!cJSON_IsArray(heads) || !cJSON_IsArray(rows) || !cJSON_IsArray(cells) || cJSON_GetArraySize(cells) != cJSON_GetArraySize(rows)) {
+        fail(err, n, "description: a matrix needs heads, rows and cells arrays, one cells row for each of the rows%s%s", NULL, NULL);
+        goto bad;
+      }
+      v->matrices = realloc(v->matrices, (v->nmatrices + 1) * sizeof *v->matrices);
+      matrix *m = &v->matrices[v->nmatrices++];
+      *m = (matrix){(int)sec, !strcmp(ori, "columns"), (size_t)cJSON_GetArraySize(heads), (size_t)cJSON_GetArraySize(rows), NULL, NULL, NULL, -1, 0};
+      m->heads = calloc(m->nheads ? m->nheads : 1, sizeof *m->heads);
+      m->row_label = calloc(m->nrows ? m->nrows : 1, sizeof *m->row_label);
+      size_t ncells = m->nheads * m->nrows;
+      m->cell = malloc((ncells > 0 ? ncells : 1) * sizeof *m->cell);
+      for (size_t k = 0; k < ncells; k++) m->cell[k] = -1;
+      /* a control the matrix names: in this section, once; it takes the head's or the row's label */
+      #define PLACE(SYM, LABEL, OUT)                                                                                                   \
+        do {                                                                                                                           \
+          int at_ = -1;                                                                                                                \
+          for (size_t j_ = 0; (SYM) && j_ < v->ncontrols; j_++)                                                                        \
+            if (strcmp(v->controls[j_].symbol, (SYM)) == 0) at_ = (int)j_;                                                             \
+          if (at_ < 0 || v->controls[at_].section != (int)sec) {                                                                       \
+            fail(err, n, "description: a matrix names '%s', which is no control of its section%s", (SYM) ? (SYM) : "(not a string)", NULL); \
+            goto bad;                                                                                                                  \
+          }                                                                                                                            \
+          if (v->controls[at_].placed) {                                                                                               \
+            fail(err, n, "description: a matrix places '%s' twice%s", (SYM), NULL);                                                    \
+            goto bad;                                                                                                                  \
+          }                                                                                                                            \
+          v->controls[at_].placed = 1;                                                                                                 \
+          if (LABEL) free(v->controls[at_].label), v->controls[at_].label = dup(LABEL);                                                \
+          (OUT) = at_;                                                                                                                 \
+        } while (0)
+      for (size_t k = 0; k < m->nheads; k++) {
+        cJSON *h = cJSON_GetArrayItem(heads, (int)k), *on = cJSON_GetObjectItemCaseSensitive(h, "on"), *edge = cJSON_GetObjectItemCaseSensitive(h, "edge");
+        const char *lab = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(h, "label"));
+        if (!lab) {
+          fail(err, n, "description: a matrix head has no label%s%s", NULL, NULL);
+          goto bad;
+        }
+        m->heads[k].label = dup(lab), m->heads[k].on = -1, m->heads[k].edge = cJSON_IsString(edge) && *edge->valuestring;
+        if (on && !cJSON_IsNull(on)) PLACE(cJSON_GetStringValue(on), lab, m->heads[k].on);
+      }
+      for (size_t r = 0; r < m->nrows; r++) {
+        const char *lab = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetArrayItem(rows, (int)r), "label"));
+        cJSON *line = cJSON_GetArrayItem(cells, (int)r), *c;
+        if (!lab || !cJSON_IsArray(line) || (size_t)cJSON_GetArraySize(line) != m->nheads) {
+          fail(err, n, "description: a matrix row has no label, or its cells are not one for each head%s%s", NULL, NULL);
+          goto bad;
+        }
+        m->row_label[r] = dup(lab);
+        size_t k = 0;
+        cJSON_ArrayForEach(c, line) {
+          if (!cJSON_IsNull(c)) PLACE(cJSON_GetStringValue(c), lab, m->cell[r * m->nheads + k]);
+          k++;
+        }
+      }
+      #undef PLACE
+      if (cnt && !cJSON_IsNull(cnt)) {
+        const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cnt, "symbol"));
+        cJSON *def = cJSON_GetObjectItemCaseSensitive(cnt, "default");
+        for (size_t j = 0; sym && j < v->ncontrols; j++)
+          if (strcmp(v->controls[j].symbol, sym) == 0 && v->controls[j].section == (int)sec && !v->controls[j].placed) m->count_ctl = (int)j;
+        if (m->count_ctl < 0 || !cJSON_IsNumber(def)) {
+          fail(err, n, "description: a matrix's count '%s' is no control of its section outside the matrix, or has no default%s", sym ? sym : "(not a string)", NULL);
+          goto bad;
+        }
+        m->count = (int64_t)def->valuedouble;
+      }
+    }
+    apply_counts(v);
   }
   /* the meters (contract 7.9): the range, the unit and the kind are the description's; a meter that is one of the controls
    * is that control's reading, the others stand in the band below the sections */
@@ -345,6 +435,12 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
                                                free(v->displays[i].spec_hz), free(v->displays[i].spec_db), free(v->displays[i].spec_peak);
   for (size_t i = 0; i < v->nmeters; i++) free(v->meters[i].symbol), free(v->meters[i].label), free(v->meters[i].unit);
   free(v->meters);
+  for (size_t k = 0; k < v->nmatrices; k++) {
+    for (size_t h = 0; h < v->matrices[k].nheads; h++) free(v->matrices[k].heads[h].label);
+    for (size_t r = 0; r < v->matrices[k].nrows; r++) free(v->matrices[k].row_label[r]);
+    free(v->matrices[k].heads), free(v->matrices[k].row_label), free(v->matrices[k].cell);
+  }
+  free(v->matrices);
   free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
   omx_font_free(v->font);
   free(v);
@@ -503,17 +599,60 @@ bool omx_panel_view_set_spectrum(omx_panel_view_t *v, uint32_t index, const doub
 }
 
 /* Whether control `c` is shown at its governing control's current value. */
-static int shown(const control *c) { return !c->gov || (c->value >= 0 && c->value <= 63 && ((c->mask >> c->value) & 1u)); }
+static int shown(const control *c) { return !c->cut && (!c->gov || (c->value >= 0 && c->value <= 63 && ((c->mask >> c->value) & 1u))); }
 
 bool omx_panel_view_set_integer(omx_panel_view_t *v, const char *symbol, int64_t value) {
   bool governs = false;
   for (size_t i = 0; v && symbol && i < v->ncontrols; i++)
     if (v->controls[i].gov && strcmp(v->controls[i].gov, symbol) == 0) v->controls[i].value = value, governs = true;
-  if (governs) omx_input_dirty(v);
+  for (size_t k = 0; v && symbol && k < v->nmatrices; k++)
+    if (v->matrices[k].count_ctl >= 0 && strcmp(v->controls[v->matrices[k].count_ctl].symbol, symbol) == 0) v->matrices[k].count = value, governs = true;
+  if (governs) apply_counts(v), omx_input_dirty(v);
   return governs;
 }
 
 bool omx_panel_view_visible(const omx_panel_view_t *v, uint32_t i) { return v && i < v->ncontrols && shown(&v->controls[i]); }
+
+/* Which heads of a matrix are drawn: every edge, and the first `count` of the others when the matrix has a count control. map[h]
+ * is the head's place among the drawn ones, -1 for a head closed up; the number drawn is returned. */
+static size_t visible_heads(const matrix *m, int *map) {
+  size_t drawn = 0, instance = 0;
+  for (size_t h = 0; h < m->nheads; h++) {
+    int keep = m->heads[h].edge || m->count_ctl < 0 || (int64_t)instance < m->count;
+    if (!m->heads[h].edge) instance++;
+    map[h] = keep ? (int)drawn++ : -1;
+  }
+  return drawn;
+}
+
+/* Close up the heads beyond each matrix's count: their controls are cut, as a control the values hide is. */
+static void apply_counts(omx_panel_view_t *v) {
+  for (size_t k = 0; k < v->nmatrices; k++) {
+    matrix *m = &v->matrices[k];
+    int *map = malloc((m->nheads ? m->nheads : 1) * sizeof *map);
+    visible_heads(m, map);
+    for (size_t h = 0; h < m->nheads; h++) {
+      int cut = map[h] < 0;
+      if (m->heads[h].on >= 0) v->controls[m->heads[h].on].cut = cut;
+      for (size_t r = 0; r < m->nrows; r++)
+        if (m->cell[r * m->nheads + h] >= 0) v->controls[m->cell[r * m->nheads + h]].cut = cut;
+    }
+    free(map);
+  }
+}
+
+static const matrix *matrix_of_section(const omx_panel_view_t *v, size_t s) {
+  for (size_t k = 0; k < v->nmatrices; k++)
+    if (v->matrices[k].section == (int)s) return &v->matrices[k];
+  return NULL;
+}
+
+/* The cell of a matrix's grid at (head, line) in a section whose matrix starts `top` below it; line 0 is the head row when any
+ * drawn head has an on/off (the face's matrixCells). */
+static void grid_at(const geometry *g, const matrix *m, int headed, double top, int head, int line, double *x, double *y) {
+  *x = g->sectionPad + (m->columns ? head : line + headed) * g->cellW;
+  *y = top + (m->columns ? line + headed : head) * g->cellH;
+}
 
 /* ------------------------------------------------------------------------------------ layout */
 
@@ -524,6 +663,7 @@ typedef struct {
   double *cx, *cy;   /* each control's cell, relative to its section */
   int *curves;       /* one per section: how many curve rows it holds, above its controls */
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
+  double *mtop;      /* one per section: where its matrix starts below the section's top, -1 for a section with none */
   box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
 } laid;
 
@@ -532,32 +672,63 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
             calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), {0, 0, 0, 0}};
+            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}};
+  for (size_t s = 0; s < v->nsections; s++) L.mtop[s] = -1;
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
   /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
-  size_t most = 0;
+  size_t most = 0, across_most = 0;
   for (size_t s = 0; s < v->nsections; s++) {
     size_t k = 0, all = 0;
+    const matrix *mx = matrix_of_section(v, s);
     for (size_t i = 0; i < v->ncontrols; i++)
-      if (v->controls[i].section == (int)s) all++, k += shown(&v->controls[i]);
-    L.drawn[s] = k > 0 || all == 0;
+      if (v->controls[i].section == (int)s && !v->controls[i].placed) all++, k += shown(&v->controls[i]);
+    L.drawn[s] = k > 0 || all == 0 || mx != NULL;
+    if (mx) {
+      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
+      size_t nv = visible_heads(mx, map), headed = 0;
+      for (size_t h = 0; h < mx->nheads; h++) headed |= map[h] >= 0 && mx->heads[h].on >= 0;
+      free(map);
+      size_t across = mx->columns ? nv : mx->nrows + headed;
+      if (across > across_most) across_most = across;
+    }
     if (k > most) most = k;
     if (L.curves[s] && most < 3) most = 3; /* a curve row needs a width of its own */
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
+  if (across_most > most) most = across_most; /* a matrix is never wrapped */
   double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
   double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
     if (!L.drawn[s]) continue;
     size_t j = 0;
     for (size_t i = 0; i < v->ncontrols; i++) {
-      if (v->controls[i].section != (int)s || !shown(&v->controls[i])) continue;
+      if (v->controls[i].section != (int)s || v->controls[i].placed || !shown(&v->controls[i])) continue;
       L.cx[i] = g->sectionPad + (double)(j % per_row) * g->cellW;
       L.cy[i] = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + floor((double)j / per_row) * g->cellH;
       j++;
     }
-    double rows = ceil((double)j / per_row), h = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + rows * g->cellH + g->sectionPad / 2;
+    double rows = ceil((double)j / per_row), top = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + rows * g->cellH;
+    double h = top + g->sectionPad / 2;
+    const matrix *mx = matrix_of_section(v, s);
+    if (mx) {
+      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
+      size_t nv = visible_heads(mx, map);
+      int headed = 0;
+      for (size_t k = 0; k < mx->nheads; k++) headed |= map[k] >= 0 && mx->heads[k].on >= 0;
+      for (size_t k = 0; k < mx->nheads; k++) {
+        if (map[k] < 0) continue;
+        if (mx->heads[k].on >= 0) grid_at(g, mx, headed, top, map[k], -headed, &L.cx[mx->heads[k].on], &L.cy[mx->heads[k].on]);
+        for (size_t r = 0; r < mx->nrows; r++)
+          if (mx->cell[r * mx->nheads + k] >= 0) {
+            int c = mx->cell[r * mx->nheads + k];
+            grid_at(g, mx, headed, top, map[k], (int)r, &L.cx[c], &L.cy[c]);
+          }
+      }
+      free(map);
+      L.mtop[s] = top;
+      h = top + (double)(mx->columns ? mx->nrows + (size_t)headed : nv) * g->cellH + g->sectionPad / 2;
+    }
     L.sections[s] = (box){g->pad, y, section_w, h};
     last = y + h;
     y += h + g->sectionGap;
@@ -573,7 +744,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   return L;
 }
 
-static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn), free(L->curves); }
+static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn), free(L->curves), free(L->mtop); }
 
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
@@ -869,6 +1040,22 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       if (v->displays[m].section != (int)si) continue;
       draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s,
                  (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
+    }
+    /* a matrix head with no on/off is its label in the head's cell, in the name place */
+    const matrix *mx = matrix_of_section(v, si);
+    if (mx) {
+      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
+      visible_heads(mx, map);
+      int headed = 0;
+      for (size_t h = 0; h < mx->nheads; h++) headed |= map[h] >= 0 && mx->heads[h].on >= 0;
+      for (size_t h = 0; h < mx->nheads; h++) {
+        if (map[h] < 0 || mx->heads[h].on >= 0) continue;
+        double cx, cy;
+        grid_at(g, mx, headed, L.mtop[si], map[h], -headed, &cx, &cy);
+        text(d, font, mx->heads[h].label, 0, (g->cellW - 4) * s, (sec.x + cx + g->cellW / 2) * s, (sec.y + cy + T->nameBase) * s, T->small * s, col->inkDim,
+             OMX_ALIGN_CENTRE);
+      }
+      free(map);
     }
     for (size_t i = 0; i < v->ncontrols; i++) {
       const control *k = &v->controls[i];
