@@ -90,6 +90,7 @@ The family follows from the meanings, never from a guess about the plugin:
 | `reverb` | `size`, `decay` | `size`, or `decay` |
 | `pitch` | `shift` | `shift` |
 | `modulation` | (any: a rotor's speeds and an LFO's shape have no meaning word yet) | `rate`, `depth` |
+| `utility` | (any: a trim, a width control, a balancer or a clipper has no class of its own) | none: a utility is always declared |
 
 A declaration whose family none of its meanings backs is refused, naming the family and the
 meanings it would need: a transient designer (attack and sustain amounts, no threshold, no ratio) is
@@ -302,6 +303,7 @@ the controls the come-up values show.
 | `delay` | `time`, `feedback`, `tone`, `mix` |
 | `reverb` | `size`, `decay`, `damping`, `mix` |
 | `pitch` | `shift`, `fine`, `mix` |
+| `utility` | `gain`, `width`, `amount`, `drive`, `ceiling`, `range` |
 
 A face can set any control that is not a reading, a trigger or a bypass. The list is a view of the panel, so it stays out of
 the canonical serialisation and the fingerprint.

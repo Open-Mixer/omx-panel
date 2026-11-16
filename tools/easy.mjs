@@ -27,6 +27,7 @@ export const EASY_ROLES = Object.freeze({
   delay: ['time', 'feedback', 'tone', 'mix'],
   reverb: ['size', 'decay', 'damping', 'mix'],
   pitch: ['shift', 'fine', 'mix'],
+  utility: ['gain', 'width', 'amount', 'drive', 'ceiling', 'range'],
 });
 
 export class EasyRefused extends Error {
