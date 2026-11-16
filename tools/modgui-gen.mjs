@@ -357,7 +357,10 @@ export function withRepeats(descriptor, declared, sections) {
     const drawn = new Map(out.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
     const count = g.count ? drawn.get(g.count.symbol) : undefined;
     if (count && count.widget !== 'selector') Object.assign(count, { widget: 'selector', options: optionsOf({ min: count.min, max: count.max }) });
-    const m = matrixOf(g, count ? { values: { [g.count.symbol]: count.def } } : {});
+    // a plugin whose panel already shows each instance by a visibleWhen rule on the count keeps that live mechanism: its
+    // instances stay on the face, hidden by their rule; only a count nothing governs truncates the static face (L6)
+    const governed = g.instances.some((i) => Object.values(i.parameters).some((sym) => drawn.get(sym)?.visibleWhen));
+    const m = matrixOf(g, count && !governed ? { values: { [g.count.symbol]: count.def } } : {});
     const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
     const cell = (h, l) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l]);
     // a cell's control is named by its row (the column's header names the band); a head toggle by its column
