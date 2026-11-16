@@ -200,10 +200,14 @@ existed. `test/group-model.test.mjs` compares each in full.
 ## The served description carries the model
 
 `omx-panel describe` serves the model, so no surface re-derives it (the console, the C renderer of omx-panel#62, the
-Zynthian builder read the description). A section that carries a repeated group has `matrix: matrixOf(g)` with every
-symbol as the description serves it: `orientation`, `columns` and `rows` (the heads, each `{ key, label, on: { symbol,
-sense } | null, edge, ordinal }`, and the parameter lines, each `{ key, label, role }`), `cells[row][column]` a served
-symbol or null, and `count: { symbol }` when the group has one. The section is the first that holds the group's instances;
+Zynthian builder read the description). A section that carries a repeated group has `matrix`, `matrixOf(g)` with every
+symbol as the description serves it and in one shape whatever the orientation: `{ orientation, heads, rows, cells,
+count? }`. `heads` are the instances and the edges along one axis, each `{ label, on: { symbol, sense } | null, edge }`
+(`edge` is `hpf`, `lowshelf`, `highshelf`, `lpf`, or null for an instance), `rows` the parameters, each `{ label }`,
+`cells[row][head]` a served symbol or null (`orientation` says only whether the surface lays the heads out as columns or
+as rows), and `count: { symbol, default }` when the group has one (S10): the surface draws the first `count` non-edge heads
+at the count port's value (`default` when it holds none), closed up, the edges kept (L6); the count control is drawn as a
+selector. The library's own `matrixOf` keeps the keys, roles and ordinals the description leaves out. The section is the first that holds the group's instances;
 the controls the matrix places (the edges, taken from beside the EQ, among them) are that section's, and a section the
 group emptied is left out of `sections`. A group the description cannot place whole (a member it does not serve, or an
 instance section that holds another plugin control beside the group) carries no matrix and is drawn as before. *Tests:
