@@ -139,7 +139,7 @@ of these codes. The checks run in this order; the first that fails names the lis
 |---|---|---|
 | `two-indices` | more than half its numbered controls carry two numbers in their symbol (`mix_3_5`): a grid of two indices | x42 matrixmixer (corpus) |
 | `declared-index-conflict` | a declared instance's symbol numbers are not its number nor one less, by one offset | "S2: ..." |
-| `ragged-instances` | more of its numbered controls sit in stems some instances lack than in stems all hold (a stem held by all but one that S5 makes a row counts as one all hold) | AMS advenv (corpus) |
+| `ragged-instances` | more of its numbered controls sit in stems some instances lack than in stems all hold (a stem held by all but one, which S5 makes a row, is still a stem some instances lack here) | AMS advenv (corpus) |
 | `one-parameter` | fewer than two stems are held by every instance: a row of one repeated control (`tools/bars.mjs`'s business) | "one-parameter" |
 | `index-gap` | the instance numbers of an indexed group are not consecutive (1, 2, 4) | "index-gap" |
 | `kind-mismatch` | a parameter is a toggle in one instance and a travel or a choice in another | "S4: kind" |
@@ -175,7 +175,9 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   reads each head's `ordinal` (its place among the instances, null for an edge) and shows it while `ordinal < value`.
   **The count control itself is drawn as a selector**: a port that is an enumeration, or a whole number of few points,
   is a selector and never a knob; the count is one whatever its range (`eqBands` 1..32 is a selector of 32 options).
-  *Tests: "L6: ..." (library), modgui-gen's omx-strip face (32 bands, the first `eqBands` default drawn).*
+  The MOD GUI face is static: it draws the first `count` instances at the count port's come-up value (omx-strip: 4 of 32;
+  omx-delay: 1 of 4), and an instance beyond it is not on the face, its ports not among the pedal's. *Tests: "L6: ..."
+  (library); modgui-gen's omx-strip and omx-delay faces.*
 
 ## The corpus
 
