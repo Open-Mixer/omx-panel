@@ -276,8 +276,25 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
   the served matrix from `omx-panel describe --layout` and draws it (omx-panel#62; docs/renderer.md), inferring no group.
 - **the console**: the served panel description carries the model; the processing view draws a repeated group by its
   served `matrix` (a follow-up in openmixer, linked from omx-panel#61).
-- **the Zynthian builder**: a page never cuts inside an instance, and an instance is one screen (a follow-up in
-  zynthian-ui, linked from omx-panel#61).
+- **the Zynthian builder**, by its two paths (Open-Mixer/zynthian-ui#54), a page never cuts inside an instance and an
+  instance is one screen where it fits:
+  - **P1, the page cut** (the plugin-hostd engine, `omx-panel describe --pages --per-page N`): `pagesOf` takes the controls
+    of a section that carries a `matrix` by instance, each head of the served matrix (the EQ's HPF and LPF edges included) one
+    group. An instance's controls run in the head's order, **its on/off first**, then its rows from the top down, a cell
+    that is empty no slot. The section's own parameters (the count, an EQ's master on) come before the instances, in the
+    description's order. An instance of at most `perPage` controls is one page of its own, never sharing it with the
+    instance before or after (a page ends early); a longer one is the only thing split, on pages of its own, as any group.
+    A page of one instance is named by its head's label (`Band 3`), a continuation `Band 3 2`. *Tests: omx-eq8, eight band
+    screens each opening with the band's on/off, over `describe --pages`; the Calf multiband compressor's four bands;
+    "P1: ...". Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
+  - **P2, the lilv path** (the jalv engine, which reads each port's `pg:group`): lv2-complement writes **one `pg:group` per
+    instance**, from the model, for a repeated group the plugin does not already declare instance by instance (source
+    `indexed`; a plugin's own groups, source `declared`, are kept as they are). The instance's group node carries
+    `lv2:symbol` `<group key or "section">_<index>`, `lv2:name` the instance's label, and the ports the instance holds, its
+    on/off included, ordered by the instance index so `displayPriority` falls with it. The group's own parameters, and the
+    ports of no instance, keep what the flat inference (`inferGroups`) gave them, or no group when it gave none. *Tests: the
+    Calf multiband compressor, whose flat inference refuses it (`unplaced-controls`), gets four instance groups; a plugin
+    already declaring its instances gets none added; "P2: ...". Sabotage: the instance groups dropped fails both.*
 
 The unit tokens (`unitToken`) stay this library's own for now: `vocabulary.mjs`'s `unitTokenOf` reads the installed
 contract's unit table and throws without it, while the group model reads LV2 unit URIs with no contract installed; moving
