@@ -56,8 +56,10 @@ jobs:
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
       - id: handback-install
-        name: Install the build and the validator's dependency
-        run: npm ci
+        name: Install the build and the validator's dependency, and omx-dsp's curve twin
+        # the curve function (curvePoints) lives in omx-dsp's TypeScript twin, not in omx-contract-data: the contract carries the
+        # unit tables, which tools/vocabulary.mjs already reads; the twin is pinned to omx-dsp's floor, as the renderer job pins it
+        run: npm ci && npm i --no-save --no-audit --no-fund '@openmixer/omx-dsp@>=0.32.2 <0.33'
       - id: handback-test
         name: Tests over the built tree (the layout, the MOD GUI, the look, the skin facts and schema, the importer, the command)
         env:
@@ -65,6 +67,8 @@ jobs:
           OMX_PANEL_REAL_BUNDLES: required
           # the lilv proofs (the complements and the modgui sync read by a real lilv world) run here, or the job fails
           OMX_PANEL_LILV: required
+          # the twin is installed above: its absence fails the curve proofs, never skips them
+          OMX_PANEL_DSP: required
         run: make test
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
