@@ -1,24 +1,278 @@
 {
   "$comment": "The MAP: each element of the OpenMixer console's vintage look -> the MOD GUI element that wears it -> the pinned tokens it reads (tools/look/console-vintage.json). A token is `console:--x` (the glass, the relief, the base paint) or `finish:--x` (the metal of the look's finish, aluminium by default). `via` names the look tokens of schema/modgui-looks.json (or the SVG file) whose raw value carries each token as a {placeholder}: test/modgui-console-map.test.mjs holds every row to that, and to the pin. A row with `ownerMock: true` is the owner's reference for the vintage look and not a console element: it reads no pinned token.",
   "rows": [
-    { "id": "knob-cap", "console": "the console's Encoder .cap: a radial cap-hi to face gradient", "modgui": "knob film strip, the domed cap (tools/look/knob-vintage.svg)", "tokens": ["finish:--knob-cap-hi", "finish:--knob-face"], "svg": "knob-vintage.svg" },
-    { "id": "knob-rim", "console": "the console's Encoder .cap stroke: the rim", "modgui": "knob film strip, the rim", "tokens": ["finish:--knob-edge"], "svg": "knob-vintage.svg" },
-    { "id": "knob-knurl", "console": "the console's Encoder .knurl: the knurled edge", "modgui": "knob film strip, the teeth ring", "tokens": ["finish:--knob-knurl"], "svg": "knob-vintage.svg" },
-    { "id": "knob-pointer", "console": "the console's Encoder .needle with its groove-shade and groove-lit walls", "modgui": "knob film strip, the carved pointer", "tokens": ["console:--knob-pointer", "finish:--knob-knurl", "finish:--knob-cap-hi"], "svg": "knob-vintage.svg" },
-    { "id": "knob-silk", "console": "the console's Encoder .silk: the 270-degree tick ring printed on the panel", "modgui": "knob film strip, the tick ring", "tokens": ["console:--legend"], "svg": "knob-vintage.svg" },
-    { "id": "knob-shadow", "console": "the console's Encoder .cap drop-shadow(--shadow-1)", "modgui": "knob film strip, the drop shadow", "tokens": ["console:--shade"], "svg": "knob-vintage.svg" },
-    { "id": "fader-cap", "console": "the console's FaderCap: ridges, groove, cream centre line, --shadow-2", "modgui": "fader film strip (tools/look/fader-vintage.svg)", "tokens": ["finish:--fader-cap", "finish:--fader-cap-ridge", "finish:--fader-cap-groove", "console:--fader-cap-line", "console:--shade"], "svg": "fader-vintage.svg" },
-    { "id": "screw", "console": "--screw: the panel's screw heads", "modgui": ".omx-pedal::before and ::after", "tokens": ["finish:--screw", "finish:--knob-cap-hi", "console:--shadow-1"], "via": ["--screws", "--screws-shadow"] },
-    { "id": "glass", "console": "GLASS_WELL (utils/glass.ts): --glass under --glass-grid in the inset track, on every display", "modgui": ".omx-curve, .omx-meter-frame, .omx-display-image", "tokens": ["console:--glass", "console:--glass-grid", "console:--inset-track"], "via": ["--screen-bg", "--screen-shadow"] },
-    { "id": "scribble", "console": "StripHead scribble strip: glass well, the accent lit", "modgui": ".omx-scribble", "tokens": ["console:--glass", "console:--accent", "console:--inset-track"], "via": ["--scribble-bg", "--scribble-ink", "--scribble-glow", "--scribble-shadow"] },
-    { "id": "curve", "console": "the console's EqCurve and the console's DynGraph: the trace in the accent, the legend", "modgui": ".omx-curve-line and the curve's text", "tokens": ["console:--accent", "console:--legend"], "via": ["--curve-line", "--t-screen"] },
-    { "id": "button-cap", "console": "lamp.ts off: a cap in the finish's metal (--btn-face) with its cream legend", "modgui": ".omx-selector-image and the look keys", "tokens": ["finish:--btn-face", "console:--cap-legend", "finish:--knob-cap-hi", "console:--shadow-1"], "via": ["--key-bg", "--t-key", "--key-shadow"] },
-    { "id": "toggle", "console": "the console's ToggleSwitch: a thumb in --toggle-face on a recessed track", "modgui": ".omx-switch-image and its thumb", "tokens": ["finish:--toggle-face", "console:--glass", "console:--inset-track"], "via": ["--switch-track", "--switch-thumb", "--switch-shadow"] },
-    { "id": "footswitch", "console": "the finish's metal cap (knob cap-hi to face, knurl at the edge)", "modgui": ".omx-bypass, the footswitch", "tokens": ["finish:--knob-cap-hi", "finish:--knob-face", "finish:--knob-knurl", "console:--shadow-1"], "via": ["--bypass-bg", "--bypass-shadow"] },
-    { "id": "section-relief", "console": "a panel's --shadow-1 relief", "modgui": ".omx-section", "tokens": ["console:--shadow-1"], "via": ["--section-shadow"] },
-    { "id": "vu-bezel", "console": "the console's Meter: the meter sits in recessed glass", "modgui": ".omx-vu, the needle VU's bezel", "tokens": ["console:--glass"], "via": ["--vu-bezel"] },
-    { "id": "enclosure", "console": "none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient", "modgui": ".omx-pedal body", "tokens": [], "ownerMock": true },
-    { "id": "label-plate", "console": "none: the owner's mock, the dark label plate and its serif title", "modgui": ".omx-head and .omx-label", "tokens": [], "ownerMock": true },
-    { "id": "bypass-led", "console": "none: the owner's mock, the red bypass LED", "modgui": ".omx-bypass-light", "tokens": [], "ownerMock": true }
+    {
+      "id": "knob-cap",
+      "console": "the console's Encoder .cap: a radial cap-hi to face gradient",
+      "modgui": "knob film strip, the domed cap (tools/look/knob-vintage.svg)",
+      "tokens": [
+        "finish:--knob-cap-hi",
+        "finish:--knob-face"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "knob-rim",
+      "console": "the console's Encoder .cap stroke: the rim",
+      "modgui": "knob film strip, the rim",
+      "tokens": [
+        "finish:--knob-edge"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "knob-knurl",
+      "console": "the console's Encoder .knurl: the knurled edge",
+      "modgui": "knob film strip, the teeth ring",
+      "tokens": [
+        "finish:--knob-knurl"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "knob-pointer",
+      "console": "the console's Encoder .needle with its groove-shade and groove-lit walls",
+      "modgui": "knob film strip, the carved pointer",
+      "tokens": [
+        "console:--knob-pointer",
+        "finish:--knob-knurl",
+        "finish:--knob-cap-hi"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "knob-silk",
+      "console": "the console's Encoder .silk: the 270-degree tick ring printed on the panel",
+      "modgui": "knob film strip, the tick ring",
+      "tokens": [
+        "console:--legend"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "knob-shadow",
+      "console": "the console's Encoder .cap drop-shadow(--shadow-1)",
+      "modgui": "knob film strip, the drop shadow",
+      "tokens": [
+        "console:--shade"
+      ],
+      "svg": "knob-vintage.svg"
+    },
+    {
+      "id": "fader-cap",
+      "console": "the console's FaderCap: ridges, groove, cream centre line, --shadow-2",
+      "modgui": "fader film strip (tools/look/fader-vintage.svg)",
+      "tokens": [
+        "finish:--fader-cap",
+        "finish:--fader-cap-ridge",
+        "finish:--fader-cap-groove",
+        "console:--fader-cap-line",
+        "console:--shade"
+      ],
+      "svg": "fader-vintage.svg"
+    },
+    {
+      "id": "screw",
+      "console": "--screw: the panel's screw heads",
+      "modgui": ".omx-pedal::before and ::after",
+      "tokens": [
+        "finish:--screw",
+        "finish:--knob-cap-hi",
+        "console:--shadow-1",
+        "console:--shade"
+      ],
+      "via": [
+        "--screws",
+        "--screws-shadow",
+        "--screws-slot"
+      ]
+    },
+    {
+      "id": "glass",
+      "console": "GLASS_WELL (utils/glass.ts): --glass under --glass-grid in the inset track, on every display",
+      "modgui": ".omx-curve, .omx-meter-frame, .omx-display-image",
+      "tokens": [
+        "console:--glass",
+        "console:--glass-grid",
+        "console:--inset-track"
+      ],
+      "via": [
+        "--screen-bg",
+        "--screen-shadow"
+      ]
+    },
+    {
+      "id": "scribble",
+      "console": "StripHead scribble strip: glass well, the accent lit",
+      "modgui": ".omx-scribble",
+      "tokens": [
+        "console:--glass",
+        "console:--accent",
+        "console:--inset-track"
+      ],
+      "via": [
+        "--scribble-bg",
+        "--scribble-ink",
+        "--scribble-glow",
+        "--scribble-shadow"
+      ]
+    },
+    {
+      "id": "curve",
+      "console": "the console's EqCurve and the console's DynGraph: the trace in the accent, the legend",
+      "modgui": ".omx-curve-line and the curve's text",
+      "tokens": [
+        "console:--accent",
+        "console:--legend"
+      ],
+      "via": [
+        "--curve-line",
+        "--t-screen"
+      ]
+    },
+    {
+      "id": "button-cap",
+      "console": "lamp.ts off: a cap in the finish's metal (--btn-face) with its cream legend",
+      "modgui": ".omx-selector-image and the look keys",
+      "tokens": [
+        "finish:--btn-face",
+        "console:--cap-legend",
+        "finish:--knob-cap-hi",
+        "console:--shadow-1"
+      ],
+      "via": [
+        "--key-bg",
+        "--t-key",
+        "--key-shadow"
+      ]
+    },
+    {
+      "id": "toggle",
+      "console": "the console's ToggleSwitch: a thumb in --toggle-face on a recessed track",
+      "modgui": ".omx-switch-image and its thumb",
+      "tokens": [
+        "finish:--toggle-face",
+        "console:--glass",
+        "console:--inset-track"
+      ],
+      "via": [
+        "--switch-track",
+        "--switch-thumb",
+        "--switch-shadow"
+      ]
+    },
+    {
+      "id": "footswitch",
+      "console": "the finish's metal cap (knob cap-hi to face, knurl at the edge)",
+      "modgui": ".omx-bypass, the footswitch",
+      "tokens": [
+        "finish:--knob-cap-hi",
+        "finish:--knob-face",
+        "finish:--knob-knurl",
+        "console:--shadow-1"
+      ],
+      "via": [
+        "--bypass-bg",
+        "--bypass-shadow"
+      ]
+    },
+    {
+      "id": "section-relief",
+      "console": "a panel's --shadow-1 relief",
+      "modgui": ".omx-section",
+      "tokens": [
+        "console:--shadow-1"
+      ],
+      "via": [
+        "--section-shadow"
+      ]
+    },
+    {
+      "id": "vu-bezel",
+      "console": "the console's Meter: the meter sits in recessed glass",
+      "modgui": ".omx-vu, the needle VU's bezel",
+      "tokens": [
+        "console:--glass"
+      ],
+      "via": [
+        "--vu-bezel"
+      ]
+    },
+    {
+      "id": "legend-ink",
+      "console": "the console's glass and its button face: the darkest ink the console prints",
+      "modgui": "the section title, a control's label and its value on the cream enclosure",
+      "tokens": [
+        "console:--glass",
+        "finish:--btn-face"
+      ],
+      "via": [
+        "--t-section",
+        "--t-control",
+        "--t-value"
+      ]
+    },
+    {
+      "id": "brand-ink",
+      "console": "--cap-legend: the cream legend printed on a cap",
+      "modgui": ".omx-brand on the label plate",
+      "tokens": [
+        "console:--cap-legend"
+      ],
+      "via": [
+        "--t-brand"
+      ]
+    },
+    {
+      "id": "key-state",
+      "console": "the accent a lit key wears, the glass a held key sinks to",
+      "modgui": "a pressed and a held key (--key-pressed-bg, --key-held-bg)",
+      "tokens": [
+        "console:--accent",
+        "console:--glass"
+      ],
+      "via": [
+        "--key-pressed-bg",
+        "--key-held-bg"
+      ]
+    },
+    {
+      "id": "enclosure",
+      "console": "none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient",
+      "modgui": ".omx-pedal body",
+      "tokens": [],
+      "ownerMock": true,
+      "via": [
+        "--enclosure",
+        "--body-bg",
+        "--body-shadow"
+      ]
+    },
+    {
+      "id": "label-plate",
+      "console": "none: the owner's mock, the dark label plate and its serif title",
+      "modgui": ".omx-head and .omx-label",
+      "tokens": [],
+      "ownerMock": true,
+      "via": [
+        "--head-bg",
+        "--head-inset",
+        "--head-rule",
+        "--t-label"
+      ]
+    },
+    {
+      "id": "bypass-led",
+      "console": "none: the owner's mock, the red bypass LED",
+      "modgui": ".omx-bypass-light",
+      "tokens": [],
+      "ownerMock": true,
+      "via": [
+        "--led-off",
+        "--led-on-bg",
+        "--led-on-shadow",
+        "--led-left"
+      ]
+    }
   ]
 }

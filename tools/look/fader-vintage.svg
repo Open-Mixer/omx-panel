@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
   <!-- The vintage look's fader, ONE drawing, in the console's own metal: the console's FaderCap's cap (ridges in the cap and ridge colours, a
        dark groove carrying the cream centre line) over a recessed slot. Every colour is a pinned-token placeholder of
        the console's pin (tools/look-pin.mjs) in the look's finish, aluminium by default. {capY} is the frame's cap top, and {capY+n} a

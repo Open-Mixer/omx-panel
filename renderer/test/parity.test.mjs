@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { skipWithoutTwin, CLI, DATA, FIXTURES, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
+import { modgui, skipWithoutTwin, CLI, DATA, FIXTURES, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
 
 for (const fx of FIXTURES) {
   for (const scale of [1, 0.5, 2]) {
@@ -24,9 +24,14 @@ for (const fx of FIXTURES) {
     });
   }
   if (fx.screenshot) {
-    test(`${fx.name}: the committed MOD GUI screenshot is what the renderer draws`, skipWithoutTwin(fx), () => {
+    // the committed screenshot wears the generator's default (vintage) look, which the renderer does not draw: the flat look's screenshot is
+    // written by the generator the way a bundle gets it, and read back as the file
+    test(`${fx.name}: the MOD GUI screenshot the generator writes for the flat look is what the renderer draws`, skipWithoutTwin(fx), () => {
       const dir = scratch();
-      const shot = decodePng(readFileSync(join(ROOT, fx.screenshot)));
+      const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));
+      const panel = fx.panel ? JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')) : undefined;
+      const files = new Map(modgui.generateModgui(descriptor, { panel, stem: fx.stem, source: 'parity', look: 'console' }));
+      const shot = decodePng(files.get(`modgui/screenshot-${fx.stem}.png`));
       const d = compare(render(descriptionFile(fx, dir), stateFile(fx, dir)), shot);
       assert.ok(d.sameSize && d.exact, `${d.off} pixels differ, by up to ${d.worst}`);
     });

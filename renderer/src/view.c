@@ -42,6 +42,19 @@ static int hex_colour(const char *s, omx_rgb *out) {
   return 1;
 }
 
+/* A colour the console look (looks.console of look.json) sets: `#rrggbb`, or a colour role's name in braces, read in `tok`. */
+static int look_colour(cJSON *flat, cJSON *tok, const char *name, omx_rgb *out, char *err, size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(flat, name));
+  char role[48];
+  if (s && s[0] == '{' && s[1] == '-' && strlen(s) < sizeof role + 2 && s[strlen(s) - 1] == '}') {
+    snprintf(role, sizeof role, "%.*s", (int)strlen(s) - 2, s + 1);
+    s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, role));
+  }
+  if (hex_colour(s, out)) return 1;
+  fail(err, n, "look: looks.console %s is not a colour or a role's name%s", name, NULL);
+  return 0;
+}
+
 static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n) {
   cJSON *root = cJSON_Parse(json);
   cJSON *tok = cJSON_GetObjectItemCaseSensitive(root, "tokens");
@@ -72,6 +85,12 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
       cJSON_Delete(root);
       return 0;
     }
+  }
+  /* the scribble strip's two colours are the console look's (the flat look the roles give): a colour or a role's name in braces */
+  cJSON *flat = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(root, "looks"), "console");
+  if (!look_colour(flat, tok, "--scribble-bg", &v->col.scribbleBg, err, n) || !look_colour(flat, tok, "--scribble-ink", &v->col.scribbleInk, err, n)) {
+    cJSON_Delete(root);
+    return 0;
   }
   cJSON_Delete(root);
   return 1;
@@ -105,9 +124,11 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
   NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
+  NUM(g, scribbleW, &v->g, "geometry"); NUM(g, scribbleH, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
-  NUM(t, nameBase, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
+  NUM(t, nameBase, &v->t, "text"); NUM(t, nameBaseStrip, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
+  NUM(t, readingBase, &v->t, "text");
   cJSON_Delete(root);
   return 1;
 bad:
@@ -170,6 +191,26 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         goto bad;
       }
       c->gov = dup(gov), c->mask = (uint64_t)m, c->value = (int64_t)def->valuedouble;
+    }
+  }
+  /* the aligned matrix (tools/modgui-gen.mjs, MATRIX_ROWS): the controls the band, high-pass and low-pass roles bind are the cells of
+   * their section's matrix, a column per band from the high-pass to the low-pass, each column stacking its parameters in one order */
+  cJSON *roles = cJSON_GetObjectItemCaseSensitive(root, "roles");
+  cJSON_ArrayForEach(it, roles) {
+    const char *role = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "role")), *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
+    cJSON *ix = cJSON_GetObjectItemCaseSensitive(it, "index");
+    static const char *const ROWS[] = {"on", "type", "freq", "gain", "q", "slope"};
+    char kind[8] = "", param[8] = "";
+    if (!role || !sym || sscanf(role, "%7[a-z]_%7[a-z]", kind, param) != 2) continue;
+    int row = -1;
+    for (int r = 0; r < 6; r++)
+      if (strcmp(param, ROWS[r]) == 0) row = r == 5 ? 1 : r;
+    if (row < 0 || !(strcmp(kind, "band") == 0 || strcmp(kind, "hpf") == 0 || strcmp(kind, "lpf") == 0)) continue;
+    for (size_t k = 0; k < v->ncontrols; k++) {
+      if (strcmp(v->controls[k].symbol, sym) != 0) continue;
+      if (strcmp(kind, "band") == 0) snprintf(v->controls[k].mkey, sizeof v->controls[k].mkey, "b%d", cJSON_IsNumber(ix) ? (ix->valueint & 0xffff) + 1 : 1);
+      else memcpy(v->controls[k].mkey, kind, sizeof v->controls[k].mkey);
+      v->controls[k].mrow = row;
     }
   }
   /* the bar groups: a section's `bars` runs name their controls and labels in order */
@@ -527,6 +568,45 @@ typedef struct {
   box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
 } laid;
 
+/* An aligned matrix's column order key: the high-pass first, the bands by number, the low-pass last. */
+static int mcol_rank(const char *k) { return strcmp(k, "hpf") == 0 ? -1 : strcmp(k, "lpf") == 0 ? 1 << 20 : atoi(k + 1); }
+
+/* One section's matrix, if it has one (two or more bands and two or more rows of cells): the columns that hold a shown cell, in order, as
+ * their keys, and the rows its cells use, as indexes into the five-row order. Returns the column count, 0 for no matrix. */
+static int section_matrix(const omx_panel_view_t *v, size_t s, char cols[][8], int *nrows, int rowat[5]) {
+  char all[32][8];
+  int nall = 0, rows_used[5] = {0}, bands = 0;
+  for (size_t i = 0; i < v->ncontrols; i++) {
+    const control *k = &v->controls[i];
+    if (k->section != (int)s || !k->mkey[0]) continue;
+    int have = 0;
+    for (int a = 0; a < nall; a++) have |= strcmp(all[a], k->mkey) == 0;
+    if (!have && nall < 32) {
+      memcpy(all[nall], k->mkey, 8), nall++;
+      bands += k->mkey[0] == 'b';
+    }
+    rows_used[k->mrow] = 1;
+  }
+  int nr = 0;
+  for (int r = 0; r < 5; r++) rowat[r] = rows_used[r] ? nr++ : -1;
+  if (bands < 2 || nr < 2) return 0;
+  *nrows = nr;
+  int n = 0;
+  for (int a = 0; a < nall; a++) {
+    int any = 0;
+    for (size_t i = 0; i < v->ncontrols; i++)
+      if (v->controls[i].section == (int)s && strcmp(v->controls[i].mkey, all[a]) == 0 && shown(&v->controls[i])) any = 1;
+    if (!any) continue;
+    int at = n++;
+    while (at > 0 && mcol_rank(cols[at - 1]) > mcol_rank(all[a])) memcpy(cols[at], cols[at - 1], 8), at--;
+    memcpy(cols[at], all[a], 8);
+  }
+  return n ? n : -1; /* a matrix whose every column is hidden still owns its cells: no column, no cell drawn */
+}
+
+/* The height of an aligned matrix column's header (tools/modgui-gen.mjs, MATRIX_HEAD_H). */
+#define MATRIX_HEAD_H 20
+
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
 static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
@@ -536,28 +616,51 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
   /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
-  size_t most = 0;
+  size_t most = 0, widest_matrix = 0;
   for (size_t s = 0; s < v->nsections; s++) {
-    size_t k = 0, all = 0;
+    char cols[32][8];
+    int nrows, rowat[5];
+    int mc = section_matrix(v, s, cols, &nrows, rowat);
+    size_t k = 0, all = 0, loose = 0;
     for (size_t i = 0; i < v->ncontrols; i++)
-      if (v->controls[i].section == (int)s) all++, k += shown(&v->controls[i]);
+      if (v->controls[i].section == (int)s) {
+        all++, k += shown(&v->controls[i]);
+        loose += mc != 0 && !v->controls[i].mkey[0] && shown(&v->controls[i]);
+      }
     L.drawn[s] = k > 0 || all == 0;
-    if (k > most) most = k;
+    /* a matrix section is as wide as its loose controls or its columns need, the widest of them widening every section */
+    size_t width = mc != 0 ? (loose < (size_t)per_row ? loose : (size_t)per_row) : k;
+    if (mc > 0 && (size_t)mc > width) width = (size_t)mc;
+    if (mc > 0 && (size_t)mc > widest_matrix) widest_matrix = (size_t)mc;
+    if (width > most) most = width;
     if (L.curves[s] && most < 3) most = 3; /* a curve row needs a width of its own */
   }
-  if (most > (size_t)per_row) most = (size_t)per_row;
+  size_t cap = (size_t)per_row > widest_matrix ? (size_t)per_row : widest_matrix;
+  if (most > cap) most = cap;
   double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
   double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
     if (!L.drawn[s]) continue;
+    char cols[32][8];
+    int nrows = 0, rowat[5], mc = section_matrix(v, s, cols, &nrows, rowat);
     size_t j = 0;
     for (size_t i = 0; i < v->ncontrols; i++) {
-      if (v->controls[i].section != (int)s || !shown(&v->controls[i])) continue;
+      if (v->controls[i].section != (int)s || !shown(&v->controls[i]) || (mc != 0 && v->controls[i].mkey[0])) continue;
       L.cx[i] = g->sectionPad + (double)(j % per_row) * g->cellW;
       L.cy[i] = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + floor((double)j / per_row) * g->cellH;
       j++;
     }
-    double rows = ceil((double)j / per_row), h = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + rows * g->cellH + g->sectionPad / 2;
+    double rows = ceil((double)j / per_row), mx_top = g->sectionTitleH + L.curves[s] * (g->curveH + g->curveGap) + rows * g->cellH;
+    double h = mx_top + (mc > 0 ? MATRIX_HEAD_H + nrows * g->cellH : 0) + g->sectionPad / 2;
+    if (mc > 0)
+      for (size_t i = 0; i < v->ncontrols; i++) {
+        const control *k = &v->controls[i];
+        if (k->section != (int)s || !k->mkey[0] || !shown(k)) continue;
+        int col = 0;
+        while (col < mc && strcmp(cols[col], k->mkey) != 0) col++;
+        L.cx[i] = g->sectionPad + col * g->cellW;
+        L.cy[i] = mx_top + MATRIX_HEAD_H + rowat[k->mrow] * g->cellH;
+      }
     L.sections[s] = (box){g->pad, y, section_w, h};
     last = y + h;
     y += h + g->sectionGap;
@@ -894,12 +997,19 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
         reading = 1;
       }
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
-      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      /* a selector's and a display's label stands under its control; every other label sits on its value strip (geometry.json) */
+      int strip = !reading && (k->bar || k->w != W_SELECTOR);
+      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
       if (!k->bar && k->w == W_SELECTOR)
         text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
              T->small * s, col->ink, OMX_ALIGN_CENTRE);
-      else if (!reading || k->text[0])
-        text(d, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      else if (strip) {
+        /* the scribble strip: a recessed well the value is set in */
+        double sw = g->scribbleW * s;
+        d->round_rect(d->ctx, mid - sw / 2, (y + g->cellH - g->scribbleH) * s, sw, g->scribbleH * s, 3 * s, col->scribbleBg);
+        text(d, font, k->text, 0, sw - 4 * s, mid, (y + T->valueBase) * s, T->small * s, col->scribbleInk, OMX_ALIGN_CENTRE);
+      } else if (k->text[0])
+        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
     }
   }
   if (v->nband) {

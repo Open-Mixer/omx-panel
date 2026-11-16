@@ -111,6 +111,9 @@ export function checkRoles(doc, values) {
   return faults;
 }
 
+/** The finish a look wears: its `--finish`, where `{console:default-finish}` is the console's own default (read from its tokens.css, pinned). */
+export const finishOf = (look, pin = loadPin()) => String(look['--finish']).replace(/\{console:default-finish\}/g, pin.defaultFinish);
+
 /** The MOD GUI's looks file, parsed. */
 export const loadLooks = (file = LOOKS_JSON) => JSON.parse(readFileSync(file, 'utf8'));
 
@@ -137,9 +140,9 @@ export function checkLooks(looks, roles = loadRoles()) {
     for (const [k, v] of Object.entries(look)) {
       for (const ref of String(v).matchAll(/\{console:(--[a-z0-9-]+)\}/g)) if (!(ref[1] in consoleTokens())) faults.push(`look ${n} ${k} names console:${ref[1]}, which the pin does not carry`);
       for (const ref of String(v).matchAll(/\{finish:(--[a-z0-9-]+)\}/g)) {
-        const fin = loadPin().finish[look['--finish']];
-        if (!fin) faults.push(`look ${n} ${k} names finish:${ref[1]} and the look's --finish '${look['--finish']}' is no console finish`);
-        else if (!(ref[1] in fin)) faults.push(`look ${n} ${k} names finish:${ref[1]}, which the ${look['--finish']} finish of the pin does not carry`);
+        const fin = loadPin().finish[finishOf(look)];
+        if (!fin) faults.push(`look ${n} ${k} names finish:${ref[1]} and the look's --finish '${finishOf(look)}' is no console finish`);
+        else if (!(ref[1] in fin)) faults.push(`look ${n} ${k} names finish:${ref[1]}, which the ${finishOf(look)} finish of the pin does not carry`);
       }
       for (const ref of String(v).matchAll(/\{(--[a-z0-9-]+)\}/g)) {
         if (ref[1] !== '--enclosure' && !names.has(ref[1])) faults.push(`look ${n} ${k} names ${ref[1]}, which is no colour role`);
@@ -178,7 +181,7 @@ export function emitLook(doc = loadRoles(), looks = loadLooks()) {
     tierSetting: looks.tierSetting,
     // the console's pinned relief, base paint and metal, for the drawings (the knob and the fader SVGs name them) beside the looks
     console: { commit: pin.source.commit, defaultFinish: pin.defaultFinish, tokens: consoleTokens(pin), finish: pin.finish },
-    looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => consoleTokens(pin)[t]).replace(/\{finish:(--[a-z0-9-]+)\}/g, (_m, t) => pin.finish[l['--finish']][t])]))])),
+    looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:default-finish\}/g, pin.defaultFinish).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => consoleTokens(pin)[t]).replace(/\{finish:(--[a-z0-9-]+)\}/g, (_m, t) => pin.finish[finishOf(l, pin)][t])]))])),
   };
   return `${JSON.stringify(look, null, 2)}\n`;
 }

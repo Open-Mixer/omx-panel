@@ -293,9 +293,12 @@ test('the screenshot of the fixture descriptor carries its text: title, section 
   // the delay's declared panel draws its time_response above the controls: the control rows sit one curve row lower
   const g = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8')).geometry;
   const row = g.curveH + g.curveGap;
+  const text = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8')).text;
+  // a control's cell starts under the section title and the curve; its label and value sit on the strip, at the declared baselines
+  const at = (base) => g.sectionTop + g.sectionTitleH + row + base - 3;
   assert.ok(bare(shot, 24, 16, 80) > 2, 'the title row has glyph pixels over the plain surface');
-  assert.ok(bare(shot, 129 + row, 100, 165) > 2, 'the control name row has glyph pixels');
-  assert.ok(bare(shot, 139 + row, 100, 165) > 2, 'the default value row has glyph pixels');
+  assert.ok(bare(shot, at(text.nameBaseStrip), 100, 165) > 2, 'the control name row has glyph pixels');
+  assert.ok(bare(shot, at(text.valueBase), 100, 165) > 2, 'the default value row has glyph pixels');
   assert.ok(bare(thumb, 12, 8, 40) > 2, 'the thumbnail carries the title');
   assert.equal(pixelRow(shot, 24, 16, 40), pixelRow(gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png')[1], 24, 16, 40), 'the same bytes on a second run');
 });

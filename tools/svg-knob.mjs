@@ -44,7 +44,9 @@ export function resolveSvg(text, tokens, angle, pinned, extra = {}) {
 }
 
 /** The scene of an SVG text: gradients by id, and shapes in paint order with the rotations over them. */
-export function parseSvg(text) {
+export function parseSvg(source) {
+  // the comments (the licence lines, the drawing's notes) are no part of the drawing
+  const text = source.replace(/<!--[\s\S]*?-->/g, '');
   const grads = new Map();
   for (const m of text.matchAll(/<(linearGradient|radialGradient)\b([^>]*)>([\s\S]*?)<\/\1>/g)) {
     const a = attrs(m[2]);

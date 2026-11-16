@@ -111,7 +111,7 @@ tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed
 every row to it: each token a row lists is in the pin, is named as a placeholder (`{console:--x}` or `{finish:--x}`) in the look
 token or the drawing the row names, and is worn as the pinned value in `tools/look.json`; and a value moved in a `tokens.css` goes
 red in the drift check, token by token. A row marked "the owner's mock" is not a console element (the cream enclosure, the label
-plate, the red LED) and reads no pinned token.
+plate, the red LED) and reads no pinned token. Those rows are the ONLY place a vintage token may hold a colour literal: the rows' `via` lists name them, and `test/modgui-no-retyped-look.test.mjs` refuses a `#rrggbb` anywhere else.
 
 | Row | Console element | MOD GUI element | Pinned tokens |
 |---|---|---|---|
@@ -122,7 +122,7 @@ plate, the red LED) and reads no pinned token.
 | `knob-silk` | the console's Encoder .silk: the 270-degree tick ring printed on the panel | knob film strip, the tick ring | `console:--legend` |
 | `knob-shadow` | the console's Encoder .cap drop-shadow(--shadow-1) | knob film strip, the drop shadow | `console:--shade` |
 | `fader-cap` | the console's FaderCap: ridges, groove, cream centre line, --shadow-2 | fader film strip (tools/look/fader-vintage.svg) | `finish:--fader-cap`, `finish:--fader-cap-ridge`, `finish:--fader-cap-groove`, `console:--fader-cap-line`, `console:--shade` |
-| `screw` | --screw: the panel's screw heads | .omx-pedal::before and ::after | `finish:--screw`, `finish:--knob-cap-hi`, `console:--shadow-1` |
+| `screw` | --screw: the panel's screw heads | .omx-pedal::before and ::after: 12 px heads in the foot's corners, with a slot | `finish:--screw`, `finish:--knob-cap-hi`, `console:--shadow-1`, `console:--shade` |
 | `glass` | GLASS_WELL (utils/glass.ts): --glass under --glass-grid in the inset track, on every display | .omx-curve, .omx-meter-frame, .omx-display-image | `console:--glass`, `console:--glass-grid`, `console:--inset-track` |
 | `scribble` | StripHead scribble strip: glass well, the accent lit | .omx-scribble | `console:--glass`, `console:--accent`, `console:--inset-track` |
 | `curve` | the console's EqCurve and the console's DynGraph: the trace in the accent, the legend | .omx-curve-line and the curve's text | `console:--accent`, `console:--legend` |
@@ -131,6 +131,9 @@ plate, the red LED) and reads no pinned token.
 | `footswitch` | the finish's metal cap (knob cap-hi to face, knurl at the edge) | .omx-bypass, the footswitch | `finish:--knob-cap-hi`, `finish:--knob-face`, `finish:--knob-knurl`, `console:--shadow-1` |
 | `section-relief` | a panel's --shadow-1 relief | .omx-section | `console:--shadow-1` |
 | `vu-bezel` | the console's Meter: the meter sits in recessed glass | .omx-vu, the needle VU's bezel | `console:--glass` |
+| `legend-ink` | the console's glass and its button face: the darkest ink the console prints | the section title, a control's label and its value on the cream enclosure | `console:--glass`, `finish:--btn-face` |
+| `brand-ink` | --cap-legend: the cream legend printed on a cap | .omx-brand on the label plate | `console:--cap-legend` |
+| `key-state` | the accent a lit key wears, the glass a held key sinks to | a pressed and a held key (--key-pressed-bg, --key-held-bg) | `console:--accent`, `console:--glass` |
 | `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
 | `label-plate` | none: the owner's mock, the dark label plate and its serif title | .omx-head and .omx-label | none (the owner's mock) |
 | `bypass-led` | none: the owner's mock, the red bypass LED | .omx-bypass-light | none (the owner's mock) |
@@ -141,7 +144,7 @@ grid, the legend and the accent (`tokens`); the RELIEF the console draws depth w
 `--inset-track`); the base control paint no finish changes (`base`: `--knob-pointer`, `--fader-cap-line`, `--cap-legend`); and the three
 FINISH blocks (`finish`: aluminium, graphite, black; the metal a knob, a fader cap, a button cap, a toggle and a screw are made of),
 aluminium being the default (`defaultFinish`, the console's default `data-finish`). `tools/look.mjs` writes them into `tools/look.json`
-(`console`), and each look names its metal with the `--finish` token (`aluminium` for vintage, `none` for the others).
+(`console`), and each look names its metal with the `--finish` token (the console's default finish, read from its `tokens.css`, for vintage; `none` for the others).
 
 **The metal knob and fader.** The vintage knob and fader film strips are generated from `tools/look/knob-vintage.svg` and
 `tools/look/fader-vintage.svg` through `tools/svg-knob.mjs`; every colour in them is a pinned placeholder, so a re-pin or another

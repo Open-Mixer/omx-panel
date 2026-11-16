@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # MOD GUI shots
 
 Every image: real mod-ui 1.15.0 (build v1.15.0.3371, commit 391c1ed, github.com/moddevices/mod-ui) running in a container, no audio host, drawn in Chromium; label "mod-ui 1.15.0 in a container".

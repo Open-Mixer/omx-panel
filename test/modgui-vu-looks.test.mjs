@@ -82,6 +82,20 @@ test('the gain-reduction needle is reversed: it rests right and swings left as t
   assert.ok(Math.abs(angleOf(gr) - VU.angleMin) < 0.5, 'full reduction swings to the left');
 });
 
+test('the gain-reduction needle rests right when the page opens: a start event carries the ports\' initial values, not a reading', () => {
+  const p = page();
+  const gr = dialFor(p, 'gain-reduction');
+  // mod-ui opens a pedal with each output port at its minimum (-60 dB): that is no gain reduction of 60 dB, so no needle moves
+  p.fire({ type: 'start', ports: p.dials.map((d) => ({ symbol: d.symbol, value: Number(d.getAttribute('data-min')) })) });
+  for (let i = 0; i < 40; i++) p.tick(100);
+  const rest = (d) => (d.getAttribute('data-reversed') === '1' ? VU.angleMax : VU.angleMin);
+  for (const d of p.dials) if (d.needle.style.transform) assert.ok(Math.abs(angleOf(d) - rest(d)) < 0.5, `${d.getAttribute('data-kind')} left its rest on a start event: ${angleOf(d)}`);
+  // and the first reading after it moves the needle from the rest
+  p.fire({ type: 'change', symbol: gr.symbol, value: Number(gr.getAttribute('data-min')) });
+  for (let i = 0; i < 40; i++) p.tick(100);
+  assert.ok(Math.abs(angleOf(gr) - VU.angleMin) < 0.5, 'a reading of full reduction swings left');
+});
+
 test('the ballistic step: after one time constant the needle has covered 63.2% of the way', () => {
   const p = page();
   const level = dialFor(p, 'level');

@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
   <!-- The vintage look's knob, ONE drawing, in the console's own metal: the console's Encoder's cap (a radial cap-hi to face gradient, a rim in
        the edge colour, a knurled edge, a carved pointer between a shaded and a lit groove wall) and its silkscreened tick ring. Every
        colour is a pinned-token placeholder: the console's pinned tokens (tools/look-pin.mjs) in the look's finish,

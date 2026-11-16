@@ -1,0 +1,56 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// What the face declares once (tools/look/geometry.json) and the generator reads, never types again: the uppercase label's tracking
+// (`label.letterSpacing`), and the screw heads' size and place (`screw`, `screwInset`), which the stylesheet and the raster both draw.
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { GEOMETRY, LETTER_SPACING, generateModgui, layout, loadLook, renderFace, resolvePanel } from '../tools/modgui-gen.mjs';
+import { inflateSync } from 'node:zlib';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/** The pixels of a PNG this tree writes (8-bit RGBA, filter None on every line). */
+function decodePng(png) {
+  const b = Buffer.from(png), w = b.readUInt32BE(16), h = b.readUInt32BE(20), idat = [];
+  for (let o = 8; o < b.length; ) { const n = b.readUInt32BE(o); if (b.toString('latin1', o + 4, o + 8) === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + n)); o += 12 + n; }
+  const raw = inflateSync(Buffer.concat(idat)), data = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) data.set(raw.subarray(y * (w * 4 + 1) + 1, (y + 1) * (w * 4 + 1)), y * w * 4);
+  return { w, h, data };
+}
+const GEO = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8'));
+const FIX = join(ROOT, 'test/fixtures/omx-delay');
+const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
+const gen = (look) => new Map(generateModgui(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay', source: 't', look }));
+
+test('the label tracking is declared once: geometry.json holds it and no rule, test or fit types it again', () => {
+  assert.equal(typeof GEO.label.letterSpacing, 'number');
+  assert.equal(LETTER_SPACING, GEO.label.letterSpacing);
+  for (const f of ['tools/modgui-gen.mjs', 'test/modgui-label-fit.test.mjs']) {
+    assert.doesNotMatch(readFileSync(join(ROOT, f), 'utf8'), /letter-spacing:\s*0\.05em|0\.05 \* size/, `${f} types the tracking`);
+  }
+  const css = gen('vintage').get('modgui/stylesheet-omx-delay.css').toString();
+  assert.match(css, new RegExp(`\\.omx-control-title \\{[^}]*letter-spacing: ${GEO.label.letterSpacing}em`));
+});
+
+test('the screw heads are readable: a declared size of 12 px or more, in the foot\'s corners clear of the head plate, with a slot', () => {
+  assert.ok(GEOMETRY.screw >= 12, `${GEOMETRY.screw} px`);
+  const css = gen('vintage').get('modgui/stylesheet-omx-delay.css').toString();
+  const rule = css.match(/::before, [^\n]*::after \{[^}]*\}/)[0];
+  assert.match(rule, new RegExp(`width: ${GEOMETRY.screw}px; height: ${GEOMETRY.screw}px`));
+  assert.match(rule, new RegExp(`bottom: ${GEOMETRY.screwInset}px`));
+  assert.doesNotMatch(rule, /top:/, 'the head plate would cover a screw at the top');
+  assert.match(rule, /linear-gradient\(135deg/, 'a screwdriver slot');
+});
+
+test('the raster draws the same two heads: a metal disc with a slot darker than the metal', () => {
+  const p = resolvePanel(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay' });
+  const lay = { ...layout(p), brand: p.brand, name: p.name ?? p.stem, stem: p.stem };
+  const img = decodePng(renderFace(lay, loadLook('vintage'), 4));
+  const r = GEOMETRY.screw / 2, cx = (GEOMETRY.screwInset + r) * 4, cy = (lay.h - GEOMETRY.screwInset - r) * 4;
+  const at = (x, y) => { const i = (Math.round(y) * img.w + Math.round(x)) * 4; return [img.data[i], img.data[i + 1], img.data[i + 2]]; };
+  const lum = ([a, b, c]) => a + b + c;
+  const off = at(cx - r * 4 * 0.5, cy - r * 4 * 0.5), on = at(cx, cy);
+  assert.ok(lum(off) - lum(on) > 60, `the slot (${on}) is not darker than the metal beside it (${off})`);
+});

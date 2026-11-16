@@ -62,6 +62,8 @@ export const GEOMETRY = Object.freeze(FACE.geometry);
 /** The needle meters, declared once (tools/look/geometry.json, `vu`): the sweep, the orange zone, the ballistics, which kind is reversed. */
 /** The label sizes a control steps through, largest first (tools/look/geometry.json `label.sizes`): a word that does not fit the cell steps the size down, never breaks. */
 export const LABEL_SIZES = Object.freeze(FACE.label.sizes);
+/** The tracking of an uppercase label, in em (`label.letterSpacing`): the stylesheet's rules and the size fit read this one number. */
+export const LETTER_SPACING = FACE.label.letterSpacing;
 export const VU = Object.freeze(FACE.vu);
 
 /** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
@@ -647,7 +649,15 @@ export function renderFace(lay, look, scale) {
   // the body is the look's first colour (the plugin's enclosure in vintage); a look with a head plate sets it dark over the top
   const bodyHex = look.depth['--body-bg'].includes('{--enclosure}') ? enclosureOf(look, lay.stem) : /#[0-9a-f]{6}/i.exec(depthOf(look, lay.stem, '--body-bg'))?.[0] ?? tok['--surface'];
   roundRect(c, s, s, (lay.w - 2) * s, (lay.h - 2) * s, (radius - 1) * s, rgbOf(bodyHex));
-  if (look.depth['--screws'] !== 'none') for (const sx of [9, lay.w - 18]) disc(c, (sx + 4.5) * s, 13.5 * s, 4.5 * s, hexOf(look, lay.stem, '--screws'));
+  if (look.depth['--screws'] !== 'none') {
+    // the screw heads sit in the foot's corners, clear of the head plate: a disc of the metal with a screwdriver slot across it
+    const r = g.screw / 2;
+    for (const cx of [g.screwInset + r, lay.w - g.screwInset - r]) {
+      const cy = lay.h - g.screwInset - r;
+      disc(c, cx * s, cy * s, r * s, hexOf(look, lay.stem, '--screws'));
+      segment(c, (cx - r * 0.7) * s, (cy + r * 0.7) * s, (cx + r * 0.7) * s, (cy - r * 0.7) * s, Math.max(0.6, 0.8 * s), hexOf(look, lay.stem, '--screws-slot'));
+    }
+  }
   if (look.depth['--head-bg'] !== 'none') {
     const [it, il] = look.depth['--head-inset'] === 'none' ? [0, 0] : look.depth['--head-inset'].split(' ').map((v) => parseFloat(v));
     roundRect(c, (1 + il) * s, (1 + it) * s, (lay.w - 2 - 2 * il) * s, (g.headH - 1 - it) * s, (il ? 4 : radius - 1) * s, hexOf(look, lay.stem, '--head-bg'));
@@ -693,7 +703,9 @@ export function renderFace(lay, look, scale) {
         drawKnob(c, (x + g.cellW / 2) * s, (y + g.knobTop + g.knob / 2) * s, (g.knob / 2) * s, travelFraction(k, k.def), col, look);
       }
       const mid = (x + g.cellW / 2) * s, fit = (g.cellW - 4) * s;
-      drawText(c, font, fitText(font, k.bar ?? k.name, TEXT.small * s, fit), mid, (y + TEXT.nameBase) * s, TEXT.small * s, tx.control, 'centre');
+      // a selector's and a display's label stands under its control, every other label sits on its value strip (the stylesheet's two anchors)
+      const strip = k.widget !== 'selector' && k.widget !== 'display';
+      drawText(c, font, fitText(font, k.bar ?? k.name, TEXT.small * s, fit), mid, (y + (strip ? TEXT.nameBaseStrip : TEXT.nameBase)) * s, TEXT.small * s, tx.control, 'centre');
       if (k.widget === 'selector') {
         const shown = fitText(font, valueText(k), TEXT.small * s, (g.selectorW - 8) * s);
         drawText(c, font, shown, mid, (y + g.selectorTop + g.selectorH / 2 + TEXT.small * 0.36) * s, TEXT.small * s, tx.key, 'centre');
@@ -810,7 +822,7 @@ export function labelSizeOf(name, width, looks = labelLooks()) {
       const caps = look.depth['--control-caps'] === 'uppercase';
       return String(name).split(/\s+/).every((w) => {
         const t = caps ? w.toUpperCase() : w;
-        return textWidth(look.font, t, size) + (caps ? 0.05 * size * [...t].length : 0) <= width;
+        return textWidth(look.font, t, size) + (caps ? LETTER_SPACING * size * [...t].length : 0) <= width;
       });
     });
     if (fits) return size;
@@ -918,9 +930,9 @@ ${banner(' * ', source).join('\n')}
  */
 ${P} { position: relative; box-sizing: border-box; background: ${D('--body-bg')}; box-shadow: ${D('--body-shadow')}; border-radius: ${bodyRadius}px; color: ${D('--t-label')}; font-family: ${tok['--font-ui']}; }
 ${P} .omx-head { position: absolute; left: ${inset ? inset[1] : 0}; right: ${inset ? inset[1] : 0}; top: ${inset ? inset[0] : 0};${decl('background', D('--head-bg'))}${D('--head-bg') === 'none' ? '' : inset ? ' border-radius: 4px;' : ` border-radius: ${bodyRadius}px ${bodyRadius}px 0 0;`}${D('--head-rule') === 'none' ? '' : ` border-bottom: 2px solid ${D('--head-rule')};`}${decl('box-shadow', D('--accent-bar-glow'))} }
-${D('--screws') === 'none' ? '' : `${P}::before, ${P}::after { content: ''; position: absolute; top: 9px; width: 9px; height: 9px; border-radius: 50%; background: ${D('--screws')};${decl('box-shadow', D('--screws-shadow'))} }
-${P}::before { left: 9px; }
-${P}::after { right: 9px; }
+${D('--screws') === 'none' ? '' : `${P}::before, ${P}::after { content: ''; position: absolute; bottom: ${g.screwInset}px; width: ${g.screw}px; height: ${g.screw}px; border-radius: 50%; background: linear-gradient(135deg, transparent 43%, ${D('--screws-slot')} 43%, ${D('--screws-slot')} 57%, transparent 57%), ${D('--screws')};${decl('box-shadow', D('--screws-shadow'))} }
+${P}::before { left: ${g.screwInset}px; }
+${P}::after { right: ${g.screwInset}px; }
 `}
 ${P} .omx-brand { position: absolute; left: ${g.pad}px; top: 5px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: ${D('--t-brand')}; }
 ${P} .omx-label { position: absolute; left: ${g.pad}px; top: 17px; font-size: 14px; font-weight: 600;${decl('font-family', D('--label-font'))} }
@@ -929,7 +941,7 @@ ${P} .omx-bypass-light { width: 10px; height: 10px; margin: 5px; border-radius: 
 ${P} .omx-bypass-light.on { background: ${D('--led-on-bg')};${decl('box-shadow', D('--led-on-shadow'))} }
 ${P} .omx-section { position: absolute; box-sizing: border-box; background: ${D('--section-bg')}; border-radius: ${g.sectionRadius}px;${decl('box-shadow', D('--section-shadow'))} }
 ${P} .omx-section-title { margin: 0; padding: 3px ${g.sectionPad}px; height: ${g.sectionTitleH}px; box-sizing: border-box; font-size: 10px; font-weight: 600; text-transform: uppercase; color: ${D('--t-section')}; }
-${P} .omx-colhead { position: absolute; width: ${g.cellW}px; height: 14px; line-height: 14px; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: ${D('--t-section')}; }
+${P} .omx-colhead { position: absolute; width: ${g.cellW}px; height: 14px; line-height: 14px; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: ${LETTER_SPACING}em; color: ${D('--t-section')}; }
 ${P} .omx-control { position: absolute; width: ${g.cellW}px; height: ${g.cellH}px; text-align: center; }
 ${P} .omx-knob-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${film}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
 ${draws(panel, 'fader') ? `${P} .omx-fader-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${faderFilm}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
@@ -939,7 +951,7 @@ ${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-sha
 ${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}
 ${P} .omx-switch-image.on::after { left: ${g.switchW - g.switchH + 3}px; background: ${tok['--ink']}; }
-${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; max-height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow-wrap: normal; word-break: keep-all; position: absolute; left: 0; right: 0; bottom: ${g.scribbleH + g.labelGap}px; }
+${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: ${LETTER_SPACING}em;`} white-space: normal; overflow: hidden; max-height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow-wrap: normal; word-break: keep-all; position: absolute; left: 0; right: 0; bottom: ${g.scribbleH + g.labelGap}px; }
 ${P} .omx-selector .omx-control-title, ${P} .omx-display .omx-control-title { position: static; height: 40px; max-height: none; }
 ${LABEL_SIZES.slice(1).map((z) => `${P} .omx-lbl-${z} .omx-control-title { font-size: ${z}px; line-height: 10px; }`).join('\n')}
 ${P} .omx-scribble { position: absolute; left: ${(g.cellW - g.scribbleW) / 2}px; top: ${g.cellH - g.scribbleH}px; box-sizing: border-box; width: ${g.scribbleW}px; height: ${g.scribbleH}px; border-radius: 3px; background: ${D('--scribble-bg')}; color: ${D('--scribble-ink')};${decl('text-shadow', D('--scribble-glow'))}${decl('box-shadow', D('--scribble-shadow'))} font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 10px; line-height: ${g.scribbleH}px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
@@ -1036,10 +1048,10 @@ function (event, funcs) {
             draw(this);
         });
     };
-    var vuSet = function (symbol, value, jump) {
+    var vuSet = function (symbol, value) {
         event.icon.find('[data-vu]').each(function () {
             if (this.getAttribute('data-vu-symbol') !== symbol) return;
-            if (!this.omxVu) this.omxVu = { cur: jump ? value : (this.getAttribute('data-reversed') === '1' ? parseFloat(this.getAttribute('data-max')) : parseFloat(this.getAttribute('data-min'))), target: value, t: Date.now() };
+            if (!this.omxVu) this.omxVu = { cur: (this.getAttribute('data-reversed') === '1' ? parseFloat(this.getAttribute('data-max')) : parseFloat(this.getAttribute('data-min'))), target: value, t: Date.now() };
             this.omxVu.target = value;
             this.omxVu.t = this.omxVu.t || Date.now();
             draw(this);
@@ -1050,7 +1062,8 @@ function (event, funcs) {
         }
     };
     var show = function (symbol, value) {
-        vuSet(symbol, value, event.type === 'start');
+        // a start event carries each port's initial value (mod-ui's minimum), not a reading: a needle meter keeps its rest until a change
+        if (event.type !== 'start') vuSet(symbol, value);
         onoff(symbol, value);
         var v = Math.round(value);
         event.icon.find('[data-visible-port="' + symbol + '"]').each(function () {

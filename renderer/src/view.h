@@ -38,6 +38,9 @@ typedef struct {
   int64_t value;
   /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
   char *bar;
+  /* an aligned matrix's cell (the roles band_/hpf_/lpf_ on|type|freq|gain|q|slope bind it): its column key (b1.., hpf, lpf), '\0' for none, and its row (0..4) */
+  char mkey[8];
+  int mrow;
   /* the travel the host gave (input.c): the control's own unit; none given is 0..1, linear, no default */
   struct { double min, max, def, step; int given, has_def, log, integer; } travel;
   int read_only, hold;
@@ -87,15 +90,15 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
 } geometry;
 
 typedef struct {
-  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, valueBase;
+  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, nameBaseStrip, valueBase, readingBase;
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, meterGreen, meterAmber, meterRed;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
 } palette;
 
 struct omx_panel_view {

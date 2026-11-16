@@ -40,7 +40,7 @@ const file = (re) => gen().find(([p]) => re.test(p))[1].toString();
 const wordW = (look, word, size) => {
   const caps = look.depth['--control-caps'] === 'uppercase';
   const t = caps ? word.toUpperCase() : word;
-  return textWidth(look.font, t, size) + (caps ? 0.05 * size * [...t].length : 0);
+  return textWidth(look.font, t, size) + (caps ? GEO.label.letterSpacing * size * [...t].length : 0);
 };
 const sizeOf = (html, name) => {
   const m = new RegExp(`<div class="omx-control ([^"]*)"[^>]*title="${name}"`).exec(html);

@@ -44,7 +44,7 @@ export const FIXTURES = [
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
 
-const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+export const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const { renderFace, layout, loadLook, resolvePanel } = modgui;
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
