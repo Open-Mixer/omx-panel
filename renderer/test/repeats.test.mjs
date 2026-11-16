@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * The renderer draws a section's `matrix` as the description gives it (docs/renderer.md; omx-panel#62), the matrix the group
- * model computed and the MOD GUI face draws: each control's cell is the face's, and each cell sits where the matrix of
- * test/fixtures/repeats/<name>.layout.json (matrixOf's, written once by tools/repeats-fixture.mjs) puts it. Neither is
- * derived again here.
+ * The renderer draws a section's `matrix` as `omx-panel describe --layout` serves it (docs/renderer.md; omx-panel#62), the
+ * group model's served matrix, the one the MOD GUI face draws: each control's cell is the face's, and each cell sits where
+ * the served matrix puts it. Nothing is derived again here, and no fixture carries a matrix of its own making. The tests that
+ * read only rectangles need no omx-dsp twin; those that compare with the face need it, and fail without it.
  */
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { CASES } from '../../test/fixtures/repeats/cases.mjs';
-import { CLI, DATA, FIXTURES, HAVE_TWIN, ROOT, descriptionFile, rects, resolved, scratch } from './harness.mjs';
+import { CLI, DATA, FIXTURES, ROOT, descriptionFile, rects, resolved, scratch } from './harness.mjs';
 
 const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+const { drawnHeads } = await import(join(ROOT, 'dist', 'tools', 'group-model.mjs'));
 const geometry = JSON.parse(readFileSync(join(ROOT, 'tools', 'look', 'geometry.json'), 'utf8'));
 const { cellW, cellH } = geometry.geometry ?? geometry;
-const skip = (c) => (c.needsTwin && !HAVE_TWIN ? { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' } : {});
-const fixture = (c) => FIXTURES.find((f) => f.name === c.name);
-const [EQ8, EQMARKS, MBC] = CASES;
+const fixture = (c) => c;
+const named = (n) => FIXTURES.find((f) => f.name === n);
+const [EQ8, EQMARKS, MBC, TAPS] = ['omx-eq8', 'eq-marks', 'mbc', 'taps'].map(named);
+const CASES = [EQ8, EQMARKS, MBC, TAPS];
+const ORIENTATION = { 'omx-eq8': 'columns', 'eq-marks': 'columns', mbc: 'rows', 'taps': 'columns' };
 const matrixOf = (doc) => doc.sections.find((s) => s.matrix).matrix;
 
 /** The description file of a case, as a document, and the cell of each control the renderer draws (null: hidden), by symbol. */
@@ -33,41 +35,43 @@ function drawn(c, edit) {
 }
 
 for (const c of CASES) {
-  test(`${c.name}: every control's cell is the MOD GUI face's`, skip(c), () => {
+  test(`${c.name}: every control's cell is the MOD GUI face's`, () => {
     const { cells } = drawn(c);
     const face = new Map(modgui.layout(resolved(fixture(c))).sections.flatMap((s) => s.controls.map((k) => [k.symbol, [s.x + k.x, s.y + k.y, cellW, cellH]])));
     assert.ok(face.size > 0);
     for (const [sym, want] of face) assert.deepEqual(cells.get(sym), want, sym);
   });
 
-  test(`${c.name}: each cell is where the matrix of the description puts it`, skip(c), () => {
+  test(`${c.name}: each cell is where the served matrix puts it`, () => {
     const { doc, cells } = drawn(c);
     const mx = matrixOf(doc);
-    assert.equal(mx.orientation, c.orientation);
+    assert.equal(mx.orientation, ORIENTATION[c.name]);
     // the head row is a row of the served matrix (its cells are the heads' on/off): every cell is at (head, row)
     const at = (head, row) => (mx.orientation === 'columns' ? [head, row] : [row, head]); // (column, row) of the grid
-    const placed = mx.cells.flatMap((line, ri) => line.flatMap((sym, hi) => (sym ? [[sym, at(hi, ri)]] : [])));
+    // the heads drawn at the count's default (the group model's drawnHeads, L6), closed up
+    const heads = drawnHeads(mx);
+    const placed = mx.cells.flatMap((line, ri) => heads.flatMap((hi, col) => (line[hi] ? [[line[hi], at(col, ri)]] : [])));
     const [first, [c0, r0]] = placed[0];
     const [ox, oy] = [cells.get(first)[0] - c0 * cellW, cells.get(first)[1] - r0 * cellH];
     for (const [sym, [col, row]] of placed) assert.deepEqual(cells.get(sym).slice(0, 2), [ox + col * cellW, oy + row * cellH], sym);
   });
 }
 
-test('the EQ is drawn left to right with HPF first and LPF last, the bands between', skip(EQ8), () => {
+test('the EQ is drawn left to right with HPF first and LPF last, the bands between', () => {
   const { doc, cells } = drawn(EQ8);
   assert.equal(matrixOf(doc).heads[0].edge !== null && matrixOf(doc).heads.at(-1).edge !== null, true);
   const xs = ['hpf_freq', ...Array.from({ length: 8 }, (_, i) => `b${i + 1}_freq`), 'lpf_freq'].map((s) => cells.get(s)[0]);
   assert.ok(xs.every((x, i) => i === 0 || x > xs[i - 1]), xs.join(' '));
 });
 
-test('swapping the HPF and LPF heads of the matrix swaps their columns: the renderer follows the matrix, not the plugin', skip(EQ8), () => {
+test('swapping the HPF and LPF heads of the matrix swaps their columns: the renderer follows the matrix, not the plugin', () => {
   const base = drawn(EQ8).cells;
   const swapped = drawn(EQ8, (doc) => { const mx = matrixOf(doc); mx.heads.reverse(); mx.cells.forEach((l) => l.reverse()); }).cells;
   assert.equal(swapped.get('lpf_freq')[0], base.get('hpf_freq')[0]);
   assert.equal(swapped.get('hpf_freq')[0], base.get('lpf_freq')[0]);
 });
 
-test('a count closes up the instances beyond it; the edges stay and the LPF follows the last drawn band', skip(EQ8), () => {
+test('a count closes up the instances beyond it; the edges stay and the LPF follows the last drawn band', () => {
   const { cells } = drawn(EQ8, (doc) => {
     const host = doc.controls.find((k) => k.symbol === 'b1_freq').section;
     doc.controls.push({ ...doc.controls.find((k) => k.symbol === 'b1_type'), symbol: 'nbands', label: 'Bands', section: host, standard: { widget: 'selector' } });
@@ -80,7 +84,7 @@ test('a count closes up the instances beyond it; the edges stay and the LPF foll
   assert.ok(cells.get('nbands'), 'the count control is drawn, as a control of the section');
 });
 
-test('an empty cell is empty and nothing moves into it', skip(MBC), () => {
+test('an empty cell is empty and nothing moves into it', () => {
   const base = drawn(MBC).cells;
   const { cells } = drawn(MBC, (doc) => {
     const mx = matrixOf(doc);
@@ -138,7 +142,7 @@ test('a section with no matrix is laid out as before', () => {
   assert.ok(xs.size <= 8, `${xs.size} columns`); // flowed in rows of rowControls, never one column a band
 });
 
-test('rows align across the columns: the HPF and LPF share the band freq row, their slope the gain row, and their empty cell stays empty', skip(EQ8), () => {
+test('rows align across the columns: the HPF and LPF share the band freq row, their slope the gain row, and their empty cell stays empty', () => {
   const { cells } = drawn(EQ8);
   const y = (sym) => cells.get(sym)[1];
   for (const e of ['hpf', 'lpf']) {
@@ -149,7 +153,7 @@ test('rows align across the columns: the HPF and LPF share the band freq row, th
   assert.ok(y('b1_freq') < y('b1_gain') && y('b1_gain') < y('b1_q') && y('b1_q') < y('b1_type'), 'freq, gain, q, type');
 });
 
-test("'On' is drawn once, as the last row of its column, and the head row is the heads' on/off, never a second control", skip(EQ8), () => {
+test("'On' is drawn once, as the last row of its column, and the head row is the heads' on/off, never a second control", () => {
   const { doc, cells } = drawn(EQ8);
   const mx = matrixOf(doc);
   assert.equal(mx.rows.filter((r) => r.head).length, 1);
@@ -180,7 +184,7 @@ function visible(c, width, scale = 1) {
   return Number(/visible-columns (\d+)/.exec(out)[1]);
 }
 
-test('the visible column count fills the width: floor(width / cell), at least one, at most the columns', skip(EQ8), () => {
+test('the visible column count fills the width: floor(width / cell), at least one, at most the columns', () => {
   const heads = 10;
   assert.equal(visible(EQ8, cellW * 4 + 3), 4);
   assert.equal(visible(EQ8, cellW * 7), 7);
@@ -188,4 +192,46 @@ test('the visible column count fills the width: floor(width / cell), at least on
   assert.equal(visible(EQ8, cellW * 50), heads);
   assert.equal(visible(EQ8, cellW * 6, 2), 3);
   assert.equal(visible(MBC, cellW * 100), 6, 'rows orientation: the rows (the five parameters and On) are the columns');
+});
+
+test('the visible-column rule answers the cross-language vector the JavaScript tests read (test/fixtures/group-model/visible-columns.json)', () => {
+  const { vectors } = JSON.parse(readFileSync(join(ROOT, 'test', 'fixtures', 'group-model', 'visible-columns.json'), 'utf8'));
+  assert.ok(vectors.length >= 8);
+  for (const v of vectors) {
+    const file = descriptionFile({ name: 'vector', served: true, descriptor: v.descriptor }, scratch());
+    const out = execFileSync(CLI, ['--description', file, '--data', DATA, '--scale', String(v.scale), '--visible-columns', String(v.width)], { encoding: 'utf8' });
+    assert.equal(Number(/visible-columns (\d+)/.exec(out)[1]), v.expect, v.name);
+  }
+});
+
+test('a head whose on/off is not a { symbol, sense } object is refused: a bare string is not the served shape', () => {
+  const r = refused((d) => { const mx = matrixOf(d); mx.heads[0].on = mx.heads[0].on.symbol; });
+  assert.notEqual(r.status, 0);
+  assert.match(r.err, /on\/off/);
+});
+
+test('a head row that is not the last row is refused', () => {
+  const r = refused((d) => { const mx = matrixOf(d); mx.rows.unshift(mx.rows.pop()); mx.cells.unshift(mx.cells.pop()); });
+  assert.notEqual(r.status, 0);
+  assert.match(r.err, /head row/);
+});
+
+test('a matrix with no head row is refused: the served matrix always ends with one', () => {
+  const r = refused((d) => { const mx = matrixOf(d); mx.rows.pop(); mx.cells.pop(); mx.heads.forEach((h) => { h.on = null; }); });
+  assert.notEqual(r.status, 0);
+  assert.match(r.err, /head row/);
+});
+
+test('heads with no on/off: their captions have a row of their own, the last, and no row of controls is moved (four delay taps)', () => {
+  const { doc, cells } = drawn(TAPS);
+  const mx = matrixOf(doc);
+  assert.deepEqual(mx.rows.at(-1), { label: '', head: true });
+  const face = modgui.layout(resolved(TAPS)).sections.find((s) => s.matrix);
+  const captions = face.captions.map((cap) => face.y + cap.y);
+  const rows = [...cells.entries()].filter(([sym, r]) => r && mx.cells.flat().includes(sym)).map(([, r]) => r[1]);
+  assert.ok(captions.length > 0, 'the face draws the captions');
+  for (const y of captions) assert.ok(y > Math.max(...rows), `a caption at y ${y} is not below every row of controls`);
+  // the renderer draws the section as tall as the face's: the caption's row is in it (parity holds every pixel of it)
+  const r = rects(descriptionFile(TAPS, scratch()));
+  assert.ok(r.length > 0);
 });
