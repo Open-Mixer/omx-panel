@@ -24,8 +24,8 @@ VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 DEPS := libcjson omx-contract
 # The meter's view law is omx-dsp's (contract 7.9): the marker's hold and fall by elapsed time are omx_meter_view_step() of
 # <omxdsp/mix/omx_meter_view.h> and its rate OMX_METER_VIEW_FALL_DB_PER_SECOND, header-only, from omx-dsp-devel at or above
-# 0.32.3 and below 0.33 (pkg-config omxdsp); no number of the law is copied here.
-OMXDSP_FLOOR := 0.32.3
+# 0.32.4 and below 0.33 (pkg-config omxdsp); no number of the law is copied here.
+OMXDSP_FLOOR := 0.32.4
 OMXDSP_CEILING := 0.33
 # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
 CFLAGS ?= -O2 -g
