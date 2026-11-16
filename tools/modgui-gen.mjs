@@ -405,13 +405,16 @@ export function layout(panel) {
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const grid = place(s.controls);
+    // a control the come-up values hide takes no room: the grid holds the shown controls, and the script (emitScript)
+    // lays the sections out again when a value shows another
+    const grid = place(s.controls.filter((c) => c.shown !== false));
     const rows = grid.rows;
+    let shownAt = 0;
     const curves = s.displays.length * (g.curveH + g.curveGap);
     const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + grid.at[j].col * g.cellW, y: g.sectionTitleH + curves + grid.at[j].row * g.cellH })),
+      controls: s.controls.map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: g.sectionTitleH + curves } : { ...c, x: g.sectionPad + grid.at[shownAt].col * g.cellW, y: g.sectionTitleH + curves + grid.at[shownAt++].row * g.cellH })),
     };
     y += h + g.sectionGap;
     return sec;
@@ -767,7 +770,7 @@ export function emitTemplate(panel, lay, source) {
     const marks = geo.marks.map((m) => `<circle cx="${n(m.at[0])}" cy="${n(m.at[1])}" r="2.5"/><text x="${n(m.at[0])}" y="${n(m.at[1] - 5)}" text-anchor="middle">${m.letter}</text>`).join('');
     return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/><polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>${marks}</svg>`;
   };
-  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
+  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" data-curves="${s.displays.length * (g.curveH + g.curveGap)}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
 ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
         </div>`).join('\n') + (lay.band ? `
@@ -780,7 +783,7 @@ ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data
             <div class="mod-pedal-${dir}-image"></div>
         </div>
         {{/effect.ports.${kind}.${dir}}}`).join('\n');
-  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family}" style="width:${lay.w}px;height:${lay.h}px">
+  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" style="width:${lay.w}px;height:${lay.h}px">
 ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
     <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
          MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
@@ -878,10 +881,47 @@ function (event, funcs) {
             this.style.display = on ? '' : 'none';
         });
     };
+    // a control that is hidden takes no room: the sections are laid out again over the shown controls, as the generator lays out
+    // the come-up face (the same grid: a row holds data-row-controls controls, an edge band starts a row of its own)
+    var relayout = function () {
+        var found = event.icon.find('.omx-pedal');
+        var root = found && found[0];
+        if (!root || !root.querySelectorAll) return;
+        var n = function (name) { return parseFloat(root.getAttribute(name)); };
+        var y = n('data-section-top');
+        var sections = root.querySelectorAll('.omx-section');
+        for (var s = 0; s < sections.length; s++) {
+            var sec = sections[s];
+            if (sec.className.indexOf('omx-meters') >= 0) {
+                sec.style.top = y + 'px';
+                y += parseFloat(sec.style.height) + n('data-section-gap');
+                continue;
+            }
+            var curves = parseFloat(sec.getAttribute('data-curves')) || 0;
+            var col = 0, row = 0, prev = null, any = false;
+            for (var c = 0; c < sec.children.length; c++) {
+                var k = sec.children[c];
+                if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
+                var band = k.getAttribute('data-band') || '';
+                if (any && (col === n('data-row-controls') || band !== prev)) { col = 0; row++; }
+                prev = band; any = true;
+                k.style.left = (n('data-section-pad') + col * n('data-cell-w')) + 'px';
+                k.style.top = (n('data-title-h') + curves + row * n('data-cell-h')) + 'px';
+                col++;
+            }
+            var h = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h') + n('data-section-pad') / 2;
+            sec.style.top = y + 'px';
+            sec.style.height = h + 'px';
+            y += h + n('data-section-gap');
+        }
+        root.style.height = (y - n('data-section-gap') + n('data-pad')) + 'px';
+    };
     if (event.type === 'start') {
         for (var i = 0; i < event.ports.length; i++) show(event.ports[i].symbol, event.ports[i].value);
+        relayout();
     } else if (event.type === 'change') {
         show(event.symbol, event.value);
+        relayout();
     }
 }
 `;
