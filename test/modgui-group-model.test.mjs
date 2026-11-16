@@ -15,8 +15,8 @@ import { generateModgui, layout, resolvePanel } from '../tools/modgui-gen.mjs';
 const DIR = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'group-model', 'omx-plugins');
 const descriptor = (name) => JSON.parse(readFileSync(join(DIR, `${name}.descriptor.json`), 'utf8'));
 /** The face's boxes for a descriptor, and each drawn control by symbol at its absolute place. */
-function face(name) {
-  const lay = layout(resolvePanel(descriptor(name), { stem: name }));
+function face(name, edit = (d) => d) {
+  const lay = layout(resolvePanel(edit(descriptor(name)), { stem: name }));
   const at = new Map(lay.sections.flatMap((s) => s.controls.map((k) => [k.symbol, { x: s.x + k.x, y: s.y + k.y, section: s.key, name: k.name, widget: k.widget }])));
   return { lay, at };
 }
@@ -68,8 +68,11 @@ test('omx-strip: only the first eqBands instances are drawn, at the port\'s come
   assert.ok(lay.w < 14 * 72, `${lay.w}`);
 });
 
-test('omx-delay: the Taps are four columns, Time under tap 2..4 only, the count a selector', () => {
-  const { at } = face('omx-delay');
+/** omx-delay with its tap count come up at `n`. */
+const taps = (n) => (d) => { d.controls.find((c) => c.symbol === 'fxDelayTaps').travel.default = n; return d; };
+
+test('omx-delay: the Taps are four columns at a count of 4, Time under tap 2..4 only, the count a selector', () => {
+  const { at } = face('omx-delay', taps(4));
   const xs = [0, 1, 2, 3].map((i) => at.get(`tap${i}Gain`).x);
   assert.ok(xs.every((x, i) => i === 0 || x > xs[i - 1]));
   for (const i of [1, 2, 3]) assert.equal(at.get(`tap${i}Factor`).x, at.get(`tap${i}Gain`).x, `tap ${i}`);
@@ -77,6 +80,12 @@ test('omx-delay: the Taps are four columns, Time under tap 2..4 only, the count 
   assert.ok(at.get('tap1Factor').y > at.get('tap1Pan').y, 'Time is a row of the matrix, after Gain and Pan');
   assert.equal(at.has('tap0Factor'), false);
   assert.equal(at.get('fxDelayTaps').widget, 'selector');
+});
+
+test('omx-delay: at its come-up count (1) only tap 1 is drawn', () => {
+  const { at } = face('omx-delay');
+  assert.ok(at.has('tap0Gain') && at.has('tap0Pan'));
+  for (const i of [1, 2, 3]) assert.equal(at.has(`tap${i}Gain`) || at.has(`tap${i}Factor`), false, `tap ${i + 1}`);
 });
 
 test('the MOD GUI template places every band control at its cell, by the layout', () => {

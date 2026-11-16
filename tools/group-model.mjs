@@ -45,7 +45,7 @@ export function unitToken(unit) {
 
 /**
  * @typedef {{ symbol: string, name: string, index: number, kind: 'toggle' | 'choice' | 'travel', unit: string,
- *   min?: number, max?: number, options?: number, path: string[] }} Control
+ *   min?: number, max?: number, options?: number, integer?: boolean, path: string[] }} Control
  */
 
 /**
@@ -64,7 +64,7 @@ export function controlsOfDescriptor(descriptor, { panel } = {}) {
       index: Number.isInteger(c.id) ? c.id : i,
       kind: c.kind,
       unit: unitToken(c.travel?.unit),
-      ...(c.kind === 'travel' ? { min: c.travel?.min, max: c.travel?.max } : {}),
+      ...(c.kind === 'travel' ? { min: c.travel?.min, max: c.travel?.max, ...(c.travel?.step === 1 ? { integer: true } : {}) } : {}),
       ...(c.kind === 'choice' ? { options: (c.ids ?? c.labels ?? []).length } : {}),
       path: panel ? (sectionOf.has(c.symbol) ? [sectionOf.get(c.symbol)] : []) : [c.group ?? []].flat(),
     }))
@@ -86,6 +86,7 @@ export function controlsOfLv2(triples, uri) {
       ...(p.min !== undefined ? { min: p.min } : {}),
       ...(p.max !== undefined ? { max: p.max } : {}),
       ...(p.options !== undefined ? { options: p.options } : {}),
+      ...(p.integer ? { integer: true } : {}),
       path: g ? [g.name ?? g.symbol ?? p.group] : [],
     };
   });
@@ -118,16 +119,24 @@ const ROLE_WORDS = {
  * shares) and its kind and unit: `on` / `off` (the instance's head toggle), one of ROLE_ORDER, or null.
  */
 export function roleOf(words, kind, unit) {
+  return claimOf(words, kind, unit).role;
+}
+
+/**
+ * A parameter's role and what claims it: `byWord` when its words name the role (S8: that wins), false when only its unit
+ * does (a dB control is a gain, a hertz control a frequency, unless another control of the group is called that).
+ */
+function claimOf(words, kind, unit) {
   const w = words.map((x) => x.toLowerCase());
   if (kind === 'toggle') {
-    if (w.length === 0 || w.every((x) => ON_WORDS.has(x) || SECTION_WORDS.has(x))) return 'on';
-    if (w.every((x) => OFF_WORDS.has(x))) return 'off';
-    return null;
+    if (w.length === 0 || w.every((x) => ON_WORDS.has(x) || SECTION_WORDS.has(x))) return { role: 'on', byWord: true };
+    if (w.every((x) => OFF_WORDS.has(x))) return { role: 'off', byWord: true };
+    return { role: null, byWord: false };
   }
-  if (unit === FREQUENCY_UNIT) return 'freq';
-  for (const role of ROLE_ORDER) if (w.some((x) => ROLE_WORDS[role].includes(x))) return role;
-  if (unit === 'db') return 'gain';
-  return null;
+  if (unit === FREQUENCY_UNIT) return { role: 'freq', byWord: w.some((x) => ROLE_WORDS.freq.includes(x)) };
+  for (const role of ROLE_ORDER) if (w.some((x) => ROLE_WORDS[role].includes(x))) return { role, byWord: true };
+  if (unit === 'db') return { role: 'gain', byWord: false };
+  return { role: null, byWord: false };
 }
 
 /** An EQ: its parameters hold a frequency, a gain, and a Q or a type. */
@@ -160,7 +169,7 @@ function edgeOf(name) {
  * @typedef {{ edge: string, label: string, on: Head | null, parameters: Record<string, string> }} Edge
  * @typedef {{ key: string, label: string, role: string | null }} Row
  * @typedef {{ key: string, label: string | null, source: 'declared' | 'indexed' | 'none', kind: 'repeated' | 'list',
- *   parameters: string[], family?: 'eq' | null, rows?: Row[], instances?: Instance[], edges?: Edge[],
+ *   parameters: string[], family?: 'eq' | null, rows?: Row[], instances?: Instance[], edges?: Edge[], count?: { symbol: string } | null,
  *   reason?: keyof typeof REASONS, detail?: string }} Group
  */
 
@@ -200,7 +209,10 @@ export function inferGroupModel(controls) {
 
   const groups = [...buckets.entries()].map(([key, b]) => bucketGroup(key, b));
   attachEdges(groups, buckets);
-  const first = (g) => Math.min(...memberSymbols(g).map((s) => ordered.find((c) => c.symbol === s)?.index ?? Infinity));
+  const bySymbol = new Map(ordered.map((c) => [c.symbol, c]));
+  for (const g of groups) if (g.kind === 'repeated') g.count = countOf(g, bySymbol);
+  // a group sits where its first control does; the controls an EQ took as its edges from beside do not move it
+  const first = (g) => Math.min(...memberSymbols({ ...g, edges: [] }).map((s) => bySymbol.get(s)?.index ?? Infinity));
   return { groups: groups.filter((g) => memberSymbols(g).length > 0).sort((a, b) => first(a) - first(b)) };
 }
 
@@ -316,7 +328,10 @@ function instancesGroup(key, b, source, slotted, loose) {
   const wordsOf = (c) => nameTokens(c.name).filter((t) => !isNum(t));
   const common = complete.map((k) => wordsOf(first.bySlot.get(k)).map((w) => w.toLowerCase())).reduce((a, w) => a.filter((x) => w.includes(x)));
   const paramWords = (c) => wordsOf(c).filter((w) => !common.includes(w.toLowerCase()));
-  const roles = new Map(complete.map((k) => { const c = first.bySlot.get(k); return [k, roleOf(paramWords(c), c.kind, c.unit)]; }));
+  // S8: a role a control's words claim wins over one its unit claims
+  const claims = new Map(complete.map((k) => { const c = first.bySlot.get(k); return [k, claimOf(paramWords(c), c.kind, c.unit)]; }));
+  const wordRoles = new Set([...claims.values()].filter((x) => x.byWord && x.role).map((x) => x.role));
+  const roles = new Map([...claims].map(([k, x]) => [k, x.byWord || !wordRoles.has(x.role) ? x.role : null]));
   const head = complete.find((k) => roles.get(k) === 'on') ?? complete.find((k) => roles.get(k) === 'off') ?? null;
   const roleSet = new Set(roles.values());
   const family = isEqRoles(roleSet) ? 'eq' : null;
@@ -328,6 +343,23 @@ function instancesGroup(key, b, source, slotted, loose) {
   }
   const rows = rowSlots.map((k) => ({ key: rowKey(k), label: paramWords(first.bySlot.get(k)).join(' ') || k, role: roles.get(k) ?? null }));
 
+  // S5: a stem held by all but one instance is a row with an empty cell, when each control it holds is that instance's own
+  // (its name prints the one number the instance's other names print) and S4 holds over the instances that hold it
+  const lone = partial.filter((k) => {
+    const holders = slotted.map((s, i) => ({ s, i })).filter(({ s }) => s.bySlot.has(k));
+    if (holders.length !== slotted.length - 1 || holders.length < 2) return false;
+    const cs = holders.map(({ s }) => s.bySlot.get(k));
+    if (!holders.every(({ i }, h) => { const ns2 = nameNumbers(cs[h].name); return ns2.length === printed[i].size && ns2.every((n) => printed[i].has(n)); })) return false;
+    if (new Set(cs.map((c) => c.kind)).size > 1 || new Set(cs.map((c) => c.unit)).size > 1) return false;
+    if (cs[0].unit === FREQUENCY_UNIT || cs[0].kind === 'toggle') return true;
+    return new Set(cs.map((c) => (c.kind === 'choice' ? `${c.options}` : `${c.min}..${c.max}`))).size === 1;
+  });
+  for (const k of lone) {
+    const c = slotted.find((s) => s.bySlot.has(k)).bySlot.get(k);
+    rowSlots.push(k);
+    rows.push({ key: k, label: paramWords(c).join(' ') || k, role: null });
+  }
+
   const word = common.length > 0
     ? wordsOf(first.bySlot.get(complete[0])).filter((w) => common.includes(w.toLowerCase())).join(' ')
     : (complete.flatMap((k) => wordsOf(first.bySlot.get(k))).find((w) => SECTION_WORDS.has(w.toLowerCase())) ?? (family === 'eq' ? 'Band' : ''));
@@ -337,15 +369,30 @@ function instancesGroup(key, b, source, slotted, loose) {
       index: s.n,
       label: s.label ?? (word ? `${capital(word)} ${shown}` : `${shown}`),
       on: head ? { symbol: s.bySlot.get(head).symbol, sense: roles.get(head) } : null,
-      parameters: Object.fromEntries(rowSlots.map((k) => [rowKey(k), s.bySlot.get(k).symbol])),
+      parameters: Object.fromEntries(rowSlots.filter((k) => s.bySlot.has(k)).map((k) => [rowKey(k), s.bySlot.get(k).symbol])),
     };
   });
-  const partialSyms = slotted.flatMap((s) => partial.filter((k) => s.bySlot.has(k)).map((k) => s.bySlot.get(k)));
+  const partialSyms = slotted.flatMap((s) => partial.filter((k) => !lone.includes(k) && s.bySlot.has(k)).map((k) => s.bySlot.get(k)));
   const params = [...loose, ...partialSyms].sort((x, y) => x.index - y.index).map((c) => c.symbol);
-  return { key, label: b.label, source, kind: 'repeated', family, parameters: params, rows, instances, _controls: b.controls };
+  return { key, label: b.label, source, kind: 'repeated', family, parameters: params, rows, instances, count: null, _controls: b.controls };
 }
 
 const capital = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+
+/**
+ * S10: the group's own whole-number travel from 0 or 1 up to the number of its instances, named by a word the group is
+ * called by (singular or plural): the control that sets how many instances are live. `{ symbol }` or null.
+ */
+function countOf(g, bySymbol) {
+  const stem = (w) => w.toLowerCase().replace(/s$/, '');
+  const called = new Set([g.label ?? '', ...g.instances.map((i) => i.label)].flatMap((t) => nameTokens(t)).filter((t) => !isNum(t)).map(stem));
+  for (const symbol of g.parameters) {
+    const c = bySymbol.get(symbol);
+    if (c?.kind !== 'travel' || !c.integer || ![0, 1].includes(c.min) || c.max !== g.instances.length) continue;
+    if (nameTokens(c.name).some((t) => !isNum(t) && called.has(stem(t)))) return { symbol };
+  }
+  return null;
+}
 
 /**
  * The EQ's edges: a high-pass, a low shelf, a high shelf and a low-pass found beside an EQ's bands, each a column at its
@@ -363,14 +410,9 @@ function attachEdges(groups, buckets) {
       byEdge.get(e.edge).push({ c, words: nameTokens(c.name).slice(e.take).filter((t) => !isNum(t)) });
       return true;
     };
-    const fromLoose = new Set(g.parameters.filter((s) => take(all.find((c) => c.symbol === s))));
-    const eaten = new Set();
-    for (const other of groups) {
-      if (other === g || other.kind !== 'list' || other.source !== 'none' || !other.label) continue;
-      const cs = other.parameters.map((s) => all.find((c) => c.symbol === s));
-      const es = new Set(cs.map((c) => edgeOf(c.name)?.edge ?? null));
-      if (es.size === 1 && !es.has(null)) { cs.forEach(take); eaten.add(other); }
-    }
+    // S9: every control whose name opens with an edge word, from the EQ's own parameters and from any list group
+    const sources = [g, ...groups.filter((other) => other !== g && other.kind === 'list')];
+    for (const src of sources) for (const s of src.parameters) take(all.find((c) => c.symbol === s));
     const edges = [];
     for (const { edge } of EDGES) {
       const members = byEdge.get(edge);
@@ -387,8 +429,7 @@ function attachEdges(groups, buckets) {
     }
     if (edges.length === 0) continue;
     const used = new Set(edges.flatMap((e) => [...(e.on ? [e.on.symbol] : []), ...Object.values(e.parameters)]));
-    g.parameters = g.parameters.filter((s) => !(fromLoose.has(s) && used.has(s)));
-    for (const other of eaten) if (other.parameters.every((s) => used.has(s))) other.parameters = [];
+    for (const src of sources) src.parameters = src.parameters.filter((s) => !used.has(s));
     g.edges = edges;
     // the rows an edge brings that no band holds go after the bands' rows
     for (const e of edges) for (const k of Object.keys(e.parameters)) if (!g.rows.some((r) => r.key === k)) g.rows.push({ key: k, label: capital(k.includes(':') ? k.split(':')[1] : k), role: ROLE_ORDER.includes(k) ? k : null });
@@ -413,22 +454,48 @@ function edgeLabel(edge, name) {
  * A repeated group as the matrix a surface draws: `columns` and `rows` with `cells[row][column]` a control symbol or
  * null (that column has no such parameter), never flowed. An EQ is always `columns` (bands left to right low to high,
  * the high-pass leftmost, the low-pass rightmost); another repeated group is `columns` when it has at least as many
- * instances as rows, else `rows` (the instances as rows, transposed). Each instance's header carries its on/off.
+ * instances as rows, else `rows` (the instances as rows, transposed). Each instance's header carries its on/off and its
+ * `ordinal` (its place among the instances, null for an edge). A group with a `count` draws its first `count` instances
+ * only, at `values[count.symbol]` (L6): the others are left out and leave no gap; a value left out draws every instance.
  * @param {Group} g a repeated group of inferGroupModel's
+ * @param {{ values?: Record<string, number> }} [options]
  */
-export function matrixOf(g) {
+export function matrixOf(g, { values = {} } = {}) {
   if (g.kind !== 'repeated') throw new Error(`group-model: '${g.key}' is a ${g.kind}, not a repeated group`);
   const left = (g.edges ?? []).filter((e) => EDGES.find((x) => x.edge === e.edge).side === 'left');
   const right = (g.edges ?? []).filter((e) => EDGES.find((x) => x.edge === e.edge).side === 'right');
+  const live = Number(values[g.count?.symbol]);
+  const instances = [...g.instances].sort((a, b) => a.index - b.index).map((i, ordinal) => ({ ...i, ordinal }))
+    .filter((i) => !(Number.isFinite(live) && i.ordinal >= live));
   const heads = [
-    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, parameters: e.parameters })),
-    ...[...g.instances].sort((a, b) => a.index - b.index).map((i) => ({ key: `${g.key}#${i.index}`, label: i.label, on: i.on, edge: null, parameters: i.parameters })),
-    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, parameters: e.parameters })),
+    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
+    ...instances.map((i) => ({ key: `${g.key}#${i.index}`, label: i.label, on: i.on, edge: null, ordinal: i.ordinal, parameters: i.parameters })),
+    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
   ];
   const orientation = g.family === 'eq' || heads.length >= g.rows.length ? 'columns' : 'rows';
   const grid = g.rows.map((r) => heads.map((h) => h.parameters[r.key] ?? null));
-  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge });
+  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge, ordinal: h.ordinal });
   return orientation === 'columns'
     ? { orientation, columns: heads.map(strip), rows: g.rows, cells: grid }
     : { orientation, columns: g.rows, rows: heads.map(strip), cells: heads.map((_, c) => g.rows.map((_, r) => grid[r][c])) };
+}
+
+/**
+ * Where a repeated group's matrix goes among a surface's sections (`sections`: `{ id, symbols }` in drawing order). The
+ * sections that hold the group's instances and own parameters are its home: they must hold nothing else, and the first is
+ * where the matrix goes (the others are folded into it). The sections that hold only the group's edges, taken from
+ * beside the EQ, are donors: they give their members to the matrix and keep the rest. Null when the group cannot be
+ * placed whole: a member no section draws, or a home section that holds another control beside the group.
+ * @returns {{ home: unknown, folded: unknown[], donors: unknown[], members: Set<string> } | null}
+ */
+export function placeMatrix(g, sections) {
+  const members = new Set(memberSymbols(g));
+  const edgeOnly = new Set((g.edges ?? []).flatMap((e) => [...(e.on ? [e.on.symbol] : []), ...Object.values(e.parameters)]));
+  const drawn = new Set(sections.flatMap((s) => s.symbols));
+  if ([...members].some((sym) => !drawn.has(sym))) return null;
+  const holds = (s, set) => s.symbols.some((sym) => set.has(sym));
+  const home = sections.filter((s) => s.symbols.some((sym) => members.has(sym) && !edgeOnly.has(sym)));
+  if (home.length === 0 || home.some((s) => s.symbols.some((sym) => !members.has(sym)))) return null;
+  const donors = sections.filter((s) => !home.includes(s) && holds(s, members));
+  return { home: home[0].id, folded: home.slice(1).map((s) => s.id), donors: donors.map((s) => s.id), members };
 }

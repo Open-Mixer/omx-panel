@@ -32,7 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { controlsOfDescriptor, inferGroupModel, matrixOf, memberSymbols } from './group-model.mjs';
+import { controlsOfDescriptor, inferGroupModel, matrixOf, placeMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -340,20 +340,24 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
 }
 
 /**
- * The sections that together hold exactly one repeated group's controls (docs/group-model.md), drawn as one section: its
- * own parameters first, then the group's matrix, each cell at its row and column, never flowed. Sections that hold anything
- * else beside the group, or only part of it (an Easy section took some), are left as they are.
+ * A repeated group's controls (docs/group-model.md) drawn as one section: its own parameters first, then the group's matrix,
+ * each cell at its row and column, never flowed. The section is where the group's instances were; the edges (an EQ's
+ * high-pass and low-pass) are taken from whatever section holds them, which keeps the rest of its controls. The
+ * instances beyond the group's count are not drawn, at the count's come-up value, and the count is a selector (L6). A group
+ * some of whose controls are not drawn (an Easy section took them), or whose instance section holds anything else beside
+ * the group, is left as it is.
  */
 export function withRepeats(descriptor, declared, sections) {
   const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, declared ? { panel: declared } : {}));
   let out = sections;
   for (const g of groups) {
     if (g.kind !== 'repeated') continue;
-    const members = new Set(memberSymbols(g));
-    const touched = out.filter((s) => s.controls.some((k) => members.has(k.symbol)));
-    const drawn = new Map(touched.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
-    if (touched.length === 0 || [...drawn.keys()].some((sym) => !members.has(sym)) || [...members].some((sym) => !drawn.has(sym))) continue;
-    const m = matrixOf(g);
+    const placed = placeMatrix(g, out.map((s, id) => ({ id, symbols: s.controls.map((k) => k.symbol) })));
+    if (!placed) continue;
+    const drawn = new Map(out.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
+    const count = g.count ? drawn.get(g.count.symbol) : undefined;
+    if (count && count.widget !== 'selector') Object.assign(count, { widget: 'selector', options: optionsOf({ min: count.min, max: count.max }) });
+    const m = matrixOf(g, count ? { values: { [g.count.symbol]: count.def } } : {});
     const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
     const cell = (h, l) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l]);
     // a cell's control is named by its row (the column's header names the band); a head toggle by its column
@@ -362,12 +366,19 @@ export function withRepeats(descriptor, declared, sections) {
       heads: heads.map((h) => ({ label: h.label, on: h.on ? { ...drawn.get(h.on.symbol), name: h.label } : null })),
       lines: lines.map((l, li) => ({ label: l.label, cells: heads.map((_, hi) => { const sym = cell(hi, li); return sym ? { ...drawn.get(sym), name: l.label } : null; }) })),
     };
-    // every control stays in the section's list (the ports the MOD GUI declares, the widgets it draws); the matrix places them
-    const placed = [...matrix.heads.map((h) => h.on), ...matrix.lines.flatMap((l) => l.cells)].filter(Boolean);
-    const merged = { key: touched[0].key, label: g.label ?? touched[0].label, displays: touched.flatMap((s) => s.displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placed], matrix };
-    const at = out.indexOf(touched[0]);
-    out = out.filter((s) => !touched.includes(s));
-    out.splice(at, 0, merged);
+    // the controls the matrix places and the group's own parameters; an instance the count leaves out is not on the face
+    const placedControls = [...matrix.heads.map((h) => h.on), ...matrix.lines.flatMap((l) => l.cells)].filter(Boolean);
+    const homeSection = out[placed.home];
+    const merged = { key: homeSection.key, label: g.label ?? homeSection.label, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
+    const folded = new Set(placed.folded);
+    const donors = new Set(placed.donors);
+    out = out.flatMap((s, i) => {
+      if (i === placed.home) return [merged];
+      if (folded.has(i)) return [];
+      if (!donors.has(i)) return [s];
+      const rest = { ...s, controls: s.controls.filter((k) => !placed.members.has(k.symbol)) };
+      return rest.controls.length > 0 || rest.displays.length > 0 ? [rest] : [];
+    });
   }
   return out;
 }
