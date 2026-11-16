@@ -161,13 +161,16 @@ export const lv2UnitTable = once(() => {
 /** The sheet of the param-contract units is omx-contract's: OMX_PARAM_CONTRACT_UNITS, in its param-contract.json. */
 export const PARAM_UNITS_ITEM = 'OMX_PARAM_CONTRACT_UNITS';
 
-/** The file that declares it: `<contractdir>/3/omx-contract/param-contract.json` (omx-contract-data, from 3.6.0). It is
- * read as that one file, never through the merged contract directory, so an older package that still installs the
- * same item (omx-plugins-contract before 0.17.0) cannot make the read refuse or answer. */
+/** The file that declares it: the first JSON file of the merged contract directory that holds the item (omx-contract's
+ * `3/omx-contract/param-contract.json`, from omx-contract-data 3.6.0), found like every other item. */
 export function paramUnitsFile() {
-  const dir = packageDir('omx-contract');
-  const file = dir && join(dir, 'param-contract.json');
-  return file && existsSync(file) ? file : undefined;
+  return contractFiles().find((file) => {
+    try {
+      return PARAM_UNITS_ITEM in (JSON.parse(readFileSync(file, 'utf8')) ?? {});
+    } catch {
+      return false;
+    }
+  });
 }
 
 /** The param-contract units' values, by name in capitals without underscores (SEMITONE12TET): `Map<name, value>`. */
