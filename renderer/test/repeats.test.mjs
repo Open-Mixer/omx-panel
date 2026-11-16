@@ -187,5 +187,5 @@ test('the visible column count fills the width: floor(width / cell), at least on
   assert.equal(visible(EQ8, 1), 1);
   assert.equal(visible(EQ8, cellW * 50), heads);
   assert.equal(visible(EQ8, cellW * 6, 2), 3);
-  assert.equal(visible(MBC, cellW * 100), 5, 'rows orientation: the parameters are the columns');
+  assert.equal(visible(MBC, cellW * 100), 6, 'rows orientation: the rows (the five parameters and On) are the columns');
 });
