@@ -6,7 +6,8 @@
  * with no role plays no meaning and derives no curve, and its goldens would be drawn without one.
  */
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { ROOT, RENDERER } from './harness.mjs';
@@ -21,8 +22,8 @@ h.descriptionFile(fx, h.scratch());`;
 });
 
 test('make renderer-check points $OMX_ROLE_MEANINGS at the tree\'s stand-in unless the caller names one', () => {
-  const env = { ...process.env };
-  delete env.OMX_ROLE_MEANINGS;
-  const dry = execFileSync('make', ['-n', '-s', '-C', ROOT, 'renderer-check'], { encoding: 'utf8', env });
-  assert.match(dry, /OMX_ROLE_MEANINGS=\S*test\/fixtures\/role-meanings\/panel-roles\.json/);
+  // the recipe is read, not dry-run: `make -n` still runs a recipe line that calls $(MAKE), the whole renderer check
+  const make = readFileSync(join(ROOT, 'Makefile'), 'utf8');
+  const recipe = /^renderer-check:.*\n((?:\t.*\n|.*\\\n)+)/m.exec(make)?.[1] ?? '';
+  assert.match(recipe, /OMX_ROLE_MEANINGS="\$\$\{OMX_ROLE_MEANINGS:-\$\(CURDIR\)\/test\/fixtures\/role-meanings\/panel-roles\.json\}"/);
 });
