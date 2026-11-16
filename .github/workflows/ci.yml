@@ -38,9 +38,9 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.16.0'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
-          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' \
+          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.3' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
@@ -69,6 +69,9 @@ jobs:
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
         uses: Open-Mixer/.github/.github/actions/spdx-check@openmixer-v1
+      - id: handback-deps
+        name: The spec and debian/control state the floors packaging/deps.txt declares, and no ceiling
+        uses: Open-Mixer/.github/.github/actions/deps-render@openmixer-v1
       - id: handback-copies
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
@@ -95,7 +98,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.2' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.16.0' 'omx-contract-data >= 3.16.0' 'plugin-hostd-contract >= 0.20.3' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-contract >= 0.32.2'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -129,7 +132,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.2' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.16.0' 'omx-contract-data >= 3.16.0' 'plugin-hostd-contract >= 0.20.3' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-contract >= 0.32.2'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -139,7 +142,7 @@ jobs:
           if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
       - name: The tree, the renderer, playwright-core and omx-dsp's twin
-        run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.2 <0.33'
+        run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.2'
       - name: The three surfaces from one stream
         run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
       - uses: actions/upload-artifact@v4
@@ -165,7 +168,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.2' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.16.0' 'omx-contract-data >= 3.16.0' 'plugin-hostd-contract >= 0.20.3' 'omx-dsp-devel >= 0.32.2' 'omx-dsp-contract >= 0.32.2'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -207,7 +210,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.13.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.2" "omx-dsp-devel < 0.33"
+              "omx-contract-devel >= 3.16.0" "omx-dsp-devel >= 0.32.2"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
@@ -328,7 +331,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.16.0' 'omx-contract < 4' 'omx-contract-data >= 3.16.0'
+      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.16.0' 'omx-contract-data >= 3.16.0'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel

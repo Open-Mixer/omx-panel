@@ -17,7 +17,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
+.PHONY: all build check test spdx public-sources look copies deps install renderer renderer-check install-renderer test-host-reads
 
 all: build
 
@@ -27,7 +27,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
-check: build spdx public-sources look copies
+check: build spdx public-sources look copies deps
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -48,6 +48,12 @@ public-sources:
 
 look:
 	node tools/look.mjs --check
+
+# The spec and debian/control state the floors packaging/deps.txt declares and no ceiling (#65): Open-Mixer/.github's
+# deps-render, from a checkout of it (`render.sh --write .` regenerates them).
+deps:
+	$(OPENMIXER_DOTGITHUB)/.github/actions/deps-render/render.sh --self-test
+	$(OPENMIXER_DOTGITHUB)/.github/actions/deps-render/render.sh --check .
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:

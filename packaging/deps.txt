@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#
+# The ONE place a dependency floor is written (Open-Mixer/omx-panel#65). Rendered into the spec and debian/control by
+# Open-Mixer/.github's deps-render (render.sh --write) and held to them by render.sh --check (`make deps`, CI).
+# Floors only: every row is one of our packages, so no ceiling (a breaking release declares its own Breaks/Conflicts).
+#   <rpm name>  <deb name>  <floor>
+omx-contract-data     omx-contract-data      3.16.0
+omx-contract-devel    libomx-contract-dev    3.16.0
+plugin-hostd-contract plugin-hostd-contract  0.20.3
+omx-dsp-devel         libomxdsp-dev          0.32.2
+nodejs                nodejs                 18      -
