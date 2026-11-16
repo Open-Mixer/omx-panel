@@ -104,6 +104,26 @@ with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so t
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
 `vintage` clears 4.5:1 on every pair.
 
+## The look switch and the needle meters
+
+**One template, three looks.** The package ships the `vintage`, `console` and `3d` looks in ONE stylesheet: each look's rules are scoped by a
+class on the pedal root, `omx-look-<name>`, so the pedal wears the look its root names and a look swaps every token (colour, depth,
+font, knob film) with no other change. Geometry is shared, so every look has the same size and the same ports. `--look` (and
+`modgui-look`) only picks the class the pedal starts with, the shipped default; the default of the setting stays `vintage`. The header carries a
+small look switch (three keys, one per look). Clicking one swaps the root's look class and remembers the choice in the browser
+(`localStorage`, the key `omx-look`); every storage access is inside `try`/`catch`, so with storage absent or throwing the pedal is correct and
+wears the shipped default, vintage. The switch is never a plugin port: nothing about it is addressable or automatable, and a click on it
+stops propagation so mod-ui's own drag does not start. The knob and fader film strips are one per look (`knobs/omx-knob-<look>.png`).
+
+**Needle meters.** The meters of a plugin (input and output level, gain reduction, key level) are its OUTPUT control ports. The MOD GUI's
+script receives each as a `change` event (MOD's modgui javascript port-value callback) and moves the meter it names. A meter is drawn twice, in
+the same box: as a bar (the `console` and `3d` looks) and as an analog needle (the `vintage` look: a cream dial, a black needle, an
+orange zone), the look class showing one of them. The needle's angle is a function of the port's value, declared once in
+`tools/look/geometry.json`, `vu`: the sweep (`angleMin` to `angleMax`, degrees from vertical), the fraction of the sweep that is the orange zone,
+and the ballistics, `tauMs` per meter kind: a level needle rises and falls like a VU, a first-order lag of 300 ms
+(`value += (target - value) * (1 - exp(-dt / tau))`, stepped by the script on a timer), and the gain-reduction needle is REVERSED: it rests at
+the right (0 dB) and swings left as the gain is reduced. The needle is a DOM transform; no port is written.
+
 ## Tiers and edge bands
 
 A plugin declares each control's tier in its panel block, `tiers` (symbol to `easy` or `advanced`; a control that names none is
