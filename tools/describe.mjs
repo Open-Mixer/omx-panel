@@ -326,12 +326,16 @@ function withMatrices(description, effective, panel, layout, servedOf) {
     const placed = placeMatrix(g, sections.map((s) => ({ id: s.key, symbols: controls.filter((c) => c.section === s.key).map((c) => keyOf_.get(c.symbol) ?? c.symbol) })));
     if (!placed) continue;
     const m = matrixOf(g);
-    const head = (h) => ({ ...h, on: h.on ? { symbol: served(h.on.symbol), sense: h.on.sense } : null });
+    // the served shape (docs/group-model.md): `heads` are the instances and edges, `rows` the parameters, `cells[row][head]`, whatever the orientation
+    const [hs, ls] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
+    const cells = ls.map((_, l) => hs.map((_h, h) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l])).map((sym) => (sym === null ? null : served(sym))));
+    const countDefault = g.count ? description.params.find((x) => x.symbol === served(g.count.symbol))?.default : undefined;
     const matrix = {
-      ...m,
-      ...(m.orientation === 'columns' ? { columns: m.columns.map(head) } : { rows: m.rows.map(head) }),
-      cells: m.cells.map((row) => row.map((sym) => (sym === null ? null : served(sym)))),
-      ...(g.count ? { count: { symbol: served(g.count.symbol), widget: 'selector' } } : {}),
+      orientation: m.orientation,
+      heads: hs.map((h) => ({ label: h.label, on: h.on ? { symbol: served(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
+      rows: ls.map((l) => ({ label: l.label })),
+      cells,
+      ...(g.count ? { count: { symbol: served(g.count.symbol), default: countDefault ?? null } } : {}),
     };
     controls = controls.map((c) => (placed.members.has(keyOf_.get(c.symbol) ?? c.symbol) ? { ...c, section: placed.home, ...(g.count && (keyOf_.get(c.symbol) ?? c.symbol) === g.count.symbol ? { widget: 'auto' } : {}) } : c));
     // a section the group emptied goes, unless a display or a meter stands on it
