@@ -245,7 +245,7 @@ is a desktop to prove it on), and redrawing only what changed.
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |
-| omx-dsp's meter view (>= 0.32.4, < 0.33) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
+| omx-dsp's meter view (>= 0.32.4) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
 | libm | | glibc | libc6 | |
 | pugl (window) | the window and its events | `pugl-devel` | `libpugl-dev` | ISC |
 | NanoVG (window) | drawing in the window | `nanovg-devel` | `libnanovg-dev` | Zlib |

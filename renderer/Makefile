@@ -24,9 +24,8 @@ VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 DEPS := libcjson omx-contract
 # The meter's view law is omx-dsp's (contract 7.9): the marker's hold and fall by elapsed time are omx_meter_view_step() of
 # <omxdsp/mix/omx_meter_view.h> and its rate OMX_METER_VIEW_FALL_DB_PER_SECOND, header-only, from omx-dsp-devel at or above
-# 0.32.4 and below 0.33 (pkg-config omxdsp); no number of the law is copied here.
+# 0.32.4 (pkg-config omxdsp); no number of the law is copied here.
 OMXDSP_FLOOR := 0.32.4
-OMXDSP_CEILING := 0.33
 # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude $(shell $(PKG_CONFIG) --cflags $(DEPS) omxdsp)
@@ -54,10 +53,10 @@ all: $(B)/libomx-panel-render.a $(B)/$(SONAME) $(B)/omx-panel-render $(B)/omx-pa
 
 $(B):
 	mkdir -p $@
-# omx-dsp's floor and ceiling, checked before the view is compiled against its header
+# omx-dsp's floor, checked before the view is compiled against its header
 $(B)/omxdsp-version: FORCE | $(B)
-	@$(PKG_CONFIG) --atleast-version=$(OMXDSP_FLOOR) omxdsp && ! $(PKG_CONFIG) --atleast-version=$(OMXDSP_CEILING) omxdsp || \
-	  { echo "the renderer needs omx-dsp-devel >= $(OMXDSP_FLOOR) and < $(OMXDSP_CEILING) (pkg-config omxdsp: $$($(PKG_CONFIG) --modversion omxdsp 2>&1))" >&2; exit 1; }
+	@$(PKG_CONFIG) --atleast-version=$(OMXDSP_FLOOR) omxdsp || \
+	  { echo "the renderer needs omx-dsp-devel >= $(OMXDSP_FLOOR) (pkg-config omxdsp: $$($(PKG_CONFIG) --modversion omxdsp 2>&1))" >&2; exit 1; }
 	@$(PKG_CONFIG) --modversion omxdsp | cmp -s - $@ || $(PKG_CONFIG) --modversion omxdsp > $@
 $(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h src/look_roles.h src/gesture_words.h include/omx_panel_render.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
