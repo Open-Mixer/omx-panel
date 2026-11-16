@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { generateModgui, GEOMETRY, LOOKS, loadLook, wornDepth } from '../tools/modgui-gen.mjs';
+import { generateModgui, LOOKS, loadLook, VU, wornDepth } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = join(ROOT, 'test/fixtures/omx-comp');
@@ -18,7 +18,7 @@ const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 const descriptor = read('omx-comp.descriptor.json');
 const panel = read('omx-comp.panel.json');
 const made = (look = 'vintage') => new Map(generateModgui(descriptor, { panel, stem: 'omx-comp', source: 't', look }));
-const VU = GEOMETRY.vu;
+
 
 /** The script, run as MOD runs it, over a stand-in page: a root with a class list, the dials and the switch keys the template names. */
 function page({ storage, look = 'vintage' } = {}) {
@@ -27,7 +27,7 @@ function page({ storage, look = 'vintage' } = {}) {
   const attr = (tag, n) => tag.match(new RegExp(`${n}="([^"]*)"`))?.[1] ?? null;
   const classes = new Set(template.match(/^<div class="([^"]*)"/)[1].replace('{{{cns}}}', '').split(/\s+/).filter(Boolean));
   const root = { classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c), contains: (c) => classes.has(c) }, get className() { return [...classes].join(' '); }, getAttribute: () => null };
-  const dials = tags(/<div class="omx-vu"[^>]*>/g).map((tag) => ({ symbol: attr(tag, 'data-symbol'), getAttribute: (n) => attr(tag, n), needle: { style: {} }, querySelector() { return this.needle; }, style: {} }));
+  const dials = tags(/<div class="omx-vu"[^>]*>/g).map((tag) => ({ symbol: attr(tag, 'data-vu-symbol'), getAttribute: (n) => attr(tag, n), needle: { style: {} }, querySelector() { return this.needle; }, style: {} }));
   const keys = tags(/<[a-z]+ class="omx-look-key"[^>]*>/g).map((tag) => {
     const handlers = {};
     return { look: attr(tag, 'data-look'), getAttribute: (n) => attr(tag, n), addEventListener: (t, f) => { (handlers[t] ??= []).push(f); }, click() { const ev = { stopped: false, stopPropagation() { this.stopped = true; }, preventDefault() {} }; for (const f of handlers.click ?? []) f(ev); return ev; }, mousedown() { const ev = { stopped: false, stopPropagation() { this.stopped = true; }, preventDefault() {} }; for (const f of handlers.mousedown ?? []) f(ev); return ev; } };
@@ -69,6 +69,10 @@ test('the gain-reduction needle is reversed: it rests right and swings left as t
   const p = page();
   const gr = dialFor(p, 'gain-reduction');
   assert.ok(gr, 'no gain-reduction dial');
+  assert.equal(gr.getAttribute('data-reversed'), '1');
+  assert.equal(dialFor(p, 'level').getAttribute('data-reversed'), '0');
+  const grBlock = made().get('modgui/icon-omx-comp.html').toString().split('data-kind="gain-reduction"')[1].split('omx-vu-pivot')[0];
+  assert.ok(grBlock.includes(`transform:rotate(${VU.angleMax}deg)`), 'the gain-reduction needle does not rest at the right');
   const lo = Number(gr.getAttribute('data-min'));
   p.fire({ type: 'change', symbol: gr.symbol, value: 0 });
   for (let i = 0; i < 40; i++) p.tick(100);

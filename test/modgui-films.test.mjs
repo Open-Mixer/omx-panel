@@ -18,8 +18,8 @@ const SOURCE = 'plugins/omx-delay/omx-delay.decl.json (its panel block) and tool
 const cli = (...args) => spawnSync(process.execPath, [join(ROOT, 'tools/modgui-gen.mjs'), ...args], { encoding: 'utf8' });
 const args = (out, panel = join(FIX, 'omx-delay.panel.json')) =>
   ['--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', panel, '--out', out, '--stem', 'omx-delay', '--source', SOURCE];
-const KNOB = 'modgui/knobs/omx-knob.png';
-const FADER = 'modgui/knobs/omx-fader.png';
+const KNOB = 'modgui/knobs/omx-knob-vintage.png';
+const FADER = 'modgui/knobs/omx-fader-vintage.png';
 const bundle = () => {
   const out = join(mkdtempSync(join(tmpdir(), 'films-')), 'omx-delay.lv2');
   cpSync(join(FIX, 'omx-delay.lv2'), out, { recursive: true });
@@ -38,7 +38,7 @@ test('--no-films --check names a film strip that came back as EXTRA', () => {
   writeFileSync(join(out, KNOB), renderFilm(loadLook()));
   const r = cli('--check', '--no-films', ...args(out));
   assert.equal(r.status, 1);
-  assert.match(r.stderr, /EXTRA .*omx-knob\.png/);
+  assert.match(r.stderr, /EXTRA .*omx-knob-vintage\.png/);
 });
 
 test('--films-only writes the knob strip, the render of the look, and touches nothing else', () => {

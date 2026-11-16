@@ -57,6 +57,8 @@ export const ROW_CONTROLS = FACE.rowControls;
 
 /** The geometry, in CSS px: one set of numbers the template, the stylesheet and the raster read. */
 export const GEOMETRY = Object.freeze(FACE.geometry);
+/** The needle meters, declared once (tools/look/geometry.json, `vu`): the sweep, the orange zone, the ballistics, which kind is reversed. */
+export const VU = Object.freeze(FACE.vu);
 
 /** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
  * the descriptor's to say, an index is not it, so the generator refuses and names the control. */
@@ -725,13 +727,14 @@ const files = (stem) => ({
   stylesheet: `${MODGUI_DIR}/stylesheet-${stem}.css`,
   screenshot: `${MODGUI_DIR}/screenshot-${stem}.png`,
   thumbnail: `${MODGUI_DIR}/thumbnail-${stem}.png`,
-  film: `${MODGUI_DIR}/knobs/omx-knob.png`,
-  faderFilm: `${MODGUI_DIR}/knobs/omx-fader.png`,
+  filmOf: (look) => `${MODGUI_DIR}/knobs/omx-knob-${look}.png`,
+  faderFilmOf: (look) => `${MODGUI_DIR}/knobs/omx-fader-${look}.png`,
   script: `${MODGUI_DIR}/script-${stem}.js`,
 });
 
 /** Whether any control of the panel is shown by another control's value. */
-const governs = (panel) => panel.sections.some((x) => x.controls.some((k) => k.visibleWhen || k.widget === 'switch'));
+/** Every face ships its script: the look switch and the needles live in it, with the visibility rules and the toggles' words. */
+const governs = () => true;
 
 /** Whether any control of the panel is drawn with `widget`. */
 const draws = (panel, widget) => panel.sections.some((x) => x.controls.some((k) => k.widget === widget));
@@ -765,7 +768,7 @@ ${ports}        ] ;
 }
 
 /** The icon template, in MOD's documented format: every section and every control, laid out. */
-export function emitTemplate(panel, lay, source) {
+export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
   const g = GEOMETRY;
   // a governed control names its governing port and the mask of the values that show it; the script reads them
   const band = (k) => (k.band ? ` data-band="${esc(k.band)}"` : '');
@@ -813,6 +816,7 @@ ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${ds
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">Meters</h2>
+${lay.band.meters.map((m, i) => { const n = lay.band.meters.length, dw = Math.floor((lay.band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap, rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" style="left:${g.sectionPad + i * dw}px;top:${g.sectionTitleH}px;width:${dw - 4}px;height:${dh}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span><div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
 ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span></div>`).join('\n')}
         </div>` : '');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
@@ -820,7 +824,7 @@ ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data
             <div class="mod-pedal-${dir}-image"></div>
         </div>
         {{/effect.ports.${kind}.${dir}}}`).join('\n');
-  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
+  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family} omx-look-${lookName}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
 ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
     <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
          MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
@@ -830,6 +834,7 @@ ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
         <span class="omx-brand">{{brand}}</span>
         <span class="omx-label">{{label}}</span>
         <div class="omx-bypass" mod-role="bypass"><div class="omx-bypass-light" mod-role="bypass-light"></div></div>
+        <div class="omx-lookswitch">${LOOKS.map((n) => `<span class="omx-look-key" data-look="${n}" title="${n} look">${n === '3d' ? '3D' : n[0].toUpperCase()}</span>`).join('')}</div>
     </div>
 ${sections}
     <div class="mod-pedal-input">
@@ -844,15 +849,15 @@ ${jacks('output')}
 
 /** The stylesheet: the GEOMETRY and the look's resolved tokens, scoped by MOD's {{{cns}}}. The pedal's rim is an inset shadow, not a
  * border: a border takes a pixel of layout and would set every box of the face 1 px right and down of the raster's (renderFace). */
-export function emitStylesheet(panel, look, source) {
+export function emitStylesheet(panel, look, source, scope) {
   const g = GEOMETRY, f = files(panel.stem), tok = look.tokens;
   const D = (k) => depthOf(look, panel.stem, k);
   const bodyRadius = D('--body-radius') === 'none' ? g.radius : Number(D('--body-radius'));
   const inset = D('--head-inset') === 'none' ? null : D('--head-inset').split(' ');
   const held = D('--key-held-bg') !== 'none', lift = look.name === 'console' ? '' : ' transform: translateY(1px);';
-  const P = '.omx-pedal{{{cns}}}';
-  const film = `/resources/${relative(MODGUI_DIR, f.film)}{{{ns}}}`;
-  const faderFilm = `/resources/${relative(MODGUI_DIR, f.faderFilm)}{{{ns}}}`;
+  const P = scope ?? `.omx-pedal{{{cns}}}.omx-look-${look.name}`;
+  const film = `/resources/${relative(MODGUI_DIR, f.filmOf(look.name))}{{{ns}}}`;
+  const faderFilm = `/resources/${relative(MODGUI_DIR, f.faderFilmOf(look.name))}{{{ns}}}`;
   return `/*
 ${banner(' * ', source).join('\n')}
  * Colours and font: the OpenMixer console's ${look.theme} theme, resolved in tools/look.json.${look.name === 'console' ? '' : `\n * Look: ${look.name} (the ${LOOK_SETTING.name} setting).`}
@@ -896,7 +901,17 @@ ${P} .omx-curve-line { stroke: ${D('--curve-line')}; stroke-width: 1.5; stroke-l
 ${P} .omx-curve-plot circle { fill: ${D('--t-screen')}; }
 ${P} .omx-curve-plot text { fill: ${D('--t-screen')}; font-size: 10px; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${D('--t-screen-dim')}; }
-` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
+` : ''}${P} .omx-lookswitch { position: absolute; right: ${g.pad + 30}px; top: ${g.headH / 2 - 8}px; height: 16px; display: flex; gap: 2px; }
+${P} .omx-look-key { box-sizing: border-box; width: 16px; height: 16px; line-height: 14px; text-align: center; font-size: 9px; font-weight: 600; cursor: pointer; border-radius: 3px; border: 1px solid ${tok['--border-strong']}; color: ${D('--t-key')}; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} user-select: none; }
+${P}.omx-look-vintage .omx-look-key[data-look="vintage"], ${P}.omx-look-console .omx-look-key[data-look="console"], ${P}.omx-look-3d .omx-look-key[data-look="3d"] { background: ${D('--key-pressed-bg')}; }
+${(panel.meters ?? []).length > 0 ? `${P} .omx-vu { display: none; position: absolute; box-sizing: border-box; overflow: hidden; border-radius: 6px 6px 3px 3px; background: ${D('--t-label')}; border: 1px solid ${tok['--border-strong']};${decl('box-shadow', D('--screen-shadow'))} }
+${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: conic-gradient(from ${VU.angleMin}deg at 50% 118%, transparent 0deg, transparent ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${tok['--accent']} ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${tok['--accent']} ${VU.angleMax - VU.angleMin}deg, transparent ${VU.angleMax - VU.angleMin}deg); opacity: 0.55; clip-path: circle(88% at 50% 118%); }
+${P} .omx-vu-needle { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 78%; margin-left: -1px; background: ${tok['--surface']}; transform-origin: 50% 100%; border-radius: 1px; }
+${P} .omx-vu-pivot { position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: ${tok['--surface']}; }
+${P} .omx-vu-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-control')}; white-space: nowrap; }
+${look.name === 'vintage' ? `${P} .omx-meter-frame { display: none; }
+${P} .omx-vu { display: block; }
+` : ''}` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-screen-dim')}; white-space: nowrap; overflow: hidden; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ` : ''}`;
@@ -913,7 +928,73 @@ function (event, funcs) {
             this.textContent = value >= 0.5 ? 'ON' : 'OFF';
         });
     };
+    // the look: the pedal wears the class its template names (the shipped default), unless the browser remembers another; a key swaps it.
+    // Every storage access is guarded: with storage absent or throwing the pedal wears the shipped default and the keys still work.
+    var LOOKS = ['vintage', 'console', '3d'];
+    var found = event.icon.find('.omx-pedal');
+    var pedal = found && found[0];
+    var wear = function (name) {
+        if (!pedal || !pedal.classList) return;
+        for (var i = 0; i < LOOKS.length; i++) pedal.classList.remove('omx-look-' + LOOKS[i]);
+        pedal.classList.add('omx-look-' + name);
+    };
+    var remember = function () {
+        var saved = null;
+        try { saved = localStorage.getItem('omx-look'); } catch (e) { saved = null; }
+        if (LOOKS.indexOf(saved) >= 0) wear(saved);
+        event.icon.find('[data-look]').each(function () {
+            if (this.omxBound) return;
+            this.omxBound = true;
+            var name = this.getAttribute('data-look');
+            var stop = function (e) { e.stopPropagation(); };
+            this.addEventListener('mousedown', stop);
+            this.addEventListener('touchstart', stop);
+            this.addEventListener('click', function (e) {
+                e.stopPropagation();
+                wear(name);
+                try { localStorage.setItem('omx-look', name); } catch (err) { /* the look is worn for this session only */ }
+            });
+        });
+    };
+    // the needles: an output port's value is the target of the meter that names it; a timer lags the needle towards it by the declared
+    // time constant (a first-order lag, value += (target - value) * (1 - exp(-dt / tau))), so a level rises and falls like a VU
+    var angle = function (d, value) {
+        var min = parseFloat(d.getAttribute('data-min')), max = parseFloat(d.getAttribute('data-max'));
+        var a0 = parseFloat(d.getAttribute('data-angle-min')), a1 = parseFloat(d.getAttribute('data-angle-max'));
+        var clamp = function (x) { return x < 0 ? 0 : x > 1 ? 1 : x; };
+        if (d.getAttribute('data-reversed') === '1') return a1 - clamp((max - value) / (max - min)) * (a1 - a0);
+        return a0 + clamp((value - min) / (max - min)) * (a1 - a0);
+    };
+    var draw = function (d) {
+        var needle = d.querySelector('.omx-vu-needle');
+        if (needle) needle.style.transform = 'rotate(' + angle(d, d.omxVu.cur).toFixed(2) + 'deg)';
+    };
+    var tick = function () {
+        var now = Date.now();
+        event.icon.find('[data-vu]').each(function () {
+            var v = this.omxVu;
+            if (!v) return;
+            var dt = now - v.t;
+            v.t = now;
+            v.cur += (v.target - v.cur) * (1 - Math.exp(-dt / parseFloat(this.getAttribute('data-tau'))));
+            draw(this);
+        });
+    };
+    var vuSet = function (symbol, value, jump) {
+        event.icon.find('[data-vu]').each(function () {
+            if (this.getAttribute('data-vu-symbol') !== symbol) return;
+            if (!this.omxVu) this.omxVu = { cur: jump ? value : (this.getAttribute('data-reversed') === '1' ? parseFloat(this.getAttribute('data-max')) : parseFloat(this.getAttribute('data-min'))), target: value, t: Date.now() };
+            this.omxVu.target = value;
+            this.omxVu.t = this.omxVu.t || Date.now();
+            draw(this);
+        });
+        if (pedal && !pedal.omxTimer && typeof setInterval === 'function') {
+            var first = event.icon.find('[data-vu]')[0];
+            pedal.omxTimer = setInterval(tick, first ? parseFloat(first.getAttribute('data-step')) : 30);
+        }
+    };
     var show = function (symbol, value) {
+        vuSet(symbol, value, event.type === 'start');
         onoff(symbol, value);
         var v = Math.round(value);
         event.icon.find('[data-visible-port="' + symbol + '"]').each(function () {
@@ -992,6 +1073,7 @@ function (event, funcs) {
         root.style.height = (y - n('data-section-gap') + n('data-pad')) + 'px';
     };
     if (event.type === 'start') {
+        remember();
         for (var i = 0; i < event.ports.length; i++) show(event.ports[i].symbol, event.ports[i].value);
         relayout();
     } else if (event.type === 'change') {
@@ -1013,15 +1095,17 @@ export function generateModgui(descriptor, { panel: declared, stem, source, easy
   const panel = resolvePanel(descriptor, { panel: declared, stem, easyFirst: wantEasyFirst, ...(tier ? { tier } : {}) });
   const lay = { ...layout(panel), brand: panel.brand, name: panel.name ?? panel.stem, stem: panel.stem };
   const f = files(panel.stem);
+  // every look is in the one stylesheet, each scoped by a class on the pedal root; the look named is the one the pedal starts with
+  const worn = [...LOOKS.map((n) => (n === look.name ? look : loadLook(n))), ...(LOOKS.includes(look.name) ? [] : [look])];
   return [
     [MODGUI_TTL, Buffer.from(emitModguiTtl(panel, source))],
-    [f.template, Buffer.from(emitTemplate(panel, lay, source))],
-    [f.stylesheet, Buffer.from(emitStylesheet(panel, look, source))],
+    [f.template, Buffer.from(emitTemplate(panel, lay, source, look.name))],
+    [f.stylesheet, Buffer.from(worn.map((l) => emitStylesheet(panel, l, source)).join(''))],
     [f.screenshot, renderFace(lay, look, 1)],
     [f.thumbnail, renderFace(lay, look, GEOMETRY.thumbScale)],
-    [f.film, renderFilm(look)],
-    ...(draws(panel, 'fader') ? [[f.faderFilm, renderFaderFilm(look)]] : []),
-    ...(governs(panel) ? [[f.script, Buffer.from(emitScript(source))]] : []),
+    ...worn.map((l) => [f.filmOf(l.name), renderFilm(l)]),
+    ...(draws(panel, 'fader') ? worn.map((l) => [f.faderFilmOf(l.name), renderFaderFilm(l)]) : []),
+    [f.script, Buffer.from(emitScript(source))],
   ];
 }
 
@@ -1114,7 +1198,7 @@ export function main(argv) {
   }
   // the film strips are every bundle's same render of the look: a tree that does not track them leaves them out, and
   // its build writes only them into the built bundle
-  const films = new Set(Object.entries(files(stem)).filter(([k]) => k === 'film' || k === 'faderFilm').map(([, p]) => p));
+  const films = new Set(LOOKS.flatMap((n) => [files(stem).filmOf(n), files(stem).faderFilmOf(n)]));
   if (noFilms) made = made.filter(([p]) => !films.has(p));
   if (filmsOnly) made = made.filter(([p]) => films.has(p));
   for (const symbol of resolvePanel(descriptor, { panel, stem }).skipped) console.error(`modgui: skipped trigger control '${symbol}'`);

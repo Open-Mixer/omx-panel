@@ -59,9 +59,10 @@ for (const name of ['vintage', 'console', '3d']) {
 test('the default look is vintage', () => {
   assert.ok(css().includes(wornDepth(loadLook('vintage'))['--key-pressed-shadow']));
   assert.deepEqual(gen().map(([, b]) => Buffer.from(b)), gen('vintage').map(([, b]) => Buffer.from(b)));
-  assert.notEqual(css('vintage'), css('console'));
-  assert.notEqual(css('3d'), css('console'));
-  assert.notEqual(css('3d'), css('vintage'));
+  // one stylesheet ships the three looks, scoped by a class on the pedal root: what differs is the class the pedal starts with
+  for (const name of LOOKS) assert.ok(css().includes(`.omx-pedal{{{cns}}}.omx-look-${name} `));
+  assert.match(html('vintage'), /^<div class="omx-pedal\{\{\{cns\}\}\}[^"]* omx-look-vintage/);
+  assert.match(html('console'), /^<div class="omx-pedal\{\{\{cns\}\}\}[^"]* omx-look-console/);
 });
 
 test('an unknown look is refused by name, in the library and on the command line', () => {

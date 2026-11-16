@@ -52,7 +52,7 @@ test('arm: a panel with no meter carries no meter rule', () => {
 });
 test('the pedal\'s rim takes no layout: every box of the template sits where the raster face draws it', () => {
   const css = emitStylesheet(resolved(), loadLook('console'), 'test');
-  const pedal = /^\.omx-pedal\{\{\{cns\}\}\} \{[^}]*\}/m.exec(css)[0];
+  const pedal = /^\.omx-pedal\{\{\{cns\}\}\}\.omx-look-console \{[^}]*\}/m.exec(css)[0];
   assert.match(pedal, /box-shadow: inset 0 0 0 1px #[0-9a-f]{6}/);
   assert.ok(!/\bborder:/.test(pedal), 'a border would set the sections, the meter frames and every control 1 px right and down of the raster');
 });
