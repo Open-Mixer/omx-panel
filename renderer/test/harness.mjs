@@ -31,6 +31,14 @@ export function requireTwin(fx) {
   if (fx.needsTwin && !HAVE_TWIN) throw new Error(`omx-dsp's twin (@openmixer/omx-dsp) is not installed: fixture '${fx.name}' draws a curve and needs it (npm i --no-save '@openmixer/omx-dsp@>=0.32.2')`);
 }
 
+const { roleMeanings } = await import(join(ROOT, 'dist', 'tools', 'vocabulary.mjs'));
+/** Throw, naming it, when the role vocabulary declares no role: a layout then plays no meaning and an EQ derives no curve, so a
+ * fixture drawn so would be held to the wrong picture (docs/renderer.md). `make renderer-check` names the tree's stand-in. */
+export function requireVocabulary() {
+  if (roleMeanings().size > 0) return;
+  throw new Error(`no role vocabulary: $OMX_ROLE_MEANINGS (${process.env.OMX_ROLE_MEANINGS ?? 'unset'}) and the installed contract directories declare no role; run make renderer-check, or set OMX_ROLE_MEANINGS=test/fixtures/role-meanings/panel-roles.json`);
+}
+
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
   // the reverb's declared panel: its decay-envelope is a time_response display, the frame and the word until a host sets the envelope
@@ -72,6 +80,7 @@ export function face(fx, scale) {
 /** The fixture's panel description, in a file: a repeated group's (`served`) as `omx-panel describe --layout` serves it, the
  * merged section and its matrix, as a host draws it; the others as `omx-panel layout` writes them. */
 export function descriptionFile(fx, dir) {
+  requireVocabulary();
   if (fx.served) {
     const args = [OMX_PANEL, 'describe', '--layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
     const file = join(dir, `${fx.name}.layout.json`);
