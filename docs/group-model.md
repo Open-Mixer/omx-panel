@@ -30,7 +30,10 @@ for (const g of groups) if (g.kind === 'repeated') draw(servedMatrix(g)); // els
 The model reuses `group-infer.mjs`'s name tokens and section words and its LV2 reader; it does not restate them. The EQ's role words
 (frequency, gain, Q, type, slope) and edge words (high-pass, low shelf, high shelf, low-pass) are ONE table,
 `EQ_WORDS` in `tools/meaning-infer.mjs`, which owns them: the band inference there and the group model's rows (S8) and edges
-(S9) both read it, and neither keeps a list of its own (omx-panel#75).
+(S9) both read it, and neither keeps a list of its own (omx-panel#75). Its role words name a role outright (a Q is `q`,
+`quality`, `resonance`); its fallback words (`bandwidth`, `bw`, `reso`, `width`, `w` for a Q, `mode` for a type) claim the
+role only as a unit does: a control called by a role word wins it (S8; the band inference's Q likewise), so a band holding a
+Bandwidth and a Q takes the Q, and an EQ whose only such control is a Bandwidth (x42 fil4) takes that.
 
 ## Where it lives, and why
 
