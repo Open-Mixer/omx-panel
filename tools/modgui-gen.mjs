@@ -32,6 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
+import { controlsOfDescriptor, inferGroupModel, matrixOf, memberSymbols } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -295,6 +296,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
+  sections.splice(0, sections.length, ...withRepeats(descriptor, declared, sections));
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
@@ -318,6 +320,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
+    if (sec.matrix) continue; // a repeated group's matrix places every control; no bar row is cut out of it
     const word = panel.sections.find((p) => p.key === sec.key)?.bars;
     const items = sec.controls.map((k) => ({ symbol: k.symbol, label: k.name, control: controls.find((x) => keyOf(x) === k.symbol) }));
     const { runs, refusal } = barsOf(items, word);
@@ -336,20 +339,85 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
 }
 
+/**
+ * The sections that together hold exactly one repeated group's controls (docs/group-model.md), drawn as one section: its
+ * own parameters first, then the group's matrix, each cell at its row and column, never flowed. Sections that hold anything
+ * else beside the group, or only part of it (an Easy section took some), are left as they are.
+ */
+export function withRepeats(descriptor, declared, sections) {
+  const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, declared ? { panel: declared } : {}));
+  let out = sections;
+  for (const g of groups) {
+    if (g.kind !== 'repeated') continue;
+    const members = new Set(memberSymbols(g));
+    const touched = out.filter((s) => s.controls.some((k) => members.has(k.symbol)));
+    const drawn = new Map(touched.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
+    if (touched.length === 0 || [...drawn.keys()].some((sym) => !members.has(sym)) || [...members].some((sym) => !drawn.has(sym))) continue;
+    const m = matrixOf(g);
+    const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
+    const cell = (h, l) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l]);
+    // a cell's control is named by its row (the column's header names the band); a head toggle by its column
+    const matrix = {
+      orientation: m.orientation,
+      heads: heads.map((h) => ({ label: h.label, on: h.on ? { ...drawn.get(h.on.symbol), name: h.label } : null })),
+      lines: lines.map((l, li) => ({ label: l.label, cells: heads.map((_, hi) => { const sym = cell(hi, li); return sym ? { ...drawn.get(sym), name: l.label } : null; }) })),
+    };
+    // every control stays in the section's list (the ports the MOD GUI declares, the widgets it draws); the matrix places them
+    const placed = [...matrix.heads.map((h) => h.on), ...matrix.lines.flatMap((l) => l.cells)].filter(Boolean);
+    const merged = { key: touched[0].key, label: g.label ?? touched[0].label, displays: touched.flatMap((s) => s.displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placed], matrix };
+    const at = out.indexOf(touched[0]);
+    out = out.filter((s) => !touched.includes(s));
+    out.splice(at, 0, merged);
+  }
+  return out;
+}
+
+/**
+ * A matrix section's grid: the head row (or column) when any instance has an on/off, then one row (or column) per
+ * parameter; every control, the heads among them, at its cell. A head with no toggle is a caption at its cell.
+ */
+function matrixCells(mx, top) {
+  const g = GEOMETRY;
+  const headed = mx.heads.some((h) => h.on) ? 1 : 0;
+  const at = (hi, li) => (mx.orientation === 'columns'
+    ? { x: g.sectionPad + hi * g.cellW, y: top + li * g.cellH }
+    : { x: g.sectionPad + li * g.cellW, y: top + hi * g.cellH });
+  const controls = [];
+  const captions = [];
+  mx.heads.forEach((h, hi) => {
+    if (h.on) controls.push({ ...h.on, ...at(hi, 0) });
+    else captions.push({ text: h.label, ...at(hi, 0) });
+  });
+  mx.lines.forEach((l, li) => l.cells.forEach((k, hi) => { if (k) controls.push({ ...k, ...at(hi, li + headed) }); }));
+  const across = mx.orientation === 'columns' ? mx.heads.length : mx.lines.length + headed;
+  const down = mx.orientation === 'columns' ? mx.lines.length + headed : mx.heads.length;
+  return { controls, captions, across, down };
+}
+
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
 export function layout(panel) {
   const g = GEOMETRY;
-  // a curve row needs a width of its own: three cells
-  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(s.controls.length, s.displays.length > 0 ? 3 : 0))));
+  // a curve row needs a width of its own: three cells; a matrix is as wide as its columns
+  const across = (s) => (s.matrix ? matrixCells(s.matrix, 0).across : 0);
+  const flowedCount = (s) => (s.matrix ? s.controls.length - matrixCells(s.matrix, 0).controls.length : s.controls.length);
+  const most = Math.max(Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(flowedCount(s), s.displays.length > 0 ? 3 : 0)))), ...panel.sections.map(across));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const rows = Math.ceil(s.controls.length / ROW_CONTROLS);
+    const inGrid = new Set(s.matrix ? [...s.matrix.heads.map((h) => h.on?.symbol), ...s.matrix.lines.flatMap((l) => l.cells.map((k) => k?.symbol))].filter(Boolean) : []);
+    const flowed = s.controls.filter((k) => !inGrid.has(k.symbol));
+    const rows = Math.ceil(flowed.length / ROW_CONTROLS);
     const curves = s.displays.length * (g.curveH + g.curveGap);
-    const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
+    const top = g.sectionTitleH + curves + rows * g.cellH;
+    const grid = s.matrix ? matrixCells(s.matrix, top) : { controls: [], captions: [], down: 0 };
+    const h = top + grid.down * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+      controls: [
+        ...flowed.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+        ...grid.controls,
+      ],
+      ...(s.matrix ? { captions: grid.captions } : {}),
     };
     y += h + g.sectionGap;
     return sec;
@@ -477,6 +545,9 @@ export function renderFace(lay, look, scale) {
         drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
       }
     });
+    for (const cap of sec.captions ?? []) {
+      drawText(c, font, fitText(font, cap.text, TEXT.small * s, (g.cellW - 4) * s), (sec.x + cap.x + g.cellW / 2) * s, (sec.y + cap.y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+    }
     for (const k of sec.controls) {
       // a control the come-up values hide is not on the screenshot, as the face hides it
       if (!k.shown) continue;
@@ -631,7 +702,7 @@ export function emitTemplate(panel, lay, source) {
   };
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${(s.captions ?? []).map((cap) => `            <span class="omx-control-title omx-caption" style="position:absolute;margin-top:0;text-align:center;left:${cap.x}px;top:${cap.y + TEXT.nameBase - TEXT.small}px;width:${g.cellW}px">${esc(cap.text)}</span>\n`).join('')}${s.controls.map(control).join('\n')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">Meters</h2>
