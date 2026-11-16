@@ -13,6 +13,7 @@
  * An inference that does not hold is never drawn as a guessed matrix: the group is a plain list and carries a REASON code.
  */
 import { nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
+import { EQ_WORDS } from './meaning-infer.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // The reason codes: the only ways a candidate repeated group falls back to a plain list (docs/group-model.md, "Uncertain").
@@ -106,13 +107,8 @@ const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
 const OFF_WORDS = new Set(['bypass', 'mute', 'off']);
-const ROLE_WORDS = {
-  type: ['type', 'shape'],
-  slope: ['slope'],
-  freq: ['frequency', 'freq', 'f', 'fc', 'cutoff'],
-  gain: ['gain', 'g', 'level'],
-  q: ['q', 'quality', 'bandwidth', 'bw', 'resonance', 'reso'],
-};
+/** The role words: meaning-infer.mjs's EQ_WORDS, the one table (omx-panel#75). */
+const ROLE_WORDS = EQ_WORDS.roles;
 
 /**
  * A parameter's role from its words (the name's words less the number and the words every parameter of the instance
@@ -142,16 +138,11 @@ function claimOf(words, kind, unit) {
 /** An EQ: its parameters hold a frequency, a gain, and a Q or a type. */
 const isEqRoles = (roles) => roles.has('freq') && roles.has('gain') && (roles.has('q') || roles.has('type'));
 
-/** The EQ's edge columns: the filters outermost, the shelves inside them, the bands between. */
-export const EDGES = [
-  { edge: 'hpf', side: 'left', words: ['hpf', 'hp', 'highpass', 'high pass', 'lowcut', 'low cut', 'locut'] },
-  { edge: 'lowshelf', side: 'left', words: ['lowshelf', 'low shelf', 'ls', 'loshelf'] },
-  { edge: 'highshelf', side: 'right', words: ['highshelf', 'high shelf', 'hs', 'hishelf'] },
-  { edge: 'lpf', side: 'right', words: ['lpf', 'lp', 'lowpass', 'low pass', 'highcut', 'high cut', 'hicut'] },
-];
+/** The EQ's edge columns, the filters outermost, the shelves inside them, the bands between: meaning-infer.mjs's EQ_WORDS edges, the one table. */
+export const EDGES = EQ_WORDS.edges;
 
 /** The edge a control's name opens with, and how many words that takes; null for none. */
-function edgeOf(name) {
+export function edgeOf(name) {
   const t = nameTokens(name).map((x) => x.toLowerCase());
   for (const e of EDGES) for (const w of e.words) {
     const ws = w.split(' ');
