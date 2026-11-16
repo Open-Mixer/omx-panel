@@ -113,11 +113,12 @@ function (event, funcs) {
                 if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
                 if (matrix && k.getAttribute('data-mx-col')) { cells.push(k); continue; }
                 var band = k.getAttribute('data-band') || '';
-                if (any && (col === n('data-row-controls') || band !== prev)) { col = 0; row++; }
+                var span = parseFloat(k.getAttribute('data-span')) || 1;
+                if (any && (col + span > n('data-row-controls') || band !== prev)) { col = 0; row++; }
                 prev = band; any = true;
                 k.style.left = (n('data-section-pad') + col * n('data-cell-w')) + 'px';
                 k.style.top = (n('data-title-h') + curves + row * n('data-cell-h')) + 'px';
-                col++;
+                col += span;
             }
             var top = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h');
             var h = top + n('data-section-pad') / 2;
@@ -136,7 +137,7 @@ function (event, funcs) {
                     if (head.className.indexOf('omx-colhead') < 0) continue;
                     var hk = head.getAttribute('data-mx-col');
                     head.style.display = hk in at ? '' : 'none';
-                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = top + 'px'; }
+                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = (top + 6) + 'px'; }
                 }
                 if (order.length) h += n('data-head-h') + parseFloat(sec.getAttribute('data-mx-rows')) * n('data-cell-h');
                 wide = Math.max(wide, order.length * n('data-cell-w') + 2 * n('data-section-pad'));

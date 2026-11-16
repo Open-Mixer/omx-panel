@@ -34,7 +34,7 @@ import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { SLOPE_UNITS } from './vocabulary.mjs';
-import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
+import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { paintScene, parseSvg, readKnobSvg, renderSvgFilm, resolveSvg } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
@@ -346,7 +346,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
@@ -413,10 +413,25 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
+/** How many cells wide a selector is: one, or as many as its widest label needs (an enumeration of long labels, the strip's stage order, is a
+ * row-wide selector, never an ellipsis); the shown text is measured in the default look's font at the selector's 10 px. */
+export function selectorSpan(options) {
+  const font = loadLook(DEFAULT_LOOK).font;
+  const widest = Math.max(0, ...options.map((o) => textWidth(font, String(o.label), TEXT.small)));
+  return widest + 12 <= GEOMETRY.selectorW ? 1 : Math.min(ROW_CONTROLS, Math.ceil((widest + 20) / GEOMETRY.cellW));
+}
+
+/** The vintage look's serif, bundled (tools/look/font-gelasio.json pins it): no system font is relied on. */
+function emitFontFace(f) {
+  return `@font-face { font-family: 'Gelasio'; font-style: normal; font-weight: 400 700; src: url(/resources/${relative(MODGUI_DIR, f.font)}{{{ns}}}) format('woff2'); }\n`;
+}
+
 /** The rows of an aligned matrix, top to bottom: the on/off at the head of each column. */
 const MATRIX_ROWS = ['on', 'type', 'freq', 'gain', 'q'];
 /** The height of a matrix column's header. */
-const MATRIX_HEAD_H = 14;
+const MATRIX_HEAD_H = 20;
+/** The gap above a matrix header: the column labels sit clear of the scribbles above. */
+const MATRIX_HEAD_GAP = 6;
 
 export function layout(panel) {
   const g = GEOMETRY;
@@ -425,9 +440,12 @@ export function layout(panel) {
   const place = (controls) => {
     let col = 0, row = 0, prev;
     return { at: controls.map((c) => {
-      if (col > 0 && (col === ROW_CONTROLS || (c.band ?? '') !== (prev ?? ''))) col = 0, row++;
+      const span = c.span ?? 1;
+      if (col > 0 && (col + span > ROW_CONTROLS || (c.band ?? '') !== (prev ?? ''))) col = 0, row++;
       prev = c.band;
-      return { col: col++, row };
+      const at = { col, row };
+      col += span;
+      return at;
     }), rows: controls.length === 0 ? 0 : row + 1 };
   };
   // a matrix section (an EQ's bands): the cells hold the columns whose controls the come-up values show, the others flow above
@@ -452,7 +470,7 @@ export function layout(panel) {
     const cells = s.matrix ? s.matrix.cols.flatMap((col) => s.controls.filter((c) => c.col === col).sort((a, b) => a.ri - b.ri).map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: mxTop } : { ...c, x: g.sectionPad + cols.indexOf(col) * g.cellW, y: mxTop + MATRIX_HEAD_H + c.ri * g.cellH }))) : [];
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h, controls: [...placed, ...cells],
-      ...(s.matrix ? { heads: s.matrix.cols.map((col) => ({ col, label: s.matrix.labels[col], shown: cols.includes(col), x: g.sectionPad + Math.max(0, cols.indexOf(col)) * g.cellW, y: mxTop })), mxTop } : {}),
+      ...(s.matrix ? { heads: s.matrix.cols.map((col) => ({ col, label: s.matrix.labels[col], shown: cols.includes(col), x: g.sectionPad + Math.max(0, cols.indexOf(col)) * g.cellW, y: mxTop + MATRIX_HEAD_GAP })), mxTop } : {}),
     };
     y += h + g.sectionGap;
     return sec;
@@ -730,6 +748,8 @@ const files = (stem) => ({
   filmOf: (look) => `${MODGUI_DIR}/knobs/omx-knob-${look}.png`,
   faderFilmOf: (look) => `${MODGUI_DIR}/knobs/omx-fader-${look}.png`,
   script: `${MODGUI_DIR}/script-${stem}.js`,
+  font: `${MODGUI_DIR}/fonts/Gelasio.woff2`,
+  fontLicense: `${MODGUI_DIR}/fonts/Gelasio-OFL.txt`,
 });
 
 /** Whether any control of the panel is shown by another control's value. */
@@ -784,19 +804,20 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
     }
+    const wide = (k.span ?? 1) > 1;
     const data = `data-symbol="${k.symbol}" data-min="${k.min}" data-max="${k.max}" data-default="${k.def}"${band(k)}`;
     // a selector is MOD's custom-select over the port's values: the shown value and one option each
     const options = (k.options ?? []).map((o) => `\n                    <div class="omx-selector-option" mod-role="enumeration-option" mod-port-value="${o.value}">${esc(o.label)}</div>`).join('');
     const image = k.widget === 'switch'
       ? `<div class="omx-switch-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}" mod-widget="switch"></div>`
       : k.widget === 'selector'
-        ? `<div class="omx-selector-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}" mod-widget="custom-select">
+        ? `<div class="omx-selector-image" style="${wide ? `width:${k.span * g.cellW - 8}px` : ''}" mod-role="input-control-port" mod-port-symbol="${k.symbol}" mod-widget="custom-select">
                     <div class="omx-selector-value" mod-role="input-control-value" mod-port-symbol="${k.symbol}"></div>
                     <div class="omx-selector-list">${options}
                     </div>
                 </div>`
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
-    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}${mx(k)}>
+    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}${wide ? `;width:${k.span * g.cellW}px` : ''}" title="${esc(k.name)}" ${data}${wide ? ` data-span="${k.span}"` : ''}${vis(k)}${mx(k)}>
                 ${image}
                 <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>${k.widget === 'selector' ? '' : `
                 <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"${k.widget === 'switch' ? ' data-onoff' : ''}></div>`}
@@ -885,7 +906,7 @@ ${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-sha
 ${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}
 ${P} .omx-switch-image.on::after { left: ${g.switchW - g.switchH + 3}px; background: ${tok['--ink']}; }
-${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; height: 20px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow-wrap: anywhere; }
 ${P} .omx-scribble { position: absolute; left: ${(g.cellW - g.scribbleW) / 2}px; top: ${g.cellH - g.scribbleH}px; box-sizing: border-box; width: ${g.scribbleW}px; height: ${g.scribbleH}px; border-radius: 3px; background: ${D('--scribble-bg')}; color: ${D('--scribble-ink')};${decl('text-shadow', D('--scribble-glow'))}${decl('box-shadow', D('--scribble-shadow'))} font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 10px; line-height: ${g.scribbleH}px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 ${draws(panel, 'selector') ? `${P} .omx-selector-image { position: relative; box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
 ${held ? `${P} .omx-selector-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
@@ -1031,11 +1052,12 @@ function (event, funcs) {
                 if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
                 if (matrix && k.getAttribute('data-mx-col')) { cells.push(k); continue; }
                 var band = k.getAttribute('data-band') || '';
-                if (any && (col === n('data-row-controls') || band !== prev)) { col = 0; row++; }
+                var span = parseFloat(k.getAttribute('data-span')) || 1;
+                if (any && (col + span > n('data-row-controls') || band !== prev)) { col = 0; row++; }
                 prev = band; any = true;
                 k.style.left = (n('data-section-pad') + col * n('data-cell-w')) + 'px';
                 k.style.top = (n('data-title-h') + curves + row * n('data-cell-h')) + 'px';
-                col++;
+                col += span;
             }
             var top = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h');
             var h = top + n('data-section-pad') / 2;
@@ -1054,7 +1076,7 @@ function (event, funcs) {
                     if (head.className.indexOf('omx-colhead') < 0) continue;
                     var hk = head.getAttribute('data-mx-col');
                     head.style.display = hk in at ? '' : 'none';
-                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = top + 'px'; }
+                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = (top + 6) + 'px'; }
                 }
                 if (order.length) h += n('data-head-h') + parseFloat(sec.getAttribute('data-mx-rows')) * n('data-cell-h');
                 wide = Math.max(wide, order.length * n('data-cell-w') + 2 * n('data-section-pad'));
@@ -1100,12 +1122,14 @@ export function generateModgui(descriptor, { panel: declared, stem, source, easy
   return [
     [MODGUI_TTL, Buffer.from(emitModguiTtl(panel, source))],
     [f.template, Buffer.from(emitTemplate(panel, lay, source, look.name))],
-    [f.stylesheet, Buffer.from(worn.map((l) => emitStylesheet(panel, l, source)).join(''))],
+    [f.stylesheet, Buffer.from(`${emitFontFace(f)}${worn.map((l) => emitStylesheet(panel, l, source)).join('')}`)],
     [f.screenshot, renderFace(lay, look, 1)],
     [f.thumbnail, renderFace(lay, look, GEOMETRY.thumbScale)],
     ...worn.map((l) => [f.filmOf(l.name), renderFilm(l)]),
     ...(draws(panel, 'fader') ? worn.map((l) => [f.faderFilmOf(l.name), renderFaderFilm(l)]) : []),
     [f.script, Buffer.from(emitScript(source))],
+    [f.font, readFileSync(join(TOOLS, 'fonts', 'Gelasio.woff2'))],
+    [f.fontLicense, readFileSync(join(TOOLS, 'fonts', 'Gelasio-OFL.txt'))],
   ];
 }
 

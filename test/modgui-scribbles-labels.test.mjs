@@ -4,7 +4,7 @@
 //   1. the unit is written ONCE: mod-ui's value binding renders the value with the port's unit (the plugin's units:render), so the
 //      stylesheet adds none, for every unit kind (dB, ms, Hz, %, ratio);
 //   2. a toggled port's scribble reads ON or OFF, set by the MOD GUI's script from the port's value;
-//   3. a label wraps to two lines and keeps its full text in the control's title: it is never cut without the full text being there,
+//   3. a label wraps to four lines and keeps its full text in the control's title: it is never cut without the full text being there,
 //      and never overlaps its neighbour's.
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -48,13 +48,62 @@ test('a toggled port\'s scribble reads ON or OFF, set by the script', () => {
   assert.equal(nodes[0].textContent, 'ON');
 });
 
-test('a label wraps to two lines and keeps its full text in the control\'s title', () => {
+test('a label wraps to four lines and keeps its full text in the control\'s title', () => {
   const rule = css().match(/\.omx-control-title \{[^}]*\}/)[0];
   assert.doesNotMatch(rule, /white-space:\s*nowrap/, 'a label that does not wrap is cut');
-  assert.match(rule, /-webkit-line-clamp:\s*2/);
-  assert.match(rule, /height:\s*20px/);
+  assert.match(rule, /-webkit-line-clamp:\s*4/);
+  assert.match(rule, /height:\s*40px/);
   const t = template();
   for (const c of controls) assert.match(t, new RegExp(`<div class="omx-control [^"]*"[^>]*title="${c.name}"`), `${c.symbol}: the full name is not the control's title`);
   const g = GEOMETRY;
-  assert.ok(g.cellH >= g.knobTop + g.knob + 20 + g.scribbleH, 'the cell has no room for two lines of label and the scribble');
+  assert.ok(g.cellH >= g.knobTop + g.knob + 40 + g.scribbleH, 'the cell has no room for four lines of label and the scribble');
+});
+
+// ---- measured, per look: what the label shows once wrapped, and what a selector shows of every scale point
+import { selectorSpan } from '../tools/modgui-gen.mjs';
+import { loadLook } from '../tools/modgui-gen.mjs';
+import { textWidth } from '../tools/raster.mjs';
+
+/** Greedy wrap of `text` into lines of at most `maxW` px (a word wider than a line breaks anywhere, as overflow-wrap: anywhere does). */
+function wrap(font, text, px, spacing, maxW) {
+  const w = (t) => textWidth(font, t, px) + spacing * px * [...t].length;
+  const lines = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    const tryLine = line ? `${line} ${word}` : word;
+    if (w(tryLine) <= maxW) { line = tryLine; continue; }
+    if (line) lines.push(line);
+    line = '';
+    let rest = word;
+    while (w(rest) > maxW) {
+      let k = [...rest].length;
+      while (k > 1 && w([...rest].slice(0, k).join('')) > maxW) k--;
+      lines.push([...rest].slice(0, k).join(''));
+      rest = [...rest].slice(k).join('');
+    }
+    line = rest;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+for (const name of ['vintage', 'console', '3d']) {
+  test(`${name}: every label of the strip and the comp wraps into the four lines the cell holds`, () => {
+    const look = loadLook(name);
+    const caps = look.depth['--control-caps'] === 'uppercase';
+    const names = ['Detector Oversampling', 'Comp Detector Oversampling', 'Gate Hysteresis', 'Comp Threshold', 'Gate Knee Start', 'Detector Topology', 'Comp Release', 'EQ 1 Freq', 'Gate Threshold'];
+    for (const n of names) {
+      const lines = wrap(look.font, caps ? n.toUpperCase() : n, 10, caps ? 0.05 : 0, 72);
+      assert.ok(lines.length <= 4, `${name}: '${n}' needs ${lines.length} lines: ${JSON.stringify(lines)}`);
+    }
+  });
+}
+
+test('a selector of long labels is as wide as its widest label needs: no scale point is cut', () => {
+  const options = Array.from({ length: 120 }, (_v, i) => ({ value: i, label: i === 0 ? 'In > Flt > Gate > EQ > Comp' : `In > Flt > Gate > EQ > Comp ${i}` }));
+  const span = selectorSpan(options);
+  assert.ok(span > 1 && span <= 8, `span ${span}`);
+  const font = loadLook('vintage').font;
+  for (const o of options) assert.ok(textWidth(font, o.label, 10) + 12 <= span * 72 - 8, `'${o.label}' does not fit ${span} cells`);
+  assert.equal(selectorSpan([{ value: 0, label: 'Bell' }, { value: 1, label: 'Low Shelf' }]), 1);
 });

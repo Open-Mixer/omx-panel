@@ -57,7 +57,7 @@
       "--head-rule": "none",
       "--screws": "radial-gradient(circle at 40% 35%, #fafafa, #8a8a8a)",
       "--body-radius": "14",
-      "--label-font": "Georgia, \"Times New Roman\", serif",
+      "--label-font": "Gelasio, Georgia, \"Times New Roman\", serif",
       "--control-caps": "uppercase",
       "--scribble-bg": "{console:--glass}",
       "--scribble-ink": "{console:--accent}",
