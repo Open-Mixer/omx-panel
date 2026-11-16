@@ -157,3 +157,12 @@ test('the visible-column rule answers the cross-language vector (the C renderer 
     assert.equal(model.visibleColumns(m, { width: v.width, column: GEOMETRY.cellW * v.scale }), v.expect, v.name);
   }
 });
+
+test('one section merge: the home is the matrix\'s, a folded or donor section stays only while it still holds something', () => {
+  assert.equal(typeof model.mergedSections, 'function');
+  const placed = { home: 'b1', folded: ['b2'], donors: ['hpf', 'filters'], members: new Set() };
+  const sections = ['in', 'hpf', 'b1', 'b2', 'filters', 'out'].map((id) => ({ id }));
+  const holds = new Set(['in', 'filters', 'out']);
+  const out = model.mergedSections(placed, sections, { idOf: (s) => s.id, holdsAfter: (s) => holds.has(s.id) });
+  assert.deepEqual(out.map((x) => [x.section.id, x.home]), [['in', false], ['b1', true], ['filters', false], ['out', false]]);
+});

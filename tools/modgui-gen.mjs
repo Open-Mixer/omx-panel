@@ -32,7 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { controlsOfDescriptor, drawnHeads, inferGroupModel, placeMatrix, servedMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -367,15 +367,11 @@ export function withRepeats(descriptor, declared, sections) {
       return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
     }));
     const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
-    const folded = new Set(placed.folded);
-    const donors = new Set(placed.donors);
-    out = out.flatMap((s, i) => {
-      if (i === placed.home) return [merged];
-      if (folded.has(i)) return [];
-      if (!donors.has(i)) return [s];
-      const rest = { ...s, controls: s.controls.filter((k) => !placed.members.has(k.symbol)) };
-      return rest.controls.length > 0 || rest.displays.length > 0 ? [rest] : [];
-    });
+    // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
+    const rest = (s) => ({ ...s, controls: s.controls.filter((k) => !placed.members.has(k.symbol)) });
+    const holdsAfter = ({ s, id }) => !placed.folded.includes(id) && (rest(s).controls.length > 0 || s.displays.length > 0);
+    out = mergedSections(placed, out.map((s, id) => ({ s, id })), { idOf: (x) => x.id, holdsAfter })
+      .map(({ section: x, home: isHome }) => (isHome ? merged : placed.donors.includes(x.id) ? rest(x.s) : x.s));
   }
   return out;
 }
