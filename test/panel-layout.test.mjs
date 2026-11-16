@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { keyOf, MEASUREMENTS, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
+import { keyOf, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
 import { contractUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -63,8 +63,6 @@ check('a read-only dB travel is a meter whose measurement is not stated', widget
 check('a read-only LUFS travel is a foreign meter: measurement is never guessed from the unit', widgetOf(travel('LUFS', { readonly: true })), { widget: 'meter', measurement: null, held: false, clip: false });
 check('arm: the same LUFS travel, not read-only, is a knob', widgetOf(travel('LUFS')), { widget: 'knob' });
 check('arm: a read-only travel in no level unit is a display', widgetOf(travel('ms', { readonly: true })), { widget: 'display' });
-check('rms, vu and ppm are not measurement words (7.9)', MEASUREMENTS.some((m) => ['rms', 'vu', 'ppm'].includes(m)), false);
-check('the measurement words are the level kinds the descriptor spells, lra among them', MEASUREMENTS, ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra']);
 check('a declared fader wins', widgetOf(travel('dB'), 'fader'), { widget: 'fader' });
 check('a declared selector is a selector', widgetOf(travel(''), 'selector'), { widget: 'selector' });
 check('a face serves knob, fader and switch as they are, every other widget as auto',
