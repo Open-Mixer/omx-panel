@@ -37,6 +37,39 @@
       "title": "Easy controls",
       "description": "The controls the plugin opens on, in order, by symbol. Every control stays one click away. Left out, tools/easy.mjs picks them from the roles."
     },
+    "tier": {
+      "enum": ["easy", "advanced"],
+      "default": "advanced",
+      "title": "Tier",
+      "description": "Who a control is for: `easy` controls are the ones a plugin shows in its Easy generation, `advanced` is every control. A control that names no tier is advanced, so nothing disappears until a plugin says so."
+    },
+    "tiers": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+      "additionalProperties": { "$ref": "#/$defs/tier" },
+      "title": "Tiers",
+      "description": "Each control's tier, by parameter symbol, in the plugin's declaration beside its widgets. A control left out is advanced. The MOD GUI is generated for one tier (`omx-panel modgui --tier easy|advanced`, the `modgui-tier` setting, default advanced): Easy draws the easy controls and leaves the advanced ones out, Advanced draws every control. MOD has no live switch; a surface that has one reads the same field."
+    },
+    "sectionEdges": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first": { "$ref": "#/$defs/edgeBand" },
+        "last": { "$ref": "#/$defs/edgeBand" }
+      },
+      "title": "Edge bands",
+      "description": "A section's first and last band, borrowed from another section's controls: an EQ draws its plugin's high-pass filter as its first band and its low-pass as its last, [HPF] [Band 1..N] [LPF]. Only the drawing moves; the audio order is the plugin's, and an Order control the plugin declares shows it. The curve of the section includes the filters' roll-off when the panel's `roles` bind hpf_* and lpf_* roles."
+    },
+    "edgeBand": {
+      "type": "object",
+      "required": ["from", "label", "controls"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "description": "The key of the section that lists the controls." },
+        "label": { "type": "string", "description": "The band's name, drawn on each of its controls (data-band)." },
+        "controls": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "The controls, by symbol, that section lists and this section draws." }
+      }
+    },
     "visibleWhen": {
       "type": "object",
       "additionalProperties": { "$ref": "#/$defs/visibleWhenRule" },
