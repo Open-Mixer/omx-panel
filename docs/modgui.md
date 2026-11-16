@@ -104,6 +104,55 @@ with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so t
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
 `vintage` clears 4.5:1 on every pair.
 
+## The map: the console's vintage, element by element
+
+The owner's rule: any vintage look goes into mod-ui, so the `vintage` look draws each console element in the console's own
+tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed); `test/modgui-console-map.test.mjs` holds
+every row to it: each token a row lists is in the pin, is named as a placeholder (`{console:--x}` or `{finish:--x}`) in the look
+token or the drawing the row names, and is worn as the pinned value in `tools/look.json`; and a value moved in a `tokens.css` goes
+red in the drift check, token by token. A row marked "the owner's mock" is not a console element (the cream enclosure, the label
+plate, the red LED) and reads no pinned token.
+
+| Row | Console element | MOD GUI element | Pinned tokens |
+|---|---|---|---|
+| `knob-cap` | Encoder.vue .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (tools/look/knob-vintage.svg) | `finish:--knob-cap-hi`, `finish:--knob-face` |
+| `knob-rim` | Encoder.vue .cap stroke: the rim | knob film strip, the rim | `finish:--knob-edge` |
+| `knob-knurl` | Encoder.vue .knurl: the knurled edge | knob film strip, the teeth ring | `finish:--knob-knurl` |
+| `knob-pointer` | Encoder.vue .needle with its groove-shade and groove-lit walls | knob film strip, the carved pointer | `console:--knob-pointer`, `finish:--knob-knurl`, `finish:--knob-cap-hi` |
+| `knob-silk` | Encoder.vue .silk: the 270-degree tick ring printed on the panel | knob film strip, the tick ring | `console:--legend` |
+| `knob-shadow` | Encoder.vue .cap drop-shadow(--shadow-1) | knob film strip, the drop shadow | `console:--shade` |
+| `fader-cap` | FaderCap.vue: ridges, groove, cream centre line, --shadow-2 | fader film strip (tools/look/fader-vintage.svg) | `finish:--fader-cap`, `finish:--fader-cap-ridge`, `finish:--fader-cap-groove`, `console:--fader-cap-line`, `console:--shade` |
+| `screw` | --screw: the panel's screw heads | .omx-pedal::before and ::after | `finish:--screw`, `finish:--knob-cap-hi`, `console:--shadow-1` |
+| `glass` | GLASS_WELL (utils/glass.ts): --glass under --glass-grid in the inset track, on every display | .omx-curve, .omx-meter-frame, .omx-display-image | `console:--glass`, `console:--glass-grid`, `console:--inset-track` |
+| `scribble` | StripHead scribble strip: glass well, the accent lit | .omx-scribble | `console:--glass`, `console:--accent`, `console:--inset-track` |
+| `curve` | EqCurve.vue and DynGraph.vue: the trace in the accent, the legend | .omx-curve-line and the curve's text | `console:--accent`, `console:--legend` |
+| `button-cap` | lamp.ts off: a cap in the finish's metal (--btn-face) with its cream legend | .omx-selector-image and the look keys | `finish:--btn-face`, `console:--cap-legend`, `finish:--knob-cap-hi`, `console:--shadow-1` |
+| `toggle` | ToggleSwitch.vue: a thumb in --toggle-face on a recessed track | .omx-switch-image and its thumb | `finish:--toggle-face`, `console:--glass`, `console:--inset-track` |
+| `footswitch` | the finish's metal cap (knob cap-hi to face, knurl at the edge) | .omx-bypass, the footswitch | `finish:--knob-cap-hi`, `finish:--knob-face`, `finish:--knob-knurl`, `console:--shadow-1` |
+| `section-relief` | a panel's --shadow-1 relief | .omx-section | `console:--shadow-1` |
+| `vu-bezel` | Meter.vue: the meter sits in recessed glass | .omx-vu, the needle VU's bezel | `console:--glass` |
+| `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
+| `label-plate` | none: the owner's mock, the dark label plate and its serif title | .omx-head and .omx-label | none (the owner's mock) |
+| `bypass-led` | none: the owner's mock, the red bypass LED | .omx-bypass-light | none (the owner's mock) |
+
+**What the pin keeps** (`tools/look/console-vintage.json`, read from `tokens.css` at one commit with its sha-256, by
+`node tools/look-pin.mjs --write <tokens.css> <commit>`, verified by `--check` and `$OPENMIXER_TOKENS_CSS` in the test): the glass, its
+grid, the legend and the accent (`tokens`); the RELIEF the console draws depth with (`relief`: `--shade`, `--shadow-1`, `--shadow-2`,
+`--inset-track`); the base control paint no finish changes (`base`: `--knob-pointer`, `--fader-cap-line`, `--cap-legend`); and the three
+FINISH blocks (`finish`: aluminium, graphite, black; the metal a knob, a fader cap, a button cap, a toggle and a screw are made of),
+aluminium being the default (`defaultFinish`, the console's default `data-finish`). `tools/look.mjs` writes them into `tools/look.json`
+(`console`), and each look names its metal with the `--finish` token (`aluminium` for vintage, `none` for the others).
+
+**The metal knob and fader.** The vintage knob and fader film strips are generated from `tools/look/knob-vintage.svg` and
+`tools/look/fader-vintage.svg` through `tools/svg-knob.mjs`; every colour in them is a pinned placeholder, so a re-pin or another
+finish re-draws them with no hand drawing and no binary in the tree. The knob is Encoder.vue's: a radial cap-hi to face cap, an edge
+rim, a knurled ring, a pointer between a shaded and a lit groove wall, the silkscreened tick ring and the drop shadow.
+
+**3d is its own look.** Four roles tell `3d` from the console's flat look, each held by a test: raised sections (a gradient plate under
+an outer drop shadow with a lit top edge, `--section-bg` and `--section-shadow`), recessed glass with a highlight (`--screen-shadow`: an
+inset sink with a lit lower lip), keycap switches with a pressed state (`--key-shadow` and `--switch-shadow` stand a cap on its own
+thickness, `--key-pressed-shadow` sinks it), and a glowing accent bar (`--accent-bar-glow` on the head's rule).
+
 ## The look switch and the needle meters
 
 **One template, three looks.** The package ships the `vintage`, `console` and `3d` looks in ONE stylesheet: each look's rules are scoped by a

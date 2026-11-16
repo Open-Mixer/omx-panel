@@ -9,7 +9,7 @@
  *   fill / stroke as #rrggbb, or url(#id) of a <linearGradient x1 y1 x2 y2> or <radialGradient cx cy r> (each in
  *   objectBoundingBox fractions, <stop offset stop-color stop-opacity>), fill-opacity, and <g transform="rotate(a cx cy)">.
  *
- * A colour in the file is a role placeholder, `{--accent}`, resolved against the look's tokens before it is read, and the
+ * A colour in the file is a role placeholder, `{--accent}`, resolved against the look's tokens before it is read (and `{console:--x}` / `{finish:--x}`, the console's pinned relief and metal), and the
  * pointer's group carries `rotate({angle} cx cy)`, the frame's angle in degrees from straight up: -135 at the first
  * frame, +135 at the last, MOD's 270-degree sweep. Pure: no clock, no host (sin and cos are rounded to 1e-9 first).
  */
@@ -24,10 +24,20 @@ export const knobSvgFile = (name) => join(LOOK_DIR, name);
 const attrs = (tag) => Object.fromEntries([...tag.matchAll(/([\w:-]+)="([^"]*)"/g)].map((m) => [m[1], m[2]]));
 const num = (a, k, d = 0) => (a[k] === undefined ? d : Number(a[k]));
 
-/** `svg` text with every `{--role}` replaced by the look's token and `{angle}` by `angle`. */
-export function resolveSvg(text, tokens, angle) {
-  return text.replace(/\{(--[a-z0-9-]+|angle)\}/g, (_m, k) => {
+/**
+ * `text` with every placeholder set: `{--role}` from the look's tokens, `{console:--x}` and `{finish:--x}` from the console's pin
+ * (`pinned`, as tools/look.json carries it, the finish being the look's own), `{angle}` and any other `{name}` of `extra`
+ * (a fader's `capY`, and `{capY+n}` a point n below it) from the frame.
+ */
+export function resolveSvg(text, tokens, angle, pinned, extra = {}) {
+  return text.replace(/\{((?:console:|finish:)?--[a-z0-9-]+|angle|capY(?:\+[\d.]+)?)\}/g, (_m, k) => {
     if (k === 'angle') return String(angle);
+    if (k.startsWith('capY')) return String(Math.round((extra.capY + Number(k.slice(5) || 0)) * 1000) / 1000);
+    if (k.startsWith('console:') || k.startsWith('finish:')) {
+      const v = pinned?.[k];
+      if (typeof v !== 'string') throw new Error(`svg-knob: the drawing names ${k}, which the console's pin does not carry for this look`);
+      return v;
+    }
     if (typeof tokens[k] !== 'string') throw new Error(`svg-knob: the knob names ${k}, which the look does not set`);
     return tokens[k];
   });
@@ -142,11 +152,11 @@ export function paintScene(c, scene, ox, oy, k) {
 }
 
 /** A film strip: `frames` frames of `size` px, the knob of `svgText` from -135 to +135 degrees, as a PNG. */
-export function renderSvgFilm(svgText, tokens, frames, size, viewBox = 48) {
+export function renderSvgFilm(svgText, tokens, frames, size, viewBox = 48, pinned, extraOf = () => ({})) {
   const c = canvas(size * frames, size);
   for (let i = 0; i < frames; i++) {
     const angle = round9(-135 + (270 * i) / (frames - 1));
-    paintScene(c, parseSvg(resolveSvg(svgText, tokens, angle)), i * size, 0, size / viewBox);
+    paintScene(c, parseSvg(resolveSvg(svgText, tokens, angle, pinned, extraOf(i / (frames - 1)))), i * size, 0, size / viewBox);
   }
   return encodePng(c, size);
 }

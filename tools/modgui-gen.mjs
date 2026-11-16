@@ -532,7 +532,10 @@ export function loadLook(name = DEFAULT_LOOK) {
   if (!fontFile.startsWith(`${TOOLS}${sep}`)) throw new Error(`modgui-gen: --font-file '${tokens['--font-file']}' leaves tools/`);
   // the look's own tokens, as declared: a colour role in them (`{--accent}`) is set from `tokens` where they are worn (depthOf), so a moved role moves them
   const depth = { ...look.looks[name] };
-  return { name, theme: look.theme, personality: look.personality, tokens, depth, font: parseFont(readFileSync(fontFile)) };
+  // the console's pinned relief and metal for the drawings: `{console:--x}` anywhere, `{finish:--x}` in the look's own finish
+  const finish = look.console?.finish?.[depth['--finish']] ?? {};
+  const pinned = Object.fromEntries([...Object.entries(look.console?.tokens ?? {}).map(([k, v]) => [`console:${k}`, v]), ...Object.entries(finish).map(([k, v]) => [`finish:${k}`, v])]);
+  return { name, theme: look.theme, personality: look.personality, tokens, depth, pinned, font: parseFont(readFileSync(fontFile)) };
 }
 
 /** The plugin's enclosure colour in `look`: the palette's entry its name picks (a one-colour palette is its colour). */
@@ -558,7 +561,7 @@ function drawKnob(c, cx, cy, r, f, col, look) {
   // a look with a knob drawing wears it, scaled to this knob: the same SVG the film strip is made from
   if (look && look.depth['--knob'] !== 'flat') {
     const k = (2 * r) / GEOMETRY.knob, angle = -135 + 270 * Math.min(1, Math.max(0, f));
-    paintScene(c, parseSvg(resolveSvg(readKnobSvg(look.depth['--knob']), look.tokens, angle)), cx - 24 * k, cy - 24 * k, k);
+    paintScene(c, parseSvg(resolveSvg(readKnobSvg(look.depth['--knob']), look.tokens, angle, look.pinned)), cx - 24 * k, cy - 24 * k, k);
     return;
   }
   disc(c, cx, cy, r, col.rim);
@@ -717,7 +720,7 @@ export function renderFace(lay, look, scale) {
 export function renderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   // a look with a knob drawing: one SVG, a frame per step (tools/svg-knob.mjs); the console's is the flat knob
-  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--knob']), look.tokens, n, g.knob);
+  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--knob']), look.tokens, n, g.knob, 48, look.pinned);
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawKnob(c, i * g.knob + g.knob / 2, g.knob / 2, g.knob / 2 - 1, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -726,6 +729,8 @@ export function renderFilm(look) {
 /** The fader's film strip: the same square frames, the fader from minimum to maximum. */
 export function renderFaderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
+  // a look with a fader drawing: one SVG, the cap at its frame's place (the foot at the minimum, the top at the maximum)
+  if (look.depth['--fader'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--fader']), look.tokens, n, g.knob, 48, look.pinned, (f) => ({ capY: 33 - 30 * f }));
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawFader(c, i * g.knob + g.knob / 2, 0, g.knob, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -885,7 +890,7 @@ ${banner(' * ', source).join('\n')}
  * Colours and font: the OpenMixer console's ${look.theme} theme, resolved in tools/look.json.${look.name === 'console' ? '' : `\n * Look: ${look.name} (the ${LOOK_SETTING.name} setting).`}
  */
 ${P} { position: relative; box-sizing: border-box; background: ${D('--body-bg')}; box-shadow: ${D('--body-shadow')}; border-radius: ${bodyRadius}px; color: ${D('--t-label')}; font-family: ${tok['--font-ui']}; }
-${P} .omx-head { position: absolute; left: ${inset ? inset[1] : 0}; right: ${inset ? inset[1] : 0}; top: ${inset ? inset[0] : 0};${decl('background', D('--head-bg'))}${D('--head-bg') === 'none' ? '' : inset ? ' border-radius: 4px;' : ` border-radius: ${bodyRadius}px ${bodyRadius}px 0 0;`}${D('--head-rule') === 'none' ? '' : ` border-bottom: 2px solid ${D('--head-rule')};`} }
+${P} .omx-head { position: absolute; left: ${inset ? inset[1] : 0}; right: ${inset ? inset[1] : 0}; top: ${inset ? inset[0] : 0};${decl('background', D('--head-bg'))}${D('--head-bg') === 'none' ? '' : inset ? ' border-radius: 4px;' : ` border-radius: ${bodyRadius}px ${bodyRadius}px 0 0;`}${D('--head-rule') === 'none' ? '' : ` border-bottom: 2px solid ${D('--head-rule')};`}${decl('box-shadow', D('--accent-bar-glow'))} }
 ${D('--screws') === 'none' ? '' : `${P}::before, ${P}::after { content: ''; position: absolute; top: 9px; width: 9px; height: 9px; border-radius: 50%; background: ${D('--screws')};${decl('box-shadow', D('--screws-shadow'))} }
 ${P}::before { left: 9px; }
 ${P}::after { right: 9px; }
@@ -901,8 +906,8 @@ ${P} .omx-colhead { position: absolute; width: ${g.cellW}px; height: 14px; line-
 ${P} .omx-control { position: absolute; width: ${g.cellW}px; height: ${g.cellH}px; text-align: center; }
 ${P} .omx-knob-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${film}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
 ${draws(panel, 'fader') ? `${P} .omx-fader-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${faderFilm}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
-` : ''}${P} .omx-switch-image { position: relative; width: ${g.switchW}px; height: ${g.switchH}px; margin: ${g.switchTop}px auto ${g.knob + g.knobTop - g.switchTop - g.switchH}px; border-radius: ${g.switchH / 2}px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
-${P} .omx-switch-image::after { content: ''; position: absolute; top: 3px; left: 3px; width: ${g.switchH - 6}px; height: ${g.switchH - 6}px; border-radius: 50%; background: ${tok['--ink-dim']}; }
+` : ''}${P} .omx-switch-image { position: relative; width: ${g.switchW}px; height: ${g.switchH}px; margin: ${g.switchTop}px auto ${g.knob + g.knobTop - g.switchTop - g.switchH}px; border-radius: ${g.switchH / 2}px; background: ${D('--switch-track')};${decl('box-shadow', D('--switch-shadow'))} cursor: pointer; }
+${P} .omx-switch-image::after { content: ''; position: absolute; top: 3px; left: 3px; width: ${g.switchH - 6}px; height: ${g.switchH - 6}px; border-radius: 50%; background: ${D('--switch-thumb')}; }
 ${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}
@@ -926,7 +931,7 @@ ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size:
 ` : ''}${P} .omx-lookswitch { position: absolute; z-index: 30; right: ${g.pad + 30}px; top: ${g.headH / 2 - 8}px; height: 16px; display: flex; gap: 2px; }
 ${P} .omx-look-key { box-sizing: border-box; width: 16px; height: 16px; line-height: 14px; text-align: center; font-size: 9px; font-weight: 600; cursor: pointer; border-radius: 3px; border: 1px solid ${tok['--border-strong']}; color: ${D('--t-key')}; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} user-select: none; }
 ${P}.omx-look-vintage .omx-look-key[data-look="vintage"], ${P}.omx-look-console .omx-look-key[data-look="console"], ${P}.omx-look-3d .omx-look-key[data-look="3d"] { background: ${D('--key-pressed-bg')}; }
-${(panel.meters ?? []).length > 0 ? `${P} .omx-vu { display: none; position: absolute; box-sizing: border-box; overflow: hidden; border-radius: 6px 6px 3px 3px; background: ${D('--t-label')}; border: 1px solid ${tok['--border-strong']};${decl('box-shadow', D('--screen-shadow'))} }
+${(panel.meters ?? []).length > 0 ? `${P} .omx-vu { display: none; position: absolute; box-sizing: border-box; overflow: hidden; border-radius: 6px 6px 3px 3px; background: ${D('--t-label')}; border: ${D('--vu-bezel')};${decl('box-shadow', D('--screen-shadow'))} }
 ${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: conic-gradient(from ${VU.angleMin}deg at 50% 118%, transparent 0deg, transparent ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${D('--curve-line')} ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${D('--curve-line')} ${VU.angleMax - VU.angleMin}deg, transparent ${VU.angleMax - VU.angleMin}deg); opacity: 0.55; clip-path: circle(88% at 50% 118%); }
 ${P} .omx-vu-needle { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 78%; margin-left: -1px; background: ${tok['--surface']}; transform-origin: 50% 100%; border-radius: 1px; }
 ${P} .omx-vu-pivot { position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: ${tok['--surface']}; }

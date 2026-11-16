@@ -18,7 +18,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadPin } from './look-pin.mjs';
+import { consoleTokens, loadPin } from './look-pin.mjs';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
 export const ROLES_JSON = join(TOOLS, '..', 'schema', 'look-roles.json');
@@ -135,7 +135,12 @@ export function checkLooks(looks, roles = loadRoles()) {
     for (const k of keys) if (typeof look[k] !== 'string' || !look[k]) faults.push(`look ${n} sets no ${k}`);
     for (const k of Object.keys(look)) if (!keys.includes(k)) faults.push(`look ${n} sets ${k}, which another look does not: one schema`);
     for (const [k, v] of Object.entries(look)) {
-      for (const ref of String(v).matchAll(/\{console:(--[a-z0-9-]+)\}/g)) if (!(ref[1] in loadPin().tokens)) faults.push(`look ${n} ${k} names console:${ref[1]}, which the pin does not carry`);
+      for (const ref of String(v).matchAll(/\{console:(--[a-z0-9-]+)\}/g)) if (!(ref[1] in consoleTokens())) faults.push(`look ${n} ${k} names console:${ref[1]}, which the pin does not carry`);
+      for (const ref of String(v).matchAll(/\{finish:(--[a-z0-9-]+)\}/g)) {
+        const fin = loadPin().finish[look['--finish']];
+        if (!fin) faults.push(`look ${n} ${k} names finish:${ref[1]} and the look's --finish '${look['--finish']}' is no console finish`);
+        else if (!(ref[1] in fin)) faults.push(`look ${n} ${k} names finish:${ref[1]}, which the ${look['--finish']} finish of the pin does not carry`);
+      }
       for (const ref of String(v).matchAll(/\{(--[a-z0-9-]+)\}/g)) {
         if (ref[1] !== '--enclosure' && !names.has(ref[1])) faults.push(`look ${n} ${k} names ${ref[1]}, which is no colour role`);
         if (ref[1] === '--enclosure' && TEXT_PLATES.includes(k)) faults.push(`look ${n} ${k} carries text and names the enclosure: its contrast is not the roles' to hold`);
@@ -164,13 +169,16 @@ export function emitLook(doc = loadRoles(), looks = loadLooks()) {
   const tokens = {};
   for (const r of doc.roles) tokens[r.name] = r.default;
   for (const f of NOT_COLOURS) tokens[f] = doc.font[f];
+  const pin = loadPin();
   const look = {
     $comment: 'GENERATED — DO NOT EDIT BY HAND. The look the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads: every colour role of schema/look-roles.json at its one default, and the font. Regenerate: `node tools/look.mjs`, then commit the result.',
     ...Object.fromEntries(LOOK_AXES.map((a) => [a, doc.look[a]])),
     tokens,
     setting: looks.setting,
     tierSetting: looks.tierSetting,
-    looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => loadPin().tokens[t])]))])),
+    // the console's pinned relief, base paint and metal, for the drawings (the knob and the fader SVGs name them) beside the looks
+    console: { commit: pin.source.commit, defaultFinish: pin.defaultFinish, tokens: consoleTokens(pin), finish: pin.finish },
+    looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => consoleTokens(pin)[t]).replace(/\{finish:(--[a-z0-9-]+)\}/g, (_m, t) => pin.finish[l['--finish']][t])]))])),
   };
   return `${JSON.stringify(look, null, 2)}\n`;
 }

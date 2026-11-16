@@ -18,7 +18,8 @@ export const snap = (v) => Math.round(v * 16) / 16;
 
 /** `#rrggbb` -> [r, g, b]. A token that is not a plain hex colour is refused, never guessed. */
 export function rgbOf(hex) {
-  const m = /^#([0-9a-f]{6})$/i.exec(String(hex).trim());
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(String(hex).trim()); // the console's three-digit shade
+  const m = short ? [null, short[1] + short[1] + short[2] + short[2] + short[3] + short[3]] : /^#([0-9a-f]{6})$/i.exec(String(hex).trim());
   if (!m) throw new Error(`raster: '${hex}' is not a #rrggbb colour`);
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

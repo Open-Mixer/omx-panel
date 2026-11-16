@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- The vintage look's fader, ONE drawing, in the console's own metal: FaderCap.vue's cap (ridges in the cap and ridge colours, a
+       dark groove carrying the cream centre line) over a recessed slot. Every colour is a pinned-token placeholder of
+       the console's pin (tools/look-pin.mjs) in the look's finish, aluminium by default. {capY} is the frame's cap top, and {capY+n} a
+       point n below it: the cap runs from the foot (minimum) to the top (maximum). tools/svg-knob.mjs reads the subset. -->
+  <rect x="22" y="3" width="4" height="42" rx="2" fill="{finish:--fader-cap-groove}"/>
+  <rect x="9" y="{capY+1}" width="30" height="12" rx="2" fill="{console:--shade}" fill-opacity="0.5"/>
+  <rect x="9" y="{capY}" width="30" height="12" rx="2" fill="{finish:--fader-cap}"/>
+  <rect x="9" y="{capY+1.5}" width="30" height="1" fill="{finish:--fader-cap-ridge}"/>
+  <rect x="9" y="{capY+3.5}" width="30" height="1" fill="{finish:--fader-cap-ridge}"/>
+  <rect x="9" y="{capY+7.5}" width="30" height="1" fill="{finish:--fader-cap-ridge}"/>
+  <rect x="9" y="{capY+9.5}" width="30" height="1" fill="{finish:--fader-cap-ridge}"/>
+  <rect x="9" y="{capY+5}" width="30" height="2" fill="{finish:--fader-cap-groove}"/>
+  <rect x="9" y="{capY+5.5}" width="30" height="1" fill="{console:--fader-cap-line}"/>
+  <rect x="9" y="{capY}" width="30" height="1" fill="{finish:--knob-cap-hi}"/>
+</svg>

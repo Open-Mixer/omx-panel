@@ -40,7 +40,7 @@ for (const name of ['vintage', 'console', '3d']) {
     for (const k of LOOK_KEYS) {
       const v = wornDepth(look)[k];
       // a token that is `none` draws nothing; every other one is in the CSS, resolved
-      if (v === 'none' || k === '--knob' || k === '--enclosure' || v.includes('{') || ['--t-list-sel', '--head-inset', '--body-radius', '--control-caps'].includes(k)) continue; // the selector's own rule: omx-delay draws no selector
+      if (v === 'none' || k === '--knob' || k === '--fader' || k === '--finish' || k === '--vu-bezel' || k === '--enclosure' || v.includes('{') || ['--t-list-sel', '--head-inset', '--body-radius', '--control-caps'].includes(k)) continue; // the selector's own rule: omx-delay draws no selector
       assert.ok(text.includes(v), `${name}: ${k} = ${v} is not in the stylesheet`);
     }
   });
