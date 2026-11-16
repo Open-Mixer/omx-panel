@@ -37,7 +37,7 @@ function page({ storage, look = 'vintage' } = {}) {
   const env = { setInterval: (f, ms) => { timers.push({ f, ms }); return timers.length; }, clearInterval() {}, Date: { now: () => now }, localStorage: storage };
   const script = made(look).get('modgui/script-omx-comp.js').toString().replace(/^\/\/.*\n/gm, '');
   const fn = new Function(...Object.keys(env), `return (${script});`)(...Object.values(env));
-  const sets = { '.omx-pedal': [root], '[data-vu]': dials, '[data-look]': keys };
+  const sets = { '[data-omx-pedal]': [root], '[data-vu]': dials, '[data-look]': keys };
   const icon = { find: (sel) => { const hit = sets[sel] ?? []; return Object.assign(hit.slice(), { each: (f) => hit.forEach((x) => f.call(x)) }); } };
   const fire = (event) => fn({ ...event, icon });
   return { root, dials, keys, fire, tick: (ms) => { now += ms; for (const t of timers) t.f(); }, classes, storage };

@@ -13,7 +13,7 @@ function (event, funcs) {
     // the look: the pedal wears the class its template names (the shipped default), unless the browser remembers another; a key swaps it.
     // Every storage access is guarded: with storage absent or throwing the pedal wears the shipped default and the keys still work.
     var LOOKS = ['vintage', 'console', '3d'];
-    var found = event.icon.find('.omx-pedal');
+    var found = event.icon.find('[data-omx-pedal]');
     var pedal = found && found[0];
     var wear = function (name) {
         if (!pedal || !pedal.classList) return;
@@ -91,7 +91,7 @@ function (event, funcs) {
     // a control that is hidden takes no room: the sections are laid out again over the shown controls, as the generator lays out
     // the come-up face (the same grid: a row holds data-row-controls controls, an edge band starts a row of its own)
     var relayout = function () {
-        var found = event.icon.find('.omx-pedal');
+        var found = event.icon.find('[data-omx-pedal]');
         var root = found && found[0];
         if (!root || !root.querySelectorAll) return;
         var n = function (name) { return parseFloat(root.getAttribute(name)); };

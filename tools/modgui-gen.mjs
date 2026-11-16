@@ -824,7 +824,7 @@ ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data
             <div class="mod-pedal-${dir}-image"></div>
         </div>
         {{/effect.ports.${kind}.${dir}}}`).join('\n');
-  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family} omx-look-${lookName}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
+  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family} omx-look-${lookName}" data-omx-pedal data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
 ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
     <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
          MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
@@ -901,11 +901,11 @@ ${P} .omx-curve-line { stroke: ${D('--curve-line')}; stroke-width: 1.5; stroke-l
 ${P} .omx-curve-plot circle { fill: ${D('--t-screen')}; }
 ${P} .omx-curve-plot text { fill: ${D('--t-screen')}; font-size: 10px; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${D('--t-screen-dim')}; }
-` : ''}${P} .omx-lookswitch { position: absolute; right: ${g.pad + 30}px; top: ${g.headH / 2 - 8}px; height: 16px; display: flex; gap: 2px; }
+` : ''}${P} .omx-lookswitch { position: absolute; z-index: 30; right: ${g.pad + 30}px; top: ${g.headH / 2 - 8}px; height: 16px; display: flex; gap: 2px; }
 ${P} .omx-look-key { box-sizing: border-box; width: 16px; height: 16px; line-height: 14px; text-align: center; font-size: 9px; font-weight: 600; cursor: pointer; border-radius: 3px; border: 1px solid ${tok['--border-strong']}; color: ${D('--t-key')}; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} user-select: none; }
 ${P}.omx-look-vintage .omx-look-key[data-look="vintage"], ${P}.omx-look-console .omx-look-key[data-look="console"], ${P}.omx-look-3d .omx-look-key[data-look="3d"] { background: ${D('--key-pressed-bg')}; }
 ${(panel.meters ?? []).length > 0 ? `${P} .omx-vu { display: none; position: absolute; box-sizing: border-box; overflow: hidden; border-radius: 6px 6px 3px 3px; background: ${D('--t-label')}; border: 1px solid ${tok['--border-strong']};${decl('box-shadow', D('--screen-shadow'))} }
-${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: conic-gradient(from ${VU.angleMin}deg at 50% 118%, transparent 0deg, transparent ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${tok['--accent']} ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${tok['--accent']} ${VU.angleMax - VU.angleMin}deg, transparent ${VU.angleMax - VU.angleMin}deg); opacity: 0.55; clip-path: circle(88% at 50% 118%); }
+${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: conic-gradient(from ${VU.angleMin}deg at 50% 118%, transparent 0deg, transparent ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${D('--curve-line')} ${(1 - VU.zone) * (VU.angleMax - VU.angleMin)}deg, ${D('--curve-line')} ${VU.angleMax - VU.angleMin}deg, transparent ${VU.angleMax - VU.angleMin}deg); opacity: 0.55; clip-path: circle(88% at 50% 118%); }
 ${P} .omx-vu-needle { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 78%; margin-left: -1px; background: ${tok['--surface']}; transform-origin: 50% 100%; border-radius: 1px; }
 ${P} .omx-vu-pivot { position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: ${tok['--surface']}; }
 ${P} .omx-vu-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-control')}; white-space: nowrap; }
@@ -931,7 +931,7 @@ function (event, funcs) {
     // the look: the pedal wears the class its template names (the shipped default), unless the browser remembers another; a key swaps it.
     // Every storage access is guarded: with storage absent or throwing the pedal wears the shipped default and the keys still work.
     var LOOKS = ['vintage', 'console', '3d'];
-    var found = event.icon.find('.omx-pedal');
+    var found = event.icon.find('[data-omx-pedal]');
     var pedal = found && found[0];
     var wear = function (name) {
         if (!pedal || !pedal.classList) return;
@@ -1009,7 +1009,7 @@ function (event, funcs) {
     // a control that is hidden takes no room: the sections are laid out again over the shown controls, as the generator lays out
     // the come-up face (the same grid: a row holds data-row-controls controls, an edge band starts a row of its own)
     var relayout = function () {
-        var found = event.icon.find('.omx-pedal');
+        var found = event.icon.find('[data-omx-pedal]');
         var root = found && found[0];
         if (!root || !root.querySelectorAll) return;
         var n = function (name) { return parseFloat(root.getAttribute(name)); };
