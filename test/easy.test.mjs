@@ -30,7 +30,7 @@ test('the roles answer in the family row\'s order, whatever order the plugin lis
 });
 
 test('every family of the layout has a row, and no row is past the rule\'s six', () => {
-  for (const family of ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch']) {
+  for (const family of ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility']) {
     assert.ok(Array.isArray(EASY_ROLES[family]), family);
     assert.ok(EASY_ROLES[family].length <= 6, family);
   }
