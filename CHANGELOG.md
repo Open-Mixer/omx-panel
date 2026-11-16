@@ -4,12 +4,12 @@
 
 ## Unreleased
 
-- The `utility` panel family (omx-contract's `PANEL_FAMILIES`, 3.20.0), the family of a trim, a width control, a balancer or a
+- The `utility` panel family (omx-contract's `PANEL_FAMILIES`, 3.19.0), the family of a trim, a width control, a balancer or a
   clipper: the role table gives it `gain`, `width`, `pseudo`, `pseudo_time`, `bass_mono`, `bass_mono_freq`, `amount`, `range`,
   `drive`, `ceiling` and `softness` (one per control omx-trim, omx-width, omx-balancer and omx-clipper declare whose unit a
   token serves; the balancer's dB/s speed and dB/oct slope have none), `gain`, `width`, `amount` or `drive` as the one
   required role, and an Easy row. A utility is declared, never inferred: it has no class or meaning set of its own. The
-  packaging floors move to omx-contract 3.20.0, the release that carries the word; the npm devDependency stays on the range
+  packaging floors move to omx-contract 3.19.0, the release that carries the word; the npm devDependency stays on the range
   the lock resolves until that release is published.
 
 - The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
