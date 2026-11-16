@@ -386,6 +386,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       if ([...cols].filter((c) => /^b\d+$/.test(c)).length < 2 || rows.length < 2) continue;
       const order = [...(cols.has('hpf') ? ['hpf'] : []), ...[...cols].filter((c) => /^b\d+$/.test(c)).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))), ...(cols.has('lpf') ? ['lpf'] : [])];
       for (const k of mem) Object.assign(k, { col: cell.get(k.symbol).col, mxrow: cell.get(k.symbol).row, ri: rows.indexOf(cell.get(k.symbol).row) });
+      for (const k of mem) delete k.span;
       sec.matrix = { cols: order, rows, labels: Object.fromEntries(order.map((c) => [c, c === 'hpf' ? 'HPF' : c === 'lpf' ? 'LPF' : c.slice(1)])) };
     }
   } catch (err) {

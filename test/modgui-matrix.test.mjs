@@ -58,3 +58,11 @@ test('the bands past the count are not laid out', () => {
   const hidden = matrix(html()).filter((k) => k.hidden);
   assert.ok(hidden.length > 0);
 });
+
+test('a matrix cell is one column wide: a selector in a column never spans into the next', () => {
+  const text = html();
+  const sec = text.split('data-section="eq"')[1].split('<div class="omx-section"')[0];
+  const cells = [...sec.matchAll(/<div class="omx-control [^"]*"[^>]*data-mx-col="[^"]*"[^>]*>/g)].map(([t]) => t);
+  assert.ok(cells.length > 0);
+  for (const tag of cells) assert.doesNotMatch(tag, /data-span=|width:\d+px/, 'a cell is wider than its column');
+});
