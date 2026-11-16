@@ -1,0 +1,53 @@
+{
+  "family": "reverb",
+  "roles": {
+    "size": "size",
+    "algorithm": "algorithm",
+    "predelay": "predelay",
+    "damping": "damping",
+    "width": "width",
+    "low_cut": "lowcut",
+    "high_cut": "highcut",
+    "mix": "mix"
+  },
+  "sections": [
+    {
+      "key": "reverb",
+      "label": "Reverb",
+      "controls": [
+        "algorithm",
+        "size",
+        "damping",
+        "predelay",
+        "width",
+        "mix",
+        "lowcut",
+        "highcut"
+      ],
+      "graph": "decay-envelope"
+    },
+    {
+      "key": "reverse",
+      "label": "Reverse",
+      "controls": [
+        "reverse"
+      ]
+    },
+    {
+      "key": "gated",
+      "label": "Gated",
+      "controls": [
+        "hold",
+        "release",
+        "gateThreshold"
+      ]
+    },
+    {
+      "key": "plate",
+      "label": "Plate",
+      "controls": [
+        "plateModDepth"
+      ]
+    }
+  ]
+}

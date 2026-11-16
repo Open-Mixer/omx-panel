@@ -115,6 +115,16 @@ bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t 
  * ascend. The points are copied. */
 bool omx_panel_view_set_curve(omx_panel_view_t *view, uint32_t display, const double *x, const double *y, uint32_t n);
 
+/** The stems of a `time_response` display: one per tap of a delay's train (the processing-view spec, amendment 2026-09-16h), its time
+ * in ms from 0 and its level in dB (a unit impulse in is 0 dB; the picture's floor is -60 dB), its `shade` 0..1 (the tone's darkening,
+ * 1 full), and its leg letter (`L`, `R`, or a space for both). Drawn as a segment from the floor to the level, dimmed by the shade,
+ * the letter above; the envelope of the same display, when the host sets one, is its curve (`omx_panel_view_set_curve`, x in ms from
+ * 0 and y in dB), and the two share one axis whose end is the last point or stem. False, changing nothing, for a display that is no
+ * time response, a time below 0, a level or shade that is not finite, a shade outside 0..1. Zero stems clear them. The arrays are
+ * copied. */
+bool omx_panel_view_set_stems(omx_panel_view_t *view, uint32_t display, const double *t_ms, const double *db, const double *shade,
+                              const char *letters, uint32_t n);
+
 /** The marks of display `display`, an `eq_response`: one per band a planter owns (not the operator's), at its frequency in Hz (above zero) and
  * its own depth in dB, with the one letter of its planter (`letters`, one char each). Drawn as a disc on the curve's axes and the letter
  * above it, with the points' axes. The marks come from the host with the points; the renderer infers none and, with none set, draws none.

@@ -78,20 +78,25 @@ export function widgetOf(c, declared) {
 export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 
 /** The display kinds and sources, by enum value. */
-export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter'];
+export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
 export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
 export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
 
-/** A section `graph` -> the display the extension names for it; a graph with none here is the
- * renderer's own (delay taps, a decay envelope, an LFO). */
-export const DISPLAY_OF_GRAPH = { 'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve' };
+/** A section `graph` -> the display the extension names for it; a graph word with none here is
+ * refused by name when the panel is described (a declaration error, never a silent drop). */
+export const DISPLAY_OF_GRAPH = {
+  'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve',
+  // the time response (the processing-view spec, amendment 2026-09-16h): a delay's tap train and a reverb's decay envelope
+  // are one kind, x time in ms from 0, y level in dB with the floor at -60; the graph words stay the section's vocabulary
+  'delay-taps': 'time_response', 'decay-envelope': 'time_response',
+};
 /** The basis of a declared section's graph: `exact` only when an authored descriptor says so (the one-panel spec §5.3), else `modelled`. */
 export const basisOf = (descriptor, section) => (section.basis === 'exact' && descriptor.origin === 'authored' ? 'exact' : 'modelled');
 
 /** The displays a host computes from a family's roles in closed form. */
-const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'] };
+const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
 /** A descriptor unit -> the token a role checks it against: the param-contract extension's own table,
  * so a unit it serves is a unit a role can take. A unit it has no token for (`unknown` among them) is
@@ -363,8 +368,10 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
 
   const displays = listed.flatMap((s, section) => {
+    if (s.graph === undefined) return [];
     const kind = DISPLAY_OF_GRAPH[s.graph];
-    if (!kind) return [];
+    // a graph word that names no kind is a declaration error, named; dropping it drew nothing and said nothing (ruling 6)
+    if (!kind) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, which names no display kind (${Object.keys(DISPLAY_OF_GRAPH).join(', ')})`);
     if (!CLOSED_FORMS[family]?.includes(kind)) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, and the ${family} family has no ${kind} a host computes`);
     // `exact` only when an authored descriptor declares it (the one-panel spec §5.3); any other curve is modelled
     const basis = basisOf(descriptor, s);

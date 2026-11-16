@@ -15,7 +15,8 @@
  *   widgets      a row's widget word other than `auto`
  *   visibleWhen  a row with a visibleParamId: `{ param, values }`, the values the mask's set bits
  *   displays     a display of source `family` is the section's graph (transfer_curve: dynamics-curve, or transfer-curve
- *                for the drive family; eq_response: eq-curve); one of source `meters` is derived from the descriptor's
+ *                for the drive family; eq_response: eq-curve; time_response: decay-envelope for the reverb family, else
+ *                delay-taps); one of source `meters` is derived from the descriptor's
  *                meters as any describe does, and is not carried
  *   placementDefaults are the descriptor's own travel defaults, and are not carried; the fingerprint is the plugin's
  *                and is not read: describe computes its own over what it lays out
@@ -32,7 +33,10 @@ export function isServedPanel(x) {
 }
 
 /** A family display's section graph, by the family the panel states. */
-const GRAPH_OF_DISPLAY = { transfer_curve: (family) => (family === 'drive' ? 'transfer-curve' : 'dynamics-curve'), eq_response: () => 'eq-curve' };
+const GRAPH_OF_DISPLAY = {
+  transfer_curve: (family) => (family === 'drive' ? 'transfer-curve' : 'dynamics-curve'), eq_response: () => 'eq-curve',
+  time_response: (family) => (family === 'reverb' ? 'decay-envelope' : 'delay-taps'),
+};
 
 /**
  * The declared panel the served panel `x` states, over `descriptor` (its parameters, keyed by `keyOf`); `indexedRoles`

@@ -1,0 +1,402 @@
+{
+  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.7.0"
+  },
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.reverb",
+    "format": "clap",
+    "uri": "urn:openmixer:reverb",
+    "name": "omx reverb",
+    "vendor": "openmixer",
+    "version": "0.19.3",
+    "doc": "The console's reverb: room, plate, hall, reverse and gated algorithms with pre-delay, size, damping, width and low and high cuts, mixed with the dry signal.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "plateModDepth",
+      "name": "Plate Mod Depth",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 400,
+        "step": 1,
+        "unit": "%",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Plate"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_PLATE_MOD_DEPTH_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "mix",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_MIX_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "size",
+      "name": "Size",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 0.7,
+        "scale": "linear"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "size",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_SIZE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "damping",
+      "name": "Damping",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 0.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "damping",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_DAMPING_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "width",
+      "name": "Width",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "width",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_WIDTH_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "predelay",
+      "name": "Predelay",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "ms",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "predelay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_PREDELAY_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "lowcut",
+      "name": "Lowcut",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "lowCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_LOWCUT_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "highcut",
+      "name": "Highcut",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 20000,
+        "scale": "stepped"
+      },
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "highCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_HIGHCUT_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "reverse",
+      "name": "Reverse",
+      "kind": "travel",
+      "travel": {
+        "min": 50,
+        "max": 500,
+        "step": 1,
+        "unit": "ms",
+        "default": 300,
+        "scale": "stepped"
+      },
+      "group": [
+        "Reverse"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_REVERSE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "hold",
+      "name": "Hold",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 120,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gated"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_HOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "release",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 500,
+        "step": 1,
+        "unit": "ms",
+        "default": 20,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gated"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "gateThreshold",
+      "name": "Gate Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -80,
+        "max": 0,
+        "step": 1,
+        "unit": "dBFS",
+        "default": -40,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gated"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_GATE_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "algorithm",
+      "name": "Algorithm",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "labels": [
+        "Room",
+        "Plate",
+        "Hall",
+        "Reverse",
+        "Gated"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "default": "0",
+      "group": [
+        "Reverb"
+      ],
+      "meaning": "algorithm",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/reverb.json#REVERB_ALGORITHMS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_REVERB",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ReverbPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-reverb/omx_reverb_clap.c#clap_entry"
+  }
+}

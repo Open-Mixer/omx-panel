@@ -52,9 +52,15 @@ typedef struct {
   int section;
   int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
   int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
+  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
+  /* the stems a host hands a time_response (omx_panel_view_set_stems): one per tap, from the floor to its level, its paint dimmed
+   * by its shade (0..1) and its leg letter above (' ' for none); none by default */
+  double *stem_x, *stem_y, *stem_shade;
+  char *stem_letter;
+  size_t nstems;
   /* the marks a host hands with the points: one per band a planter owns, none by default */
   double *mark_freq, *mark_depth;
   char *mark_letter;
