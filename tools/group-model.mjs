@@ -131,6 +131,9 @@ function claimOf(words, kind, unit) {
   }
   if (unit === FREQUENCY_UNIT) return { role: 'freq', byWord: w.some((x) => ROLE_WORDS.freq.includes(x)) };
   for (const role of ROLE_ORDER) if (w.some((x) => ROLE_WORDS[role].includes(x))) return { role, byWord: true };
+  // a weaker word (the table's fallback: a bandwidth or a width for a Q, a mode for a type) claims as a unit does: a control
+  // whose words name the role outright wins it, and the weaker one keeps a row of its own
+  for (const role of ROLE_ORDER) if (w.some((x) => EQ_WORDS.fallback[role]?.includes(x))) return { role, byWord: false };
   if (unit === 'db') return { role: 'gain', byWord: false };
   return { role: null, byWord: false };
 }

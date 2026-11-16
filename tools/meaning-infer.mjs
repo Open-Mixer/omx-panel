@@ -38,11 +38,12 @@ export const EQ_WORDS = Object.freeze({
     slope: Object.freeze(['slope']),
     freq: Object.freeze(['frequency', 'freq', 'cutoff', 'hz', 'fc', 'f']),
     gain: Object.freeze(['boost', 'gain', 'level', 'cut', 'g']),
-    q: Object.freeze(['bandwidth', 'resonance', 'quality', 'reso', 'bw', 'q']),
+    q: Object.freeze(['resonance', 'quality', 'q']),
   }),
   // the weaker words: a role the band inference reads when no word above claims it (a `mode` choice, a `width` in octaves), and
   // the group model does not (beside a `type` or a `q`, a mode or a width is a parameter of its own)
-  fallback: Object.freeze({ type: Object.freeze(['mode']), q: Object.freeze(['width', 'w']) }),
+  // the role words name a Q outright (q, quality, resonance): a control called so is a band's Q before a bandwidth beside it
+  fallback: Object.freeze({ type: Object.freeze(['mode']), q: Object.freeze(['bandwidth', 'reso', 'bw', 'width', 'w']) }),
   edges: Object.freeze([
     Object.freeze({ edge: 'hpf', shape: 'highpass', side: 'left', words: Object.freeze(['hpf', 'hp', 'highpass', 'high pass', 'hi pass', 'lowcut', 'low cut', 'locut']) }),
     Object.freeze({ edge: 'lowshelf', shape: 'lowshelf', side: 'left', words: Object.freeze(['lowshelf', 'low shelf', 'lo shelf', 'loshelf', 'ls']) }),
