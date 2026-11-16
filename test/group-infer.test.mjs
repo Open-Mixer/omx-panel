@@ -73,8 +73,19 @@ describe('a plugin that already carries its groups is nothing to do', () => {
   });
 
   const eq8 = join(INSTALLED, 'omx-eq8.lv2/omx-eq8.ttl');
-  it('the omx-eq8 fixture is the installed file byte for byte', { skip: !existsSync(eq8) && 'omx-plugins is not installed here' }, () => {
-    assert.ok(readFileSync(join(FIXTURES, 'omx-eq8/omx-eq8.ttl')).equals(readFileSync(eq8)));
+  // the bundle's lv2:minorVersion / lv2:microVersion lines move with every omx-plugins release (0.19.3 -> 0.19.5 broke
+  // the byte-for-byte arm in wave c3190); they are the only lines forgiven: any other line that differs stays red
+  const VERSION_LINE = /^\s*lv2:(minorVersion|microVersion) \d+ ;$/;
+  const sansVersion = (text) => text.split('\n').filter((line) => !VERSION_LINE.test(line)).join('\n');
+  it('the omx-eq8 fixture is the installed file byte for byte, its version lines aside', { skip: !existsSync(eq8) && 'omx-plugins is not installed here' }, () => {
+    const fixture = readFileSync(join(FIXTURES, 'omx-eq8/omx-eq8.ttl'), 'utf8');
+    const installed = readFileSync(eq8, 'utf8');
+    assert.equal(sansVersion(fixture), sansVersion(installed));
+    // the arm sees what it must: a moved version line is forgiven, a moved port symbol is not (sabotage)
+    assert.equal(sansVersion(fixture), sansVersion(installed.replace(/lv2:microVersion \d+ ;/, 'lv2:microVersion 99 ;')));
+    const moved = installed.replace(/lv2:symbol "([^"]+)"/, 'lv2:symbol "$1_moved"');
+    assert.notEqual(moved, installed, 'the sabotage moved a port symbol');
+    assert.notEqual(sansVersion(fixture), sansVersion(moved));
   });
 
   it('a third party\'s complete groups (x42 matrixmixer)', () => {
