@@ -26,7 +26,12 @@ const members = new Set([...matrix.heads.flatMap((h) => (h.on ? [h.on.symbol] : 
 const touched = [...new Set(layout.controls.filter((c) => members.has(c.symbol)).map((c) => c.section))].sort((a, b) => a - b);
 const inTouched = layout.controls.filter((c) => touched.includes(c.section)).map((c) => c.symbol);
 if (inTouched.some((sym) => !members.has(sym) && sym !== matrix.count?.symbol)) throw new Error('the group shares its sections with other controls');
-const g = { label: served.sections.find((x) => x.matrix).label };
+// The served section keeps its first section's label ('Bands / Band 1'); the MOD GUI face titles the merged section by the
+// group's ('Bands'). The face's title is used here until describe serves the group's (reported on the base's PR): the parity
+// test holds the renderer to the face.
+const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+const face = modgui.layout(modgui.resolvePanel(descriptor, { panel, stem: 'x' })).sections.find((x) => x.matrix);
+const g = { label: face?.label ?? served.sections.find((x) => x.matrix).label };
 
 const host = touched[0];
 const sectionAt = (i) => (touched.includes(i) ? host : i - touched.filter((t) => t < i && t !== host).length);

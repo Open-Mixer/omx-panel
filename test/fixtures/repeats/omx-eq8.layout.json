@@ -5,7 +5,7 @@
   {
    "key": "hpf",
    "labelKey": null,
-   "label": "Bands / Band 1",
+   "label": "Bands",
    "matrix": {
     "orientation": "columns",
     "heads": [
