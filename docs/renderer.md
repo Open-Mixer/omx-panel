@@ -38,31 +38,41 @@ A section's `bars` (a bar group, [panel-layout.md](panel-layout.md) "Bars") is a
 its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives each bar's rectangle for hit-testing as for every control.
 
 A section of a repeated group (an EQ's bands, a multiband compressor's bands: [group-model.md](group-model.md)) carries `matrix`,
-the group model's `matrixOf` as the served description gives it (omx-panel#61): `{ orientation, heads, rows, cells, count? }`.
-`heads` are the instances, in drawing order, each `{ label, on, edge }` (`on` its on/off control as `{ symbol, sense }` or null, `edge`
-the EQ filter's name for a high-pass, shelf or low-pass, else null); `rows` are the parameters, each `{ label }`, in the owner's EQ order (freq, gain with the high-pass's and low-pass's slope on that row, q, type, the rest) and last, when any head has an on/off, the head row `{ label: 'On', head: true }`; `cells[row][head]`
-is a control's symbol or null. The renderer reads it and infers no group, reorders, wraps or transposes nothing. It draws, in
-the section's box: the curve rows, then the section's other controls (those no head or cell names) flowed in rows of
-`rowControls` as any section's, then the matrix. In `columns` each head is a column, left to right, and each parameter a row;
-in `rows` each head is a row and each parameter a column. The head row is a row of the matrix like any other and the last one: its cells are the heads'
-`on` symbols, the same controls as `heads[].on`, drawn ONCE, there, each named by its head's label; a head with no on/off has its
-label drawn in that row's name place (in the first row when no head has an on/off, as the face). A head row whose cells differ from
-the heads' `on`, a second head row, or a head with an on/off and no head row is refused. Each
-cell is the control of the parameter's row (column) at the head's column (row), named by the parameter's label; a null cell is
-empty and nothing moves into it (a stem one instance lacks is a row with an empty cell). A matrix is as wide as its heads (its
-parameters, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it does not wrap a
-matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns`: `max(1, floor(width / (cellW x scale)))`,
-at most the matrix's columns (the instances the count closed up not counted; the parameters, in `rows`), 0 with no matrix: a host that cannot show them
-all scrolls whole columns, and the command's `--visible-columns <width>` prints it. The EQ is `columns`, its high-pass the first column and its low-pass the last: the order is of the drawing, the audio
-order is the plugin's.
+the group model's served matrix (`servedMatrix`, "The served matrix") exactly as `omx-panel describe --layout` serves it:
+`{ orientation, title, heads, rows, cells, count? }`. The renderer READS it and recomputes nothing: no group, no row order, no
+head row, no caption place, no transposition. `heads` are the instances and edges in drawing order, each `{ label, on, edge }`
+(`on` its on/off control as `{ symbol, sense }`, nothing else, or null; `edge` the EQ filter's name for a high-pass, shelf or
+low-pass, else null); `rows` are the parameters in the owner's order (freq, gain with the high-pass's and low-pass's slope on
+that row, q, type, the rest), then the head row, always the last, `{ label: 'On' | '', head: true }`; `cells[row][head]` is a
+control's symbol or null. The section is titled by `title`. It draws, in the section's box: the curve rows, then the section's
+other controls (those no cell names) flowed in rows of `rowControls` as any section's, then the matrix. In `columns` each head
+is a column, left to right, and each row a row; in `rows` each head is a row and each row a column. Every cell, the head row's
+among them, is placed as a cell: the control of that row at that head, named by the row's label (a head-row control by its
+head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
+row of its own (a matrix whose heads have no on/off, omx-delay's taps, has a caption row, and no caption overprints a row of
+controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the last, or a head
+whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
+as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
+does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
+`min(across, max(1, floor(width / (cellW x scale))))`, `across` the drawn heads in `columns` and the served rows (the head row
+among them) in `rows`, 0 with no matrix; the command's `--visible-columns <width>` prints it, and the test vector
+`test/fixtures/group-model/visible-columns.json` holds it to the JavaScript answer. The EQ is `columns`, its high-pass the
+first column and its low-pass the last: the order is of the drawing, the audio order is the plugin's.
 
-`count: { symbol, default }` (`default` null when the control has none: every instance is drawn until the host gives a value) names the control that says how many instances the plugin runs (an EQ's band count). Only the first
-`count` heads that have no `edge` are drawn, with every head that has one, closed up in order: a hidden head's controls take no
-cell, are not drawn and have no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the
-host gives one with `omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section.
-A hidden control of a drawn head keeps its cell empty. A `matrix` that is not an object, names a control that is not there or
-not in its section, places one twice, has a `cells` row of another length than `heads`, or whose `orientation` is neither word is
-refused by message, as `bars` is. A section with no `matrix`, and a description with none, is laid out as before.
+`count: { symbol, default }` (`default` null when the control has none: every instance is drawn until the host gives a value)
+names the control that says how many instances the plugin runs (an EQ's band count); the served matrix carries it only where no
+`visibleWhen` rule already governs the instances. The heads drawn are the group model's `drawnHeads`: every head that has an
+`edge`, and the first `count` of the others, closed up in order: a hidden head's controls take no cell, are not drawn and have
+no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the host gives one with
+`omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section. A hidden control of
+a drawn head keeps its cell empty. A `matrix` that is not an object, names a control that is not there or not in its section,
+places one twice, has a `cells` row of another length than `heads`, or whose `orientation` is neither word is refused by
+message, as `bars` is. A section with no `matrix`, and a description with none, is laid out as before.
+
+The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multiband compressor) from `omx-panel describe
+--layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
+tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
+and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
 
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
@@ -127,7 +137,8 @@ the functions of the header and nothing else (`renderer/src/exports.map`, held t
 a surface that loads the renderer at run time, such as Zynthian's Tk panel through Python's ctypes, opens the shared one.
 
 The description a host draws is `omx-panel describe --layout`: the layout the one derivation made the description from, the
-family's displays included, in the shape this library reads. `omx-panel layout` alone lays out the declared panel and derives
+family's displays included, a repeated group's sections merged into the one that carries its served `matrix`, in the shape
+this library reads. `omx-panel layout` alone lays out the declared panel and derives
 no display.
 
 `omx_panel_view_draw` fills every pixel of the buffer, transparent where the panel does not reach. At the
