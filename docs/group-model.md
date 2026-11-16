@@ -181,6 +181,16 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   hidden by the rule. *Tests: "L6: ..."
   (library); modgui-gen's omx-strip and omx-delay faces.*
 
+- **L7, the owner's drawing rule for an EQ, every surface.** An EQ is one matrix: a column per band, left to right, HPF
+  first and LPF last; each column's controls stacked vertically, every column in the same row order, a control a band lacks
+  an empty cell, so row `r` is the same parameter in every column (the HPF's gain cell is empty and its `freq` sits on the
+  band's `freq` row). A surface shows **as many columns as fit**: `visibleColumns(matrix, { width, column })` is
+  `max(1, floor(width / column))` columns, never one band per screen while more fit; a surface that cannot show them all
+  scrolls whole columns. An encoder surface (Zynthian) shows the whole matrix and its encoders edit the **selected
+  column**: `selectedColumn(matrix, n)` is the column `n` clamped to the matrix (one knob picks `n`), and the encoders
+  of the surface are that column's rows in row order, an empty cell leaving its encoder idle. The head toggle (`on`) is
+  the column's header in this model; a surface that stacks it draws it as the column's last row. *Tests: "L7: ...".*
+
 ## The corpus
 
 `test/fixtures/group-model/`: each plugin's input (a descriptor as omx-plugins ships it, or the TTL as its package
