@@ -28,6 +28,8 @@ const READINGS = { gr: { fraction: 0.4, text: '8 dB' }, outlevel: { fraction: 0.
 
 for (const fx of FIXTURES) {
   for (const [sizeName, size] of SIZES) {
+    // a fixture with a committed MOD GUI screenshot has its natural size held by parity.test.mjs, exact against the screenshot and the face
+    if (sizeName === 'natural' && fx.screenshot) continue;
     for (const scale of SCALES) {
       const file = join(GOLDEN, `${fx.name}-${sizeName}@${scale}x.png`);
       test(`${fx.name}, ${sizeName}, ${scale}x: the golden image`, skipWithoutTwin(fx), () => {
