@@ -950,3 +950,11 @@ bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
     }
   return true;
 }
+
+/* The first form of the call, before the view remembers what it drew: every draw is a whole one and reports the whole buffer. */
+bool omx_panel_view_draw_dirty(omx_panel_view_t *v, const omx_panel_buffer_t *b, omx_panel_rect_t *rects, size_t cap, size_t *count) {
+  if (!rects || !count || !cap || !omx_panel_view_draw(v, b)) return false;
+  rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+  *count = 1;
+  return true;
+}
