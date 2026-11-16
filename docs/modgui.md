@@ -153,6 +153,34 @@ an outer drop shadow with a lit top edge, `--section-bg` and `--section-shadow`)
 inset sink with a lit lower lip), keycap switches with a pressed state (`--key-shadow` and `--switch-shadow` stand a cap on its own
 thickness, `--key-pressed-shadow` sinks it), and a glowing accent bar (`--accent-bar-glow` on the head's rule).
 
+## The labels of a face
+
+A control's label is set by rules declared once, in `tools/look/geometry.json`, and read by the stylesheet, the raster and the tests; the
+numbers below are that file's (`label`, `geometry.labelGap`, `geometry.cellH`, `geometry.scribbleH`).
+
+**A label breaks only between words.** It wraps at spaces, never inside a word (`overflow-wrap: normal`, `word-break: keep-all`), and
+never in more than four lines (`line-clamp: 4`, ten px a line). A word that does not fit the cell makes the label's SIZE step down; it
+never makes the word break.
+
+**The declared size steps.** `label.sizes` lists the sizes a label steps through, largest first (10, 9 and 8 px). A control's label takes
+the largest size at which EVERY word of its name fits the control's width (`span` cells of `cellW`) in EVERY look, the look's capitals
+and its tracking included: an uppercase label counts `label.letterSpacing` em for each letter (the one declaration of the tracking, 0.05
+em; the stylesheet's `letter-spacing` and the fit both read it). A word that fits at no step takes the smallest step. The size is a class
+on the control, `omx-lbl-<size>`, and the largest step carries none.
+
+**The gap to the value strip, `labelGap`.** A knob, a switch or a fader has a scribble strip (`scribbleW` by `scribbleH`) on the foot of
+its cell, and its label sits on the strip, its last line `labelGap` px above the strip's top (3 px), the label growing upward. One
+number sets the gap in every look; no look types its own. A selector and a display have no strip: their label stands directly under the
+control, its first line at the control's foot. The raster draws the same: the label's baseline is `text.nameBaseStrip` over a strip and
+`text.nameBase` under a selector or a display, and the strip's value is at `text.valueBase`, in the strip's well.
+
+**The selector rule.** A control is drawn as a selector, never as a knob, when the descriptor says its values can be listed, and no
+plugin's name is read: a toggle is a switch; a parameter with labelled values (a choice, an enumeration port) is a selector; an integer
+travel is a selector when it has at most `MAX_SELECTOR_STEPS` steps (16), or has no unit and at most `MAX_COUNT_VALUES` values (32), a
+count such as an EQ's band count; every other travel, a time in milliseconds over thousands of steps included, is a knob. A selector's
+width is one cell, or as many cells as its longest option needs (never an ellipsis); a panel's `widgets` entry overrides the rule for one
+control.
+
 ## The look switch and the needle meters
 
 **One template, three looks.** The package ships the `vintage`, `console` and `3d` looks in ONE stylesheet: each look's rules are scoped by a
