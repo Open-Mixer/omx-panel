@@ -7,7 +7,7 @@
  * derived again here.
  */
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -44,12 +44,9 @@ for (const c of CASES) {
     const { doc, cells } = drawn(c);
     const mx = matrixOf(doc);
     assert.equal(mx.orientation, c.orientation);
-    const headed = mx.heads.some((h) => h.on) ? 1 : 0;
-    const grid = (head, row) => (mx.orientation === 'columns' ? [head, row + headed] : [row + headed, head]); // (column, row) of the grid
-    const placed = [
-      ...mx.heads.flatMap((h, hi) => (h.on ? [[h.on.symbol, mx.orientation === 'columns' ? [hi, 0] : [0, hi]]] : [])),
-      ...mx.cells.flatMap((line, ri) => line.flatMap((sym, hi) => (sym ? [[sym, grid(hi, ri)]] : []))),
-    ];
+    // the head row is a row of the served matrix (its cells are the heads' on/off): every cell is at (head, row)
+    const at = (head, row) => (mx.orientation === 'columns' ? [head, row] : [row, head]); // (column, row) of the grid
+    const placed = mx.cells.flatMap((line, ri) => line.flatMap((sym, hi) => (sym ? [[sym, at(hi, ri)]] : [])));
     const [first, [c0, r0]] = placed[0];
     const [ox, oy] = [cells.get(first)[0] - c0 * cellW, cells.get(first)[1] - r0 * cellH];
     for (const [sym, [col, row]] of placed) assert.deepEqual(cells.get(sym).slice(0, 2), [ox + col * cellW, oy + row * cellH], sym);
@@ -139,4 +136,56 @@ test('a section with no matrix is laid out as before', () => {
   assert.equal(cells.size, doc.controls.length);
   const xs = new Set([...cells.values()].map((r) => r[0]));
   assert.ok(xs.size <= 8, `${xs.size} columns`); // flowed in rows of rowControls, never one column a band
+});
+
+test('rows align across the columns: the HPF and LPF share the band freq row, their slope the gain row, and their empty cell stays empty', skip(EQ8), () => {
+  const { cells } = drawn(EQ8);
+  const y = (sym) => cells.get(sym)[1];
+  for (const e of ['hpf', 'lpf']) {
+    assert.equal(y(`${e}_freq`), y('b1_freq'), `${e} freq`);
+    assert.equal(y(`${e}_slope`), y('b1_gain'), `${e} slope on the gain row`);
+  }
+  for (const b of [2, 5, 8]) for (const p of ['freq', 'gain', 'q', 'type']) assert.equal(y(`b${b}_${p}`), y(`b1_${p}`), `b${b}_${p}`);
+  assert.ok(y('b1_freq') < y('b1_gain') && y('b1_gain') < y('b1_q') && y('b1_q') < y('b1_type'), 'freq, gain, q, type');
+});
+
+test("'On' is drawn once, as the last row of its column, and the head row is the heads' on/off, never a second control", skip(EQ8), () => {
+  const { doc, cells } = drawn(EQ8);
+  const mx = matrixOf(doc);
+  assert.equal(mx.rows.filter((r) => r.head).length, 1);
+  assert.ok(mx.rows.at(-1).head, 'the head row is last');
+  assert.deepEqual(mx.cells.at(-1), mx.heads.map((h) => h.on?.symbol ?? null));
+  assert.equal(doc.controls.filter((k) => k.symbol === 'b3_on').length, 1);
+  for (const [i, h] of mx.heads.entries()) {
+    const lowest = Math.max(...mx.cells.flatMap((l) => (l[i] ? [cells.get(l[i])[1]] : [])));
+    assert.equal(cells.get(h.on.symbol)[1], lowest, `${h.label}: On is the column's last row`);
+  }
+  const ys = mx.heads.map((h) => cells.get(h.on.symbol)[1]);
+  assert.equal(new Set(ys).size, 1);
+});
+
+test("a head row that differs from the heads' on/off is refused; so are two head rows", () => {
+  let r = refused((d) => { const mx = matrixOf(d); mx.cells.at(-1)[0] = mx.cells.at(-1)[1]; });
+  assert.notEqual(r.status, 0);
+  assert.match(r.err, /head row/);
+  r = refused((d) => { const mx = matrixOf(d); mx.rows[0].head = true; });
+  assert.notEqual(r.status, 0);
+  assert.match(r.err, /head row/);
+});
+
+/** The count of columns the renderer says a surface `width` px wide shows. */
+function visible(c, width, scale = 1) {
+  const file = descriptionFile(fixture(c), scratch());
+  const out = execFileSync(CLI, ['--description', file, '--data', DATA, '--scale', String(scale), '--visible-columns', String(width)], { encoding: 'utf8' });
+  return Number(/visible-columns (\d+)/.exec(out)[1]);
+}
+
+test('the visible column count fills the width: floor(width / cell), at least one, at most the columns', skip(EQ8), () => {
+  const heads = 10;
+  assert.equal(visible(EQ8, cellW * 4 + 3), 4);
+  assert.equal(visible(EQ8, cellW * 7), 7);
+  assert.equal(visible(EQ8, 1), 1);
+  assert.equal(visible(EQ8, cellW * 50), heads);
+  assert.equal(visible(EQ8, cellW * 6, 2), 3);
+  assert.equal(visible(MBC, cellW * 100), 5, 'rows orientation: the parameters are the columns');
 });

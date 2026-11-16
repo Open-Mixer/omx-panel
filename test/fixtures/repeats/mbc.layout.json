@@ -57,6 +57,10 @@
      },
      {
       "label": "Makeup"
+     },
+     {
+      "label": "On",
+      "head": true
      }
     ],
     "cells": [
@@ -89,6 +93,12 @@
       "b2_makeup",
       "b3_makeup",
       "b4_makeup"
+     ],
+     [
+      "b1_bypass",
+      "b2_bypass",
+      "b3_bypass",
+      "b4_bypass"
      ]
     ]
    }
