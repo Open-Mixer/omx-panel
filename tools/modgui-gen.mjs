@@ -50,6 +50,8 @@ export const MODGUI_TTL = 'modgui.ttl';
 export const MODGUI_DIR = 'modgui';
 /** An integer travel with more steps than this is a continuous knob; fewer is a selector. */
 export const MAX_SELECTOR_STEPS = 16;
+/** A count (an integer travel with no unit: bands, voices, stages) may have this many values and stay a selector. */
+export const MAX_COUNT_VALUES = 32;
 /** The face's numbers, tools/look/geometry.json: the file the C renderer (renderer/) reads too. */
 const FACE = JSON.parse(readFileSync(join(TOOLS, 'look', 'geometry.json'), 'utf8'));
 /** The controls of one row of a section; a section with more wraps onto further rows. */
@@ -58,6 +60,8 @@ export const ROW_CONTROLS = FACE.rowControls;
 /** The geometry, in CSS px: one set of numbers the template, the stylesheet and the raster read. */
 export const GEOMETRY = Object.freeze(FACE.geometry);
 /** The needle meters, declared once (tools/look/geometry.json, `vu`): the sweep, the orange zone, the ballistics, which kind is reversed. */
+/** The label sizes a control steps through, largest first (tools/look/geometry.json `label.sizes`): a word that does not fit the cell steps the size down, never breaks. */
+export const LABEL_SIZES = Object.freeze(FACE.label.sizes);
 export const VU = Object.freeze(FACE.vu);
 
 /** A choice control whose descriptor states ids (and labels) but no `values`: the value the plugin reads for an id is
@@ -81,7 +85,7 @@ export function travelOf(c) {
     const at = c.ids.indexOf(c.default);
     return { kind: 'integer', min: points[0].value, max: points[points.length - 1].value, def: at >= 0 ? c.values[at] : c.default, points };
   }
-  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default };
+  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default, unit: c.travel.unit };
   return undefined;
 }
 
@@ -109,7 +113,8 @@ const ttlStr = (s) => `"${String(s).replace(/[\\"\n\r\t]/g, (ch) => TTL_ESCAPES[
  */
 export function widgetOf(p) {
   if (p.kind === 'toggle') return 'switch';
-  if (choicesOf(p) || (p.kind === 'integer' && p.max - p.min <= MAX_SELECTOR_STEPS)) return 'selector';
+  if (choicesOf(p)) return 'selector';
+  if (p.kind === 'integer' && (p.max - p.min <= MAX_SELECTOR_STEPS || (!p.unit && p.max - p.min + 1 <= MAX_COUNT_VALUES))) return 'selector';
   return 'knob';
 }
 
@@ -793,9 +798,31 @@ ${ports}        ] ;
 `;
 }
 
+/**
+ * The size a control's label is set in: the largest of `LABEL_SIZES` at which every WORD of the name fits `width` px in EVERY look
+ * (caps and spacing are the look's), so a label wraps at word boundaries only and never breaks inside a word. A word that fits at
+ * no declared size takes the smallest (the test names it).
+ */
+const labelLooks = () => LOOKS.map((n) => loadLook(n));
+export function labelSizeOf(name, width, looks = labelLooks()) {
+  for (const size of LABEL_SIZES) {
+    const fits = looks.every((look) => {
+      const caps = look.depth['--control-caps'] === 'uppercase';
+      return String(name).split(/\s+/).every((w) => {
+        const t = caps ? w.toUpperCase() : w;
+        return textWidth(look.font, t, size) + (caps ? 0.05 * size * [...t].length : 0) <= width;
+      });
+    });
+    if (fits) return size;
+  }
+  return LABEL_SIZES[LABEL_SIZES.length - 1];
+}
+
 /** The icon template, in MOD's documented format: every section and every control, laid out. */
 export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
   const g = GEOMETRY;
+  const looks = labelLooks();
+  const lbl = (k) => { const z = labelSizeOf(k.bar ?? k.name, (k.span ?? 1) * g.cellW, looks); return z === LABEL_SIZES[0] ? '' : ` omx-lbl-${z}`; };
   // a governed control names its governing port and the mask of the values that show it; the script reads them
   const band = (k) => (k.band ? ` data-band="${esc(k.band)}"` : '');
   const vis = (k) => (k.visibleWhen ? ` data-visible-port="${k.visibleWhen.symbol}" data-visible-mask="${k.visibleWhen.mask.toString(16)}"` : '');
@@ -805,7 +832,7 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
     // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
     if (k.widget === 'display') {
       const range = k.min === undefined ? '' : ` data-min="${k.min}" data-max="${k.max}"`;
-      return `            <div class="omx-control omx-display" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}${mx(k)}>
+      return `            <div class="omx-control omx-display${lbl(k)}" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}${mx(k)}>
                 <div class="omx-display-image"></div>
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
@@ -823,7 +850,7 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
                     </div>
                 </div>`
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
-    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}${wide ? `;width:${k.span * g.cellW}px` : ''}" title="${esc(k.name)}" ${data}${wide ? ` data-span="${k.span}"` : ''}${vis(k)}${mx(k)}>
+    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}${lbl(k)}" style="${at(k)}${wide ? `;width:${k.span * g.cellW}px` : ''}" title="${esc(k.name)}" ${data}${wide ? ` data-span="${k.span}"` : ''}${vis(k)}${mx(k)}>
                 ${image}
                 <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>${k.widget === 'selector' ? '' : `
                 <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"${k.widget === 'switch' ? ' data-onoff' : ''}></div>`}
@@ -912,7 +939,9 @@ ${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-sha
 ${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}
 ${P} .omx-switch-image.on::after { left: ${g.switchW - g.switchH + 3}px; background: ${tok['--ink']}; }
-${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow-wrap: anywhere; }
+${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; max-height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow-wrap: normal; word-break: keep-all; position: absolute; left: 0; right: 0; bottom: ${g.scribbleH + g.labelGap}px; }
+${P} .omx-selector .omx-control-title, ${P} .omx-display .omx-control-title { position: static; height: 40px; max-height: none; }
+${LABEL_SIZES.slice(1).map((z) => `${P} .omx-lbl-${z} .omx-control-title { font-size: ${z}px; line-height: 10px; }`).join('\n')}
 ${P} .omx-scribble { position: absolute; left: ${(g.cellW - g.scribbleW) / 2}px; top: ${g.cellH - g.scribbleH}px; box-sizing: border-box; width: ${g.scribbleW}px; height: ${g.scribbleH}px; border-radius: 3px; background: ${D('--scribble-bg')}; color: ${D('--scribble-ink')};${decl('text-shadow', D('--scribble-glow'))}${decl('box-shadow', D('--scribble-shadow'))} font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 10px; line-height: ${g.scribbleH}px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 ${draws(panel, 'selector') ? `${P} .omx-selector-image { position: relative; box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
 ${held ? `${P} .omx-selector-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
