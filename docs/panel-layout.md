@@ -52,6 +52,25 @@ meaning that names exactly one of the family's roles plays it; an indexed role (
 control of its meaning, in order; any other role is played by its first control, and a second is
 left unpublished, named.
 
+With a declared panel the roles are the panel's, and they back the family too (#43): a control the panel binds to a
+role, whose own meaning the descriptor leaves unstated (a scan writes `unknown`), carries the role's meaning, for the
+family check and for what the description serves as the control's meaning. A meaning the descriptor does state stays the
+descriptor's and has to agree with the role: a declared role over a control that states another meaning is left
+unpublished, named (`panel.describe.role-dropped`, "the descriptor says it means ratio, not threshold, the threshold
+role's"). So omx-comp's own panel over plugin-hostd's scan of it, every meaning `unknown`, is the dynamics family with
+its curve and its gain-reduction bar, as on the console.
+
+`--panel` takes the declared form (omx-plugins' `<stem>.decl.json`, `panel`) or the panel the plugin serves:
+`org.openmixer.panel-description/1` as `omx-clap-scan --json` prints it and `plugin-hostd-probe panel` copies it
+(`{ plugin, panel: { family, fingerprint, sections, controls, roles, displays, placementDefaults } }`, or that `panel`
+object alone). The served tables name parameters by id; `tools/panel-served.mjs` reads them as the declared form over
+the descriptor's keys (a symbol, else `p<id>`): the control rows of a section in row order, the roles, a row's widget
+other than `auto`, a visibility row as a `visibleWhen` rule over the mask's set bits, a display of source `family` as
+the section's graph. A display of source `meters` is derived from the descriptor's meters as any describe does, the
+placement defaults are the descriptor's own travel defaults, and the plugin's fingerprint is not read: describe computes
+its own. A table the scan refused, a `panel` of null and a parameter id the descriptor does not have are refused by
+name (`panel.describe.layout-invalid`). plugin-hostd stays a host that copies bytes; the panel format is this package's.
+
 A `modulation` depth is a plain amount (`none`, `pc`, `coef`) or a sweep in octaves (`oct`), as a phaser's is.
 
 ## The family
@@ -175,7 +194,7 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 | `selector` | a choice |
 | `meter` | a read-only travel in a level unit (`dB`, `dBFS`, `dBTP`, `dBu`, `LUFS`, `LU`) |
 | `display` | any other read-only control |
-| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`) |
+| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`; `delay-taps` and `decay-envelope`, the two words of the `time_response` display) |
 | `xy` | no descriptor word names a pair of controls yet; nothing takes it |
 
 ### Meters

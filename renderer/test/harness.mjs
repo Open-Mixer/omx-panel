@@ -7,7 +7,7 @@
  * a PNG read back to pixels. Reads the built tree (the parent's `npm ci && make`) and renderer/build/.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +30,8 @@ export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'om
 
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
+  // the reverb's declared panel: its decay-envelope is a time_response display, the frame and the word until a host sets the envelope
+  { name: 'omx-reverb', descriptor: 'test/fixtures/omx-reverb/omx-reverb.descriptor.json', panel: 'test/fixtures/omx-reverb/omx-reverb.panel.json', stem: 'omx-reverb' },
   // a bar group (nine drawbars by their footage, a section of its own) beside two knobs: the rule finds the run, the renderer and the MOD GUI draw it as a row of faders
   { name: 'organ', descriptor: 'test/fixtures/organ/organ.descriptor.json', stem: 'organ' },
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
@@ -91,7 +93,24 @@ export function stateFile(fx, dir, readings = {}) {
   return file;
 }
 
-export const scratch = () => mkdtempSync(join(tmpdir(), 'omx-panel-render-'));
+/** Scratch directories: each one made is removed when the process exits, a failed test, an uncaught error, process.exit()
+ * and SIGINT/SIGTERM/SIGHUP included (#45). OMX_PANEL_KEEP_SCRATCH=1 keeps them all, to debug a failure, and names them on
+ * stderr at exit. */
+const KEEP = process.env.OMX_PANEL_KEEP_SCRATCH === '1';
+const made = new Set();
+const drop = (dir) => { if (KEEP) return; rmSync(dir, { recursive: true, force: true }); made.delete(dir); };
+function sweep() {
+  if (KEEP && made.size) process.stderr.write(`OMX_PANEL_KEEP_SCRATCH=1: kept ${made.size} scratch dir(s):\n${[...made].join('\n')}\n`);
+  for (const dir of [...made]) drop(dir);
+}
+process.on('exit', sweep);
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(sig, () => { sweep(); process.kill(process.pid, sig); });
+
+export const scratch = (prefix = 'omx-panel-render-') => {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  made.add(dir);
+  return dir;
+};
 
 /** The renderer over a description and a state: `{ w, h, data }`, RGBA with straight alpha unless `format`/`alpha` say
  * otherwise. `size` [w, h] in device px, or the natural size; `window` reads a window's frame instead (natural size);
@@ -102,8 +121,13 @@ export function render(description, state, { scale = 1, size, format = 'rgba', a
   const args = ['--description', description, '--data', data, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--raw', out];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   if (window) args.push('--window');
-  const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);
-  return { w, h, data: new Uint8Array(readFileSync(out)) };
+  try {
+    const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);
+    return { w, h, data: new Uint8Array(readFileSync(out)) };
+  } finally {
+    // the pixels are in memory now; a failed draw's directory is kept only under OMX_PANEL_KEEP_SCRATCH=1
+    drop(dir);
+  }
 }
 
 /** A PNG's pixels, RGBA: 8-bit RGBA, not interlaced, every scanline filter None (what both of this tree's writers make). */

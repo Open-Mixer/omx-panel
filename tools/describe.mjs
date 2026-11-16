@@ -32,6 +32,8 @@
 import { applySkinOverride } from '../src/skin-package.js';
 import { inferBands } from './meaning-infer.mjs';
 import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { declaredFromServed, isServedPanel } from './panel-served.mjs';
+import { INDEXED_ROLES } from './role-table.mjs';
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's. */
 export const DESCRIBE_CODES = {
@@ -215,6 +217,16 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
       userFamily = r.family;
       for (const x of r.refused ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideRefused, { plugin, layer: x.layer, name: x.name, message: x.message }));
       for (const x of r.dropped ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideDropped, { plugin, layer: x.layer, control: x.control, name: x.name, message: x.message }));
+    }
+  }
+  // the panel a plugin serves (plugin-hostd-probe panel) is read as the declared form over this descriptor (#43), so a
+  // user's family override applies to it as to any declared panel
+  if (panel && isServedPanel(panel)) {
+    try {
+      panel = declaredFromServed(panel, effective, { where: where ?? `served panel of ${plugin}`, keyOf, indexedRoles: INDEXED_ROLES });
+    } catch (e) {
+      refusals.push(refuse(DESCRIBE_CODES.layoutInvalid, { plugin, message: e.message }));
+      return { description: null, refusals };
     }
   }
   const options = { panel, ns, ...(where ? { where } : {}) };

@@ -25,6 +25,8 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_set_hold;
     omx_panel_view_set_integer;
     omx_panel_view_set_marks;
+    omx_panel_view_set_stems;
+    omx_panel_view_set_spectrum;
     omx_panel_view_set_meter;
     omx_panel_view_set_paint;
     omx_panel_view_set_read_only;

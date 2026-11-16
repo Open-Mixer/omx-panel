@@ -119,7 +119,7 @@
         "type": "object",
         "required": ["kind", "section", "source"],
         "properties": {
-          "kind": { "enum": ["gain_reduction_bar", "transfer_curve", "eq_response", "meter"] },
+          "kind": { "enum": ["gain_reduction_bar", "transfer_curve", "eq_response", "meter", "time_response"] },
           "section": { "type": "string" },
           "source": { "enum": ["family", "meters", "gain_adjustment", "curve"] }
         }

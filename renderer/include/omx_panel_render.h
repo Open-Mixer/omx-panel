@@ -115,11 +115,31 @@ bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t 
  * ascend. The points are copied. */
 bool omx_panel_view_set_curve(omx_panel_view_t *view, uint32_t display, const double *x, const double *y, uint32_t n);
 
+/** The stems of a `time_response` display: one per tap of a delay's train (the processing-view spec, amendment 2026-09-16h), its time
+ * in ms from 0 and its level in dB (a unit impulse in is 0 dB; the picture's floor is -60 dB), its `shade` 0..1 (the tone's darkening,
+ * 1 full), and its leg letter (`L`, `R`, or a space for both). Drawn as a segment from the floor to the level, dimmed by the shade,
+ * the letter above; the envelope of the same display, when the host sets one, is its curve (`omx_panel_view_set_curve`, x in ms from
+ * 0 and y in dB), and the two share one axis whose end is the last point or stem. False, changing nothing, for a display that is no
+ * time response, a time below 0, a level or shade that is not finite, a shade outside 0..1. Zero stems clear them. The arrays are
+ * copied. */
+bool omx_panel_view_set_stems(omx_panel_view_t *view, uint32_t display, const double *t_ms, const double *db, const double *shade,
+                              const char *letters, uint32_t n);
+
 /** The marks of display `display`, an `eq_response`: one per band a planter owns (not the operator's), at its frequency in Hz (above zero) and
  * its own depth in dB, with the one letter of its planter (`letters`, one char each). Drawn as a disc on the curve's axes and the letter
  * above it, with the points' axes. The marks come from the host with the points; the renderer infers none and, with none set, draws none.
  * False, changing nothing, for an index with no curve or no log axis, or a frequency that is not above zero or a value not finite. */
 bool omx_panel_view_set_marks(omx_panel_view_t *view, uint32_t display, const double *freq, const double *depth, const char *letters, uint32_t n);
+
+/** The spectrum of display `display`, an `eq_response`: `n` bands at their centres in Hz (above zero, ascending), each with its level
+ * and its peak in dBFS (finite, or -INFINITY for silence, drawn as nothing), on the level window [db_min, db_max] with a graticule
+ * line every grid_db, as the host declares them (omx-dsp's RTA_LEVEL_DB_MIN/MAX and RTA_LEVEL_GRID_DB). While a spectrum is set the
+ * display is drawn on the console analyser's axes: the curve's log frequency axis, ONE dB graticule (the level window's), the
+ * spectrum under the curve and the marks, and the curve's gain parked with 0 dB at the window's middle. n == 0 clears it and the
+ * display returns to its own curve axis. False, changing nothing, for an index with no log axis, an hz not above zero or not
+ * ascending, a non-finite window, db_min >= db_max or grid_db <= 0. The values are copied. */
+bool omx_panel_view_set_spectrum(omx_panel_view_t *view, uint32_t display, const double *hz, const double *db, const double *peak_db,
+                                 uint32_t n, double db_min, double db_max, double grid_db);
 
 /** A governing control's integer value. A control the description shows only for certain values of another (its
  * `visibleWhen` and `mask`, a declared panel's visibleWhen) is shown while bit `value` of its mask is set: a hidden

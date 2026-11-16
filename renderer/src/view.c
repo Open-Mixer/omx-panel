@@ -48,7 +48,8 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
   struct { const char *name; omx_rgb *to; } want[] = {
       {"--surface", &v->col.surface}, {"--surface-2", &v->col.section}, {"--surface-3", &v->col.body},
       {"--border-strong", &v->col.rim}, {"--ink", &v->col.ink},       {"--ink-dim", &v->col.inkDim},
-      {"--accent", &v->col.accent},
+      {"--accent", &v->col.accent},   {"--meter-green", &v->col.meterGreen}, {"--meter-amber", &v->col.meterAmber},
+      {"--meter-red", &v->col.meterRed},
   };
   if (!cJSON_IsObject(tok)) {
     fail(err, n, "look: no tokens object%s%s", NULL, NULL);
@@ -241,7 +242,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         goto bad;
       }
       /* only a closed-form curve has a place on the panel; a gain-reduction bar or a meter is a control's reading */
-      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0) ? sec->valueint : -1;
+      d->time_x = strcmp(kind, "time_response") == 0;
+      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0 || d->time_x) ? sec->valueint : -1;
       d->log_x = strcmp(kind, "eq_response") == 0, d->symmetric = d->log_x;
       d->basis = dup(basis ? basis : "modelled");
     }
@@ -338,7 +340,9 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
   free(v->section_keys);
   for (size_t i = 0; i < v->ncontrols; i++)
     free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
-  for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter);
+  for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter),
+                                               free(v->displays[i].stem_x), free(v->displays[i].stem_y), free(v->displays[i].stem_shade), free(v->displays[i].stem_letter),
+                                               free(v->displays[i].spec_hz), free(v->displays[i].spec_db), free(v->displays[i].spec_peak);
   for (size_t i = 0; i < v->nmeters; i++) free(v->meters[i].symbol), free(v->meters[i].label), free(v->meters[i].unit);
   free(v->meters);
   free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
@@ -421,7 +425,7 @@ bool omx_panel_view_set_curve(omx_panel_view_t *v, uint32_t index, const double 
   if (index >= v->ndisplays || v->displays[index].section < 0) return false;
   display *d = &v->displays[index];
   for (uint32_t k = 0; k < n; k++) {
-    if (!isfinite(x[k]) || !isfinite(y[k]) || (k && !(x[k] > x[k - 1])) || (d->log_x && !(x[k] > 0))) return false;
+    if (!isfinite(x[k]) || !isfinite(y[k]) || (k && !(x[k] > x[k - 1])) || (d->log_x && !(x[k] > 0)) || (d->time_x && !(x[k] >= 0))) return false;
   }
   double *nx = malloc(n * sizeof *nx), *ny = malloc(n * sizeof *ny);
   if (!nx || !ny) {
@@ -449,6 +453,52 @@ bool omx_panel_view_set_marks(omx_panel_view_t *v, uint32_t index, const double 
   if (n) memcpy(nf, freq, n * sizeof *nf), memcpy(nd, depth, n * sizeof *nd), memcpy(nl, letters, n);
   free(d->mark_freq), free(d->mark_depth), free(d->mark_letter);
   d->mark_freq = nf, d->mark_depth = nd, d->mark_letter = nl, d->nmarks = n;
+  return true;
+}
+
+bool omx_panel_view_set_stems(omx_panel_view_t *v, uint32_t index, const double *t_ms, const double *db, const double *shade, const char *letters,
+                              uint32_t n) {
+  if (!v || index >= v->ndisplays || v->displays[index].section < 0 || !v->displays[index].time_x || (n && (!t_ms || !db || !shade || !letters)))
+    return false;
+  display *d = &v->displays[index];
+  /* a stem stands on the time axis at or after 0, at a finite level, with a shade in 0..1 */
+  for (uint32_t k = 0; k < n; k++)
+    if (!isfinite(t_ms[k]) || !(t_ms[k] >= 0) || !isfinite(db[k]) || !isfinite(shade[k]) || !(shade[k] >= 0 && shade[k] <= 1)) return false;
+  double *nx = malloc((n ? n : 1) * sizeof *nx), *ny = malloc((n ? n : 1) * sizeof *ny), *ns = malloc((n ? n : 1) * sizeof *ns);
+  char *nl = malloc(n ? n : 1);
+  if (!nx || !ny || !ns || !nl) {
+    free(nx), free(ny), free(ns), free(nl);
+    return false;
+  }
+  if (n) memcpy(nx, t_ms, n * sizeof *nx), memcpy(ny, db, n * sizeof *ny), memcpy(ns, shade, n * sizeof *ns), memcpy(nl, letters, n);
+  free(d->stem_x), free(d->stem_y), free(d->stem_shade), free(d->stem_letter);
+  d->stem_x = nx, d->stem_y = ny, d->stem_shade = ns, d->stem_letter = nl, d->nstems = n;
+  return true;
+}
+
+bool omx_panel_view_set_spectrum(omx_panel_view_t *v, uint32_t index, const double *hz, const double *db, const double *peak_db, uint32_t n,
+                                 double db_min, double db_max, double grid_db) {
+  if (!v || index >= v->ndisplays || v->displays[index].section < 0 || !v->displays[index].log_x) return false;
+  if (!isfinite(db_min) || !isfinite(db_max) || !isfinite(grid_db) || !(db_min < db_max) || !(grid_db > 0)) return false;
+  if (n && (!hz || !db || !peak_db)) return false;
+  /* a level is finite or silence (-INFINITY); a centre is above zero and above the one before */
+  for (uint32_t k = 0; k < n; k++)
+    if (!(hz[k] > 0) || !isfinite(hz[k]) || (k && !(hz[k] > hz[k - 1])) || !(isfinite(db[k]) || db[k] == -INFINITY) ||
+        !(isfinite(peak_db[k]) || peak_db[k] == -INFINITY))
+      return false;
+  display *d = &v->displays[index];
+  double *nh = NULL, *nd = NULL, *np = NULL;
+  if (n) {
+    nh = malloc(n * sizeof *nh), nd = malloc(n * sizeof *nd), np = malloc(n * sizeof *np);
+    if (!nh || !nd || !np) {
+      free(nh), free(nd), free(np);
+      return false;
+    }
+    memcpy(nh, hz, n * sizeof *nh), memcpy(nd, db, n * sizeof *nd), memcpy(np, peak_db, n * sizeof *np);
+  }
+  free(d->spec_hz), free(d->spec_db), free(d->spec_peak);
+  d->spec_hz = nh, d->spec_db = nd, d->spec_peak = np, d->nspec = n;
+  d->spec_min = db_min, d->spec_max = db_max, d->spec_grid = grid_db;
   return true;
 }
 
@@ -594,6 +644,98 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   free(cps);
 }
 
+/* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (its scene
+ * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
+ * from the top and a label on each line inside the window; under it the trace's area to the foot in the meter gradient (red at
+ * the top, amber at 0.18, green from 0.5 down) at 0.34, then the trace, a clip tick at the top over each band whose peak reaches
+ * the top, then the curve, a gain parked with 0 dB at the window's middle, and its marks on the same axis. A silent band
+ * (-INFINITY) is drawn as nothing: the trace and its area break there. */
+static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double ix, double iy, double iw,
+                          double ih, double s, const palette *col) {
+  const double lo = c->spec_min, hi = c->spec_max, mid = (lo + hi) / 2;
+  double f0 = c->spec_hz[0], f1 = c->spec_hz[c->nspec - 1];
+  if (c->n >= 2) f0 = fmin(f0, c->x[0]), f1 = fmax(f1, c->x[c->n - 1]);
+  if (!(f1 > f0)) f1 = f0 * 10;
+  const double x0 = log10(f0), x1 = log10(f1);
+#define AX(hz) (ix + (log10(hz) - x0) / (x1 - x0) * iw)
+#define AY(db) (iy + (hi - fmin(hi, fmax(lo, (db)))) / (hi - lo) * ih)
+  for (int k = 0;; k++) {
+    double g = hi - k * c->spec_grid, y;
+    if (g < lo - c->spec_grid * 1e-9) break;
+    y = AY(g);
+    d->segment(d->ctx, ix, y, ix + iw, y, fmax(0.5, 0.5 * s), col->rim);
+    if (g > lo + c->spec_grid * 1e-9 && k > 0) {
+      char label[24];
+      snprintf(label, sizeof label, "%g", fabs(g) < 1e-9 ? 0.0 : g);
+      text(d, font, label, 0, iw, ix + 3 * s, y - 2 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    }
+  }
+  static const double stop_t[4] = {0, 0.18, 0.5, 1};
+  const omx_rgb stops[4] = {col->meterRed, col->meterAmber, col->meterGreen, col->meterGreen};
+  double *xs = malloc(c->nspec * sizeof *xs), *ys = malloc(c->nspec * sizeof *ys);
+  for (size_t k = 0; xs && ys && k < c->nspec;) {
+    size_t m = 0;
+    for (; k < c->nspec && isfinite(c->spec_db[k]); k++) xs[m] = AX(c->spec_hz[k]), ys[m] = AY(c->spec_db[k]), m++;
+    if (m >= 2) {
+      d->fill_under(d->ctx, xs, ys, m, iy + ih, iy, iy + ih, stop_t, stops, 4, 0.34);
+      for (size_t j = 1; j < m; j++) d->segment(d->ctx, xs[j - 1], ys[j - 1], xs[j], ys[j], fmax(0.75, 0.75 * s), col->accent);
+    }
+    if (k < c->nspec && !isfinite(c->spec_db[k])) k++;
+  }
+  free(xs), free(ys);
+  for (size_t k = 0; k < c->nspec; k++)
+    if (c->spec_peak[k] >= hi) d->round_rect(d->ctx, AX(c->spec_hz[k]) - 1.5 * s, iy, 3 * s, 4 * s, 0, col->meterRed);
+  for (size_t k = 1; k < c->n; k++)
+    d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->accent);
+  for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
+    double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
+    char one[2] = {c->mark_letter[k], 0};
+    d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
+    text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+  }
+#undef AX
+#undef AY
+}
+
+/* A colour part way from `a` to `b`: `t` of the way, for a stem dimmed by its shade. */
+static omx_rgb towards(omx_rgb a, omx_rgb b, double t) {
+  omx_rgb o;
+  for (int k = 0; k < 3; k++) o.c[k] = (uint8_t)omx_round(a.c[k] + (b.c[k] - a.c[k]) * t);
+  return o;
+}
+
+/* A time response (the processing-view spec, amendment 2026-09-16h): x is time in ms from 0 to the content's end (the last point or
+ * stem), y is level in dB on the window from the floor, -60, to 0, raised to the next 6 dB when a level exceeds 0. The envelope the host
+ * gave is a polyline, each stem a segment from the floor to its level, its paint dimmed by its shade toward the body, its leg letter
+ * above. The 0 dB line is the reference. No point is computed here. */
+static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double ix, double iy, double iw, double ih,
+                      double s, double w, const palette *col) {
+  double xmax = 0, ymax = 0;
+  for (size_t k = 0; k < c->n; k++) xmax = fmax(xmax, c->x[k]), ymax = fmax(ymax, c->y[k]);
+  for (size_t k = 0; k < c->nstems; k++) xmax = fmax(xmax, c->stem_x[k]), ymax = fmax(ymax, c->stem_y[k]);
+  if (!(xmax > 0)) xmax = 1;
+  const double lo = -60, hi = ymax > 0 ? ceil(ymax / 6) * 6 : 0;
+  double qy0 = iy + ih - ((0 - lo) / (hi - lo)) * ih;
+  d->segment(d->ctx, ix, qy0, ix + iw, qy0, fmax(0.5, 0.5 * s), col->rim);
+  double px = 0, py = 0;
+  for (size_t k = 0; k < c->n; k++) {
+    double qx = ix + (c->x[k] / xmax) * iw, qy = iy + ih - ((fmax(c->y[k], lo) - lo) / (hi - lo)) * ih;
+    if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->accent);
+    px = qx, py = qy;
+  }
+  for (size_t k = 0; k < c->nstems; k++) {
+    if (!(c->stem_y[k] > lo)) continue; /* a stem at or below the floor is not there */
+    double qx = ix + (c->stem_x[k] / xmax) * iw, qy = iy + ih - ((c->stem_y[k] - lo) / (hi - lo)) * ih;
+    d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->body, col->accent, c->stem_shade[k]));
+    if (c->stem_letter[k] != ' ') {
+      /* the letter's baseline sits 3 px over the stem's top; a stem at the ceiling would put it over the frame, so it is
+       * held to the frame's top (the text is baseline-aligned: the glyph occupies the size above the baseline) */
+      char one[2] = {c->stem_letter[k], 0};
+      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->ink, OMX_ALIGN_CENTRE);
+    }
+  }
+}
+
 /* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes come from the
  * points alone: an eq_response is a log frequency axis with the dB symmetric about 0, to the next 6 dB; a transfer_curve is linear dB,
  * input and output on one span, with the unity line. No point is computed here. With no points the frame and the caption stand: a
@@ -603,7 +745,11 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
   d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
   double ix = x + 5 * s, iy = y + 5 * s, iw = w - 10 * s, ih = h - 10 * s - 12 * s;
-  if (c->n >= 2) {
+  if (c->nspec)
+    draw_analyser(d, font, T, c, ix, iy, iw, ih, s, col);
+  else if (c->time_x) {
+    if (c->n >= 2 || c->nstems) draw_time(d, font, T, c, ix, iy, iw, ih, s, w, col);
+  } else if (c->n >= 2) {
     double x0, x1, lo, hi;
     if (c->symmetric) {
       double m = 6;
@@ -777,6 +923,10 @@ omx_font *omx_panel_view_font(const omx_panel_view_t *v) { return v ? v->font : 
 static void cpu_round_rect(void *c, double x, double y, double w, double h, double r, omx_rgb rgb) { omx_round_rect(c, x, y, w, h, r, rgb); }
 static void cpu_disc(void *c, double cx, double cy, double r, omx_rgb rgb) { omx_disc(c, cx, cy, r, rgb); }
 static void cpu_segment(void *c, double ax, double ay, double bx, double by, double hw, omx_rgb rgb) { omx_segment(c, ax, ay, bx, by, hw, rgb); }
+static void cpu_fill_under(void *c, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
+                           const omx_rgb *stops, size_t nstops, double alpha) {
+  omx_fill_under(c, xs, ys, n, base_y, y0, y1, t, stops, nstops, alpha);
+}
 static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }
@@ -788,7 +938,7 @@ bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
   for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
   int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
   omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra};
-  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_text};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text};
   omx_panel_view_paint(v, b->width, b->height, b->scale, &d);
   /* drawn with straight alpha; a premultiplied buffer gets each colour times its alpha, rounded to the nearest */
   if (b->format == OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)

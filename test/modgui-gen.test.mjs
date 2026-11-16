@@ -290,9 +290,12 @@ test('the screenshot of the fixture descriptor carries its text: title, section 
   const [, shot] = gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png');
   const [, thumb] = gen().find(([p]) => p === 'modgui/thumbnail-omx-delay.png');
   const bare = (png, y, x0, x1) => new Set(pixelRow(png, y, x0, x1).split(' ')).size;
+  // the delay's declared panel draws its time_response above the controls: the control rows sit one curve row lower
+  const g = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8')).geometry;
+  const row = g.curveH + g.curveGap;
   assert.ok(bare(shot, 24, 16, 80) > 2, 'the title row has glyph pixels over the plain surface');
-  assert.ok(bare(shot, 129, 100, 165) > 2, 'the control name row has glyph pixels');
-  assert.ok(bare(shot, 139, 100, 165) > 2, 'the default value row has glyph pixels');
+  assert.ok(bare(shot, 129 + row, 100, 165) > 2, 'the control name row has glyph pixels');
+  assert.ok(bare(shot, 139 + row, 100, 165) > 2, 'the default value row has glyph pixels');
   assert.ok(bare(thumb, 12, 8, 40) > 2, 'the thumbnail carries the title');
   assert.equal(pixelRow(shot, 24, 16, 40), pixelRow(gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png')[1], 24, 16, 40), 'the same bytes on a second run');
 });

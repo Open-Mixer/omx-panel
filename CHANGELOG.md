@@ -5,6 +5,30 @@
 ## Unreleased
 
 - 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
+  This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
+  omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the
+  declared form (both below); and fixes: the commit-msg hook takes the current stub from the checker's release line,
+  artifact retention is explicit (30 days on a tag, 2 otherwise), the Makefile names the shared checks' checkout through
+  OPENMIXER_DOTGITHUB, the renderer tests remove their scratch directories and read readelf in the C locale, debian/control
+  floors libomx-contract-dev as the spec floors omx-contract-devel, and the omx-eq8 fixture matches the installed file
+  apart from its version lines.
+- The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
+  section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
+  end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve
+  (`omx_panel_view_set_curve`) and the stems as `omx_panel_view_set_stems` (one per tap: time, level, shade, leg letter), each
+  array when present. The closed forms of the delay and reverb families name it, the served panel reads it back to the family's
+  graph word, the skin schema lists it. `describe` refuses a graph word that names no display kind by name: it used to drop the
+  display in silence, which is how the reverb's picture went missing. omx-plugins' omx-reverb joins the fixtures.
+
+- 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
+  scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
+  `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its
+  family; a control the panel binds to a role serves the role's meaning where the descriptor states none; a meaning the
+  descriptor does state still has to agree with the role, or the role is named and not bound
+  (`panel.describe.role-dropped`). `--panel` also reads the panel a plugin serves, `org.openmixer.panel-description/1` as
+  omx-clap-scan --json prints it and plugin-hostd-probe panel copies it (`tools/panel-served.mjs`): its tables name
+  parameters by id, and are read as the declared form over the descriptor's keys; plugin-hostd stays a host that copies
+  bytes.
 - 0.13.7: the DEBs build again. 0.13.6's failed lintian --fail-on warning (script-not-executable): tools/gesture-words.mjs ships as a command now, executable, its declaration without the shebang, and the build refuses a shipped module with a shebang that is not a listed command.
 - 0.13.6: a host that is not JavaScript reads the gesture word names through the library (`omx_panel_word_name`,
   generated from schema/gestures.json) and the compare format, slots and ring bound through `omx-panel compare describe`

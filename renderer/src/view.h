@@ -52,13 +52,24 @@ typedef struct {
   int section;
   int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
   int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
+  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
+  /* the stems a host hands a time_response (omx_panel_view_set_stems): one per tap, from the floor to its level, its paint dimmed
+   * by its shade (0..1) and its leg letter above (' ' for none); none by default */
+  double *stem_x, *stem_y, *stem_shade;
+  char *stem_letter;
+  size_t nstems;
   /* the marks a host hands with the points: one per band a planter owns, none by default */
   double *mark_freq, *mark_depth;
   char *mark_letter;
   size_t nmarks;
+  /* the spectrum a host hands an eq_response (omx_panel_view_set_spectrum): its bands' centres, levels and peaks in dBFS
+   * (-INFINITY for silence) on the level window [spec_min, spec_max] with a graticule line every spec_grid; none by default */
+  double *spec_hz, *spec_db, *spec_peak;
+  size_t nspec;
+  double spec_min, spec_max, spec_grid;
 } display;
 
 /* One meter of the description's `meters` (contract 7.9): its range is the description's, its reading the host's. A meter whose
@@ -84,7 +95,7 @@ typedef struct {
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, meterGreen, meterAmber, meterRed;
 } palette;
 
 struct omx_panel_view {
