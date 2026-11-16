@@ -103,7 +103,7 @@ const isNum = (t) => /^\d+$/.test(t);
 const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
-export const ROLE_ORDER = ['type', 'slope', 'freq', 'gain', 'q'];
+export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
 const OFF_WORDS = new Set(['bypass', 'mute', 'off']);
 const ROLE_WORDS = {
@@ -431,6 +431,10 @@ function attachEdges(groups, buckets) {
     const used = new Set(edges.flatMap((e) => [...(e.on ? [e.on.symbol] : []), ...Object.values(e.parameters)]));
     for (const src of sources) src.parameters = src.parameters.filter((s) => !used.has(s));
     g.edges = edges;
+    // the owner's order puts an edge's slope on the gain row, one aligned row, when the bands hold no slope row of their own
+    if (!g.rows.some((r) => r.key === 'slope')) {
+      for (const e of edges) if ('slope' in e.parameters && !('gain' in e.parameters)) { e.parameters.gain = e.parameters.slope; delete e.parameters.slope; }
+    }
     // the rows an edge brings that no band holds go after the bands' rows
     for (const e of edges) for (const k of Object.keys(e.parameters)) if (!g.rows.some((r) => r.key === k)) g.rows.push({ key: k, label: capital(k.includes(':') ? k.split(':')[1] : k), role: ROLE_ORDER.includes(k) ? k : null });
     const rank = (r) => { const i = ROLE_ORDER.indexOf(r.key); return i === -1 ? ROLE_ORDER.length : i; };

@@ -393,16 +393,18 @@ export function withRepeats(descriptor, declared, sections) {
 function matrixCells(mx, top) {
   const g = GEOMETRY;
   const headed = mx.heads.some((h) => h.on) ? 1 : 0;
+  // the on/off is the column's LAST row (L3, the owner's order); a head with no toggle is a caption in that row's place
+  const last = mx.lines.length;
   const at = (hi, li) => (mx.orientation === 'columns'
     ? { x: g.sectionPad + hi * g.cellW, y: top + li * g.cellH }
     : { x: g.sectionPad + li * g.cellW, y: top + hi * g.cellH });
   const controls = [];
   const captions = [];
   mx.heads.forEach((h, hi) => {
-    if (h.on) controls.push({ ...h.on, ...at(hi, 0) });
-    else captions.push({ text: h.label, ...at(hi, 0) });
+    if (h.on) controls.push({ ...h.on, ...at(hi, last) });
+    else captions.push({ text: h.label, ...at(hi, headed ? last : 0) });
   });
-  mx.lines.forEach((l, li) => l.cells.forEach((k, hi) => { if (k) controls.push({ ...k, ...at(hi, li + headed) }); }));
+  mx.lines.forEach((l, li) => l.cells.forEach((k, hi) => { if (k) controls.push({ ...k, ...at(hi, li) }); }));
   const across = mx.orientation === 'columns' ? mx.heads.length : mx.lines.length + headed;
   const down = mx.orientation === 'columns' ? mx.lines.length + headed : mx.heads.length;
   return { controls, captions, across, down };

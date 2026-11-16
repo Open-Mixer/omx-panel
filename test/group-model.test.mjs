@@ -190,8 +190,8 @@ test('S9: every control opening with an edge word is taken from any list group, 
   const m = matrixOf(groups[1]);
   assert.deepEqual(m.columns.map((x) => x.key), ['hpf', 'EQ#1', 'EQ#2', 'EQ#3', 'lpf']);
   assert.deepEqual(m.columns.map((x) => x.on?.symbol ?? null).filter(Boolean).slice(0, 1), ['hpfOn']);
-  const slope = m.rows.findIndex((r) => r.key === 'slope');
-  assert.deepEqual(m.cells[slope], ['hpfSlope', null, null, null, null]);
+  const slope = m.rows.findIndex((r) => r.key === 'gain');
+  assert.deepEqual(m.cells[slope].slice(0, 1).concat(m.cells[slope].slice(1, 4).map((x) => x && 'band')), ['hpfSlope', 'band', 'band', 'band']);
   // an edge word with no frequency is no edge: its controls stay where they were
   const noFreq = [f('hpfSlope', 'HPF Slope', 0, { kind: 'choice', options: 2 }), ...bands(3, EQ).map((x) => ({ ...x, index: x.index + 10, path: ['EQ'] }))];
   const kept = inferGroupModel(noFreq).groups;

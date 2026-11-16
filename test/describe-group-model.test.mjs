@@ -80,5 +80,5 @@ test('omx-delay: the Taps matrix carries Time under taps 2..4 with tap 1\'s cell
 test('omx-dyneq: the Band matrix keys type, freq, gain, q by their roles, and threshold and range as rows of their own', () => {
   const d = describeOf('omx-dyneq');
   const [s] = withMatrix(d);
-  assert.deepEqual(s.matrix.rows.map((r) => r.label), ['Type', 'Freq', 'Gain', 'Q', 'Dynamics', 'Threshold', 'Ratio', 'Range', 'Attack', 'Release', 'Listen']);
+  assert.deepEqual(s.matrix.rows.map((r) => r.label), ['Freq', 'Gain', 'Q', 'Type', 'Dynamics', 'Threshold', 'Ratio', 'Range', 'Attack', 'Release', 'Listen', 'On']);
 });
