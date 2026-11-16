@@ -46,7 +46,8 @@ in-process call, and it already shells out to `omx-panel` for it.
 
 ## The model
 
-`inferGroupModel(controls)` returns `{ groups }`, in the order of each group's first control (`index`). A group is:
+`inferGroupModel(controls)` returns `{ groups }`, in the order of each group's first control (`index`); the controls an EQ
+took as its edges do not count, so omx-strip's EQ stays after its Gate though its HPF sits before it. A group is:
 
 - `kind: 'list'`: `parameters`, its controls' symbols in index order. A list that was a candidate repeat and failed a
   check carries `reason` (a code of the table below) and `detail` (the evidence, for a reader).
