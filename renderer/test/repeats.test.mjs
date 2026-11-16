@@ -207,7 +207,8 @@ test('the visible-column rule answers the cross-language vector the JavaScript t
 test('a head whose on/off is not a { symbol, sense } object is refused: a bare string is not the served shape', () => {
   const r = refused((d) => { const mx = matrixOf(d); mx.heads[0].on = mx.heads[0].on.symbol; });
   assert.notEqual(r.status, 0);
-  assert.match(r.err, /on\/off/);
+  // refused for its shape, by name, not caught later by the head-row comparison
+  assert.match(r.err, /not a \{ symbol, sense \} object/);
 });
 
 test('a head row that is not the last row is refused', () => {
