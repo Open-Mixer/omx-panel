@@ -20,13 +20,7 @@
    "source": "none",
    "reason": null,
    "parameters": [
-    "filterOn",
-    "hpfOn",
-    "hpfFreq",
-    "hpfSlope",
-    "lpfOn",
-    "lpfFreq",
-    "lpfSlope"
+    "filterOn"
    ]
   },
   {
@@ -60,6 +54,12 @@
    ],
    "orientation": "columns",
    "heads": [
+    {
+     "key": "hpf",
+     "label": "HPF",
+     "on": "hpfOn",
+     "sense": "on"
+    },
     {
      "key": "EQ#1",
      "label": "EQ 1",
@@ -251,12 +251,22 @@
      "label": "EQ 32",
      "on": "eq32On",
      "sense": "on"
+    },
+    {
+     "key": "lpf",
+     "label": "LPF",
+     "on": "lpfOn",
+     "sense": "on"
     }
    ],
    "lines": [
     {
      "key": "type",
      "label": "Type"
+    },
+    {
+     "key": "slope",
+     "label": "Slope"
     },
     {
      "key": "freq",
@@ -273,6 +283,7 @@
    ],
    "cells": [
     [
+     null,
      "eq1Type",
      "eq2Type",
      "eq3Type",
@@ -304,9 +315,47 @@
      "eq29Type",
      "eq30Type",
      "eq31Type",
-     "eq32Type"
+     "eq32Type",
+     null
     ],
     [
+     "hpfSlope",
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     "lpfSlope"
+    ],
+    [
+     "hpfFreq",
      "eq1Freq",
      "eq2Freq",
      "eq3Freq",
@@ -338,9 +387,11 @@
      "eq29Freq",
      "eq30Freq",
      "eq31Freq",
-     "eq32Freq"
+     "eq32Freq",
+     "lpfFreq"
     ],
     [
+     null,
      "eq1Gain",
      "eq2Gain",
      "eq3Gain",
@@ -372,9 +423,11 @@
      "eq29Gain",
      "eq30Gain",
      "eq31Gain",
-     "eq32Gain"
+     "eq32Gain",
+     null
     ],
     [
+     null,
      "eq1Q",
      "eq2Q",
      "eq3Q",
@@ -406,9 +459,11 @@
      "eq29Q",
      "eq30Q",
      "eq31Q",
-     "eq32Q"
+     "eq32Q",
+     null
     ]
-   ]
+   ],
+   "count": "eqBands"
   },
   {
    "key": "Comp",

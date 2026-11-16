@@ -1,0 +1,199 @@
+{
+ "input": "omx-plugins/omx-dyneq.descriptor.json",
+ "uri": null,
+ "groups": [
+  {
+   "key": "Band",
+   "label": "Band",
+   "kind": "repeated",
+   "source": "declared",
+   "family": "eq",
+   "parameters": [],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "Band#1",
+     "label": "Band 1",
+     "on": "bandOn1",
+     "sense": "on"
+    },
+    {
+     "key": "Band#2",
+     "label": "Band 2",
+     "on": "bandOn2",
+     "sense": "on"
+    },
+    {
+     "key": "Band#3",
+     "label": "Band 3",
+     "on": "bandOn3",
+     "sense": "on"
+    },
+    {
+     "key": "Band#4",
+     "label": "Band 4",
+     "on": "bandOn4",
+     "sense": "on"
+    },
+    {
+     "key": "Band#5",
+     "label": "Band 5",
+     "on": "bandOn5",
+     "sense": "on"
+    },
+    {
+     "key": "Band#6",
+     "label": "Band 6",
+     "on": "bandOn6",
+     "sense": "on"
+    }
+   ],
+   "lines": [
+    {
+     "key": "type",
+     "label": "Type"
+    },
+    {
+     "key": "freq",
+     "label": "Freq"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "q",
+     "label": "Q"
+    },
+    {
+     "key": "dynMode#",
+     "label": "Dynamics"
+    },
+    {
+     "key": "threshold#",
+     "label": "Threshold"
+    },
+    {
+     "key": "ratio#",
+     "label": "Ratio"
+    },
+    {
+     "key": "range#",
+     "label": "Range"
+    },
+    {
+     "key": "attack#",
+     "label": "Attack"
+    },
+    {
+     "key": "release#",
+     "label": "Release"
+    },
+    {
+     "key": "listen#",
+     "label": "Listen"
+    }
+   ],
+   "cells": [
+    [
+     "bandType1",
+     "bandType2",
+     "bandType3",
+     "bandType4",
+     "bandType5",
+     "bandType6"
+    ],
+    [
+     "freq1",
+     "freq2",
+     "freq3",
+     "freq4",
+     "freq5",
+     "freq6"
+    ],
+    [
+     "gain1",
+     "gain2",
+     "gain3",
+     "gain4",
+     "gain5",
+     "gain6"
+    ],
+    [
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "q5",
+     "q6"
+    ],
+    [
+     "dynMode1",
+     "dynMode2",
+     "dynMode3",
+     "dynMode4",
+     "dynMode5",
+     "dynMode6"
+    ],
+    [
+     "threshold1",
+     "threshold2",
+     "threshold3",
+     "threshold4",
+     "threshold5",
+     "threshold6"
+    ],
+    [
+     "ratio1",
+     "ratio2",
+     "ratio3",
+     "ratio4",
+     "ratio5",
+     "ratio6"
+    ],
+    [
+     "range1",
+     "range2",
+     "range3",
+     "range4",
+     "range5",
+     "range6"
+    ],
+    [
+     "attack1",
+     "attack2",
+     "attack3",
+     "attack4",
+     "attack5",
+     "attack6"
+    ],
+    [
+     "release1",
+     "release2",
+     "release3",
+     "release4",
+     "release5",
+     "release6"
+    ],
+    [
+     "listen1",
+     "listen2",
+     "listen3",
+     "listen4",
+     "listen5",
+     "listen6"
+    ]
+   ]
+  },
+  {
+   "key": "Output",
+   "label": "Output",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "mixPct"
+   ]
+  }
+ ]
+}

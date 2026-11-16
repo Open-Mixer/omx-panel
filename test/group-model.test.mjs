@@ -29,7 +29,7 @@ export function summarize({ groups }) {
     const m = matrixOf(g);
     const [heads, lines] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
     return {
-      key: g.key, label: g.label, kind: 'repeated', source: g.source, family: g.family, parameters: g.parameters, orientation: m.orientation,
+      key: g.key, label: g.label, kind: 'repeated', source: g.source, family: g.family, parameters: g.parameters, ...(g.count ? { count: g.count.symbol } : {}), orientation: m.orientation,
       heads: heads.map((h) => ({ key: h.key, label: h.label, on: h.on?.symbol ?? null, sense: h.on?.sense ?? null })),
       lines: lines.map((l) => ({ key: l.key, label: l.label })),
       cells: m.cells,
@@ -39,9 +39,9 @@ export function summarize({ groups }) {
 
 const corpus = readdirSync(EXPECTED).filter((f) => f.endsWith('.expected.json')).sort();
 
-test('the corpus holds the seven plugins of the spec and the two ambiguous ones (a check over nothing proves nothing)', () => {
+test('the corpus holds the nine plugins of the spec and the two ambiguous ones (a check over nothing proves nothing)', () => {
   assert.deepEqual(corpus.map((f) => f.replace('.expected.json', '')), [
-    'ams-advenv', 'calf-multiband-compressor', 'lsp-para-equalizer-x8-mono', 'omx-eq16', 'omx-eq32', 'omx-eq8', 'omx-strip', 'x42-fil4', 'x42-matrixmixer',
+    'ams-advenv', 'calf-multiband-compressor', 'lsp-para-equalizer-x8-mono', 'omx-delay', 'omx-dyneq', 'omx-eq16', 'omx-eq32', 'omx-eq8', 'omx-strip', 'x42-fil4', 'x42-matrixmixer',
   ]);
 });
 
@@ -143,4 +143,77 @@ test('L4: another repeat is columns when its instances are at least its rows, el
 
 test('matrixOf refuses a list: a surface never draws a guessed matrix', () => {
   assert.throws(() => matrixOf(only(bands(4, { gain: { unit: 'db' } }))), /not a repeated group/);
+});
+
+// ---- the rulings of the review of omx-panel#63 ----
+
+test('S5: a stem held by all but one instance is a row with an empty cell; a crossover that names two numbers is not one', () => {
+  const taps = [...bands(3, { gain: { unit: 'db' }, pan: {} }), c('b2_time', 'Band 2 Time', 90), c('b3_time', 'Band 3 Time', 91)];
+  const g = only(taps);
+  assert.equal(g.kind, 'repeated');
+  const m = matrixOf(g);
+  const at = m.rows.findIndex((r) => r.label === 'Time');
+  assert.ok(at >= 0, JSON.stringify(m.rows));
+  assert.deepEqual(m.cells[at], [null, 'b2_time', 'b3_time']);
+  assert.deepEqual(g.parameters, []);
+  // between four bands, three crossovers: each names two numbers, so none is one band's own
+  const split = [...bands(4, { gain: { unit: 'db' }, pan: {} }), c('x1', 'Split 1/2', 90), c('x2', 'Split 2/3', 91), c('x3', 'Split 3/4', 92)];
+  const h = only(split);
+  assert.deepEqual(h.parameters, ['x1', 'x2', 'x3']);
+  assert.deepEqual(matrixOf(h).rows.map((r) => r.label), ['Gain', 'Pan']);
+  // held by two of four instances is no row
+  const few = [...bands(4, { gain: { unit: 'db' }, pan: {} }), c('b1_time', 'Band 1 Time', 90), c('b2_time', 'Band 2 Time', 91)];
+  assert.deepEqual(only(few).parameters, ['b1_time', 'b2_time']);
+});
+
+test('S8: a role a control\'s words claim wins over one its unit claims; the unit stands where no word claims it', () => {
+  const dyn = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, q: { min: 0.1, max: 10 }, threshold: { unit: 'db', min: -60, max: 0 }, range: { unit: 'db', min: -24, max: 12 } };
+  const g = only(bands(3, dyn));
+  const m = matrixOf(g);
+  assert.deepEqual(m.rows.map((r) => r.key), ['freq', 'gain', 'q', 'b#_threshold', 'b#_range']);
+  assert.deepEqual(m.cells[1], ['b1_gain', 'b2_gain', 'b3_gain']);
+  const trim = only(bands(3, { on: { kind: 'toggle' }, freq: dyn.freq, q: dyn.q, trim: { unit: 'db', min: -18, max: 18 } }));
+  assert.deepEqual(matrixOf(trim).rows.map((r) => r.key), ['freq', 'gain', 'q']);
+});
+
+test('S9: every control opening with an edge word is taken from any list group, the remainder stays; HPF first, LPF last', () => {
+  const f = (symbol, name, index, extra = {}) => c(symbol, name, index, { path: ['Filters'], ...extra });
+  const controls = [
+    f('filterOn', 'Filters', 0, { kind: 'toggle' }),
+    f('hpfOn', 'HPF', 1, { kind: 'toggle' }), f('hpfFreq', 'HPF Freq', 2, { unit: 'hz', min: 20, max: 1000 }), f('hpfSlope', 'HPF Slope', 3, { kind: 'choice', options: 2 }),
+    f('lpfOn', 'LPF', 4, { kind: 'toggle' }), f('lpfFreq', 'LPF Freq', 5, { unit: 'hz', min: 1000, max: 20000 }),
+    ...bands(3, EQ).map((x) => ({ ...x, index: x.index + 10, path: ['EQ'] })),
+  ];
+  const { groups } = inferGroupModel(controls);
+  assert.deepEqual(groups.map((x) => [x.key, x.kind]), [['Filters', 'list'], ['EQ', 'repeated']]);
+  assert.deepEqual(groups[0].parameters, ['filterOn']);
+  const m = matrixOf(groups[1]);
+  assert.deepEqual(m.columns.map((x) => x.key), ['hpf', 'EQ#1', 'EQ#2', 'EQ#3', 'lpf']);
+  assert.deepEqual(m.columns.map((x) => x.on?.symbol ?? null).filter(Boolean).slice(0, 1), ['hpfOn']);
+  const slope = m.rows.findIndex((r) => r.key === 'slope');
+  assert.deepEqual(m.cells[slope], ['hpfSlope', null, null, null, null]);
+  // an edge word with no frequency is no edge: its controls stay where they were
+  const noFreq = [f('hpfSlope', 'HPF Slope', 0, { kind: 'choice', options: 2 }), ...bands(3, EQ).map((x) => ({ ...x, index: x.index + 10, path: ['EQ'] }))];
+  const kept = inferGroupModel(noFreq).groups;
+  assert.deepEqual(kept.find((x) => x.key === 'Filters').parameters, ['hpfSlope']);
+  assert.equal(kept.find((x) => x.key === 'EQ').edges, undefined);
+});
+
+test('S10: a repeated group\'s count is its own whole-number travel, 1..instances, named by the group; anything else is none', () => {
+  const four = bands(4, EQ);
+  const n = (extra) => c('bandCount', 'Bands', 100, { kind: 'travel', min: 1, max: 4, integer: true, ...extra });
+  assert.deepEqual(only([...four, n()]).count, { symbol: 'bandCount' });
+  assert.equal(only([...four, n({ max: 5 })]).count, null, 'its maximum is not the instances');
+  assert.equal(only([...four, n({ integer: false })]).count, null, 'a continuous travel counts nothing');
+  assert.equal(only([...four, n({ name: 'Mode' })]).count, null, 'its name is not the group\'s');
+  assert.equal(only(four).count, null);
+});
+
+test('L6: only the first `count` instances are drawn, no gap, the edges always; the heads carry their ordinal', () => {
+  const g = only([...bands(4, EQ), c('bandCount', 'Bands', 100, { min: 1, max: 4, integer: true }), c('hpf_freq', 'HPF Freq', 101, { unit: 'hz', min: 20, max: 1000 })]);
+  assert.deepEqual(matrixOf(g).columns.map((x) => x.key), ['hpf', '#1', '#2', '#3', '#4']);
+  const two = matrixOf(g, { values: { bandCount: 2 } });
+  assert.deepEqual(two.columns.map((x) => x.label), ['HPF', 'Band 1', 'Band 2']);
+  assert.deepEqual(two.cells[0].length, 3);
+  assert.deepEqual(matrixOf(g).columns.map((x) => x.ordinal), [null, 0, 1, 2, 3]);
 });

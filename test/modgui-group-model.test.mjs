@@ -17,7 +17,7 @@ const descriptor = (name) => JSON.parse(readFileSync(join(DIR, `${name}.descript
 /** The face's boxes for a descriptor, and each drawn control by symbol at its absolute place. */
 function face(name) {
   const lay = layout(resolvePanel(descriptor(name), { stem: name }));
-  const at = new Map(lay.sections.flatMap((s) => s.controls.map((k) => [k.symbol, { x: s.x + k.x, y: s.y + k.y, section: s.key, name: k.name }])));
+  const at = new Map(lay.sections.flatMap((s) => s.controls.map((k) => [k.symbol, { x: s.x + k.x, y: s.y + k.y, section: s.key, name: k.name, widget: k.widget }])));
   return { lay, at };
 }
 
@@ -45,14 +45,38 @@ for (const [name, n] of [['omx-eq8', 8], ['omx-eq16', 16], ['omx-eq32', 32]]) {
   });
 }
 
-test('omx-strip: its EQ is 32 columns headed by eqN On, its own on and band count above; its Filters and Gate stay flowed lists', () => {
+test('omx-strip: HPF first, LPF last, the first eqBands (4) bands between, each parameter on one row; filterOn stays in Filters', () => {
   const { at } = face('omx-strip');
-  const bands = Array.from({ length: 32 }, (_, i) => i + 1);
+  const bands = [1, 2, 3, 4];
   for (const p of ['Type', 'Freq', 'Gain', 'Q', 'On']) assert.equal(new Set(bands.map((b) => at.get(`eq${b}${p}`).y)).size, 1, p);
-  const xs = bands.map((b) => at.get(`eq${b}Freq`).x);
-  assert.ok(xs.every((x, i) => i === 0 || x > xs[i - 1]));
+  const xs = [at.get('hpfFreq').x, ...bands.map((b) => at.get(`eq${b}Freq`).x), at.get('lpfFreq').x];
+  assert.ok(xs.every((x, i) => i === 0 || x > xs[i - 1]), xs.join(' '));
+  assert.equal(at.get('hpfFreq').y, at.get('eq1Freq').y);
+  assert.equal(at.get('hpfFreq').section, at.get('eq1Freq').section);
+  assert.equal(at.get('lpfFreq').section, at.get('eq1Freq').section);
   assert.ok(at.get('eqOn').y < at.get('eq1On').y && at.get('eqBands').y < at.get('eq1On').y);
-  assert.notEqual(at.get('hpfFreq').section, at.get('eq1Freq').section);
+  assert.notEqual(at.get('filterOn').section, at.get('eq1Freq').section);
+});
+
+test('omx-strip: only the first eqBands instances are drawn, at the port\'s come-up value (4 of 32), no gap; the count is a selector', () => {
+  const { at, lay } = face('omx-strip');
+  for (const b of [5, 6, 17, 32]) assert.equal(at.has(`eq${b}Freq`), false, `eq${b}Freq is drawn`);
+  assert.equal(at.get('eqBands').widget, 'selector');
+  const xs = [1, 2, 3, 4].map((b) => at.get(`eq${b}Freq`).x);
+  assert.ok(xs.every((x, i) => i === 0 || x - xs[i - 1] === xs[1] - xs[0]), xs.join(' '));
+  assert.equal(at.get('lpfFreq').x - xs[3], xs[1] - xs[0], 'the low-pass closes up on the last live band');
+  assert.ok(lay.w < 14 * 72, `${lay.w}`);
+});
+
+test('omx-delay: the Taps are four columns, Time under tap 2..4 only, the count a selector', () => {
+  const { at } = face('omx-delay');
+  const xs = [0, 1, 2, 3].map((i) => at.get(`tap${i}Gain`).x);
+  assert.ok(xs.every((x, i) => i === 0 || x > xs[i - 1]));
+  for (const i of [1, 2, 3]) assert.equal(at.get(`tap${i}Factor`).x, at.get(`tap${i}Gain`).x, `tap ${i}`);
+  assert.equal(new Set([1, 2, 3].map((i) => at.get(`tap${i}Factor`).y)).size, 1, 'Time is one row');
+  assert.ok(at.get('tap1Factor').y > at.get('tap1Pan').y, 'Time is a row of the matrix, after Gain and Pan');
+  assert.equal(at.has('tap0Factor'), false);
+  assert.equal(at.get('fxDelayTaps').widget, 'selector');
 });
 
 test('the MOD GUI template places every band control at its cell, by the layout', () => {

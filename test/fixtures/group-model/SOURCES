@@ -6,7 +6,8 @@
 # expected/*.expected.json: each plugin's inference, written from the spec's rules before tools/group-model.mjs existed.
 #
 # omx-plugins/*.descriptor.json: Open-Mixer/omx-plugins at af11dcbdeefd1d4d862cc7f0735a82e1129de16f (the plugins at
-# 0.19.3), plugins/<name>/<name>.descriptor.json, copied whole. Ours, GPL-3.0-or-later.
+# 0.19.3), plugins/<name>/<name>.descriptor.json, copied whole (omx-eq8, -eq16, -eq32, -strip, -dyneq, -delay). Ours,
+# GPL-3.0-or-later.
 #
 # lv2/*: TTL copied whole from Fedora 44 packages (lv2-calf-plugins-0.90.9-3.fc44, lsp-plugins-lv2-1.2.29-1.fc44),
 # 2026-11-16, with two comment lines added at the top that state the licence below and point here. The files are the
