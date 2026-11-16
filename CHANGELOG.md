@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+- The MOD GUI has three looks, the `modgui-look` setting (values `vintage`, `console`, `3d`; default `vintage`;
+  `omx-panel modgui --look <name>`, else `$OMX_MODGUI_LOOK`; an unknown look is refused by name, exit 2). Declared once in
+  `schema/modgui-looks.json` and emitted into `tools/look.json`. `vintage` is the owner's reference (cream enclosure, dark label
+  plate, black knobs with a white pointer, red bypass LED, chrome footswitch, recessed screens in the console's own lit glass:
+  its four tokens are the console's tokens.css at one pinned commit, `tools/look/console-vintage.json`, checked by
+  `tools/look-pin.mjs --check`); `console` is the flat look; `3d` adds depth (gradient and bevel body, recessed sections, keycap
+  switches with a pressed state). Every control but a selector gets a scribble strip bound to its port. The vintage and 3d knob
+  film strips are one SVG each (`tools/look/knob-*.svg`), painted by `tools/svg-knob.mjs`. `tools/look-contrast.mjs` lists
+  the contrast of every text pair. The console look is no longer byte for byte what it was (the scribble strip).
+
 - The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
   section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
   end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve

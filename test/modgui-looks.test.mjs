@@ -104,3 +104,62 @@ test('contrast: the table has teeth, a lighter plate under dim text is caught', 
   const rows = contrastTable({ override: { section: '#ffffff' } });
   assert.ok(rows.some((r) => r.after < r.before), 'a white section kept every ratio');
 });
+
+// ------------------------------------------------------------------------------------------ the scribble strips
+
+const html = (look, descriptor = 'omx-delay.descriptor.json', panel = 'omx-delay.panel.json') =>
+  generateModgui(read(descriptor), { panel: read(panel), stem: 'omx-delay', source: 'looks test', look }).find(([p]) => p.endsWith('.html'))[1].toString();
+/** The controls of a template: [symbol, widget, inner html]. */
+const controls = (text) => [...text.matchAll(/<div class="omx-control omx-(\w+)[^"]*"[^>]*data-symbol="([^"]+)"[^>]*>([\s\S]*?)<\/div>\s*<\/div>/g)].map((m) => [m[2], m[1], m[3]]);
+
+for (const name of ['vintage', 'console', '3d']) {
+  test(`${name}: every control but a selector has a scribble strip bound to its port, with no static value text`, () => {
+    const text = html(name);
+    const list = controls(text).filter(([, w]) => w !== 'selector' && w !== 'display');
+    assert.ok(list.length >= 4, `${list.length} controls`);
+    for (const [symbol] of list) {
+      assert.match(text, new RegExp(`<div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${symbol}" data-unit="[^"]*"></div>`), `${name}: ${symbol} has no bound scribble`);
+    }
+    // bound means empty: mod-ui writes the port's value into it; any text in a scribble is a static value
+    for (const m of text.matchAll(/<div class="omx-scribble"[^>]*>([^<]*)<\/div>/g)) assert.equal(m[1], '', 'a scribble carries static text');
+    assert.equal([...text.matchAll(/class="omx-scribble"/g)].length, list.length);
+  });
+}
+
+test('arm: a static value in a scribble, or a scribble with no port role, is caught', () => {
+  const text = html('vintage');
+  const bound = /<div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="[^"]+" data-unit="[^"]*"><\/div>/;
+  assert.match(text, bound);
+  const staticValue = text.replace('data-unit="ms"></div>', 'data-unit="ms">300</div>');
+  assert.notEqual(staticValue, text, 'the arm landed');
+  assert.ok([...staticValue.matchAll(/<div class="omx-scribble"[^>]*>([^<]*)<\/div>/g)].some((m) => m[1] !== ''));
+});
+
+// ------------------------------------------------------------------- the console's glass, pinned and never retyped
+
+test('the vintage screens wear the console\'s own glass: look.json holds exactly the pinned values', async () => {
+  const { loadPin, PINNED } = await import('../tools/look-pin.mjs');
+  const pin = loadPin();
+  assert.deepEqual(Object.keys(pin.tokens), PINNED);
+  const v = JSON.parse(readFileSync(join(ROOT, 'tools/look.json'), 'utf8')).looks.vintage;
+  assert.ok(v['--screen-bg'].includes(pin.tokens['--glass']) && v['--screen-bg'].includes(pin.tokens['--glass-grid']));
+  assert.equal(v['--scribble-bg'], pin.tokens['--glass']);
+  assert.equal(v['--scribble-ink'], pin.tokens['--accent']);
+  assert.equal(v['--curve-line'], pin.tokens['--accent']);
+  assert.equal(v['--t-screen'], pin.tokens['--legend']);
+  assert.ok(v['--scribble-glow'].includes(pin.tokens['--accent']));
+});
+
+test('the pin is the console\'s tokens.css at the pinned commit: the hash and the four values (give the file as $OPENMIXER_TOKENS_CSS)', async (t) => {
+  const { checkPin, extractTokens } = await import('../tools/look-pin.mjs');
+  const file = process.env.OPENMIXER_TOKENS_CSS;
+  if (!file) {
+    if (process.env.CI) assert.fail('CI gives the console\'s tokens.css at the pinned commit as $OPENMIXER_TOKENS_CSS');
+    t.skip('no $OPENMIXER_TOKENS_CSS: the pin is checked where the console is at hand (the release check)');
+    return;
+  }
+  const css = readFileSync(file, 'utf8');
+  assert.deepEqual(checkPin(css), []);
+  // arm: a moved glass is refused
+  assert.match(checkPin(css.replace(extractTokens(css)['--glass'], '#123456')).join(';'), /--glass/);
+});

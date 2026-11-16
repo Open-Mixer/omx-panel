@@ -72,3 +72,34 @@ default (a readout with its symbol and range, as a display with no port role), e
 the bundle against the LV2 specifications, `tools/modgui-terms.ttl` (the closed modgui vocabulary) and
 omx-contract's resource-hint terms, and refuses a property outside that vocabulary; and a descriptor with its
 first control's default moved makes `--check` fail on the template.
+
+## Looks
+
+The MOD GUI wears one of three looks, the `modgui-look` setting: `vintage` (the default; the owner's reference: a cream enclosure,
+a dark label plate, black knobs with a white pointer, a red bypass LED, a chrome footswitch, recessed screens), `console` (the
+console's flat look) and `3d` (depth: a gradient and bevel body, recessed sections and screens, raised keycap switches with a
+pressed state, a lit LED). The setting is declared in `schema/modgui-looks.json` (name, values, default, the environment variable
+`OMX_MODGUI_LOOK` and the flag `--look`); every look sets every token of one schema there and `node tools/look.mjs` emits them into
+`tools/look.json`. Packages ship the default.
+
+An installer regenerates a plugin's MOD GUI in the chosen look, in place, with:
+
+    omx-panel modgui --look "$(cat /etc/omx/modgui-look 2>/dev/null || echo vintage)" \
+        --installed omx-plugins/<name> --out /usr/lib/lv2/<name>.lv2
+
+(the one-word file is the installer's to write; `--films-only` rewrites only the knob and fader strips.)
+
+The vintage screens' glass, grid, legend and orange accent are the console's own: `tools/look/console-vintage.json` pins them at
+one console commit with the hash of its `tokens.css`; a package build reads that copy and needs neither the console nor a
+network, and the release check runs `node tools/look-pin.mjs --check <tokens.css>` over the file at the pinned commit
+(re-pin with `--write`, then `node tools/look.mjs`).
+
+The value of a control is shown in a scribble strip, `mod-role="input-control-value"` bound to the port: mod-ui writes the port's
+value into it and the template carries no value text; the unit (from the descriptor) is its `data-unit`. A selector's own value
+element is bound the same way.
+
+The knob film strips of `vintage` and `3d` are generated from one SVG each (`tools/look/knob-vintage.svg`, `knob-3d.svg`): 65
+frames of 48 px, left to right, minimum to maximum, MOD's horizontal sprite. `tools/svg-knob.mjs` paints the SVG's small subset
+with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so the strips need no external tool. `node
+tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
+`vintage` clears 4.5:1 on every pair.
