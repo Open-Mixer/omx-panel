@@ -83,7 +83,7 @@ jobs:
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |
           git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
-          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q v1
+          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q openmixer-v1
       - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |
