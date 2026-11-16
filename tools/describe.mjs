@@ -31,7 +31,7 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
-import { controlsOfDescriptor, inferGroupModel, matrixOf, placeMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, inferGroupModel, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
 import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
@@ -302,51 +302,79 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin, field: d.field, entry: d.entry, reason: d.reason }));
   }
   // the group model (docs/group-model.md): the section that holds a repeated group carries its matrix, over the sections as
-  // the skin left them, so no surface re-derives it
-  description = withMatrices(description, effective, panel, layout, servedOf);
+  // the skin left them, so no surface re-derives it; `--layout` carries the same merged section, what the renderer draws
+  const grouped = withMatrices(description, effective, panel, layout, servedOf);
+  description = grouped.description;
   // the pages are cut last, over the description as the skin left it: its sections, its order, its visibility
   description = { ...description, pages: pagesOfDescription(description, effective, layout, servedOf, { perPage, remote }) };
-  return withLayout ? { description, refusals, layout } : { description, refusals };
+  return withLayout ? { description, refusals, layout: grouped.layout } : { description, refusals };
 }
 
 /**
- * The description with each repeated group's matrix on the section that holds its instances (`matrix: matrixOf(g)`, every
- * symbol as the description serves it, `count` with the widget it is drawn as). The controls the matrix places belong to
- * that section: the other sections of the group are folded into it, and the sections the edges were taken from keep the
- * rest. A group the description cannot place whole is left as it is.
+ * The description, and the layout it was made from, with each repeated group's served matrix (group-model.mjs
+ * `servedMatrix`, the one function of the shape) on the section that holds its instances, titled by it. The controls the
+ * matrix places belong to that section: the other sections of the group are folded into it, and the sections the edges were
+ * taken from keep the rest; a section the group emptied goes, unless a display or a meter stands on it. The layout is
+ * merged the same way (each control's, display's and meter's `section` index and `sectionKey`), in its own symbols, so
+ * `describe --layout` serves what the description serves. A group the description cannot place whole is left as it is.
  */
 function withMatrices(description, effective, panel, layout, servedOf) {
   const inLayout = new Set(layout.controls.map((c) => c.symbol));
   const { groups } = inferGroupModel(controlsOfDescriptor(effective, panel ? { panel } : {}).filter((c) => inLayout.has(c.symbol)));
   const keyOf_ = new Map([...servedOf].map(([key, served]) => [served, key]));
   const served = (key) => servedOf.get(key) ?? key;
+  const governed = new Set(layout.controls.filter((c) => c.visible !== null && c.visible !== undefined).map((c) => c.symbol));
   let { sections, controls } = description;
+  let lay = layout;
   for (const g of groups) {
     if (g.kind !== 'repeated') continue;
     const placed = placeMatrix(g, sections.map((s) => ({ id: s.key, symbols: controls.filter((c) => c.section === s.key).map((c) => keyOf_.get(c.symbol) ?? c.symbol) })));
     if (!placed) continue;
-    const m = matrixOf(g);
-    // the served shape (docs/group-model.md): `heads` are the instances and edges, `rows` the parameters, `cells[row][head]`, whatever the orientation
-    const [hs, ls] = m.orientation === 'columns' ? [m.columns, m.rows] : [m.rows, m.columns];
-    const cells = ls.map((_, l) => hs.map((_h, h) => (m.orientation === 'columns' ? m.cells[l][h] : m.cells[h][l])).map((sym) => (sym === null ? null : served(sym))));
+    const home = sections.find((s) => s.key === placed.home);
     const countDefault = g.count ? description.params.find((x) => x.symbol === served(g.count.symbol))?.default : undefined;
-    const matrix = {
-      orientation: m.orientation,
-      heads: hs.map((h) => ({ label: h.label, on: h.on ? { symbol: served(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
-      // the on/off is the head, drawn once, as the last row
-      rows: [...ls.map((l) => ({ label: l.label })), ...(hs.some((h) => h.on) ? [{ label: 'On', head: true }] : [])],
-      cells: [...cells, ...(hs.some((h) => h.on) ? [hs.map((h) => (h.on ? served(h.on.symbol) : null))] : [])],
-      ...(g.count ? { count: { symbol: served(g.count.symbol), default: countDefault ?? null } } : {}),
-    };
-    controls = controls.map((c) => (placed.members.has(keyOf_.get(c.symbol) ?? c.symbol) ? { ...c, section: placed.home, ...(g.count && (keyOf_.get(c.symbol) ?? c.symbol) === g.count.symbol ? { widget: 'auto' } : {}) } : c));
+    const options = { governs: (sym) => governed.has(sym), title: home.label, countDefault: countDefault ?? null };
+    const matrix = servedMatrix(g, { ...options, symbolOf: served });
+    const isCount = (sym) => g.count && sym === g.count.symbol;
+    controls = controls.map((c) => {
+      const key = keyOf_.get(c.symbol) ?? c.symbol;
+      return placed.members.has(key) ? { ...c, section: placed.home, ...(isCount(key) ? { widget: 'auto' } : {}) } : c;
+    });
     // a section the group emptied goes, unless a display or a meter stands on it
     const stood = new Set([...description.displays.map((d) => d.section), ...description.meters.map((x) => x.section)]);
+    const gone = (s) => !controls.some((c) => c.section === s.key) && !stood.has(s.key) && (placed.folded.includes(s.key) || placed.donors.includes(s.key));
+    const titled = (s) => (s.label === matrix.title ? {} : { label: matrix.title, labelKey: s.labelKey === null ? null : '' });
     sections = sections.flatMap((s) => {
-      if (s.key === placed.home) { const { bars: _bars, ...own } = s; return [{ ...own, matrix }]; }
-      return controls.some((c) => c.section === s.key) || stood.has(s.key) || !(placed.folded.includes(s.key) || placed.donors.includes(s.key)) ? [s] : [];
+      if (s.key === placed.home) { const { bars: _bars, ...own } = s; return [{ ...own, ...titled(s), matrix }]; }
+      return gone(s) ? [] : [s];
     });
+    lay = mergeLayout(lay, placed, new Set(sections.map((s) => s.key)), servedMatrix(g, options), titled);
   }
-  return { ...description, sections, controls };
+  return { description: { ...description, sections, controls }, layout: lay };
+}
+
+/** The layout with a placed group's sections merged as the description merged them: `keep` the section keys the description
+ * kept, the home titled and carrying `matrix`, every index that named a section renumbered. */
+function mergeLayout(layout, placed, keep, matrix, titled) {
+  const old = layout.sections;
+  const sections = old.filter((s) => keep.has(s.key)).map((s) => {
+    if (s.key !== placed.home) return s;
+    const { bars: _bars, ...own } = s;
+    return { ...own, ...titled(s), matrix };
+  });
+  const index = new Map(sections.map((s, i) => [s.key, i]));
+  const homeAt = index.get(placed.home);
+  const moved = (key) => (index.has(key) ? key : placed.home);
+  const at = (item, member) => {
+    const key = member ? placed.home : moved(item.sectionKey ?? old[item.section]?.key);
+    return { ...item, section: index.get(key) ?? homeAt, sectionKey: key };
+  };
+  return {
+    ...layout,
+    sections,
+    controls: layout.controls.map((c) => at(c, placed.members.has(c.symbol))),
+    displays: layout.displays.map((d) => (typeof d.section === 'number' ? at(d, false) : d)),
+    meters: layout.meters.map((m) => (typeof m.section === 'number' ? at(m, false) : m)),
+  };
 }
 
 /** The layout of a plugin with no control to lay out but path or text parameters: one plain section for them, family
