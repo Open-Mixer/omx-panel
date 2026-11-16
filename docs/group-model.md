@@ -176,7 +176,9 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   **The count control itself is drawn as a selector**: a port that is an enumeration, or a whole number of few points,
   is a selector and never a knob; the count is one whatever its range (`eqBands` 1..32 is a selector of 32 options).
   The MOD GUI face is static: it draws the first `count` instances at the count port's come-up value (omx-strip: 4 of 32;
-  omx-delay: 1 of 4), and an instance beyond it is not on the face, its ports not among the pedal's. *Tests: "L6: ..."
+  omx-delay: 1 of 4), and an instance beyond it is not on the face, its ports not among the pedal's. A plugin whose declared panel already
+  governs each instance by a `visibleWhen` rule on the count keeps that live rule instead: its instances stay on the face,
+  hidden by the rule. *Tests: "L6: ..."
   (library); modgui-gen's omx-strip and omx-delay faces.*
 
 ## The corpus
