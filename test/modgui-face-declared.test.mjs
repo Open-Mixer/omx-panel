@@ -54,3 +54,9 @@ test('the raster draws the same two heads: a metal disc with a slot darker than 
   const off = at(cx - r * 4 * 0.5, cy - r * 4 * 0.5), on = at(cx, cy);
   assert.ok(lum(off) - lum(on) > 60, `the slot (${on}) is not darker than the metal beside it (${off})`);
 });
+
+test('every drawing the look reads ships in dist: the copy step lists each SVG of tools/look (a fader film needs fader-vintage.svg)', async () => {
+  const { DATA } = await import('../tools/copy-data.mjs');
+  const { readdirSync } = await import('node:fs');
+  for (const f of readdirSync(join(ROOT, 'tools/look')).filter((n) => n.endsWith('.svg'))) assert.ok(DATA.includes(`tools/look/${f}`), `${f} is not copied into dist`);
+});
