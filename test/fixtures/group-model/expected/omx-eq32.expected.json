@@ -218,14 +218,6 @@
    ],
    "lines": [
     {
-     "key": "type",
-     "label": "Type"
-    },
-    {
-     "key": "slope",
-     "label": "Slope"
-    },
-    {
      "key": "freq",
      "label": "Frequency"
     },
@@ -236,81 +228,13 @@
     {
      "key": "q",
      "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
     }
    ],
    "cells": [
-    [
-     null,
-     "b1_type",
-     "b2_type",
-     "b3_type",
-     "b4_type",
-     "b5_type",
-     "b6_type",
-     "b7_type",
-     "b8_type",
-     "b9_type",
-     "b10_type",
-     "b11_type",
-     "b12_type",
-     "b13_type",
-     "b14_type",
-     "b15_type",
-     "b16_type",
-     "b17_type",
-     "b18_type",
-     "b19_type",
-     "b20_type",
-     "b21_type",
-     "b22_type",
-     "b23_type",
-     "b24_type",
-     "b25_type",
-     "b26_type",
-     "b27_type",
-     "b28_type",
-     "b29_type",
-     "b30_type",
-     "b31_type",
-     "b32_type",
-     null
-    ],
-    [
-     "hpf_slope",
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     "lpf_slope"
-    ],
     [
      "hpf_freq",
      "b1_freq",
@@ -348,7 +272,7 @@
      "lpf_freq"
     ],
     [
-     null,
+     "hpf_slope",
      "b1_gain",
      "b2_gain",
      "b3_gain",
@@ -381,7 +305,7 @@
      "b30_gain",
      "b31_gain",
      "b32_gain",
-     null
+     "lpf_slope"
     ],
     [
      null,
@@ -417,6 +341,42 @@
      "b30_q",
      "b31_q",
      "b32_q",
+     null
+    ],
+    [
+     null,
+     "b1_type",
+     "b2_type",
+     "b3_type",
+     "b4_type",
+     "b5_type",
+     "b6_type",
+     "b7_type",
+     "b8_type",
+     "b9_type",
+     "b10_type",
+     "b11_type",
+     "b12_type",
+     "b13_type",
+     "b14_type",
+     "b15_type",
+     "b16_type",
+     "b17_type",
+     "b18_type",
+     "b19_type",
+     "b20_type",
+     "b21_type",
+     "b22_type",
+     "b23_type",
+     "b24_type",
+     "b25_type",
+     "b26_type",
+     "b27_type",
+     "b28_type",
+     "b29_type",
+     "b30_type",
+     "b31_type",
+     "b32_type",
      null
     ]
    ]

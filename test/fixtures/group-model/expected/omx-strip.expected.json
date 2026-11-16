@@ -261,14 +261,6 @@
    ],
    "lines": [
     {
-     "key": "type",
-     "label": "Type"
-    },
-    {
-     "key": "slope",
-     "label": "Slope"
-    },
-    {
      "key": "freq",
      "label": "Freq"
     },
@@ -279,81 +271,13 @@
     {
      "key": "q",
      "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
     }
    ],
    "cells": [
-    [
-     null,
-     "eq1Type",
-     "eq2Type",
-     "eq3Type",
-     "eq4Type",
-     "eq5Type",
-     "eq6Type",
-     "eq7Type",
-     "eq8Type",
-     "eq9Type",
-     "eq10Type",
-     "eq11Type",
-     "eq12Type",
-     "eq13Type",
-     "eq14Type",
-     "eq15Type",
-     "eq16Type",
-     "eq17Type",
-     "eq18Type",
-     "eq19Type",
-     "eq20Type",
-     "eq21Type",
-     "eq22Type",
-     "eq23Type",
-     "eq24Type",
-     "eq25Type",
-     "eq26Type",
-     "eq27Type",
-     "eq28Type",
-     "eq29Type",
-     "eq30Type",
-     "eq31Type",
-     "eq32Type",
-     null
-    ],
-    [
-     "hpfSlope",
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     "lpfSlope"
-    ],
     [
      "hpfFreq",
      "eq1Freq",
@@ -391,7 +315,7 @@
      "lpfFreq"
     ],
     [
-     null,
+     "hpfSlope",
      "eq1Gain",
      "eq2Gain",
      "eq3Gain",
@@ -424,7 +348,7 @@
      "eq30Gain",
      "eq31Gain",
      "eq32Gain",
-     null
+     "lpfSlope"
     ],
     [
      null,
@@ -460,6 +384,42 @@
      "eq30Q",
      "eq31Q",
      "eq32Q",
+     null
+    ],
+    [
+     null,
+     "eq1Type",
+     "eq2Type",
+     "eq3Type",
+     "eq4Type",
+     "eq5Type",
+     "eq6Type",
+     "eq7Type",
+     "eq8Type",
+     "eq9Type",
+     "eq10Type",
+     "eq11Type",
+     "eq12Type",
+     "eq13Type",
+     "eq14Type",
+     "eq15Type",
+     "eq16Type",
+     "eq17Type",
+     "eq18Type",
+     "eq19Type",
+     "eq20Type",
+     "eq21Type",
+     "eq22Type",
+     "eq23Type",
+     "eq24Type",
+     "eq25Type",
+     "eq26Type",
+     "eq27Type",
+     "eq28Type",
+     "eq29Type",
+     "eq30Type",
+     "eq31Type",
+     "eq32Type",
      null
     ]
    ],

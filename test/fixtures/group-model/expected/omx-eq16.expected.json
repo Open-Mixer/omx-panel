@@ -122,14 +122,6 @@
    ],
    "lines": [
     {
-     "key": "type",
-     "label": "Type"
-    },
-    {
-     "key": "slope",
-     "label": "Slope"
-    },
-    {
      "key": "freq",
      "label": "Frequency"
     },
@@ -140,49 +132,13 @@
     {
      "key": "q",
      "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
     }
    ],
    "cells": [
-    [
-     null,
-     "b1_type",
-     "b2_type",
-     "b3_type",
-     "b4_type",
-     "b5_type",
-     "b6_type",
-     "b7_type",
-     "b8_type",
-     "b9_type",
-     "b10_type",
-     "b11_type",
-     "b12_type",
-     "b13_type",
-     "b14_type",
-     "b15_type",
-     "b16_type",
-     null
-    ],
-    [
-     "hpf_slope",
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     null,
-     "lpf_slope"
-    ],
     [
      "hpf_freq",
      "b1_freq",
@@ -204,7 +160,7 @@
      "lpf_freq"
     ],
     [
-     null,
+     "hpf_slope",
      "b1_gain",
      "b2_gain",
      "b3_gain",
@@ -221,7 +177,7 @@
      "b14_gain",
      "b15_gain",
      "b16_gain",
-     null
+     "lpf_slope"
     ],
     [
      null,
@@ -241,6 +197,26 @@
      "b14_q",
      "b15_q",
      "b16_q",
+     null
+    ],
+    [
+     null,
+     "b1_type",
+     "b2_type",
+     "b3_type",
+     "b4_type",
+     "b5_type",
+     "b6_type",
+     "b7_type",
+     "b8_type",
+     "b9_type",
+     "b10_type",
+     "b11_type",
+     "b12_type",
+     "b13_type",
+     "b14_type",
+     "b15_type",
+     "b16_type",
      null
     ]
    ]

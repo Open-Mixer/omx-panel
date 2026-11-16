@@ -132,7 +132,7 @@ test('L2: an EQ of more rows than bands is still columns, its bands low to high'
   const m = matrixOf(only(bands(2, extra).reverse()));
   assert.equal(m.orientation, 'columns');
   assert.deepEqual(m.columns.map((x) => x.label), ['Band 1', 'Band 2']);
-  assert.deepEqual(m.rows.slice(0, 5).map((r) => r.key), ['type', 'slope', 'freq', 'gain', 'q']);
+  assert.deepEqual(m.rows.slice(0, 5).map((r) => r.key), ['freq', 'gain', 'slope', 'q', 'type']);
 });
 
 test('L4: another repeat is columns when its instances are at least its rows, else rows', () => {
