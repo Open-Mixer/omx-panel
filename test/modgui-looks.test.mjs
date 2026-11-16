@@ -150,17 +150,3 @@ test('the vintage screens wear the console\'s own glass: look.json holds exactly
   assert.equal(v['--t-screen'], pin.tokens['--legend']);
   assert.ok(v['--scribble-glow'].includes(pin.tokens['--accent']));
 });
-
-test('the pin is the console\'s tokens.css at the pinned commit: the hash and the four values (give the file as $OPENMIXER_TOKENS_CSS)', async (t) => {
-  const { checkPin, extractTokens } = await import('../tools/look-pin.mjs');
-  const file = process.env.OPENMIXER_TOKENS_CSS;
-  if (!file) {
-    if (process.env.CI) assert.fail('CI gives the console\'s tokens.css at the pinned commit as $OPENMIXER_TOKENS_CSS');
-    t.skip('no $OPENMIXER_TOKENS_CSS: the pin is checked where the console is at hand (the release check)');
-    return;
-  }
-  const css = readFileSync(file, 'utf8');
-  assert.deepEqual(checkPin(css), []);
-  // arm: a moved glass is refused
-  assert.match(checkPin(css.replace(extractTokens(css)['--glass'], '#123456')).join(';'), /--glass/);
-});

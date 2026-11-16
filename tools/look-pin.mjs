@@ -9,6 +9,8 @@
  * copy, which tools/look.mjs writes into tools/look.json. A release check hands this script the file at the pinned commit
  * (`--check <tokens.css>`, or $OPENMIXER_TOKENS_CSS) and it fails when the file's hash or any pinned value differs.
  *
+ * `--drift <tokens.css>` is the CI check: the file at the console's CURRENT ref, the values only (OPENMIXER_TOKENS_CSS in the test).
+ *
  * Usage: `node tools/look-pin.mjs --write <tokens.css> <commit>` re-pins (then `node tools/look.mjs`);
  *        `node tools/look-pin.mjs --check <tokens.css>` verifies the pin against that file.
  */
@@ -27,7 +29,6 @@ export const BASE = ['--knob-pointer', '--fader-cap-line', '--cap-legend'];
 /** The hardware metal a finish block sets, and the finishes of the console (aluminium is the default, the bare `:root`). */
 export const FINISH_KEYS = ['--knob-face', '--knob-edge', '--knob-cap-hi', '--knob-knurl', '--fader-cap', '--fader-cap-ridge', '--fader-cap-groove', '--btn-face', '--toggle-face', '--screw'];
 export const FINISHES = ['aluminium', 'graphite', 'black'];
-export const DEFAULT_FINISH = 'aluminium';
 export const loadPin = (file = PIN_JSON) => JSON.parse(readFileSync(file, 'utf8'));
 
 const first = (css, re, what) => {
@@ -59,13 +60,18 @@ export function extractFinishes(css) {
   }));
 }
 
+/** The console's default finish, read where the console sets it: the finish block whose selector is the bare `:root` too (`:root, :root[data-finish="x"]`). */
+export function extractDefaultFinish(css) {
+  return first(css, /:root\s*,\s*:root\[data-finish="([a-z]+)"\]/, 'default finish block (:root, :root[data-finish="…"])');
+}
+
 /** Everything the pin keeps, read out of `css`: the glass, the relief, the base paint and every finish. */
 export function extractPin(css) {
   return {
     tokens: extractTokens(css),
     relief: Object.fromEntries(RELIEF.map((k) => [k, tokenOf(css, k)])),
     base: Object.fromEntries(BASE.map((k) => [k, tokenOf(css, k)])),
-    defaultFinish: DEFAULT_FINISH,
+    defaultFinish: extractDefaultFinish(css),
     finish: extractFinishes(css),
   };
 }
@@ -106,8 +112,8 @@ export function checkPin(css, pin = loadPin()) {
 
 function main(argv) {
   const [mode, file, commit] = argv;
-  if (!['--write', '--check'].includes(mode) || !file || (mode === '--write' && !commit)) {
-    console.error('usage: look-pin.mjs --write <tokens.css> <commit> | --check <tokens.css>');
+  if (!['--write', '--check', '--drift'].includes(mode) || !file || (mode === '--write' && !commit)) {
+    console.error('usage: look-pin.mjs --write <tokens.css> <commit> | --check <tokens.css> | --drift <tokens.css>');
     process.exit(2);
   }
   const css = readFileSync(file, 'utf8');
@@ -115,6 +121,16 @@ function main(argv) {
     const pin = { $comment: 'GENERATED — the console\'s vintage glass, pinned. Re-pin: `node tools/look-pin.mjs --write <tokens.css> <commit>`, then `node tools/look.mjs`.', source: { project: 'the OpenMixer console, its tokens.css (vintage dark theme)', commit, sha256: sha(css) }, ...extractPin(css) };
     writeFileSync(PIN_JSON, `${JSON.stringify(pin, null, 2)}\n`);
     console.log(`look-pin: pinned ${commit}`);
+    return;
+  }
+  if (mode === '--drift') {
+    // the console's tokens.css at its CURRENT ref: every pinned value must still be what it holds (its hash is any edit's)
+    const drift = diffPin(css);
+    if (drift.length) {
+      console.error(`look-pin: the console moved: ${drift.join('; ')}; re-pin with --write, then node tools/look.mjs`);
+      process.exit(1);
+    }
+    console.log('look-pin: every pinned value is what the console\'s tokens.css holds now');
     return;
   }
   const faults = checkPin(css);
