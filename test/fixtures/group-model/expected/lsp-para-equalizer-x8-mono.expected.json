@@ -79,14 +79,6 @@
    ],
    "lines": [
     {
-     "key": "type",
-     "label": "Filter type"
-    },
-    {
-     "key": "slope",
-     "label": "Filter slope"
-    },
-    {
      "key": "freq",
      "label": "Frequency"
     },
@@ -95,8 +87,16 @@
      "label": "Gain"
     },
     {
+     "key": "slope",
+     "label": "Filter slope"
+    },
+    {
      "key": "q",
      "label": "Quality factor"
+    },
+    {
+     "key": "type",
+     "label": "Filter type"
     },
     {
      "key": "fm_#",
@@ -121,26 +121,6 @@
    ],
    "cells": [
     [
-     "ft_0",
-     "ft_1",
-     "ft_2",
-     "ft_3",
-     "ft_4",
-     "ft_5",
-     "ft_6",
-     "ft_7"
-    ],
-    [
-     "s_0",
-     "s_1",
-     "s_2",
-     "s_3",
-     "s_4",
-     "s_5",
-     "s_6",
-     "s_7"
-    ],
-    [
      "f_0",
      "f_1",
      "f_2",
@@ -161,6 +141,16 @@
      "g_7"
     ],
     [
+     "s_0",
+     "s_1",
+     "s_2",
+     "s_3",
+     "s_4",
+     "s_5",
+     "s_6",
+     "s_7"
+    ],
+    [
      "q_0",
      "q_1",
      "q_2",
@@ -169,6 +159,16 @@
      "q_5",
      "q_6",
      "q_7"
+    ],
+    [
+     "ft_0",
+     "ft_1",
+     "ft_2",
+     "ft_3",
+     "ft_4",
+     "ft_5",
+     "ft_6",
+     "ft_7"
     ],
     [
      "fm_0",

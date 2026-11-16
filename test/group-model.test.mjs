@@ -132,7 +132,7 @@ test('L2: an EQ of more rows than bands is still columns, its bands low to high'
   const m = matrixOf(only(bands(2, extra).reverse()));
   assert.equal(m.orientation, 'columns');
   assert.deepEqual(m.columns.map((x) => x.label), ['Band 1', 'Band 2']);
-  assert.deepEqual(m.rows.slice(0, 5).map((r) => r.key), ['type', 'slope', 'freq', 'gain', 'q']);
+  assert.deepEqual(m.rows.slice(0, 5).map((r) => r.key), ['freq', 'gain', 'slope', 'q', 'type']);
 });
 
 test('L4: another repeat is columns when its instances are at least its rows, else rows', () => {
@@ -190,8 +190,8 @@ test('S9: every control opening with an edge word is taken from any list group, 
   const m = matrixOf(groups[1]);
   assert.deepEqual(m.columns.map((x) => x.key), ['hpf', 'EQ#1', 'EQ#2', 'EQ#3', 'lpf']);
   assert.deepEqual(m.columns.map((x) => x.on?.symbol ?? null).filter(Boolean).slice(0, 1), ['hpfOn']);
-  const slope = m.rows.findIndex((r) => r.key === 'slope');
-  assert.deepEqual(m.cells[slope], ['hpfSlope', null, null, null, null]);
+  const slope = m.rows.findIndex((r) => r.key === 'gain');
+  assert.deepEqual(m.cells[slope].slice(0, 1).concat(m.cells[slope].slice(1, 4).map((x) => x && 'band')), ['hpfSlope', 'band', 'band', 'band']);
   // an edge word with no frequency is no edge: its controls stay where they were
   const noFreq = [f('hpfSlope', 'HPF Slope', 0, { kind: 'choice', options: 2 }), ...bands(3, EQ).map((x) => ({ ...x, index: x.index + 10, path: ['EQ'] }))];
   const kept = inferGroupModel(noFreq).groups;
@@ -216,4 +216,22 @@ test('L6: only the first `count` instances are drawn, no gap, the edges always; 
   assert.deepEqual(two.columns.map((x) => x.label), ['HPF', 'Band 1', 'Band 2']);
   assert.deepEqual(two.cells[0].length, 3);
   assert.deepEqual(matrixOf(g).columns.map((x) => x.ordinal), [null, 0, 1, 2, 3]);
+});
+
+test('L7: rows align across bands, a missing control an empty cell; the columns fill the width; one knob selects the column', async () => {
+  const { visibleColumns, selectedColumn } = await import('../dist/tools/group-model.mjs');
+  const g = only([...bands(3, EQ), c('hpf_freq', 'HPF Freq', 100, { unit: 'hz', min: 20, max: 1000 }), c('hpf_on', 'HPF', 101, { kind: 'toggle' })]);
+  const m = matrixOf(g);
+  const gain = m.rows.findIndex((r) => r.key === 'gain');
+  const freq = m.rows.findIndex((r) => r.key === 'freq');
+  assert.equal(m.cells[gain][0], null, 'the HPF has no gain');
+  assert.equal(m.cells[freq][0], 'hpf_freq');
+  assert.ok(m.cells.every((row) => row.length === m.columns.length));
+  assert.deepEqual(m.cells[freq].slice(1), ['b1_freq', 'b2_freq', 'b3_freq']);
+  assert.equal(visibleColumns(m, { width: 700, column: 72 }), 4);
+  assert.equal(visibleColumns(m, { width: 100, column: 72 }), 1);
+  assert.equal(visibleColumns(m, { width: 216, column: 72 }), 3);
+  assert.equal(selectedColumn(m, 2).key, m.columns[2].key);
+  assert.equal(selectedColumn(m, 99).key, m.columns.at(-1).key);
+  assert.deepEqual(selectedColumn(m, 0).cells, m.cells.map((r) => r[0]));
 });

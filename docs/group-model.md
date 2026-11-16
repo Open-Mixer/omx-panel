@@ -159,11 +159,15 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   left empty; nothing moves into it. *Test: "L1: every row holds one parameter across the instances".*
 - **L2, the EQ is always horizontal.** `orientation: 'columns'`: the bands are columns, left to right in ascending
   instance number; the high-pass is the leftmost column and the low-pass the rightmost; a low shelf sits right of the
-  high-pass and a high shelf left of the low-pass. Each column stacks its parameters in one order: `type`, `slope`,
-  `freq`, `gain`, `q`, then the rest in the first instance's order. *Tests: omx-eq8, omx-eq16, omx-eq32, x42 fil4, LSP
+  high-pass and a high shelf left of the low-pass. Each column stacks its parameters in the owner's order: `freq`,
+  then `gain` (one aligned row: the gain of a bell or shelf band and the slope of the high-pass and low-pass, an edge's
+  `slope` taking the `gain` row when the bands hold no slope row of their own; a band that holds both keeps `gain`, then
+  `slope`), `q`, `type`, then the rest in the first instance's order, and last the column's on/off (L3). *Tests: omx-eq8, omx-eq16, omx-eq32, x42 fil4, LSP
   para-equalizer, omx-strip; "L2: an EQ of more rows than bands is still columns".*
-- **L3, the head.** Each column (each row, transposed) opens with its label and its on/off (`on`), in the header, not
-  among the rows. *Test: the corpus' `heads`.*
+- **L3, the head.** Each column (each row, transposed) carries its label and its on/off (`on`) as its head, which is its
+  state, not a parameter row of `matrixOf`; a surface DRAWS the on/off as the column's last row, and the served matrix
+  (below) ends its `rows` with that row, `{ label: 'On', head: true }`, its cells the heads' `on` symbols (the same
+  control: drawn once, there). *Test: the corpus' `heads`.*
 - **L4, any other repeat takes the orientation that fits.** `columns` when there are at least as many instances as
   rows, else `rows` (one row per instance, the parameters across). *Test: the Calf multiband compressor (4 bands, 8
   parameters: rows).*
@@ -181,6 +185,16 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   hidden by the rule. *Tests: "L6: ..."
   (library); modgui-gen's omx-strip and omx-delay faces.*
 
+- **L7, the owner's drawing rule for an EQ, every surface.** An EQ is one matrix: a column per band, left to right, HPF
+  first and LPF last; each column's controls stacked vertically, every column in the same row order, a control a band lacks
+  an empty cell, so row `r` is the same parameter in every column (the HPF's gain cell is empty and its `freq` sits on the
+  band's `freq` row). A surface shows **as many columns as fit**: `visibleColumns(matrix, { width, column })` is
+  `max(1, floor(width / column))` columns, never one band per screen while more fit; a surface that cannot show them all
+  scrolls whole columns. An encoder surface (Zynthian) shows the whole matrix and its encoders edit the **selected
+  column**: `selectedColumn(matrix, n)` is the column `n` clamped to the matrix (one knob picks `n`), and the encoders
+  of the surface are that column's rows in row order, an empty cell leaving its encoder idle. The head toggle (`on`) is
+  the column's header in this model; a surface that stacks it draws it as the column's last row. *Tests: "L7: ...".*
+
 ## The corpus
 
 `test/fixtures/group-model/`: each plugin's input (a descriptor as omx-plugins ships it, or the TTL as its package
@@ -189,9 +203,9 @@ existed. `test/group-model.test.mjs` compares each in full.
 
 | plugin | input | expected |
 |---|---|---|
-| omx-eq8, omx-eq16, omx-eq32 | descriptor | one EQ, declared: HPF, bands 1..N, LPF as columns; rows type, slope, freq, gain, q |
-| omx-strip | descriptor | its EQ indexed: HPF, 32 columns `EQ 1` .. `EQ 32` headed by `eqN On`, LPF (heads `hpfOn`, `lpfOn`; rows type, slope, freq, gain, q); `eqOn` and `eqBands` its own, `eqBands` its count; Filters a list of `filterOn`; Input, Gate, Comp, Order lists |
-| omx-dyneq | descriptor | one EQ, declared: Band 1..6 as columns headed by `bandOnN`; rows type, freq, gain, q (each the one control called that), then dynMode, threshold, ratio, range, attack, release, listen under their own stems; `mixPct` in Output |
+| omx-eq8, omx-eq16, omx-eq32 | descriptor | one EQ, declared: HPF, bands 1..N, LPF as columns; rows freq, gain (the HPF's and LPF's slope on it), q, type |
+| omx-strip | descriptor | its EQ indexed: HPF, 32 columns `EQ 1` .. `EQ 32` headed by `eqN On`, LPF (heads `hpfOn`, `lpfOn`; rows freq, gain (slope on it for the edges), q, type); `eqOn` and `eqBands` its own, `eqBands` its count; Filters a list of `filterOn`; Input, Gate, Comp, Order lists |
+| omx-dyneq | descriptor | one EQ, declared: Band 1..6 as columns headed by `bandOnN`; rows freq, gain, q, type (each the one control called that), then dynMode, threshold, ratio, range, attack, release, listen under their own stems; `mixPct` in Output |
 | omx-delay | descriptor | its Taps indexed: Tap 1..4 as columns, rows Gain, Pan, then Time (tap 1's cell empty); `fxDelayTaps` its own and its count; not an EQ |
 | x42 fil4 (mono) | TTL | one EQ, indexed: Highpass, Lowshelf, Section 1..4, Highshelf, Lowpass; rows freq, gain, q |
 | LSP para-equalizer x8 mono | TTL | one EQ, indexed: Band 0..7 (its names count from 0), no head (it has no on toggle), ten rows |

@@ -50,10 +50,6 @@
    ],
    "lines": [
     {
-     "key": "type",
-     "label": "Type"
-    },
-    {
      "key": "freq",
      "label": "Freq"
     },
@@ -64,6 +60,10 @@
     {
      "key": "q",
      "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
     },
     {
      "key": "dynMode#",
@@ -96,14 +96,6 @@
    ],
    "cells": [
     [
-     "bandType1",
-     "bandType2",
-     "bandType3",
-     "bandType4",
-     "bandType5",
-     "bandType6"
-    ],
-    [
      "freq1",
      "freq2",
      "freq3",
@@ -126,6 +118,14 @@
      "q4",
      "q5",
      "q6"
+    ],
+    [
+     "bandType1",
+     "bandType2",
+     "bandType3",
+     "bandType4",
+     "bandType5",
+     "bandType6"
     ],
     [
      "dynMode1",

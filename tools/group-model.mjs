@@ -103,7 +103,7 @@ const isNum = (t) => /^\d+$/.test(t);
 const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
-export const ROLE_ORDER = ['type', 'slope', 'freq', 'gain', 'q'];
+export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
 const OFF_WORDS = new Set(['bypass', 'mute', 'off']);
 const ROLE_WORDS = {
@@ -431,6 +431,10 @@ function attachEdges(groups, buckets) {
     const used = new Set(edges.flatMap((e) => [...(e.on ? [e.on.symbol] : []), ...Object.values(e.parameters)]));
     for (const src of sources) src.parameters = src.parameters.filter((s) => !used.has(s));
     g.edges = edges;
+    // the owner's order puts an edge's slope on the gain row, one aligned row, when the bands hold no slope row of their own
+    if (!g.rows.some((r) => r.key === 'slope')) {
+      for (const e of edges) if ('slope' in e.parameters && !('gain' in e.parameters)) { e.parameters.gain = e.parameters.slope; delete e.parameters.slope; }
+    }
     // the rows an edge brings that no band holds go after the bands' rows
     for (const e of edges) for (const k of Object.keys(e.parameters)) if (!g.rows.some((r) => r.key === k)) g.rows.push({ key: k, label: capital(k.includes(':') ? k.split(':')[1] : k), role: ROLE_ORDER.includes(k) ? k : null });
     const rank = (r) => { const i = ROLE_ORDER.indexOf(r.key); return i === -1 ? ROLE_ORDER.length : i; };
@@ -498,4 +502,17 @@ export function placeMatrix(g, sections) {
   if (home.length === 0 || home.some((s) => s.symbols.some((sym) => !members.has(sym)))) return null;
   const donors = sections.filter((s) => !home.includes(s) && holds(s, members));
   return { home: home[0].id, folded: home.slice(1).map((s) => s.id), donors: donors.map((s) => s.id), members };
+}
+
+/** L7: how many of a matrix's columns (at most all of them) a surface `width` wide shows at `column` each: as many as fit, at least one. */
+export function visibleColumns(m, { width, column }) {
+  const heads = m.orientation === 'columns' ? m.columns.length : m.rows.length;
+  return Math.min(heads, Math.max(1, Math.floor(width / column)));
+}
+
+/** L7: the column `n` (clamped) an encoder surface edits: its head and its cells in row order, an empty cell null. */
+export function selectedColumn(m, n) {
+  const heads = m.orientation === 'columns' ? m.columns : m.rows;
+  const at = Math.min(heads.length - 1, Math.max(0, Math.trunc(n)));
+  return { ...heads[at], index: at, cells: m.orientation === 'columns' ? m.cells.map((r) => r[at]) : m.cells[at] };
 }

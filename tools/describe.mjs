@@ -333,8 +333,9 @@ function withMatrices(description, effective, panel, layout, servedOf) {
     const matrix = {
       orientation: m.orientation,
       heads: hs.map((h) => ({ label: h.label, on: h.on ? { symbol: served(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
-      rows: ls.map((l) => ({ label: l.label })),
-      cells,
+      // the on/off is the head, drawn once, as the last row
+      rows: [...ls.map((l) => ({ label: l.label })), ...(hs.some((h) => h.on) ? [{ label: 'On', head: true }] : [])],
+      cells: [...cells, ...(hs.some((h) => h.on) ? [hs.map((h) => (h.on ? served(h.on.symbol) : null))] : [])],
       ...(g.count ? { count: { symbol: served(g.count.symbol), default: countDefault ?? null } } : {}),
     };
     controls = controls.map((c) => (placed.members.has(keyOf_.get(c.symbol) ?? c.symbol) ? { ...c, section: placed.home, ...(g.count && (keyOf_.get(c.symbol) ?? c.symbol) === g.count.symbol ? { widget: 'auto' } : {}) } : c));
