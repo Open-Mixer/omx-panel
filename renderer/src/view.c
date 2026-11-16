@@ -259,10 +259,10 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
           goto bad;
         }
         m->heads[k].label = dup(lab), m->heads[k].on = -1, m->heads[k].edge = cJSON_IsString(edge) && *edge->valuestring;
-        if (on && !cJSON_IsNull(on)) {
-          /* the served head's on/off is { symbol, sense } */
-          const char *onsym = cJSON_GetStringValue(cJSON_IsObject(on) ? cJSON_GetObjectItemCaseSensitive(on, "symbol") : on);
-          PLACE(onsym, lab, m->heads[k].on);
+        /* the served head's on/off is { symbol, sense } and nothing else; it is PLACED by the head row's cell, below */
+        if (on && !cJSON_IsNull(on) && (!cJSON_IsObject(on) || !cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(on, "symbol")))) {
+          fail(err, n, "description: a matrix head's on/off is not a { symbol, sense } object (head '%s')%s", lab, NULL);
+          goto bad;
         }
       }
       for (size_t r = 0; r < m->nrows; r++) {
@@ -275,35 +275,38 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
         }
         m->row_label[r] = dup(lab);
         size_t k = 0;
-        if (cJSON_IsTrue(head)) {
-          /* the head row: its cells are the heads' on/off, the same controls, drawn once (placed by the heads above) */
+        int is_head = cJSON_IsTrue(head);
+        if (is_head) {
+          /* the head row: its cells are the heads' on/off, placed here like any row's, each named by its head */
           if (m->head_row >= 0) {
             fail(err, n, "description: a matrix has two head rows%s%s", NULL, NULL);
             goto bad;
           }
           m->head_row = (int)r;
-          cJSON_ArrayForEach(c, line) {
-            const char *sym = cJSON_GetStringValue(c);
-            const char *want = m->heads[k].on >= 0 ? v->controls[m->heads[k].on].symbol : NULL;
+        }
+        cJSON_ArrayForEach(c, line) {
+          cJSON *on = cJSON_GetObjectItemCaseSensitive(cJSON_GetArrayItem(heads, (int)k), "on");
+          const char *sym = cJSON_GetStringValue(c);
+          if (is_head) {
+            const char *want = cJSON_IsObject(on) ? cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(on, "symbol")) : NULL;
             if ((sym || want) && (!sym || !want || strcmp(sym, want))) {
               fail(err, n, "description: the matrix's head row differs from its heads' on/off at '%s'%s", sym ? sym : "(empty)", NULL);
               goto bad;
             }
-            k++;
           }
-          continue;
-        }
-        cJSON_ArrayForEach(c, line) {
-          if (!cJSON_IsNull(c)) PLACE(cJSON_GetStringValue(c), lab, m->cell[r * m->nheads + k]);
+          if (!cJSON_IsNull(c)) {
+            PLACE(sym, is_head ? m->heads[k].label : lab, m->cell[r * m->nheads + k]);
+            if (is_head) m->heads[k].on = m->cell[r * m->nheads + k];
+          }
           k++;
         }
       }
       #undef PLACE
-      for (size_t k = 0; k < m->nheads; k++)
-        if (m->heads[k].on >= 0 && m->head_row < 0) {
-          fail(err, n, "description: a matrix head has an on/off and the rows have no head row%s%s", NULL, NULL);
-          goto bad;
-        }
+      /* the served matrix always ends with its head row (docs/group-model.md L3) */
+      if (m->head_row < 0 || m->head_row != (int)m->nrows - 1) {
+        fail(err, n, "description: a matrix's head row is missing or is not its last row%s%s", NULL, NULL);
+        goto bad;
+      }
       if (cnt && !cJSON_IsNull(cnt)) {
         const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cnt, "symbol"));
         cJSON *def = cJSON_GetObjectItemCaseSensitive(cnt, "default");
@@ -662,7 +665,6 @@ static void apply_counts(omx_panel_view_t *v) {
     visible_heads(m, map);
     for (size_t h = 0; h < m->nheads; h++) {
       int cut = map[h] < 0;
-      if (m->heads[h].on >= 0) v->controls[m->heads[h].on].cut = cut;
       for (size_t r = 0; r < m->nrows; r++)
         if (m->cell[r * m->nheads + h] >= 0) v->controls[m->cell[r * m->nheads + h]].cut = cut;
     }
@@ -676,8 +678,8 @@ static const matrix *matrix_of_section(const omx_panel_view_t *v, size_t s) {
   return NULL;
 }
 
-/* The cell of a matrix's grid at (head, line) in a section whose matrix starts `top` below it; line 0 is the head row when any
- * drawn head has an on/off (the face's matrixCells). */
+/* The cell of a matrix's grid at (drawn head, row) in a section whose matrix starts `top` below it: the rows as served, the head
+ * row the last. */
 static void grid_at(const geometry *g, const matrix *m, double top, int head, int line, double *x, double *y) {
   *x = g->sectionPad + (m->columns ? head : line) * g->cellW;
   *y = top + (m->columns ? line : head) * g->cellH;
@@ -756,8 +758,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
       size_t nv = visible_heads(mx, map);
       for (size_t k = 0; k < mx->nheads; k++) {
         if (map[k] < 0) continue;
-        /* the on/off is drawn once, as the head row (the last), where the served rows put it */
-        if (mx->heads[k].on >= 0) grid_at(g, mx, top, map[k], mx->head_row, &L.cx[mx->heads[k].on], &L.cy[mx->heads[k].on]);
+        /* every cell, the head row's among them, where the served rows put it */
         for (size_t r = 0; r < mx->nrows; r++)
           if (mx->cell[r * mx->nheads + k] >= 0) {
             int c = mx->cell[r * mx->nheads + k];
@@ -1080,15 +1081,15 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s,
                  (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
     }
-    /* a matrix head with no on/off is its label in the head row's cell (row 0 when no head has an on/off, as the face), in the name place */
+    /* a head-row cell with no control is its head's caption: the head's label in that cell's name place, a row of its own */
     const matrix *mx = matrix_of_section(v, si);
     if (mx) {
       int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
       visible_heads(mx, map);
       for (size_t h = 0; h < mx->nheads; h++) {
-        if (map[h] < 0 || mx->heads[h].on >= 0) continue;
+        if (map[h] < 0 || mx->cell[(size_t)mx->head_row * mx->nheads + h] >= 0) continue;
         double cx, cy;
-        grid_at(g, mx, L.mtop[si], map[h], mx->head_row >= 0 ? mx->head_row : 0, &cx, &cy);
+        grid_at(g, mx, L.mtop[si], map[h], mx->head_row, &cx, &cy);
         text(d, font, mx->heads[h].label, 0, (g->cellW - 4) * s, (sec.x + cx + g->cellW / 2) * s, (sec.y + cy + T->nameBase) * s, T->small * s, col->inkDim,
              OMX_ALIGN_CENTRE);
       }
