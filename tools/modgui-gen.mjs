@@ -367,6 +367,28 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
     if (!err.code) throw err;
     meters = [];
   }
+  // a repeated group is an aligned matrix (the owner's rule: group items are aligned, an EQ's bands are columns from HPF to LPF, each
+  // column stacking its parameters in one order, the on/off at its head): the controls the band, high-pass and low-pass roles bind
+  // are the matrix's cells, by role and index, wherever the panel is declared or derived
+  try {
+    const xr = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
+    const cell = new Map();
+    for (const r of xr.roles ?? []) {
+      const m = /^(band|hpf|lpf)_(on|type|freq|gain|q|slope)$/.exec(r.role);
+      if (m) cell.set(r.symbol, { col: m[1] === 'band' ? `b${r.index + 1}` : m[1], row: m[2] === 'slope' ? 'type' : m[2] });
+    }
+    for (const sec of sections) {
+      const mem = sec.controls.filter((k) => cell.has(k.symbol));
+      const cols = new Set(mem.map((k) => cell.get(k.symbol).col));
+      const rows = MATRIX_ROWS.filter((r) => mem.some((k) => cell.get(k.symbol).row === r));
+      if ([...cols].filter((c) => /^b\d+$/.test(c)).length < 2 || rows.length < 2) continue;
+      const order = [...(cols.has('hpf') ? ['hpf'] : []), ...[...cols].filter((c) => /^b\d+$/.test(c)).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))), ...(cols.has('lpf') ? ['lpf'] : [])];
+      for (const k of mem) Object.assign(k, { col: cell.get(k.symbol).col, mxrow: cell.get(k.symbol).row, ri: rows.indexOf(cell.get(k.symbol).row) });
+      sec.matrix = { cols: order, rows, labels: Object.fromEntries(order.map((c) => [c, c === 'hpf' ? 'HPF' : c === 'lpf' ? 'LPF' : c.slice(1)])) };
+    }
+  } catch (err) {
+    if (!err.code) throw err;
+  }
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
@@ -389,6 +411,11 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
 }
 
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
+/** The rows of an aligned matrix, top to bottom: the on/off at the head of each column. */
+const MATRIX_ROWS = ['on', 'type', 'freq', 'gain', 'q'];
+/** The height of a matrix column's header. */
+const MATRIX_HEAD_H = 14;
+
 export function layout(panel) {
   const g = GEOMETRY;
   // a curve row needs a width of its own: three cells
@@ -401,20 +428,29 @@ export function layout(panel) {
       return { col: col++, row };
     }), rows: controls.length === 0 ? 0 : row + 1 };
   };
-  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(Math.min(s.controls.length, ROW_CONTROLS), s.displays.length > 0 ? 3 : 0))));
+  // a matrix section (an EQ's bands): the cells hold the columns whose controls the come-up values show, the others flow above
+  const shownIn = (s) => s.controls.filter((c) => c.shown !== false);
+  const colsOf = (s) => (s.matrix ? s.matrix.cols.filter((col) => s.controls.some((c) => c.col === col && c.shown !== false)) : []);
+  const widthOf = (s) => (s.matrix
+    ? Math.max(Math.min(shownIn(s).filter((c) => c.col === undefined).length, ROW_CONTROLS), colsOf(s).length)
+    : Math.min(s.controls.length, ROW_CONTROLS));
+  const most = Math.min(Math.max(ROW_CONTROLS, ...panel.sections.map((s) => colsOf(s).length)), Math.max(...panel.sections.map((s) => Math.max(widthOf(s), s.displays.length > 0 ? 3 : 0))));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    // a control the come-up values hide takes no room: the grid holds the shown controls, and the script (emitScript)
-    // lays the sections out again when a value shows another
-    const grid = place(s.controls.filter((c) => c.shown !== false));
+    const loose = s.controls.filter((c) => c.col === undefined);
+    const grid = place(loose.filter((c) => c.shown !== false));
     const rows = grid.rows;
     let shownAt = 0;
     const curves = s.displays.length * (g.curveH + g.curveGap);
-    const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
+    const cols = colsOf(s);
+    const mxTop = g.sectionTitleH + curves + rows * g.cellH;
+    const h = mxTop + (cols.length ? MATRIX_HEAD_H + s.matrix.rows.length * g.cellH : 0) + g.sectionPad / 2;
+    const placed = loose.map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: g.sectionTitleH + curves } : { ...c, x: g.sectionPad + grid.at[shownAt].col * g.cellW, y: g.sectionTitleH + curves + grid.at[shownAt++].row * g.cellH }));
+    const cells = s.matrix ? s.matrix.cols.flatMap((col) => s.controls.filter((c) => c.col === col).sort((a, b) => a.ri - b.ri).map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: mxTop } : { ...c, x: g.sectionPad + cols.indexOf(col) * g.cellW, y: mxTop + MATRIX_HEAD_H + c.ri * g.cellH }))) : [];
     const sec = {
-      ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: g.sectionTitleH + curves } : { ...c, x: g.sectionPad + grid.at[shownAt].col * g.cellW, y: g.sectionTitleH + curves + grid.at[shownAt++].row * g.cellH })),
+      ...s, x: g.pad, y, w: sectionW, h, controls: [...placed, ...cells],
+      ...(s.matrix ? { heads: s.matrix.cols.map((col) => ({ col, label: s.matrix.labels[col], shown: cols.includes(col), x: g.sectionPad + Math.max(0, cols.indexOf(col)) * g.cellW, y: mxTop })), mxTop } : {}),
     };
     y += h + g.sectionGap;
     return sec;
@@ -734,12 +770,13 @@ export function emitTemplate(panel, lay, source) {
   // a governed control names its governing port and the mask of the values that show it; the script reads them
   const band = (k) => (k.band ? ` data-band="${esc(k.band)}"` : '');
   const vis = (k) => (k.visibleWhen ? ` data-visible-port="${k.visibleWhen.symbol}" data-visible-mask="${k.visibleWhen.mask.toString(16)}"` : '');
+  const mx = (k) => (k.col === undefined ? '' : ` data-mx-col="${k.col}" data-mx-row="${k.mxrow}" data-mx-ri="${k.ri}"`);
   const at = (k) => `left:${k.x}px;top:${k.y}px${k.shown ? '' : ';display:none'}`;
   const control = (k) => {
     // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
     if (k.widget === 'display') {
       const range = k.min === undefined ? '' : ` data-min="${k.min}" data-max="${k.max}"`;
-      return `            <div class="omx-control omx-display" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}>
+      return `            <div class="omx-control omx-display" style="${at(k)}" title="${esc(k.name)}" data-symbol="${k.symbol}"${range}${vis(k)}${mx(k)}>
                 <div class="omx-display-image"></div>
                 <span class="omx-control-title">${esc(k.name)}</span>
             </div>`;
@@ -756,7 +793,7 @@ export function emitTemplate(panel, lay, source) {
                     </div>
                 </div>`
         : `<div class="omx-${k.widget}-image" mod-role="input-control-port" mod-port-symbol="${k.symbol}"></div>`;
-    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
+    return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}${mx(k)}>
                 ${image}
                 <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>${k.widget === 'selector' ? '' : `
                 <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"${k.widget === 'switch' ? ' data-onoff' : ''}></div>`}
@@ -770,9 +807,9 @@ export function emitTemplate(panel, lay, source) {
     const marks = geo.marks.map((m) => `<circle cx="${n(m.at[0])}" cy="${n(m.at[1])}" r="2.5"/><text x="${n(m.at[0])}" y="${n(m.at[1] - 5)}" text-anchor="middle">${m.letter}</text>`).join('');
     return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/><polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>${marks}</svg>`;
   };
-  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" data-curves="${s.displays.length * (g.curveH + g.curveGap)}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
+  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" data-curves="${s.displays.length * (g.curveH + g.curveGap)}"${s.matrix ? ` data-matrix="1" data-mx-rows="${s.matrix.rows.length}"` : ''} style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}${(s.heads ?? []).map((h) => `\n            <div class="omx-colhead" data-mx-col="${h.col}" style="left:${h.x}px;top:${h.y}px${h.shown ? '' : ';display:none'}">${h.label}</div>`).join('')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">Meters</h2>
@@ -783,7 +820,7 @@ ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data
             <div class="mod-pedal-${dir}-image"></div>
         </div>
         {{/effect.ports.${kind}.${dir}}}`).join('\n');
-  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" style="width:${lay.w}px;height:${lay.h}px">
+  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family}" data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
 ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
     <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
          MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
@@ -833,6 +870,7 @@ ${P} .omx-bypass-light { width: 10px; height: 10px; margin: 5px; border-radius: 
 ${P} .omx-bypass-light.on { background: ${D('--led-on-bg')};${decl('box-shadow', D('--led-on-shadow'))} }
 ${P} .omx-section { position: absolute; box-sizing: border-box; background: ${D('--section-bg')}; border-radius: ${g.sectionRadius}px;${decl('box-shadow', D('--section-shadow'))} }
 ${P} .omx-section-title { margin: 0; padding: 3px ${g.sectionPad}px; height: ${g.sectionTitleH}px; box-sizing: border-box; font-size: 10px; font-weight: 600; text-transform: uppercase; color: ${D('--t-section')}; }
+${P} .omx-colhead { position: absolute; width: ${g.cellW}px; height: 14px; line-height: 14px; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; color: ${D('--t-section')}; }
 ${P} .omx-control { position: absolute; width: ${g.cellW}px; height: ${g.cellH}px; text-align: center; }
 ${P} .omx-knob-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${film}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
 ${draws(panel, 'fader') ? `${P} .omx-fader-image { width: ${g.knob}px; height: ${g.knob}px; margin: ${g.knobTop}px auto 0; background-image: url(${faderFilm}); background-repeat: no-repeat; background-size: auto ${g.knob}px; cursor: pointer; }
@@ -896,6 +934,7 @@ function (event, funcs) {
         var n = function (name) { return parseFloat(root.getAttribute(name)); };
         var y = n('data-section-top');
         var sections = root.querySelectorAll('.omx-section');
+        var wide = n('data-base-w');
         for (var s = 0; s < sections.length; s++) {
             var sec = sections[s];
             if (sec.className.indexOf('omx-meters') >= 0) {
@@ -904,10 +943,12 @@ function (event, funcs) {
                 continue;
             }
             var curves = parseFloat(sec.getAttribute('data-curves')) || 0;
-            var col = 0, row = 0, prev = null, any = false;
+            var matrix = sec.getAttribute('data-matrix') === '1';
+            var col = 0, row = 0, prev = null, any = false, cells = [];
             for (var c = 0; c < sec.children.length; c++) {
                 var k = sec.children[c];
                 if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
+                if (matrix && k.getAttribute('data-mx-col')) { cells.push(k); continue; }
                 var band = k.getAttribute('data-band') || '';
                 if (any && (col === n('data-row-controls') || band !== prev)) { col = 0; row++; }
                 prev = band; any = true;
@@ -915,11 +956,39 @@ function (event, funcs) {
                 k.style.top = (n('data-title-h') + curves + row * n('data-cell-h')) + 'px';
                 col++;
             }
-            var h = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h') + n('data-section-pad') / 2;
+            var top = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h');
+            var h = top + n('data-section-pad') / 2;
+            if (matrix) {
+                // an aligned matrix: a column per band that has a shown control, in the order the template lists them (HPF, the bands, LPF),
+                // each parameter on its row, the same y in every column
+                var order = [], at = {};
+                for (var m = 0; m < cells.length; m++) {
+                    var key = cells[m].getAttribute('data-mx-col');
+                    if (!(key in at)) { at[key] = order.length; order.push(key); }
+                    cells[m].style.left = (n('data-section-pad') + at[key] * n('data-cell-w')) + 'px';
+                    cells[m].style.top = (top + n('data-head-h') + parseFloat(cells[m].getAttribute('data-mx-ri')) * n('data-cell-h')) + 'px';
+                }
+                for (var c2 = 0; c2 < sec.children.length; c2++) {
+                    var head = sec.children[c2];
+                    if (head.className.indexOf('omx-colhead') < 0) continue;
+                    var hk = head.getAttribute('data-mx-col');
+                    head.style.display = hk in at ? '' : 'none';
+                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = top + 'px'; }
+                }
+                if (order.length) h += n('data-head-h') + parseFloat(sec.getAttribute('data-mx-rows')) * n('data-cell-h');
+                wide = Math.max(wide, order.length * n('data-cell-w') + 2 * n('data-section-pad'));
+            }
             sec.style.top = y + 'px';
             sec.style.height = h + 'px';
             y += h + n('data-section-gap');
         }
+        // the face is as wide as its widest section needs: a matrix of more bands widens every section, its curve and the pedal
+        for (var w = 0; w < sections.length; w++) {
+            sections[w].style.width = wide + 'px';
+            var curve = sections[w].querySelectorAll('.omx-curve');
+            for (var q = 0; q < curve.length; q++) curve[q].style.width = (wide - 2 * n('data-section-pad')) + 'px';
+        }
+        root.style.width = (wide + 2 * n('data-pad')) + 'px';
         root.style.height = (y - n('data-section-gap') + n('data-pad')) + 'px';
     };
     if (event.type === 'start') {

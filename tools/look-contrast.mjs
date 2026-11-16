@@ -23,6 +23,7 @@ export const PAIRS = Object.freeze([
   { rule: '.omx-brand', fg: '--t-brand', fgWas: '--ink-dim', plate: 'head', was: '--surface' },
   { rule: '.omx-label', fg: '--t-label', fgWas: '--ink', plate: 'head', was: '--surface' },
   { rule: '.omx-section-title', fg: '--t-section', fgWas: '--ink-dim', plate: 'section', was: '--surface-2' },
+  { rule: '.omx-colhead', fg: '--t-section', fgWas: '--ink-dim', plate: 'section', was: '--surface-2' },
   { rule: '.omx-control-title', fg: '--t-control', fgWas: '--ink-dim', plate: 'section', was: '--surface-2' },
   { rule: '(screenshot: a control\'s value)', fg: '--t-value', fgWas: '--ink', plate: 'section', was: '--surface-2' },
   { rule: '.omx-selector-value', fg: '--t-key', fgWas: '--ink', plate: 'key', was: '--surface-3' },
