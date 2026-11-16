@@ -695,7 +695,7 @@ const files = (stem) => ({
 });
 
 /** Whether any control of the panel is shown by another control's value. */
-const governs = (panel) => panel.sections.some((x) => x.controls.some((k) => k.visibleWhen));
+const governs = (panel) => panel.sections.some((x) => x.controls.some((k) => k.visibleWhen || k.widget === 'switch'));
 
 /** Whether any control of the panel is drawn with `widget`. */
 const draws = (panel, widget) => panel.sections.some((x) => x.controls.some((k) => k.widget === widget));
@@ -759,7 +759,7 @@ export function emitTemplate(panel, lay, source) {
     return `            <div class="omx-control omx-${k.widget}${k.bar === undefined ? '' : ' omx-bar'}" style="${at(k)}" title="${esc(k.name)}" ${data}${vis(k)}>
                 ${image}
                 <span class="omx-control-title">${esc(k.bar ?? k.name)}</span>${k.widget === 'selector' ? '' : `
-                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"></div>`}
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${k.symbol}" data-unit="${esc(k.unit)}"${k.widget === 'switch' ? ' data-onoff' : ''}></div>`}
             </div>`;
   };
   // a curve's stroke, its axis and its marks, a static SVG in the frame's own px: the geometry the raster draws
@@ -842,9 +842,8 @@ ${P} .omx-switch-image.on { background: ${D('--key-pressed-bg')};${decl('box-sha
 ${held ? `${P} .omx-switch-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}
 ${P} .omx-switch-image.on::after { left: ${g.switchW - g.switchH + 3}px; background: ${tok['--ink']}; }
-${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+${P} .omx-control-title { display: block; margin-top: 1px; font-size: 10px; line-height: 10px; color: ${D('--t-control')};${D('--control-caps') === 'none' ? '' : ` text-transform: ${D('--control-caps')}; font-weight: 600; letter-spacing: 0.05em;`} white-space: normal; overflow: hidden; height: 20px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
 ${P} .omx-scribble { position: absolute; left: ${(g.cellW - g.scribbleW) / 2}px; top: ${g.cellH - g.scribbleH}px; box-sizing: border-box; width: ${g.scribbleW}px; height: ${g.scribbleH}px; border-radius: 3px; background: ${D('--scribble-bg')}; color: ${D('--scribble-ink')};${decl('text-shadow', D('--scribble-glow'))}${decl('box-shadow', D('--scribble-shadow'))} font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 10px; line-height: ${g.scribbleH}px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
-${P} .omx-scribble::after { content: attr(data-unit); margin-left: 0.3em; }
 ${draws(panel, 'selector') ? `${P} .omx-selector-image { position: relative; box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--key-bg')};${decl('box-shadow', D('--key-shadow'))} cursor: pointer; }
 ${held ? `${P} .omx-selector-image:active { background: ${D('--key-held-bg')};${decl('box-shadow', D('--key-pressed-shadow'))}${lift} }
 ` : ''}${P} .omx-selector-value { font-size: 10px; line-height: ${g.selectorH - 2}px; color: ${D('--t-key')}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -870,7 +869,14 @@ ${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10
 export function emitScript(source) {
   return `${banner('// ', source).join('\n')}
 function (event, funcs) {
+    // a toggled port reads ON or OFF: mod-ui writes the number, the script writes the word after it
+    var onoff = function (symbol, value) {
+        event.icon.find('[data-onoff][mod-port-symbol="' + symbol + '"]').each(function () {
+            this.textContent = value >= 0.5 ? 'ON' : 'OFF';
+        });
+    };
     var show = function (symbol, value) {
+        onoff(symbol, value);
         var v = Math.round(value);
         event.icon.find('[data-visible-port="' + symbol + '"]').each(function () {
             // the mask is 64 bits of hex: the half that holds bit v, read as a plain number

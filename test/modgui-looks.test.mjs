@@ -118,7 +118,7 @@ for (const name of ['vintage', 'console', '3d']) {
     const list = controls(text).filter(([, w]) => w !== 'selector' && w !== 'display');
     assert.ok(list.length >= 4, `${list.length} controls`);
     for (const [symbol] of list) {
-      assert.match(text, new RegExp(`<div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${symbol}" data-unit="[^"]*"></div>`), `${name}: ${symbol} has no bound scribble`);
+      assert.match(text, new RegExp(`<div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="${symbol}" data-unit="[^"]*"( data-onoff)?></div>`), `${name}: ${symbol} has no bound scribble`);
     }
     // bound means empty: mod-ui writes the port's value into it; any text in a scribble is a static value
     for (const m of text.matchAll(/<div class="omx-scribble"[^>]*>([^<]*)<\/div>/g)) assert.equal(m[1], '', 'a scribble carries static text');
