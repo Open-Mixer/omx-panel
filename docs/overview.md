@@ -17,6 +17,9 @@
 - The group inference: `tools/group-infer.mjs` finds the port groups an LV2 plugin lacks from what it states (its own
   partial groups, designations, name and symbol prefixes, units, index runs, its MOD GUI), or says it cannot with
   confidence and leaves the plugin as it is ([group-inference.md](group-inference.md)).
+- The group model: `tools/group-model.mjs` says which groups are one group repeated (bands, voices), as instances low to
+  high holding the same parameters, or names why it cannot; the console, the Zynthian builder and the MOD GUI draw a
+  repeated group as one aligned matrix, an EQ always horizontal ([group-model.md](group-model.md)).
 - The complement: `omx-complement-sync` (`omx-panel complement`) carries those groups to lilv, for jalv on the Zynthian
   touchscreen: for an installed bundle with a plugin to group it writes, beside omx-modgui-sync's GUIs, a bundle that
   restates the installed TTL, adds the groups and raises `lv2:microVersion` by one, so lilv loads it in place of the

@@ -5,6 +5,7 @@
  * Zynthian engine and a MOD GUI read. A declared list wins; else the roles, in their family's order; else the layout's order
  * fills what is left. It takes the layout's family, roles and controls, and has no Node import, so a browser loads it too.
  */
+import { DYNAMICS_ROLES } from './role-table.mjs';
 
 /** The most controls a declared list names: what one surface page holds. */
 export const EASY_DECLARED_MAX = 8;
@@ -17,7 +18,7 @@ export const EASY_FILL = 4;
 export const EASY_ROLES = Object.freeze({
   none: [],
   gate: ['threshold', 'range', 'attack', 'release'],
-  dynamics: ['threshold', 'ratio', 'makeup', 'mix', 'attack', 'release'],
+  dynamics: [...DYNAMICS_ROLES.slice(0, 2), 'makeup', 'mix', ...DYNAMICS_ROLES.slice(2)],
   limiter: ['ceiling', 'threshold', 'release', 'output'],
   deesser: ['frequency', 'threshold', 'range', 'mix'],
   eq: ['band_gain', 'output'],

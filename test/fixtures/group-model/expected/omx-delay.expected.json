@@ -1,0 +1,116 @@
+{
+ "input": "omx-plugins/omx-delay.descriptor.json",
+ "uri": null,
+ "groups": [
+  {
+   "key": "Delay",
+   "label": "Delay",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "fxDelayTime",
+    "fxDelayFeedback",
+    "tone",
+    "mix",
+    "pingpong",
+    "mode"
+   ]
+  },
+  {
+   "key": "Taps",
+   "label": "Taps",
+   "kind": "repeated",
+   "source": "indexed",
+   "family": null,
+   "parameters": [
+    "fxDelayTaps"
+   ],
+   "count": "fxDelayTaps",
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "Taps#0",
+     "label": "Tap 1",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "Taps#1",
+     "label": "Tap 2",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "Taps#2",
+     "label": "Tap 3",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "Taps#3",
+     "label": "Tap 4",
+     "on": null,
+     "sense": null
+    }
+   ],
+   "lines": [
+    {
+     "key": "tap#Gain",
+     "label": "Gain"
+    },
+    {
+     "key": "tap#Pan",
+     "label": "Pan"
+    },
+    {
+     "key": "tap#Factor",
+     "label": "Time"
+    }
+   ],
+   "cells": [
+    [
+     "tap0Gain",
+     "tap1Gain",
+     "tap2Gain",
+     "tap3Gain"
+    ],
+    [
+     "tap0Pan",
+     "tap1Pan",
+     "tap2Pan",
+     "tap3Pan"
+    ],
+    [
+     null,
+     "tap1Factor",
+     "tap2Factor",
+     "tap3Factor"
+    ]
+   ]
+  },
+  {
+   "key": "Tempo",
+   "label": "Tempo",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "sync",
+    "division"
+   ]
+  },
+  {
+   "key": "Duck",
+   "label": "Duck",
+   "kind": "list",
+   "source": "none",
+   "reason": null,
+   "parameters": [
+    "duckDb",
+    "duckThresholdDb",
+    "duckReleaseMs"
+   ]
+  }
+ ]
+}

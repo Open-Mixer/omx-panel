@@ -29,6 +29,10 @@ Every control's symbol, travel, default and label is the descriptor's. A toggle 
 integer travel of at most 16 steps, a selector over its values; every other travel a knob. The template lays out
 every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`. With `--easy-first` the Easy controls ([panel-layout.md](panel-layout.md)) are that first section, so a pedal's listed ports are them; a plugin's package turns it on when it regenerates its committed files, and `omx-modgui-sync` always does.
 
+A repeated group ([group-model.md](group-model.md): an EQ's bands, a multiband compressor's bands) whose controls fill
+some sections exactly is one section drawn as its matrix: each parameter on one row and each band in one column, never
+flowed, an EQ always with its bands as columns, HPF leftmost and LPF rightmost, each band's on/off at its head.
+
 A bar group ([panel-layout.md](panel-layout.md) "Bars"; a declared section's `bars: true` or `false` wins over the rule) is a row of
 faders: each control of a run is the fader widget, an ordinary `input-control-port` MOD moves live with its own fader film, its title
 the bar's label (`16'`, `1`..`16`). A declared `bars: true` that fails the rule's checks is refused by its code. A section whose

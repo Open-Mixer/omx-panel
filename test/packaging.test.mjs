@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -67,4 +67,15 @@ test('sabotage: a floor or ceiling moved on one side, or missing, is named', () 
     "pkgconfig(omxdsp): the spec's ceiling is 0.33, debian/control's for libomxdsp-dev is 0.34",
   ]);
   assert.deepEqual(buildFloorsApart(spec, 'Source: x\nBuild-Depends: libomxdsp-dev (>= 0.32.2~)\n')[0], 'omx-contract-devel: the spec floors it at 3.16.0, debian/control states no floor for libomx-contract-dev');
+});
+
+// zynthian-ui finds the omx-panel tree from the installed schema/gestures.json and reads the gesture parity scripts and
+// the descriptors they name under test/fixtures (tests/test_bar_xy_gestures.py). `make install` copies dist/ whole to
+// /usr/share/omx-panel, so what dist/ holds is what the RPM and the DEB ship (Pi 0.13.8: scripts.json absent).
+test('the package carries the gesture parity scripts and every descriptor they name, at the paths zynthian-ui reads', () => {
+  const rel = 'test/fixtures/gestures/scripts.json';
+  const { scripts } = JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
+  const named = [...new Set(scripts.map((s) => s.descriptor).filter(Boolean))];
+  assert.ok(named.length > 0);
+  for (const f of [rel, ...named]) assert.ok(existsSync(join(ROOT, 'dist', f)), `dist/${f} is not in the built package`);
 });
