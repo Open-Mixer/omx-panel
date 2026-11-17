@@ -189,6 +189,15 @@ test('S8: only a real EQ band claims the eq family; a compressor band with a Mod
   assert.deepEqual(comp.rows.map((r) => r.key), ['b#_freq', 'b#_threshold', 'b#_ratio', 'b#_mode']);
 });
 
+test('S8: a fallback type beside a dynamics word is no EQ: a dynamic-EQ-shaped compressor band keeps its stems; fil4 stays an EQ', () => {
+  const band = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  assert.equal(band.kind, 'repeated');
+  assert.equal(band.family, null, 'freq, gain, threshold, ratio, mode is a compressor band');
+  assert.ok(band.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${band.rows.map((r) => r.key)}`);
+  const fil4 = JSON.parse(readFileSync(join(EXPECTED, 'x42-fil4.expected.json'), 'utf8'));
+  assert.equal(fil4.groups.find((g) => g.kind === 'repeated').family, 'eq');
+});
+
 test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
   const on = { kind: 'toggle' };
   const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
