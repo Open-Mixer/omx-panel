@@ -290,9 +290,11 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
   - **P2, the lilv path** (the jalv engine, which reads each port's `pg:group`): lv2-complement writes **one `pg:group` per
     instance**, from the model, for a repeated group the plugin does not already declare instance by instance (source
     `indexed`; a plugin's own groups, source `declared`, are kept as they are). The instance's group node carries
-    `lv2:symbol` `<group key or "section">_<index>`, `lv2:name` the instance's label, and the ports the instance holds, its
+    `lv2:symbol` the instance's label as an LV2 symbol (`band_3`; a label that is a bare number reads "Section 3"), `lv2:name` the label, and the ports the instance holds, its
     on/off included, ordered by the instance index so `displayPriority` falls with it. The group's own parameters, and the
-    ports of no instance, keep what the flat inference (`inferGroups`) gave them, or no group when it gave none. *Tests: the
+    ports of no instance, keep what the flat inference (`inferGroups`) gave them, less the ports the instances took, or no group
+    when it gave none: the instance groups replace the flat inference's for their ports, with no rule that keeps a flat grouping
+    for the sake of the node names a bundle already carries. *Tests: the
     Calf multiband compressor, whose flat inference refuses it (`unplaced-controls`), gets four instance groups; a plugin
     already declaring its instances gets none added; "P2: ...". Sabotage: the instance groups dropped fails both.*
 
