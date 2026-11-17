@@ -1,12 +1,12 @@
 omx-panel (0.13.9) unstable; urgency=medium
 
-  * Built against omx-contract >= 3.19.0 and below 4 (was 3.13.0 to 3.16.0
-    by package), the 3.19.0 pass's newest, with its ceiling (D30). The jobs'
-    dnf lines state the same.
+  * Built against omx-contract >= 3.19.0 (was 3.13.0 to 3.16.0 by package),
+    the 3.19.0 pass's newest, floors only (no ceiling). The jobs' dnf lines
+    state the same.
   * describe --panel: a declared panel's roles back its family over a scan's
     unknown meanings, and the served panel is read as the declared form
     (#44, #43).
-  * Built against omx-dsp >= 0.32.3 and below 0.33 (was 0.32.0): the
+  * Built against omx-dsp >= 0.32.4 (was 0.32.0), floors only: the
     renderer's spectrum layer reads omx-dsp's analyser axes. The jobs' dnf
     lines and the renderer's OMXDSP_FLOOR state the same.
   * renderer: the spectrum layer, on the console analyser's axes, a single
