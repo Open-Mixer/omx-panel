@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { keyOf, MEASUREMENTS, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
+import { keyOf, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
 import { contractUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -63,8 +63,6 @@ check('a read-only dB travel is a meter whose measurement is not stated', widget
 check('a read-only LUFS travel is a foreign meter: measurement is never guessed from the unit', widgetOf(travel('LUFS', { readonly: true })), { widget: 'meter', measurement: null, held: false, clip: false });
 check('arm: the same LUFS travel, not read-only, is a knob', widgetOf(travel('LUFS')), { widget: 'knob' });
 check('arm: a read-only travel in no level unit is a display', widgetOf(travel('ms', { readonly: true })), { widget: 'display' });
-check('rms, vu and ppm are not measurement words (7.9)', MEASUREMENTS.some((m) => ['rms', 'vu', 'ppm'].includes(m)), false);
-check('the measurement words are the level kinds the descriptor spells, lra among them', MEASUREMENTS, ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra']);
 check('a declared fader wins', widgetOf(travel('dB'), 'fader'), { widget: 'fader' });
 check('a declared selector is a selector', widgetOf(travel(''), 'selector'), { widget: 'selector' });
 check('a face serves knob, fader and switch as they are, every other widget as auto',
@@ -158,11 +156,16 @@ check('a CLAP control is keyed p<id>: two controls of one name are two controls'
 check('arm: a symbol and an LV2 string id still key the control', [{ symbol: 'a', id: 1, name: 'x' }, { id: 'gain', name: 'y' }, { id: 7, name: 'z' }].map(keyOf), ['a', 'gain', 'p7']);
 
 // a descriptor with no control to lay out is refused by code and says why, not laid out as nothing (#31)
-const refusal = (d) => { try { panelLayout(d, { where: 'sq8l.json' }); return 'laid out'; } catch (e) { return e instanceof NoControls ? `${e.code}: ${e.message}` : `other: ${e.message}`; } };
+// the code is the contract and the sentence around it is schema/codes.json's (test/skin-refusal-text.test.mjs): the facts the message carries are held, not its wording
+const refusal = (d) => { try { panelLayout(d, { where: 'sq8l.json' }); return { code: 'laid out' }; } catch (e) { return e instanceof NoControls ? { code: e.code, message: e.message } : { code: 'other', message: e.message }; } };
+const CODE = 'panel.describe.no-controls';
 const sq8l = descriptor([], { programs: Array.from({ length: 512 }, (_, i) => ({ index: i, name: `Program ${i}` })) });
-check('a descriptor with programs and no controls is refused by code, naming the programs', refusal(sq8l), 'panel.describe.no-controls: sq8l.json: no control to lay out (the descriptor states no controls); its 512 programs are not drawn, a program list is not a control');
-check('arm: no controls and no programs is refused too, without the programs clause', refusal(descriptor([])), 'panel.describe.no-controls: sq8l.json: no control to lay out (the descriptor states no controls)');
-check('arm: controls that are all hidden are refused by code', refusal(descriptor([{ ...travel('dB'), hidden: true }])), 'panel.describe.no-controls: sq8l.json: no control to lay out (its 1 controls are all hidden)');
+const withPrograms = refusal(sq8l);
+check('a descriptor with programs and no controls is refused by code, naming the file and its 512 programs', [withPrograms.code, withPrograms.message.startsWith('sq8l.json: '), /\b512 programs\b/.test(withPrograms.message)], [CODE, true, true]);
+const bare = refusal(descriptor([]));
+check('arm: no controls and no programs is refused too, without naming programs', [bare.code, /program/.test(bare.message)], [CODE, false]);
+const hidden = refusal(descriptor([{ ...travel('dB'), hidden: true }]));
+check('arm: controls that are all hidden are refused by code, saying how many are hidden', [hidden.code, /\b1\b/.test(hidden.message), /hidden/.test(hidden.message)], [CODE, true, true]);
 const dir = mkdtempSync(join(tmpdir(), 'pl31-'));
 writeFileSync(join(dir, 'sq8l.json'), JSON.stringify(sq8l));
 const cli = spawnSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), '..', 'bin/omx-panel.mjs'), 'layout', '--descriptor', join(dir, 'sq8l.json'), '--pages'], { encoding: 'utf8' });

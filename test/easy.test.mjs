@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -30,7 +30,10 @@ test('the roles answer in the family row\'s order, whatever order the plugin lis
 });
 
 test('every family of the layout has a row, and no row is past the rule\'s six', () => {
-  for (const family of ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch']) {
+  // the families are the skin schema's enum (schema/skin-package.schema.json), not a list typed here
+  const families = JSON.parse(readFileSync(join(ROOT, 'schema/skin-package.schema.json'), 'utf8')).$defs.family.enum;
+  assert.ok(families.length > 0);
+  for (const family of families) {
     assert.ok(Array.isArray(EASY_ROLES[family]), family);
     assert.ok(EASY_ROLES[family].length <= 6, family);
   }

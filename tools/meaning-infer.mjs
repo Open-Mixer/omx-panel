@@ -104,7 +104,7 @@ export function bandRoleOf(c) {
 }
 
 /** Role affix tokens stripped to derive a band's group key (longest first): the table's words of each role, run together. */
-const AFFIX = {
+export const AFFIX = {
   ...Object.fromEntries(['freq', 'gain', 'q', 'type'].map((r) => [r, [...new Set([...EQ_WORDS.roles[r], ...(EQ_WORDS.fallback[r] ?? [])].map((w) => w.replace(/ /g, '')))].sort((a, b) => b.length - a.length)])),
   enable: ['active', 'section', 'sec', 'enable', 'on'],
 };

@@ -89,17 +89,7 @@ for (const code of EMITTED) {
     assert.ok(entry, `${code} has no entry in schema/codes.json`);
     for (const name of placeholders(entry.text.en)) assert.ok(entry.args.includes(name), `${code}: {${name}} is not in args`);
   });
-
-  for (const lang of CATALOG_LANGS) {
-    test(`${code} has a ${lang} sentence in catalogs/${lang}.json naming only its args`, () => {
-      const entry = declared().get(code);
-      // an entry is the sentence, or {text, by[, model, source]} with its provenance (omx-contract 3.16.0)
-      const said = catalog(lang).messages?.[code];
-      const sentence = typeof said === 'string' ? said : said?.text;
-      assert.ok(typeof sentence === 'string' && sentence !== '', `${code} has no ${lang} sentence`);
-      for (const name of placeholders(sentence)) assert.ok(entry?.args.includes(name), `${code} (${lang}): {${name}} is not in args`);
-    });
-  }
+  // the languages' sentences (present, naming only the code's args) are omx-contract's `translate --check`, the CI job `catalogs` (tools/catalogs-gate.sh)
 }
 
 test('the codes file declares no code the package does not emit', () => {

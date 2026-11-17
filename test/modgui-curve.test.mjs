@@ -2,9 +2,13 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // The MOD GUI's static curve (the one-panel spec §7.4, Q6, §7.6): the polyline in the template and the screenshot, computed by omx-dsp's
 // TypeScript twin at the come-up values, with its caption word; a mark at each band an authored descriptor declares a planter's, and
-// none where no origin is declared. Needs the twin (`@openmixer/omx-dsp`, not yet released): skipped without it, unless OMX_PANEL_DSP=required.
+// none where no origin is declared. Needs the twin (`@openmixer/omx-dsp`): skipped without it; under OMX_PANEL_DSP=required the generator refuses to load without it (the last test here).
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { generateModgui, resolvePanel, curveGeometry, STATIC_CURVE } from '../tools/modgui-gen.mjs';
 import { panelLayout } from '../tools/panel-description.mjs';
@@ -79,4 +83,32 @@ test('an origin is declared by an authored descriptor, from the closed set, on a
 test('the origin words are the twin\'s', opts, async () => {
   const { BAND_ORIGINS } = await import('../tools/panel-description.mjs');
   assert.deepEqual(['user', ...BAND_ORIGINS], twin.CURVE_WORDS.origins);
+});
+
+// the generator's refusal (tools/modgui-gen.mjs, `OMX_PANEL_DSP=required`) is the one guard that a missing twin is a failure and no skip: CI
+// always has the twin, so this arm makes it unresolvable for a child process and reads the child fail, naming the twin; without `required`
+// the same child loads (no-twin curves) and exits 0.
+test('with the twin unresolvable, the generator refuses to load under OMX_PANEL_DSP=required and loads without it', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'no-twin-'));
+  try {
+    const hook = join(dir, 'hook.mjs');
+    writeFileSync(hook, "export async function resolve(s, c, next) { if (s === '@openmixer/omx-dsp') throw Object.assign(new Error(`Cannot find package '@openmixer/omx-dsp'`), { code: 'ERR_MODULE_NOT_FOUND' }); return next(s, c); }\n");
+    const boot = join(dir, 'boot.mjs');
+    writeFileSync(boot, `import { register } from 'node:module'; register(${JSON.stringify(pathToFileURL(hook).href)});\n`);
+    const gen = fileURLToPath(new URL('../tools/modgui-gen.mjs', import.meta.url));
+    // every path reaches the child as a file URL: a space or a # in a path is not part of a URL as written
+    const run = (required) => {
+      const env = { ...process.env };
+      delete env.OMX_PANEL_DSP;
+      if (required) env.OMX_PANEL_DSP = 'required';
+      try {
+        execFileSync(process.execPath, ['--import', pathToFileURL(boot).href, '-e', `import(${JSON.stringify(pathToFileURL(gen).href)})`], { env, stdio: 'pipe' });
+        return { ok: true, stderr: '' };
+      } catch (e) { return { ok: false, stderr: String(e.stderr) }; }
+    };
+    const refused = run(true);
+    assert.equal(refused.ok, false, 'required, no twin: the generator must not load');
+    assert.match(refused.stderr, /@openmixer\/omx-dsp/);
+    assert.equal(run(false).ok, true, 'no twin, not required: the generator loads and draws frames alone');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
