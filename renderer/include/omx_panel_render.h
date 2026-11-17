@@ -149,6 +149,10 @@ bool omx_panel_view_set_integer(omx_panel_view_t *view, const char *symbol, int6
 
 /** Whether control `index` is shown at the current governing values. */
 bool omx_panel_view_visible(const omx_panel_view_t *view, uint32_t index);
+/* How many of the first repeated group's matrix columns a surface `width` px wide shows at `scale`, as many as fit: the group
+ * model's visibleColumns (max(1, floor(width / column)), at most the matrix's columns, the count's closed-up instances not
+ * counted). 0 when the panel has no matrix. */
+uint32_t omx_panel_view_visible_columns(const omx_panel_view_t *view, uint32_t width, double scale);
 
 /** The size, in logical px, the panel is laid out at with nothing to fit: what a window opens at. */
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);

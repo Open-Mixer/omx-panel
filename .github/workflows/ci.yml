@@ -104,8 +104,10 @@ jobs:
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
-      - name: The tree the tests read
-        run: npm ci && make
+      # omx-dsp's TypeScript twin: the fixtures that draw a curve (omx-eq8, eq-marks, dyn-curve) fail without it, never skip
+      # (docs/renderer.md). The channel's omx-dsp at its floor, no ceiling, as the omx-dsp-devel floor above.
+      - name: The tree the tests read, and omx-dsp's twin
+        run: npm ci && make && npm i --no-save --no-audit --no-fund '@openmixer/omx-dsp@>=0.32.2'
       - name: The renderer, and its golden images and parity with the MOD GUI face
         run: make renderer-check
 
@@ -140,7 +142,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: The tree, the renderer, playwright-core and omx-dsp's twin
         run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.2 <0.33'
+      # the role vocabulary the layout reads, this tree's stand-in, as make renderer-check names it (docs/renderer.md)
       - name: The three surfaces from one stream
+        env:
+          OMX_ROLE_MEANINGS: ${{github.workspace}}/test/fixtures/role-meanings/panel-roles.json
         run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -178,8 +183,8 @@ jobs:
         with:
           names: pugl nanovg
       - uses: actions/checkout@v4
-      - name: The tree the tests read
-        run: npm ci && make
+      - name: The tree the tests read, and omx-dsp's twin (the curve fixtures fail without it)
+        run: npm ci && make && npm i --no-save --no-audit --no-fund '@openmixer/omx-dsp@>=0.32.2'
       - name: The renderer with its window, every test run under Xvfb
         env:
           OMX_PANEL_WINDOW_REQUIRED: '1'
