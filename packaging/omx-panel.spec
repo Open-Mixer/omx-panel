@@ -15,6 +15,7 @@ URL: https://github.com/Open-Mixer/omx-panel
 Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires: make
+BuildRequires: python3-devel
 BuildRequires: sed
 BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
@@ -78,6 +79,18 @@ Requires: pkgconfig(libcjson)
 The header omx_panel_render.h, the libomx-panel-render.so link and the
 omx-panel-render pkg-config file, to build against the omx-panel renderer.
 
+%package -n python3-omx-panel
+Summary: omx-panel's document shapes for Python: import omx_panel.shapes.gestures and the others
+BuildArch: noarch
+Requires: python3
+
+%description -n python3-omx-panel
+The Python package omx_panel: omx_panel.shapes.<name> holds the typed dictionaries
+of the documents omx-panel owns (the gesture declaration with its words, inputs and
+widgets, the gesture run's control, event and answer, a look role, a refusal code),
+generated from the schemas the omx-panel package ships, so a Python consumer imports
+the words instead of restating them.
+
 %prep
 %autosetup
 
@@ -89,6 +102,8 @@ test -d node_modules || npm ci --no-audit --no-fund
 %install
 %make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
+
+make install-python DESTDIR=%{buildroot} PYTHONDIR=%{python3_sitelib}
 
 %check
 make test
@@ -115,6 +130,10 @@ make test
 %exclude %{_datadir}/omx-panel/catalogs/*.json
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/
+
+%files -n python3-omx-panel
+%license LICENSE
+%{python3_sitelib}/omx_panel/
 
 %files -n omx-panel-render
 %license LICENSE
