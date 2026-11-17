@@ -578,7 +578,12 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     return [...easyPages, ...declared];
   }
   return [...easyPages, ...x.sections.flatMap((s, section) => {
-    const cs = x.controls.filter((c) => c.section === section && !easy.includes(c.symbol));
+    // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
+    // after it stay where every other instance has them, and the blanks an instance would end on are left off
+    const taken = (c) => c.param === null || easy.includes(c.symbol);
+    const cs = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
+      .map((c) => (taken(c) ? { ...c, param: null } : c))
+      .filter((c, i, all) => c.param !== null || all.slice(i + 1).some((d) => d[GROUP] === c[GROUP] && d.param !== null));
     const pages = [];
     let page = [];
     const flush = () => {
