@@ -7,7 +7,7 @@
  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
  *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
  *                    [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]
- *                    [--steps <script.json> --steps-out <dir>]
+ *                    [--steps <script.json> --steps-out <dir> [--cap 1..64]]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
@@ -38,7 +38,7 @@ static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
     "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n"
-    "                        [--steps <script.json> --steps-out <dir>]\n";
+    "                        [--steps <script.json> --steps-out <dir> [--cap 1..64]]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -415,7 +415,7 @@ static int write_raw(const char *dir, const char *kind, size_t k, const omx_pane
  * {"step": k, "rects": [[x, y, width, height], ...], "width": w, "height": h}. Step 0 is the first draw. A step's "size": [w, h] gives
  * the buffer another size from that step on. */
 static int run_steps(const char *desc, const char *data, const char *state, const char *steps, const char *dir, omx_panel_pixel_format_t format,
-                     long width, long height, double scale) {
+                     long width, long height, double scale, size_t cap) {
   char err[512];
   char *text = slurp(steps);
   cJSON *list = text ? cJSON_Parse(text) : NULL;
@@ -447,7 +447,7 @@ static int run_steps(const char *desc, const char *data, const char *state, cons
     }
     omx_panel_rect_t rects[64];
     size_t count = 0;
-    ok = ok && omx_panel_view_draw_dirty(v, &b, rects, 64, &count) && write_raw(dir, "after", (size_t)k, &b);
+    ok = ok && omx_panel_view_draw_dirty(v, &b, rects, cap, &count) && write_raw(dir, "after", (size_t)k, &b);
     omx_panel_view_t *r = ok ? omx_panel_view_create_from_files(desc, data, err, sizeof err) : NULL;
     ok = ok && r && (!state || apply_state(r, state));
     for (int j = 0; ok && j < k; j++) ok = apply_json(r, cJSON_GetArrayItem(list, j));
@@ -467,6 +467,7 @@ static int run_steps(const char *desc, const char *data, const char *state, cons
 
 int main(int argc, char **argv) {
   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL, *stepfile = NULL, *stepdir = NULL;
+  size_t cap = 64;
   double scale = 1;
   long width = 0, height = 0;
   int bgra = 0, straight = 0, rects = 0, window = 0;
@@ -483,6 +484,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--input")) input = val;
     else if (!strcmp(a, "--steps")) stepfile = val;
     else if (!strcmp(a, "--steps-out")) stepdir = val;
+    else if (!strcmp(a, "--cap") && strtol(val, NULL, 10) >= 1 && strtol(val, NULL, 10) <= 64) cap = (size_t)strtol(val, NULL, 10);
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
@@ -505,7 +507,7 @@ int main(int argc, char **argv) {
   if (stepfile) {
     omx_panel_pixel_format_t sf = bgra ? (straight ? OMX_PANEL_PIXEL_BGRA8_STRAIGHT : OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
                                        : (straight ? OMX_PANEL_PIXEL_RGBA8_STRAIGHT : OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED);
-    return run_steps(desc, data, state, stepfile, stepdir, sf, width, height, scale);
+    return run_steps(desc, data, state, stepfile, stepdir, sf, width, height, scale, cap);
   }
   char err[512];
   omx_panel_view_t *v = omx_panel_view_create_from_files(desc, data, err, sizeof err);

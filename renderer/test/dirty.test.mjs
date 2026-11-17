@@ -18,38 +18,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { CLI, DATA, FIXTURES, descriptionFile, rects, resolved, scratch, stateFile } from './harness.mjs';
+import { firstDiff, outsideUntouched, prng, steps } from './dirty-harness.mjs';
 
 /** How far a widget's pixels reach beyond its cell, in logical px (view.c BLEED), and a display's. */
 const BLEED = 4;
-
-/** `deltas` applied one after another to the fixture's view; per step the rectangles and the three buffers (RGBA, 4 bytes a pixel). */
-function steps(description, state, deltas, { scale = 1, format = 'rgba', alpha = 'premultiplied', size } = {}) {
-  const dir = scratch();
-  const script = join(dir, 'steps.json');
-  writeFileSync(script, JSON.stringify(deltas));
-  const args = ['--description', description, '--data', DATA, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--steps', script, '--steps-out', dir];
-  if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
-  const lines = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n').map((l) => JSON.parse(l));
-  const read = (kind, k) => new Uint8Array(readFileSync(join(dir, `${kind}.${k}.raw`)));
-  return lines.map(({ step, rects: r, width, height }) => ({ step, rects: r, width, height, before: step ? read('before', step) : null, after: read('after', step), full: read('full', step) }));
-}
-
-/** The first byte at which two buffers differ, or -1. */
-const firstDiff = (a, b) => {
-  if (a.length !== b.length) return 0;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return i;
-  return -1;
-};
-const inside = (rs, w, i) => {
-  const px = i >> 2, x = px % w, y = (px - x) / w;
-  return rs.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
-};
-/** Every byte outside the step's rectangles is what the step started with. */
-function outsideUntouched(s) {
-  const w = s.width;
-  for (let i = 0; i < s.after.length; i++) if (s.after[i] !== s.before[i] && !inside(s.rects, w, i)) return `byte ${i} (pixel ${(i >> 2) % w},${Math.floor((i >> 2) / w)}) changed outside ${JSON.stringify(s.rects)}`;
-  return null;
-}
 
 /** A fixture's files, its panel size and its controls (symbol and widget, in the description's order). */
 function open(name, { edit, state: editState } = {}) {
@@ -76,16 +48,6 @@ function open(name, { edit, state: editState } = {}) {
 /** A step that moves control `symbol` to `fraction` with a text of its own. */
 const move = (symbol, fraction, text) => ({ values: { [symbol]: { fraction, text } } });
 
-function prng(seed) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 test('the first draw is a full draw, reported as the whole buffer', () => {
   const f = open('omx-delay');
   const [first] = steps(f.description, f.state, []);
@@ -108,7 +70,8 @@ test('one control changed reports that control\'s cell and nothing else, and the
     assert.equal(s.rects.length, 1, `${k.symbol}: ${JSON.stringify(s.rects)} is one rectangle`);
     const [x, y, rw, rh] = s.rects[0];
     assert.ok(x <= cell[0] && y <= cell[1] && x + rw >= cell[0] + cell[2] && y + rh >= cell[1] + cell[3], `${k.symbol}: ${s.rects[0]} covers its cell ${cell}`);
-    assert.ok(x >= cell[0] - BLEED - 1 && y >= cell[1] - BLEED - 1 && x + rw <= cell[0] + cell[2] + BLEED + 1 && y + rh <= cell[1] + cell[3] + BLEED + 1, `${k.symbol}: ${s.rects[0]} is the cell ${cell} and its bleed, no more`);
+    const want = [Math.floor(cell[0] - BLEED), Math.floor(cell[1] - BLEED), Math.ceil(cell[0] + cell[2] + BLEED), Math.ceil(cell[1] + cell[3] + BLEED)].map((v) => Math.max(0, v));
+    assert.deepEqual([x, y, x + rw, y + rh], want, `${k.symbol}: the rectangle is the cell ${cell} grown by exactly the bleed`);
     assert.notEqual(firstDiff(s.after, s.before), -1, `${k.symbol}: the step moved pixels`);
     assert.equal(outsideUntouched(s), null);
     assert.equal(firstDiff(s.after, s.full), -1, `${k.symbol}: the buffer is the full draw`);
@@ -147,7 +110,7 @@ test('a meter tick reports the meter\'s frame inside the band, and a curve its d
 });
 
 for (const name of ['omx-delay', 'organ', 'meters', 'omx-reverb', 'zamcomp-panel'])
-  for (const [format, alpha, scale] of [['rgba', 'premultiplied', 1], ['bgra', 'straight', 2]])
+  for (const [format, alpha, scale] of [['rgba', 'premultiplied', 1], ['bgra', 'straight', 2], ['rgba', 'straight', 1.5], ['bgra', 'premultiplied', 1.25]])
     test(`${name} (${format} ${alpha} x${scale}): random changes, the buffer is the full draw after each and nothing outside the rectangles moves`, () => {
       const f = open(name);
       const rnd = prng(name.length * 7919 + scale);
