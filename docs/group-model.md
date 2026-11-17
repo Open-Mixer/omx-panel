@@ -115,8 +115,9 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
   `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `resonance`) or a type,
   **and a word names it**: either a Q or a type is claimed by one of the table's strong words, or words claim both the
   frequency and the gain while the Q or type is a fallback word (`bandwidth`, `bw`, `reso`, `width`, `w` for a Q, `mode`
-  for a type: fil4's Bandwidth). A fallback type does not make an EQ of a band that also holds a dynamics word (`threshold`,
-  `ratio`, `attack`, `release`, `knee`): a frequency, a gain, a threshold, a ratio and a mode is a compressor band, not an EQ.
+  for a type: fil4's Bandwidth). A fallback Q or type does not make an EQ of a band that also holds a dynamics word (the dynamics family's roles in
+  `role-table.mjs`, `threshold`, `ratio`, `attack`, `release`, and `knee`, `thresh`, `comp`): a frequency, a gain, a
+  threshold, a ratio and a mode, or a bandwidth, is a dynamic-EQ-shaped band, `family: null`, not an EQ.
   A band whose hertz and dB are only unit claims and whose Q or type is only a fallback word (a compressor band with a Mode,
   an imager band with a Width) is not an EQ either: it keeps its own stems as row keys and draws no EQ columns.
   Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
