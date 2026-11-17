@@ -407,27 +407,27 @@ function pagesOfDescription(description, effective, layout, servedOf, { perPage,
 
 /**
  * The controls with each repeated group's instances marked and ordered for the page cut (docs/group-model.md, P1): in a
- * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order; the section's own controls (the count, an EQ's master on) come before the instances. Sections apart, the
- * order of the array is not read, so the controls are sorted by (section, rank).
+ * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order, HPF first
+ * and LPF last, and holds its `slots`: a place the head has no control at is a blank slot (`param: null`), so slot `k` of
+ * every instance's screen is the same parameter. The section's own controls (the count, an EQ's master on) come before the
+ * instances. Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
  */
 function byInstance(sections, controls) {
-  const rank = new Map();
-  const mark = new Map();
+  const bySymbol = new Map(controls.map((c) => [c.symbol, c]));
+  const placed = new Set();
+  const instances = new Map();
   sections.forEach((s, at) => {
     if (!s.matrix) return;
-    matrixInstances(s.matrix).forEach(({ head, symbols }, j) => {
-      symbols.forEach((symbol, k) => {
-        if (rank.has(symbol)) return;
-        rank.set(symbol, [at, j + 1, k]);
-        mark.set(symbol, { group: `${s.key}#${j}`, label: head.label });
+    instances.set(at, matrixInstances(s.matrix).flatMap(({ head, slots }, j) => {
+      const mark = { section: at, [GROUP]: `${s.key}#${j}`, [INSTANCE]: head.label };
+      return slots.map((symbol) => {
+        const c = symbol !== null && !placed.has(symbol) ? bySymbol.get(symbol) : undefined;
+        if (!c) return { symbol: null, label: '', param: null, visible: null, mask: 0n, ...mark };
+        placed.add(symbol);
+        return { ...c, ...mark };
       });
-    });
+    }));
   });
-  const place = (c) => rank.get(c.symbol) ?? [c.section, 0, 0];
-  const marked = controls.map((c) => (mark.has(c.symbol) ? { ...c, [GROUP]: mark.get(c.symbol).group, [INSTANCE]: mark.get(c.symbol).label } : c));
-  return marked.map((c, i) => ({ c, i })).sort((a, b) => {
-    const [x, y] = [place(a.c), place(b.c)];
-    return x[0] - y[0] || x[1] - y[1] || x[2] - y[2] || a.i - b.i;
-  }).map(({ c }) => c);
+  const own = controls.filter((c) => !placed.has(c.symbol));
+  return sections.flatMap((_, at) => [...own.filter((c) => c.section === at), ...(instances.get(at) ?? [])]);
 }
-

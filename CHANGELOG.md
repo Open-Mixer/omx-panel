@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+- An EQ's band matrix on every screen (the owner's rule: the high-pass the first band, the low-pass the last, the bands
+  between in their number order, aligned; the audio order untouched). The group model reads a descriptor of any origin:
+  one a scan wrote states no `symbol`, the model read none of its controls, and a host, which draws from a scan, got
+  omx-eq8 as the sections HPF, LPF, Band 1 .. Band 8 with no matrix. Its controls are now keyed as the layout keys them;
+  a CLAP scan's instance number is read from the parameter's name and its 0..1 whole-number travel is a toggle. The page
+  cut keeps every instance's places: a place an instance has no control at (an empty cell, or a control the Easy pages
+  took) is a blank slot, so slot k is the same parameter on every band's screen. A surface that pages an EQ sees one more
+  screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
+  docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
+
 - 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
   This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
   omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the

@@ -14,6 +14,7 @@
  */
 import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
+import { keyOf } from './panel-description.mjs';
 import { DYNAMICS_WORDS } from './role-table.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -46,30 +47,40 @@ export function unitToken(unit) {
 // The inputs: one control shape from either reader.
 
 /**
- * @typedef {{ symbol: string, name: string, index: number, kind: 'toggle' | 'choice' | 'travel', unit: string,
+ * @typedef {{ symbol: string, name: string, numbered?: string, index: number, kind: 'toggle' | 'choice' | 'travel', unit: string,
  *   min?: number, max?: number, options?: number, integer?: boolean, path: string[] }} Control
  */
 
 /**
- * The controls of an omx-contract descriptor. `panel`, a declared panel (`{ sections: [{ key, label, controls }] }`),
- * wins over the controls' own `group` paths: it is the plugin's later word on its layout.
+ * The controls of an omx-contract descriptor, each under the key the layout names it by (`keyOf`: its symbol, else an LV2
+ * control's id, else a CLAP parameter's id as `p<id>`), so a descriptor a scan wrote, which states no `symbol`, is read as
+ * the authored one is. A control keyed by a CLAP id carries `numbered`, its name: the id's digits number no instance.
+ * `panel`, a declared panel (`{ sections: [{ key, label, controls }] }`), wins over the controls' own `group` paths: it
+ * is the plugin's later word on its layout.
  * @returns {Control[]}
  */
 export function controlsOfDescriptor(descriptor, { panel } = {}) {
   const sectionOf = new Map();
   for (const s of panel?.sections ?? []) for (const sym of s.controls ?? []) sectionOf.set(typeof sym === 'string' ? sym : sym.symbol, s.label ?? s.key);
   return (descriptor.controls ?? [])
-    .filter((c) => ['toggle', 'choice', 'travel'].includes(c.kind) && !c.hidden && c.symbol)
-    .map((c, i) => ({
-      symbol: c.symbol,
-      name: c.name ?? c.symbol,
-      index: Number.isInteger(c.id) ? c.id : i,
-      kind: c.kind,
-      unit: unitToken(c.travel?.unit),
-      ...(c.kind === 'travel' ? { min: c.travel?.min, max: c.travel?.max, ...(c.travel?.step === 1 ? { integer: true } : {}) } : {}),
-      ...(c.kind === 'choice' ? { options: (c.ids ?? c.labels ?? []).length } : {}),
-      path: panel ? (sectionOf.has(c.symbol) ? [sectionOf.get(c.symbol)] : []) : [c.group ?? []].flat(),
-    }))
+    .filter((c) => ['toggle', 'choice', 'travel'].includes(c.kind) && !c.hidden && keyOf(c))
+    .map((c, i) => {
+      const symbol = keyOf(c);
+      const written = c.symbol ?? (typeof c.id === 'string' ? c.id : null);
+      // a CLAP scan states no toggle: a whole-number travel of the two points 0 and 1 is one (a band's On, an edge's On)
+      const kind = c.kind === 'travel' && c.travel?.step === 1 && c.travel.min === 0 && c.travel.max === 1 ? 'toggle' : c.kind;
+      return {
+        symbol,
+        name: c.name ?? symbol,
+        ...(written === null ? { numbered: c.name ?? '' } : {}),
+        index: Number.isInteger(c.id) ? c.id : i,
+        kind,
+        unit: unitToken(c.travel?.unit),
+        ...(kind === 'travel' ? { min: c.travel?.min, max: c.travel?.max, ...(c.travel?.step === 1 ? { integer: true } : {}) } : {}),
+        ...(c.kind === 'choice' ? { options: (c.ids ?? c.labels ?? []).length } : {}),
+        path: panel ? (sectionOf.has(symbol) ? [sectionOf.get(symbol)] : []) : [c.group ?? []].flat(),
+      };
+    })
     .sort((a, b) => a.index - b.index);
 }
 
@@ -97,9 +108,12 @@ export function controlsOfLv2(triples, uri) {
 // ---------------------------------------------------------------------------------------------------------------
 // The words.
 
-const runs = (symbol) => String(symbol).match(/\d+/g) ?? [];
-/** A symbol's stem: its one number replaced by `#` (`b3_freq` -> `b#_freq`). */
-const stemOf = (symbol) => String(symbol).replace(/\d+/g, '#');
+/** The text a control's instance number is read from: its symbol, or its name where its key is a CLAP id (`numbered`). */
+const written = (c) => String(c.numbered ?? c.symbol);
+/** The numbers a control's symbol carries (`b3_freq` -> ['3']). */
+const runs = (c) => written(c).match(/\d+/g) ?? [];
+/** A control's stem: its symbol with `#` for the number (`b3_freq` -> `b#_freq`). */
+const stemOf = (c) => written(c).replace(/\d+/g, '#');
 const isNum = (t) => /^\d+$/.test(t);
 /** The numbers a name prints as whole words ("EQ 3 Freq" -> [3]). */
 const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
@@ -215,13 +229,18 @@ export function inferGroupModel(controls) {
  * The instances of a served matrix, one per head (an EQ's HPF and LPF included), left to right: the head and the symbols it
  * holds in the order a screen shows them, its on/off first, then its cells from the top row down (the head row and an empty
  * cell are none). The one order of an instance: the page cut (`describe`) and the port groups (`instanceGroups`) both read it.
- * @returns {{ head: { label: string, on: { symbol: string } | null, edge: string | null }, symbols: string[] }[]}
+ * `slots` is the same order with the places kept: the on/off's place (where any head has one), then one place per row, null
+ * where this head has no control there, so place `k` is the same parameter in every instance; the nulls after an instance's
+ * last control are left off.
+ * @returns {{ head: { label: string, on: { symbol: string } | null, edge: string | null }, symbols: string[], slots: (string | null)[] }[]}
  */
 export function matrixInstances(served) {
-  return served.heads.map((head, j) => ({
-    head,
-    symbols: [...new Set([head.on?.symbol, ...served.cells.flatMap((row, i) => (served.rows[i].head ? [] : [row[j]]))].filter((x) => typeof x === 'string'))],
-  }));
+  const headed = served.heads.some((h) => h.on);
+  return served.heads.map((head, j) => {
+    const slots = [...(headed ? [head.on?.symbol ?? null] : []), ...served.cells.flatMap((row, i) => (served.rows[i].head ? [] : [row[j] ?? null]))];
+    while (slots.length > 0 && slots.at(-1) === null) slots.pop();
+    return { head, symbols: [...new Set(slots.filter((x) => typeof x === 'string'))], slots };
+  });
 }
 
 /**
@@ -253,8 +272,8 @@ const refuse = (key, b, source, reason, detail) => list(key, b, { source, reason
 
 /** One bucket's group: the declared instances (a), else the symbols' numbers (b); either checked by (c). */
 function bucketGroup(key, b) {
-  const numbered = b.controls.filter((c) => runs(c.symbol).length >= 1);
-  const two = numbered.filter((c) => runs(c.symbol).length >= 2);
+  const numbered = b.controls.filter((c) => runs(c).length >= 1);
+  const two = numbered.filter((c) => runs(c).length >= 2);
   const declaredAny = b.controls.some((c) => c.path.length >= 1);
   if (numbered.length > 0 && two.length * 2 > numbered.length) {
     return refuse(key, b, declaredAny ? 'declared' : 'indexed', 'two-indices', `${two.length} of ${numbered.length} numbered controls carry two numbers (${two[0].symbol})`);
@@ -278,7 +297,7 @@ function declaredInstances(key, b) {
   // a declared instance's symbols carry its number, or one less (a symbol counting from 0), the same offset throughout
   const offsets = new Set();
   for (const [n, inst] of byN) for (const c of inst.controls) {
-    const r = runs(c.symbol);
+    const r = runs(c);
     if (r.length === 1) offsets.add(n - Number(r[0]));
   }
   if (offsets.size > 1 || [...offsets].some((o) => o !== 0 && o !== 1)) {
@@ -290,20 +309,20 @@ function declaredInstances(key, b) {
 
 /** A parameter's key across instances: its symbol's stem, else its name less numbers. */
 function slotKey(c) {
-  const r = runs(c.symbol);
-  if (r.length >= 1) return stemOf(c.symbol);
+  const r = runs(c);
+  if (r.length >= 1) return stemOf(c);
   return nameTokens(c.name).filter((t) => !isNum(t)).join(' ').toLowerCase();
 }
 
 function indexedInstances(key, b) {
-  const numbered = b.controls.filter((c) => runs(c.symbol).length >= 1);
+  const numbered = b.controls.filter((c) => runs(c).length >= 1);
   /** @type {Map<string, Map<number, Control>>} */
   const stems = new Map();
   for (const c of numbered) {
-    if (runs(c.symbol).length !== 1) continue;
-    const s = stemOf(c.symbol);
+    if (runs(c).length !== 1) continue;
+    const s = stemOf(c);
     if (!stems.has(s)) stems.set(s, new Map());
-    stems.get(s).set(Number(runs(c.symbol)[0]), c);
+    stems.get(s).set(Number(runs(c)[0]), c);
   }
   const repeated = [...stems.entries()].filter(([, m]) => m.size >= 2);
   if (repeated.length === 0) return list(key, b);
