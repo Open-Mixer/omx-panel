@@ -14,6 +14,7 @@
  */
 import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
+import { DYNAMICS_WORDS } from './role-table.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // The reason codes: the only ways a candidate repeated group falls back to a plain list (docs/group-model.md, "Uncertain").
@@ -105,8 +106,6 @@ const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
 export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
-/** The words of a dynamics control: a band holding one is not made an EQ by a fallback word alone (S8). */
-const DYNAMICS_WORDS = ['threshold', 'ratio', 'attack', 'release', 'knee'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
 const OFF_WORDS = new Set(['bypass', 'mute', 'off']);
 /** The role words: meaning-infer.mjs's EQ_WORDS, the one table (omx-panel#75). */
@@ -361,7 +360,7 @@ function instancesGroup(key, b, source, slotted, loose) {
   // a band is an EQ's when a word claims its Q or type outright, or when words claim its frequency and gain and the Q or type
   // is a fallback word (fil4's Bandwidth); a mode or a width beside a frequency or a gain only a unit claims is not
   const byWord = (role) => [...claims.values()].some((x) => x.byWord && x.role === role);
-  // ... unless a dynamics word sits beside a fallback type: a frequency, gain, threshold, ratio and mode is a compressor band
+  // ... unless a dynamics word sits beside the fallback Q or type: a frequency, gain, threshold, ratio and mode is a compressor band
   const dynamic = complete.some((k) => paramWords(first.bySlot.get(k)).some((w) => DYNAMICS_WORDS.includes(w.toLowerCase())));
   const named = byWord('q') || byWord('type') || (byWord('freq') && byWord('gain') && !dynamic);
   const family = isEqRoles(roleSet) && named ? 'eq' : null;
