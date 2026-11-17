@@ -5,7 +5,6 @@ Section: misc
 Priority: optional
 Maintainer: Pau Aliagas <linuxnow@gmail.com>
 Build-Depends: debhelper-compat (= 13),
-               dh-python,
                pkgconf,
                nodejs (>= 18),
                npm,
@@ -43,7 +42,7 @@ Package: python3-omx-panel
 Section: python
 Architecture: all
 Multi-Arch: foreign
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: python3, ${misc:Depends}
 Description: omx-panel's document shapes for Python
  The Python package omx_panel: omx_panel.shapes.<name> holds the typed
  dictionaries of the documents omx-panel owns (the gesture declaration with its

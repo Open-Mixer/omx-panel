@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-# the build runs with --nodeps, without systemd-rpm-macros: the unit directory is then the one it defines
+# the build runs with --nodeps, without systemd-rpm-macros and python3-devel: the unit directory and the Python module
+# directory are then the ones it defines
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
+# likewise python3-devel's macro: where this python3 keeps pure modules
+%{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
 Version: 0.13.8
