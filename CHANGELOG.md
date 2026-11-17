@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The documents omx-panel owns have types, rendered from one schema each (docs/shapes.md; omx-panel#52, the typed-contracts
+  spec's lane S2): `shapes/gestures`, `gesture_io`, `look_role` and `code` as TypeScript interfaces
+  (`@openmixer/omx-panel/shapes/<name>`) and Python `TypedDict`s with a `Literal` for the gesture words, inputs and widgets
+  (`omx_panel.shapes.<name>`, the new package python3-omx-panel on RPM and DEB). omx-contract's own generators render them;
+  the renders are committed and `make shapes-check` holds them. `test/host_reads.py` imports the words instead of reading
+  the JSON. `test/shapes.test.mjs`.
+
 - An EQ's band matrix on every screen (the owner's rule: the high-pass the first band, the low-pass the last, the bands
   between in their number order, aligned; the audio order untouched). The group model reads a descriptor of any origin:
   one a scan wrote states no `symbol`, the model read none of its controls, and a host, which draws from a scan, got
