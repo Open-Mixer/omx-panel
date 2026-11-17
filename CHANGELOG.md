@@ -4,6 +4,17 @@
 
 ## Unreleased
 
+- The gesture reference is C. `renderer/src/gesture.c`, built into `libomx-panel-render`, is the one implementation of the
+  gesture vocabulary of `docs/panel-gestures.md`; `renderer/include/omx_panel_gesture.h` (installed with the -devel
+  package) exports `omx_gesture_open`, `omx_gesture_run` and `omx_gesture_close`: a control and a script of events in as JSON,
+  the answer `tools/gestures.mjs` gives out as JSON, so one call shape serves every runtime. `input.c` now holds only the
+  renderer's mapping of controls onto targets and calls the unit for the arithmetic. The 20 shipped scripts, 117 rules and
+  4500 seeded random scripts give the same answers from C and from `tools/gestures.mjs`; the ABI is
+  `renderer/abi/omx_panel_gesture.abi`. `tools/gestures.mjs` keeps its arithmetic and stays the
+  JavaScript reference until its wasm loader lands; it gains `validateInput` only. `schema/gestures.json` now declares every
+  refusal code with its sentence (`codes`), including `GESTURE_BAD_INPUT`, which both references answer, in the same words, to
+  input neither can read. An integer travel now rounds as `Math.round` does, exactly, where the renderer rounded a negative half
+  away from zero, and a wheel's notch count is a number, not an int32.
 - The gesture parity scripts are exported by name: `@openmixer/omx-panel/gestures/scripts.json` resolves to
   `dist/test/fixtures/gestures/scripts.json`, the file the installed tree already carries, so the console reads the
   same scripts as the Zynthian UI without a path into `dist/`.

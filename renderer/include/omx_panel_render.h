@@ -172,7 +172,7 @@ bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffe
 /* ------------------------------------------------------------------------------------------------- input
  * One gesture vocabulary (one-panel spec 7.8, docs/panel-gestures.md, schema/gestures.json): the renderer maps a pointer, a wheel,
  * an encoder detent or a key onto it and answers each call with the control, its value, and the gesture's begin and end. It reads
- * every timing, threshold and table cell from gestures.json and keeps none; tools/gestures.mjs is the reference it is held to.
+ * every timing, threshold and table cell from gestures.json and keeps none; the arithmetic is gesture.c's (omx_panel_gesture.h), the one implementation that tools/gestures.mjs answers equal to.
  *
  * Positions are in the panel's logical px, the layout's (the buffer's device px divided by the scale it was laid out at). A
  * control's value is its fraction along its travel (the layout's cell) and, once the host has given the control's travel, the value
