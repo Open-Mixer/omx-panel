@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -78,6 +79,21 @@ test('the package carries the gesture parity scripts and every descriptor they n
   const named = [...new Set(scripts.map((s) => s.descriptor).filter(Boolean))];
   assert.ok(named.length > 0);
   for (const f of [rel, ...named]) assert.ok(existsSync(join(ROOT, 'dist', f)), `dist/${f} is not in the built package`);
+});
+
+// The console's gesture lane reads the same parity scripts from the npm package: npm packs them, and the package exports
+// them by name, so a reader resolves `<package>/gestures/scripts.json` without a path into dist/.
+test('the npm package exports the gesture parity scripts by name', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const rel = 'dist/test/fixtures/gestures/scripts.json';
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(packed.status, 0, packed.stderr);
+  assert.ok(JSON.parse(packed.stdout)[0].files.map((f) => f.path).includes(rel), `the packed file list has no ${rel}`);
+  assert.equal(pkg.exports['./gestures/scripts.json'], `./${rel}`, "package.json exports no './gestures/scripts.json'");
+  // resolved through the exports map, as a consumer resolves it
+  const at = createRequire(join(ROOT, 'package.json')).resolve(`${pkg.name}/gestures/scripts.json`);
+  assert.equal(at, join(ROOT, rel));
+  assert.ok(Array.isArray(JSON.parse(readFileSync(at, 'utf8')).scripts), 'the exported file holds no scripts');
 });
 
 // tools/look.json is the one public source of the vintage tokens (docs/modgui.md "The look"): the package carries it

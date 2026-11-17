@@ -4,6 +4,9 @@
 
 ## Unreleased
 
+- The gesture parity scripts are exported by name: `@openmixer/omx-panel/gestures/scripts.json` resolves to
+  `dist/test/fixtures/gestures/scripts.json`, the file the installed tree already carries, so the console reads the
+  same scripts as the Zynthian UI without a path into `dist/`.
 - The look is the vintage look, and `tools/look.json` is the one public source of its tokens. The role defaults of
   `schema/look-roles.json` move from the dark, cyan, modern look to the console's default: dark, orange accent
   (`--accent` `#e8732c`), aluminium, vintage (`--glass` `#05070a`). The package carries the file as
