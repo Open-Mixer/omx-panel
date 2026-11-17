@@ -1,6 +1,6 @@
 omx-panel (0.13.9) unstable; urgency=medium
 
-  * Built against omx-contract >= 3.20.0 (was 3.13.0 to 3.16.0 by package),
+  * Built against omx-contract >= 3.19.0 (was 3.13.0 to 3.16.0 by package),
     the 3.19.0 pass's newest, floors only (no ceiling). The jobs' dnf lines
     state the same.
   * describe --panel: a declared panel's roles back its family over a scan's
