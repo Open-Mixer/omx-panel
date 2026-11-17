@@ -1174,8 +1174,8 @@ static void box_cover(ibox *a, const ibox *b) {
 }
 static long box_area(const ibox *a) { return (long)(a->x1 - a->x0) * (a->y1 - a->y0); }
 
-/* Merge boxes that meet until none do; then, past `cap`, the pair that grows the covering area least until `cap` remain. */
-static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
+/* Merge boxes that meet, until none do. */
+static size_t merge_meeting(ibox *bx, size_t n) {
   for (int again = 1; again;) {
     again = 0;
     for (size_t i = 0; i < n && !again; i++)
@@ -1187,6 +1187,12 @@ static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
           break;
         }
   }
+  return n;
+}
+
+/* Merge boxes that meet; then, past `cap`, the pair that grows the covering area least (and what that makes meet) until `cap` remain. */
+static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
+  n = merge_meeting(bx, n);
   while (n > cap) {
     size_t bi = 0, bj = 1;
     long best = -1;
@@ -1199,18 +1205,7 @@ static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
       }
     box_cover(&bx[bi], &bx[bj]);
     bx[bj] = bx[--n];
-    /* a covering box can now meet another */
-    for (int again = 1; again;) {
-      again = 0;
-      for (size_t i = 0; i < n && !again; i++)
-        for (size_t j = i + 1; j < n; j++)
-          if (boxes_meet(&bx[i], &bx[j])) {
-            box_cover(&bx[i], &bx[j]);
-            bx[j] = bx[--n];
-            again = 1;
-            break;
-          }
-    }
+    n = merge_meeting(bx, n);
   }
   return n;
 }
