@@ -11,12 +11,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { pluginUris } from '../dist/tools/group-infer.mjs';
-import { outName, planBundle, readInstalledBundle, sync } from '../dist/tools/lv2-complement.mjs';
+import { pluginUris, readPluginPorts } from '../dist/tools/group-infer.mjs';
+import { outName, planBundle, pluginTriples, readInstalledBundle, sync } from '../dist/tools/lv2-complement.mjs';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CALF = join(ROOT, 'test/fixtures/group-model/lv2/calf-multiband-compressor');
+const LV2_GROUPS = join(ROOT, 'test/fixtures/lv2-groups');
 const EQ8 = join(ROOT, 'test/fixtures/lv2-groups/omx-eq8');
 const LV2 = 'http://lv2plug.in/ns/lv2core#';
 const PG = 'http://lv2plug.in/ns/ext/port-groups#';
@@ -63,6 +64,17 @@ describe('P2: one pg:group per instance', () => {
     const groupOfBand = [0, 1, 2, 3].map((n) => new Set(['bypass', 'threshold', 'ratio', 'solo'].flatMap((s) => nodeOf(`${s}${n}`))));
     for (const s of groupOfBand) assert.equal(s.size, 1, 'one group for the band');
     assert.equal(new Set(groupOfBand.map((s) => [...s][0])).size, 4, 'four bands, four groups');
+  });
+
+  it('each group lists its ports in the bundle\'s port order, as lilv reads them (triplePara\'s band_1 is gain_1 fc_1 bw_1, not freq first)', () => {
+    for (const [fixture, name] of [[join(LV2_GROUPS, 'swh-triplepara'), 'triple'], [CALF, 'calf']]) {
+      const { dir } = installed(fixture, name);
+      const bundle = /** @type {any} */ (readInstalledBundle(dir));
+      const [{ uri, verdict }] = planBundle(bundle).plugins;
+      const index = new Map(readPluginPorts(pluginTriples(bundle, uri), uri).ports.map((p) => [p.symbol, p.index]));
+      for (const g of verdict.groups) assert.deepEqual(g.ports.map((p) => index.get(p)), g.ports.map((p) => index.get(p)).sort((a, b) => a - b), `${name}: ${g.symbol} ${g.ports}`);
+      assert.ok(verdict.groups.some((g) => /\d$/.test(g.symbol)), `${name}: has instance groups`);
+    }
   });
 
   it('a plugin that declares its instances already (omx-eq8) gets nothing added', () => {
