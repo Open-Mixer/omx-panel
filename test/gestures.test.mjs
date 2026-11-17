@@ -424,9 +424,10 @@ test('the MOD GUI draws the four widgets a plugin\'s parameters take, and refuse
   assert.throws(() => widgetFor({ widgets: { a: 'meter' } }, 'a', p), /does not draw/);
 });
 
-test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', async () => {
-  const twin = await import('@openmixer/omx-dsp').then((x) => x, () => null);
-  if (!twin) return; // the curve needs the twin; test/modgui-curve.test.mjs skips the same way
+// The curve needs the omx-dsp twin: without it this arm is a named skip, never a silent pass.
+const TWIN = await import('@openmixer/omx-dsp').then((x) => x, () => null);
+
+test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', { skip: TWIN ? false : 'the curve needs @openmixer/omx-dsp (the twin), which is not installed' }, async () => {
   const { generateModgui } = await import('../dist/tools/modgui-gen.mjs');
   const read = (f) => JSON.parse(readFileSync(join(ROOT, 'test/fixtures', f), 'utf8'));
   const page = new Map(generateModgui(read('eq-marks/eq.descriptor.json'), { panel: read('eq-marks/eq.panel.json'), stem: 'x', source: 'test' })).get('modgui/icon-x.html').toString();
