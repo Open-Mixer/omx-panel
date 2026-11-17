@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { candidatesOf, describe, DESCRIBE_CODES, familyRule } from '../dist/tools/describe.mjs';
-import { AFFIX, inferBands, shapesOf } from '../dist/tools/meaning-infer.mjs';
+import { AFFIX, EQ_WORDS, inferBands, shapesOf } from '../dist/tools/meaning-infer.mjs';
 
 const travel = (name, meaning, t = {}, extra = {}) => ({ name, kind: 'travel', ...(meaning ? { meaning } : {}), travel: { min: 0, max: 1, unit: 'unknown', scale: 'linear', default: 0, ...t }, ...extra });
 const dyn = (names = ['threshold', 'ratio', 'attack', 'release']) => names.map((n) => travel(n, n, { min: n === 'ratio' ? 1 : -60, max: n === 'ratio' ? 20 : 0, unit: n === 'ratio' ? 'ratio' : n === 'threshold' ? 'dB' : 'ms' }));
@@ -147,8 +147,11 @@ for (const [role, words] of Object.entries(AFFIX)) {
   }
 }
 test('every weak Q word (bandwidth, bw, width, w, and what the table adds) beside every strong one (q, quality, resonance), in either order, yields the strong one', () => {
-  const STRONG = ['q', 'quality', 'resonance'];
-  const weak = AFFIX.q.filter((w) => !STRONG.includes(w));
+  // both sets are the table's (EQ_WORDS: roles.q the strong words, fallback.q the weak), spaces run together as AFFIX has them
+  const run = (ws) => ws.map((w) => w.replace(/ /g, ''));
+  const STRONG = run(EQ_WORDS.roles.q);
+  const weak = run(EQ_WORDS.fallback.q);
+  assert.deepEqual([...weak, ...STRONG].sort(), [...AFFIX.q].sort());
   for (const w of ['bandwidth', 'width', 'bw', 'w']) assert.ok(weak.includes(w), `${w} is a weak Q word`);
   for (const w of weak) {
     for (const s of STRONG) {

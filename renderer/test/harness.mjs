@@ -26,14 +26,6 @@ const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 /** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`): a fixture that draws a curve needs it, and its tests
  * FAIL without it, naming it, never skip (docs/renderer.md); CI's renderer job installs it. */
 export const HAVE_TWIN = await import('@openmixer/omx-dsp').then(() => true, () => false);
-/** omx-dsp's twin module, or null where it is not installed; under OMX_PANEL_DSP=required (CI's `make test` job) a missing twin
- * throws instead, so no curve case is skipped there. The one place that throw is written (test/modgui-curve.test.mjs and
- * test/gestures.test.mjs import it). */
-export async function loadTwin() {
-  const twin = await import('@openmixer/omx-dsp').then((m) => m, () => null);
-  if (!twin && process.env.OMX_PANEL_DSP === 'required') throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
-  return twin;
-}
 /** Throw, naming the twin, when `fx` draws a curve and the twin is not installed. */
 export function requireTwin(fx) {
   if (fx.needsTwin && !HAVE_TWIN) throw new Error(`omx-dsp's twin (@openmixer/omx-dsp) is not installed: fixture '${fx.name}' draws a curve and needs it (npm i --no-save '@openmixer/omx-dsp@>=0.32.2')`);

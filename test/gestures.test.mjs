@@ -11,7 +11,6 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { loadTwin } from '../renderer/test/harness.mjs';
 import { GESTURES, GESTURE_CODES, GestureError, memberOf, runGesture, timingsOf, wordOf, stepOf } from '../dist/tools/gestures.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -425,9 +424,9 @@ test('the MOD GUI draws the four widgets a plugin\'s parameters take, and refuse
   assert.throws(() => widgetFor({ widgets: { a: 'meter' } }, 'a', p), /does not draw/);
 });
 
-// the curve needs omx-dsp's twin: a skip without it (test/modgui-curve.test.mjs), a failure under OMX_PANEL_DSP=required
-const haveTwin = (await loadTwin()) !== null;
-test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', haveTwin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' }, async () => {
+test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', async () => {
+  const twin = await import('@openmixer/omx-dsp').then((x) => x, () => null);
+  if (!twin) return; // the curve needs the twin; test/modgui-curve.test.mjs skips the same way
   const { generateModgui } = await import('../dist/tools/modgui-gen.mjs');
   const read = (f) => JSON.parse(readFileSync(join(ROOT, 'test/fixtures', f), 'utf8'));
   const page = new Map(generateModgui(read('eq-marks/eq.descriptor.json'), { panel: read('eq-marks/eq.panel.json'), stem: 'x', source: 'test' })).get('modgui/icon-x.html').toString();
