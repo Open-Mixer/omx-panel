@@ -114,6 +114,7 @@
     "./shapes/*": {
       "types": "./dist/ts/shapes/*.d.ts"
     },
+    "./look.json": "./dist/tools/look.json",
     "./package.json": "./package.json"
   },
   "files": [

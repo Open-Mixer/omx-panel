@@ -27,8 +27,10 @@ value and reads no travel, so a third-party plugin's panel is drawn exactly as o
 
 The face is the MOD GUI's face, drawn the same way to the bit: the head (maker and name), each section with
 its label, each control in its cell with its label and value text. The look (colours, font) is
-the colour roles of `schema/look-roles.json` as its host values them, `tools/look.json` (the roles' defaults) when
-it passes no other; a look short of any role is refused by the role's name. The geometry and text sizes are
+the colour roles of `schema/look-roles.json` as its host values them, `tools/look.json` (the vintage tokens, the
+roles' defaults: [modgui.md](modgui.md) "The look") when it passes no other; a look short of any role is refused by
+the role's name, with no other role drawn in its place. A knob's pointer is drawn in `--knob-pointer` and a curve's
+stroke in `--curve-stroke`, neither in `--accent`. The geometry and text sizes are
 `tools/look/geometry.json`, which `tools/modgui-gen.mjs` reads too. The renderer types no colour and no size.
 
 A meter fills along the foot of its frame to its reading. A display and an xy pad show a frame and their text
@@ -279,7 +281,7 @@ test or a screenshot. A build without `WINDOW=1` links no window system: the buf
 view and a headless worker pay for nothing they do not use.
 
 A window is held to the buffer by structure, not by pixel (`renderer/test/window.test.mjs`, run under
-Xvfb). Both must have the same size. In every control's cell, the accent (a knob's pointer, a fader's line,
+Xvfb). Both must have the same size. In every control's cell, the accent (a fader's line,
 a switch, a meter's fill) must be in the same place within 1 px and of about the same amount. The text in
 the cell must cover the same extent within 2 px. Block by block, the image must have the same mean colour,
 within 20 in a channel for 97 in 100 blocks.

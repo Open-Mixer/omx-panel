@@ -4,12 +4,30 @@
 
 ## Unreleased
 
+<<<<<<< HEAD
 - The documents omx-panel owns have types, rendered from one schema each (docs/shapes.md; omx-panel#52, the typed-contracts
   spec's lane S2): `shapes/gestures`, `gesture_io`, `look_role` and `code` as TypeScript interfaces
   (`@openmixer/omx-panel/shapes/<name>`) and Python `TypedDict`s with a `Literal` for the gesture words, inputs and widgets
   (`omx_panel.shapes.<name>`, the new package python3-omx-panel on RPM and DEB). omx-contract's own generators render them;
   the renders are committed and `make shapes-check` holds them. `test/host_reads.py` imports the words instead of reading
   the JSON. `test/shapes.test.mjs`.
+=======
+- The look is the vintage look, and `tools/look.json` is the one public source of its tokens. The role defaults of
+  `schema/look-roles.json` move from the dark, cyan, modern look to the console's default: dark, orange accent
+  (`--accent` `#e8732c`), aluminium, vintage (`--glass` `#05070a`). The package carries the file as
+  `dist/tools/look.json`, now exported as `@openmixer/omx-panel/look.json`, and installs it as
+  `/usr/share/omx-panel/tools/look.json`; its readers are the MOD GUI generator, the renderer, the Zynthian UI and its
+  pixel test, and the console's check of its own `tokens.css`.
+  Two new roles, each one drawing, neither drawn in `--accent` any more: `--knob-pointer` (a knob's pointer, the
+  console's cream `#f4efe2`) and `--curve-stroke` (the line of an `eq_response`, a `transfer_curve` or a
+  `time_response` display; the accent's value at this look). The renderer and the MOD GUI generator draw both from
+  the roles. A look that lacks either is refused by the role's name, as for every role; nothing stands in for a
+  missing role. A host that passes its own look (`look.json` in the renderer's data directory, a console theme, a
+  Zynthian palette) must now value both, or the renderer refuses it.
+  Every MOD GUI image, stylesheet and golden image moves with the look. The knob is still drawn flat: its metal face,
+  rim and relief are not in this change. docs/modgui.md "The look"; `test/look-roles.test.mjs`,
+  `renderer/test/look-roles.test.mjs`, `test/packaging.test.mjs`.
+>>>>>>> origin/main
 
 - An EQ's band matrix on every screen (the owner's rule: the high-pass the first band, the low-pass the last, the bands
   between in their number order, aligned; the audio order untouched). The group model reads a descriptor of any origin:
