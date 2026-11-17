@@ -48,8 +48,8 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
   struct { const char *name; omx_rgb *to; } want[] = {
       {"--surface", &v->col.surface}, {"--surface-2", &v->col.section}, {"--surface-3", &v->col.body},
       {"--border-strong", &v->col.rim}, {"--ink", &v->col.ink},       {"--ink-dim", &v->col.inkDim},
-      {"--accent", &v->col.accent},   {"--meter-green", &v->col.meterGreen}, {"--meter-amber", &v->col.meterAmber},
-      {"--meter-red", &v->col.meterRed},
+      {"--accent", &v->col.accent},   {"--knob-pointer", &v->col.pointer},   {"--curve-stroke", &v->col.curve},
+      {"--meter-green", &v->col.meterGreen}, {"--meter-amber", &v->col.meterAmber}, {"--meter-red", &v->col.meterRed},
   };
   if (!cJSON_IsObject(tok)) {
     fail(err, n, "look: no tokens object%s%s", NULL, NULL);
@@ -804,7 +804,7 @@ static void draw_knob(const omx_draw *d, double cx, double cy, double r, double 
   d->disc(d->ctx, cx, cy, r - fmax(1, r * 0.08), col->body);
   double th = (-135 + 270 * fmin(1, fmax(0, f))) * (M_PI / 180);
   double sx = sin(th), sy = -cos(th);
-  d->segment(d->ctx, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, fmax(0.75, r * 0.08), col->accent);
+  d->segment(d->ctx, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, fmax(0.75, r * 0.08), col->pointer);
 }
 
 static void draw_selector(const omx_draw *d, double x, double y, double w, double h, double at, double n, const palette *col) {
@@ -897,7 +897,7 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   for (size_t k = 0; k < c->nspec; k++)
     if (c->spec_peak[k] >= hi) d->round_rect(d->ctx, AX(c->spec_hz[k]) - 1.5 * s, iy, 3 * s, 4 * s, 0, col->meterRed);
   for (size_t k = 1; k < c->n; k++)
-    d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->accent);
+    d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->curve);
   for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
     double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
     char one[2] = {c->mark_letter[k], 0};
@@ -931,7 +931,7 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
   double px = 0, py = 0;
   for (size_t k = 0; k < c->n; k++) {
     double qx = ix + (c->x[k] / xmax) * iw, qy = iy + ih - ((fmax(c->y[k], lo) - lo) / (hi - lo)) * ih;
-    if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->accent);
+    if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->curve);
     px = qx, py = qy;
   }
   for (size_t k = 0; k < c->nstems; k++) {
@@ -978,7 +978,7 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
     for (size_t k = 0; k < c->n; k++) {
       double u = ((c->log_x ? log10(c->x[k]) : c->x[k]) - x0) / (x1 - x0);
       double qx = ix + u * iw, qy = iy + ih - ((c->y[k] - lo) / (hi - lo)) * ih;
-      if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->accent);
+      if (k) d->segment(d->ctx, px, py, qx, qy, fmax(0.75, 0.75 * s), col->curve);
       px = qx, py = qy;
     }
     /* the marks, on the log axis at the band's own depth: a disc and its planter's letter above */

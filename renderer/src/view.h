@@ -115,7 +115,7 @@ typedef struct {
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, meterGreen, meterAmber, meterRed;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed;
 } palette;
 
 struct omx_panel_view {

@@ -5,8 +5,9 @@
  * look.mjs — the colour roles of a panel (schema/look-roles.json, the one-panel spec,
  * §7.10) and the two files derived from them:
  *
- *   · tools/look.json, the values the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads from its data
- *     directory: every role at its one default, and the font;
+ *   · tools/look.json, the one public source of the vintage tokens: every role at its one default, and the font. The
+ *     MOD GUI wears it (tools/modgui-gen.mjs), the renderer reads it from its data directory, the Zynthian UI and its
+ *     pixel test map their colours from it, and the console's tokens.css is held to it (docs/modgui.md "The look");
  *   · renderer/src/look_roles.h, the role list the renderer's read_look requires of every look a host passes.
  *
  * The roles are declared once; the values are each host's (the console's tokens.css, Zynthian's palette table). Nothing
@@ -120,14 +121,14 @@ function assertSound(doc) {
   if (faults.length) throw new Error(`look: schema/look-roles.json: ${faults.join('; ')}`);
 }
 
-/** tools/look.json's text: the look the defaults are, every role at its default, and the font. */
+/** tools/look.json's text: the look the defaults are (the vintage look), every role at its default, and the font. */
 export function emitLook(doc = loadRoles()) {
   assertSound(doc);
   const tokens = {};
   for (const r of doc.roles) tokens[r.name] = r.default;
   for (const f of NOT_COLOURS) tokens[f] = doc.font[f];
   const look = {
-    $comment: 'GENERATED — DO NOT EDIT BY HAND. The look the MOD GUI wears (tools/modgui-gen.mjs) and the renderer reads: every colour role of schema/look-roles.json at its one default, and the font. Regenerate: `node tools/look.mjs`, then commit the result.',
+    $comment: 'GENERATED — DO NOT EDIT BY HAND. The one public source of the vintage tokens: every colour role of schema/look-roles.json at its one default, and the font. The MOD GUI wears it (tools/modgui-gen.mjs), the renderer reads it, the Zynthian UI maps its colours from it and the console\'s tokens.css is held to it. Regenerate: `node tools/look.mjs`, then commit the result.',
     ...Object.fromEntries(LOOK_AXES.map((a) => [a, doc.look[a]])),
     tokens,
   };
