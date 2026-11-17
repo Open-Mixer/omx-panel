@@ -28,8 +28,12 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
 const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `catalogs/${f}`);
 /** What zynthian-ui reads from the installed tree (tests/test_bar_xy_gestures.py): the gesture parity scripts and the descriptors they name. */
 const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
+/** Every document shape (docs/shapes.md): the schema, shipped for a reader that validates. */
+const SHAPES = readdirSync(join(ROOT, 'shapes')).filter((f) => f.endsWith('.schema.json')).sort().map((f) => `shapes/${f}`);
+/** The TypeScript render of each shape, committed under test/golden/ts/shapes and published as dist/ts/shapes/<name>.d.ts, where package.json's `./shapes/*` points. */
+export const SHAPE_TYPES = readdirSync(join(ROOT, 'test/golden/ts/shapes')).filter((f) => f.endsWith('.d.ts')).sort();
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, ...SHAPES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/gesture-words.mjs', 'tools/modgui-test.sh'];
 
@@ -45,6 +49,10 @@ for (const f of [...MODULES, ...DATA]) {
   mkdirSync(dirname(join(DIST, f)), { recursive: true });
   copyFileSync(join(ROOT, f), join(DIST, f));
 }
+for (const f of SHAPE_TYPES) {
+  mkdirSync(join(DIST, 'ts/shapes'), { recursive: true });
+  copyFileSync(join(ROOT, 'test/golden/ts/shapes', f), join(DIST, 'ts/shapes', f));
+}
 for (const f of COMMANDS) chmodSync(join(DIST, f), 0o755);
 // tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
 for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
@@ -52,4 +60,4 @@ for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
   const text = readFileSync(d, 'utf8');
   if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
 }
-console.log(`copy-data: ${MODULES.length} modules and ${DATA.length} data files into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);
+console.log(`copy-data: ${MODULES.length} modules, ${DATA.length} data files and ${SHAPE_TYPES.length} shape types into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);

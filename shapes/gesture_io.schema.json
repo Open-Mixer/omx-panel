@@ -1,0 +1,682 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/schema/omx-panel/shapes/gesture_io.schema.json",
+  "title": "GestureIo",
+  "description": "The call of the one gesture implementation (typed-contracts-shared-behaviour.md §4.1): a control member and a script of events in, with the surface's settings; the answer out. Every runtime passes these documents as JSON text, so no struct crosses the boundary. The answer lists every moved value as `member` and `value` entries, never a map keyed by a symbol, so a C writer has no dynamic key.",
+  "type": "object",
+  "properties": {
+    "control": {
+      "$ref": "#/$defs/Control"
+    },
+    "events": {
+      "type": "array",
+      "description": "The script, in time order; a stable sort by `t` is applied.",
+      "items": {
+        "$ref": "#/$defs/Event"
+      }
+    },
+    "settings": {
+      "$ref": "#/$defs/Settings"
+    },
+    "answer": {
+      "$ref": "#/$defs/Answer"
+    }
+  },
+  "required": [
+    "control",
+    "events"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Rect": {
+      "type": "object",
+      "title": "Rect",
+      "description": "A target rectangle in the surface's pixels: where a control, a bar or a handle can be pressed.",
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "The left edge."
+        },
+        "y": {
+          "type": "number",
+          "description": "The top edge."
+        },
+        "w": {
+          "type": "number",
+          "description": "The width."
+        },
+        "h": {
+          "type": "number",
+          "description": "The height."
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false
+    },
+    "Plot": {
+      "type": "object",
+      "title": "Plot",
+      "description": "The size of the plot a handle moves in, in pixels: a horizontal drag of the plot's width is the whole frequency travel, a vertical one of its height the whole gain travel.",
+      "properties": {
+        "w": {
+          "type": "number",
+          "description": "The plot's width."
+        },
+        "h": {
+          "type": "number",
+          "description": "The plot's height."
+        }
+      },
+      "required": [
+        "w",
+        "h"
+      ],
+      "additionalProperties": false
+    },
+    "Member": {
+      "type": "object",
+      "title": "Member",
+      "description": "One moved value of a control with its own travel: a handle's frequency, gain or Q, or a bar's height. It states its ends, default and scale in the control's own unit.",
+      "properties": {
+        "min": {
+          "type": "number",
+          "description": "The value at the start of the travel."
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at the end of the travel."
+        },
+        "def": {
+          "type": "number",
+          "description": "The declared default a reset goes to; absent: the control declares none and a reset is refused."
+        },
+        "scale": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "log"
+          ],
+          "description": "The scale of the travel; a log travel is linear in its logarithm."
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The declared step in the control's own unit, on a linear travel; absent: 1% of the travel."
+        },
+        "integer": {
+          "type": "boolean",
+          "description": "The travel lands on integers (a stepped travel)."
+        },
+        "value": {
+          "type": "number",
+          "description": "The value the gesture starts from; absent: the default, else the minimum."
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "additionalProperties": false
+    },
+    "Bar": {
+      "type": "object",
+      "title": "Bar",
+      "description": "One bar of a bar group: its member's travel, the control symbol it moves, and where it can be pressed.",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "description": "The control symbol the bar moves; the key of its value in the answer."
+        },
+        "min": {
+          "type": "number",
+          "description": "The value at the start of the travel."
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at the end of the travel."
+        },
+        "def": {
+          "type": "number",
+          "description": "The declared default a reset goes to; absent: none."
+        },
+        "value": {
+          "type": "number",
+          "description": "The value the gesture starts from."
+        },
+        "target": {
+          "$ref": "#/$defs/Rect"
+        }
+      },
+      "required": [
+        "symbol",
+        "min",
+        "max",
+        "target"
+      ],
+      "additionalProperties": false
+    },
+    "Control": {
+      "type": "object",
+      "title": "Control",
+      "description": "A control member as a surface hands it to the gesture run: the widget, its travel and its geometry. A handle carries its three members, a bar group its bars, every other widget its own travel.",
+      "properties": {
+        "widget": {
+          "type": "string",
+          "enum": [
+            "knob",
+            "fader",
+            "switch",
+            "selector",
+            "xy",
+            "meter",
+            "display",
+            "curve",
+            "bar",
+            "handle"
+          ],
+          "description": "The widget, a key of the table in gestures.schema.json."
+        },
+        "min": {
+          "type": "number",
+          "description": "The value at the start of the travel."
+        },
+        "max": {
+          "type": "number",
+          "description": "The value at the end of the travel."
+        },
+        "def": {
+          "type": "number",
+          "description": "The declared default a reset goes to."
+        },
+        "scale": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "log"
+          ],
+          "description": "The scale of the travel."
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The declared step on a linear travel."
+        },
+        "integer": {
+          "type": "boolean",
+          "description": "The travel lands on integers."
+        },
+        "value": {
+          "type": "number",
+          "description": "The value the gesture starts from."
+        },
+        "readOnly": {
+          "type": "boolean",
+          "description": "The control is read-only and takes no gesture."
+        },
+        "hold": {
+          "type": "boolean",
+          "description": "The control is a safety control: a tap acts only after the safety hold."
+        },
+        "section": {
+          "type": "string",
+          "description": "The panel section the control sits in, for the table's section exceptions."
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "description": "The direction a fader or slider moves in; absent: vertical."
+        },
+        "travelPx": {
+          "type": "number",
+          "description": "The drag distance of the whole travel in pixels; absent: the declared default."
+        },
+        "target": {
+          "$ref": "#/$defs/Rect"
+        },
+        "plot": {
+          "$ref": "#/$defs/Plot"
+        },
+        "freq": {
+          "$ref": "#/$defs/Member"
+        },
+        "gain": {
+          "$ref": "#/$defs/Member"
+        },
+        "q": {
+          "$ref": "#/$defs/Member"
+        },
+        "bars": {
+          "type": "array",
+          "description": "The bars of a bar group, left to right.",
+          "items": {
+            "$ref": "#/$defs/Bar"
+          }
+        },
+        "selected": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The bar symbol or `handle` that is selected, or null for none."
+        }
+      },
+      "required": [
+        "widget"
+      ],
+      "additionalProperties": false
+    },
+    "Event": {
+      "type": "object",
+      "title": "Event",
+      "description": "One event of a script, in the surface's time: a pointer down, move or up, a wheel notch or an encoder detent, or a key.",
+      "properties": {
+        "t": {
+          "type": "number",
+          "description": "The time in milliseconds."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "down",
+            "move",
+            "up",
+            "wheel",
+            "detent",
+            "key"
+          ],
+          "description": "The kind of event."
+        },
+        "id": {
+          "type": "string",
+          "description": "The pointer's id, for down, move and up."
+        },
+        "ptype": {
+          "type": "string",
+          "enum": [
+            "touch",
+            "mouse",
+            "pen",
+            "fader"
+          ],
+          "description": "The pointer's type."
+        },
+        "x": {
+          "type": "number",
+          "description": "The pointer's x in the surface's pixels."
+        },
+        "y": {
+          "type": "number",
+          "description": "The pointer's y in the surface's pixels."
+        },
+        "fine": {
+          "type": "boolean",
+          "description": "A move made with the fine modifier."
+        },
+        "n": {
+          "type": "integer",
+          "description": "The notches of a wheel or the detents of an encoder, signed."
+        },
+        "coarse": {
+          "type": "boolean",
+          "description": "A wheel notch or detent with the coarse modifier."
+        },
+        "encoder": {
+          "type": "integer",
+          "description": "The encoder's number; 3 is the second-parameter encoder."
+        },
+        "bar": {
+          "type": "string",
+          "description": "The bar symbol a wheel, detent or key event addresses."
+        },
+        "key": {
+          "type": "string",
+          "description": "The key's name, as the DOM names it (ArrowUp, Backspace)."
+        },
+        "shift": {
+          "type": "boolean",
+          "description": "The key was pressed with the shift modifier."
+        }
+      },
+      "required": [
+        "t",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "SettingTimings": {
+      "type": "object",
+      "title": "SettingTimings",
+      "description": "The timings a surface sets over the declared ones; each is a time in milliseconds above zero, and the safety hold is refused below its declared floor.",
+      "properties": {
+        "longPressMs": {
+          "type": "number",
+          "description": "The surface's longPressMs."
+        },
+        "doubleTapMs": {
+          "type": "number",
+          "description": "The surface's doubleTapMs."
+        },
+        "palmGuardMs": {
+          "type": "number",
+          "description": "The surface's palmGuardMs."
+        },
+        "safetyHoldMs": {
+          "type": "number",
+          "description": "The surface's safetyHoldMs."
+        },
+        "claimMs": {
+          "type": "number",
+          "description": "The surface's claimMs."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Settings": {
+      "type": "object",
+      "title": "Settings",
+      "description": "A surface's own settings of the gesture run.",
+      "properties": {
+        "timings": {
+          "$ref": "#/$defs/SettingTimings"
+        },
+        "paintWithTouch": {
+          "type": "boolean",
+          "description": "Whether painting is enabled on touch; false is refused, since painting is required on touch."
+        },
+        "paintWithMouse": {
+          "type": "boolean",
+          "description": "Whether painting is enabled with a mouse; absent: off."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Refusal": {
+      "type": "object",
+      "title": "Refusal",
+      "description": "An event the run refused, with the rule that refused it.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "GESTURE_READ_ONLY",
+            "GESTURE_CONTROL_OWNED",
+            "GESTURE_NO_DEFAULT",
+            "GESTURE_NOT_IN_TABLE",
+            "GESTURE_HOLD_SHORT",
+            "GESTURE_HOLD_BELOW_FLOOR",
+            "GESTURE_NO_TARGET",
+            "GESTURE_PAINT_REQUIRED_ON_TOUCH",
+            "GESTURE_BAD_SETTING"
+          ],
+          "description": "The refusal code, naming the rule."
+        },
+        "t": {
+          "type": "number",
+          "description": "The time of the refused event."
+        },
+        "why": {
+          "type": "string",
+          "description": "The refusal in words, for a log."
+        }
+      },
+      "required": [
+        "code",
+        "t",
+        "why"
+      ],
+      "additionalProperties": false
+    },
+    "Cancelled": {
+      "type": "object",
+      "title": "Cancelled",
+      "description": "A press that ended outside its target and so did nothing.",
+      "properties": {
+        "t": {
+          "type": "number",
+          "description": "The time of the release."
+        },
+        "why": {
+          "type": "string",
+          "description": "Why it was cancelled."
+        }
+      },
+      "required": [
+        "t",
+        "why"
+      ],
+      "additionalProperties": false
+    },
+    "Shown": {
+      "type": "object",
+      "title": "Shown",
+      "description": "How a surface shows a gesture's value: from when to when, and where.",
+      "properties": {
+        "from": {
+          "type": "number",
+          "description": "When the value text appears."
+        },
+        "until": {
+          "type": "number",
+          "description": "When it goes, after the claim for a step."
+        },
+        "clearOfFinger": {
+          "type": "boolean",
+          "description": "The text is drawn clear of the finger."
+        },
+        "drawnFollowsFinger": {
+          "type": "boolean",
+          "description": "The drawn value follows the pointer while it is down."
+        },
+        "readBackReplaces": {
+          "type": "boolean",
+          "description": "A value read back from the engine replaces the drawn one."
+        }
+      },
+      "required": [
+        "from",
+        "until",
+        "clearOfFinger",
+        "drawnFollowsFinger",
+        "readBackReplaces"
+      ],
+      "additionalProperties": false
+    },
+    "Change": {
+      "type": "object",
+      "title": "Change",
+      "description": "One member's value after a gesture: the member's name, and its value in the control's own unit.",
+      "properties": {
+        "member": {
+          "type": "string",
+          "description": "The member: `value` for a single control, `freq`, `gain` or `q` of a handle, a bar's symbol."
+        },
+        "value": {
+          "type": "number",
+          "description": "The value in the control's own unit."
+        }
+      },
+      "required": [
+        "member",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "Gesture": {
+      "type": "object",
+      "title": "Gesture",
+      "description": "One gesture of the run, from its first event to its last.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The gesture's id, one per undo entry."
+        },
+        "word": {
+          "type": "string",
+          "enum": [
+            "drag",
+            "fine",
+            "step",
+            "second",
+            "reset",
+            "more",
+            "select",
+            "toggle",
+            "paint"
+          ],
+          "description": "The gesture word, a key of `words` in gestures.schema.json."
+        },
+        "input": {
+          "type": "string",
+          "enum": [
+            "tap",
+            "doubleTap",
+            "longPress",
+            "drag",
+            "dragFine",
+            "wheel",
+            "wheelCoarse",
+            "detent",
+            "detentCoarse",
+            "encoder3",
+            "arrow",
+            "arrowCoarse",
+            "arrowSecond",
+            "backspace",
+            "pinch",
+            "sweep"
+          ],
+          "description": "The input that made it, a member of `inputs` in gestures.schema.json."
+        },
+        "begin": {
+          "type": "number",
+          "description": "When the gesture began."
+        },
+        "end": {
+          "type": "number",
+          "description": "When it ended."
+        },
+        "fine": {
+          "type": "boolean",
+          "description": "It was a fine drag."
+        },
+        "changes": {
+          "type": "array",
+          "description": "The members it changed, in the order they changed, with their last values.",
+          "items": {
+            "$ref": "#/$defs/Change"
+          }
+        },
+        "shown": {
+          "$ref": "#/$defs/Shown"
+        }
+      },
+      "required": [
+        "id",
+        "word",
+        "input",
+        "begin",
+        "end",
+        "fine",
+        "changes",
+        "shown"
+      ],
+      "additionalProperties": false
+    },
+    "Answer": {
+      "type": "object",
+      "title": "Answer",
+      "description": "What a gesture run answers: the value of every member after the script, and each gesture, undo entry, refusal and cancellation.",
+      "properties": {
+        "value": {
+          "type": "array",
+          "description": "Every member's value after the script, in the control's own unit: one entry `value` for a single control, `freq`, `gain` and `q` for a handle, one per bar.",
+          "items": {
+            "$ref": "#/$defs/Change"
+          }
+        },
+        "begin": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "When the last gesture began, or null when there was none."
+        },
+        "end": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "When the last gesture ended, or null when there was none."
+        },
+        "gesture": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Gesture"
+            },
+            {
+              "type": "null",
+              "description": "No gesture."
+            }
+          ],
+          "description": "The last gesture, or null when there was none."
+        },
+        "gestures": {
+          "type": "array",
+          "description": "Every gesture of the run, in order.",
+          "items": {
+            "$ref": "#/$defs/Gesture"
+          }
+        },
+        "undo": {
+          "type": "array",
+          "description": "The ids of the gestures that changed a value, one undo entry each.",
+          "items": {
+            "type": "string",
+            "description": "A gesture id."
+          }
+        },
+        "selected": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The bar symbol or `handle` or `value` that a tap selected, else null."
+        },
+        "refused": {
+          "type": "array",
+          "description": "The events the run refused.",
+          "items": {
+            "$ref": "#/$defs/Refusal"
+          }
+        },
+        "cancelled": {
+          "type": "array",
+          "description": "The presses that ended outside their target.",
+          "items": {
+            "$ref": "#/$defs/Cancelled"
+          }
+        }
+      },
+      "required": [
+        "value",
+        "begin",
+        "end",
+        "gesture",
+        "gestures",
+        "undo",
+        "selected",
+        "refused",
+        "cancelled"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
