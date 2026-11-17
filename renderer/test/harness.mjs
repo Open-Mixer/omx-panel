@@ -226,12 +226,12 @@ export function rects(description, { scale = 1, size } = {}) {
 const look = JSON.parse(readFileSync(join(ROOT, 'tools', 'look.json'), 'utf8')).tokens;
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
-/** The stroke pixels of the curve layer inside `frame` ({x, y, w, h}, device px): a pixel that is the accent over the frame's body, part
- * way (a hairline's edge pixels blend): along the body-to-accent line by at least 0.4 and off it by less than 25. The frame's own rim and
+/** The stroke pixels of the curve layer inside `frame` ({x, y, w, h}, device px): a pixel that is the curve stroke (--curve-stroke) over the frame's body, part
+ * way (a hairline's edge pixels blend): along the body-to-stroke line by at least 0.4 and off it by less than 25. The frame's own rim and
  * its caption are outside the inner area; no text is read. */
 export function strokePixels(img, frame, inset = 5) {
-  const accent = rgb(look['--accent']), body = rgb(look['--surface-3']);
-  const d = accent.map((c, k) => c - body[k]), dd = d.reduce((s, v) => s + v * v, 0);
+  const stroke = rgb(look['--curve-stroke']), body = rgb(look['--surface-3']);
+  const d = stroke.map((c, k) => c - body[k]), dd = d.reduce((s, v) => s + v * v, 0);
   const out = [];
   for (let y = frame.y + inset; y < frame.y + frame.h - inset - 12; y++) for (let x = frame.x + inset; x < frame.x + frame.w - inset; x++) {
     const i = (y * img.w + x) * 4, p = [0, 1, 2].map((k) => img.data[i + k] - body[k]);

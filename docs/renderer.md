@@ -281,7 +281,7 @@ test or a screenshot. A build without `WINDOW=1` links no window system: the buf
 view and a headless worker pay for nothing they do not use.
 
 A window is held to the buffer by structure, not by pixel (`renderer/test/window.test.mjs`, run under
-Xvfb). Both must have the same size. In every control's cell, the accent (a knob's pointer, a fader's line,
+Xvfb). Both must have the same size. In every control's cell, the accent (a fader's line,
 a switch, a meter's fill) must be in the same place within 1 px and of about the same amount. The text in
 the cell must cover the same extent within 2 px. Block by block, the image must have the same mean colour,
 within 20 in a channel for 97 in 100 blocks.

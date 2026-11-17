@@ -466,7 +466,7 @@ function drawKnob(c, cx, cy, r, f, col) {
   disc(c, cx, cy, r - Math.max(1, r * 0.08), col.body);
   const th = (-135 + 270 * Math.min(1, Math.max(0, f))) * (Math.PI / 180);
   const sx = Math.sin(th), sy = -Math.cos(th); // the segment snaps its ends
-  segment(c, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, Math.max(0.75, r * 0.08), col.accent);
+  segment(c, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, Math.max(0.75, r * 0.08), col.pointer);
 }
 
 /** A selector: a box, and a mark along its foot at the selected option's place among `n`. */
@@ -503,6 +503,7 @@ function drawSwitch(c, x, y, w, h, on, col) {
 const palette = (tok) => ({
   surface: rgbOf(tok['--surface']), section: rgbOf(tok['--surface-2']), body: rgbOf(tok['--surface-3']),
   rim: rgbOf(tok['--border-strong']), ink: rgbOf(tok['--ink']), inkDim: rgbOf(tok['--ink-dim']), accent: rgbOf(tok['--accent']),
+  pointer: rgbOf(tok['--knob-pointer']), curve: rgbOf(tok['--curve-stroke']),
 });
 
 /** Text sizes and baselines, in px at scale 1: the template's 10 px small text and 14 px title. */
@@ -545,7 +546,7 @@ export function renderFace(lay, look, scale) {
       if (!geo) return;
       const [ax, ay, bx, by] = geo.axis;
       segment(c, cx + ax, cy + ay, cx + bx, cy + by, Math.max(0.5, 0.5 * s), col.rim);
-      for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), col.accent);
+      for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), col.curve);
       for (const m of geo.marks) {
         disc(c, cx + m.at[0], cy + m.at[1], Math.max(2, 2.5 * s), col.ink);
         drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
@@ -778,7 +779,7 @@ ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
 ` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ${P} .omx-curve-plot { position: absolute; left: 0; top: 0; }
 ${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
-${P} .omx-curve-line { stroke: ${tok['--accent']}; stroke-width: 1.5; stroke-linejoin: round; }
+${P} .omx-curve-line { stroke: ${tok['--curve-stroke']}; stroke-width: 1.5; stroke-linejoin: round; }
 ${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
 ${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
 ${P} .omx-curve-caption { position: absolute; left: 6px; bottom: 2px; font-size: 10px; color: ${tok['--ink-dim']}; }
