@@ -84,7 +84,11 @@ $(B)/omx-panel-render.pc: omx-panel-render.pc.in | $(B)
 	sed -e 's|@PREFIX@|$(PREFIX)|' -e 's|@LIBDIR@|$(LIBDIR)|' -e 's|@INCLUDEDIR@|$(INCLUDEDIR)|' \
 	    -e 's|@DATADIR@|$(DATADIR)|' -e 's|@VERSION@|$(VERSION)|' $< > $@
 
-check: all
+# the gesture unit's test driver (test/gesture_driver.c): runs cases through omx_gesture_run for test/gesture-c.test.mjs
+$(B)/gesture_driver: test/gesture_driver.c $(B)/libomx-panel-render.a include/omx_panel_gesture.h | $(B)
+	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
+
+check: all $(B)/gesture_driver
 	node --test test/*.test.mjs
 
 install: all
