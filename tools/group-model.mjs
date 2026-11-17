@@ -356,7 +356,11 @@ function instancesGroup(key, b, source, slotted, loose) {
   const roles = new Map([...claims].map(([k, x]) => [k, x.byWord || !wordRoles.has(x.role) ? x.role : null]));
   const head = complete.find((k) => roles.get(k) === 'on') ?? complete.find((k) => roles.get(k) === 'off') ?? null;
   const roleSet = new Set(roles.values());
-  const family = isEqRoles(roleSet) ? 'eq' : null;
+  // a band is an EQ's when a word claims its Q or type outright, or when words claim its frequency and gain and the Q or type
+  // is a fallback word (fil4's Bandwidth); a mode or a width beside a frequency or a gain only a unit claims is not
+  const byWord = (role) => [...claims.values()].some((x) => x.byWord && x.role === role);
+  const named = byWord('q') || byWord('type') || (byWord('freq') && byWord('gain'));
+  const family = isEqRoles(roleSet) && named ? 'eq' : null;
   const rowKey = (k) => (family === 'eq' && roles.get(k) && roles.get(k) !== 'on' && roles.get(k) !== 'off' && [...roles.values()].filter((r) => r === roles.get(k)).length === 1 ? roles.get(k) : k);
   let rowSlots = complete.filter((k) => k !== head);
   if (family === 'eq') {
