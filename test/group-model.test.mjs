@@ -208,6 +208,11 @@ test('S8: a fallback Q or type beside a dynamics word, abbreviated or not, is no
   }
 });
 
+test('S8: a band control named Comp beside a fallback Q (Freq, Gain, Bandwidth, Comp) is no EQ', () => {
+  const g = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, bandwidth: { min: 0.1, max: 4 }, comp: { min: 0, max: 1 } }));
+  assert.equal(g.family, null);
+});
+
 test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
   const on = { kind: 'toggle' };
   const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
