@@ -27,7 +27,7 @@
  * A reader whose source is not installed throws, naming what to install; nothing is guessed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
@@ -102,15 +102,20 @@ function addRoleMeanings(into, file) {
   }
 }
 
+/** Whether `path` is a directory, in place or reached through a link: a composed contract directory links the installed
+ * packages beside a tree's own (omx-plugins' round trip and gen --check arms), and a Dirent's isDirectory is false for
+ * a link, so every walk of a contract directory asks this. */
+const isDir = (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;
+
 /** The JSON files of every package of every contract directory: where an installed package's items are. */
 function contractFiles() {
   const files = [];
   for (const dir of contractDirs()) {
     const major = join(dir, '3');
     if (!existsSync(major)) continue;
-    for (const pkg of readdirSync(major, { withFileTypes: true })) {
-      if (!pkg.isDirectory()) continue;
-      const at = join(major, pkg.name);
+    for (const pkg of readdirSync(major)) {
+      const at = join(major, pkg);
+      if (!isDir(at)) continue;
       for (const f of readdirSync(at)) if (f.endsWith('.json')) files.push(join(at, f));
     }
   }
@@ -227,17 +232,17 @@ export function installedDescriptorFile(ref) {
 export function installedDescriptorFiles() {
   const names = (dir, keep) => {
     try {
-      return readdirSync(dir, { withFileTypes: true }).filter(keep).map((e) => e.name);
+      return readdirSync(dir).filter((name) => keep(name, join(dir, name)));
     } catch {
       return [];
     }
   };
   const seen = new Map();
   for (const d of contractDirs()) {
-    const majors = names(d, (e) => e.isDirectory() && /^[0-9]+$/.test(e.name)).sort((a, b) => Number(b) - Number(a));
+    const majors = names(d, (name, at) => isDir(at) && /^[0-9]+$/.test(name)).sort((a, b) => Number(b) - Number(a));
     for (const major of majors) {
-      for (const pkg of names(join(d, major), (e) => e.isDirectory())) {
-        for (const f of names(join(d, major, pkg, 'plugins'), (e) => !e.isDirectory() && e.name.endsWith('.json'))) {
+      for (const pkg of names(join(d, major), (name, at) => isDir(at))) {
+        for (const f of names(join(d, major, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
           const ref = `${pkg}/${f}`;
           if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
         }
