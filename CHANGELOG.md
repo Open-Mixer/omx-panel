@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The `utility` panel family's content (omx-contract's `PANEL_FAMILIES`, 3.19.0), the family of a trim, a width control, a
+  balancer or a clipper: the role table gives it `gain`, `width`, `pseudo`, `pseudo_time`, `bass_mono`, `bass_mono_freq`,
+  `amount`, `range`, `drive`, `ceiling` and `softness` (one per control omx-trim, omx-width, omx-balancer and omx-clipper
+  declare whose unit a token serves; the balancer's dB/s speed and dB/oct slope have none), `gain`, `width`, `amount` or
+  `drive` as the one required role, and an Easy row. A utility is declared, never inferred. The packaging floors move to
+  omx-contract 3.19.0, the release that carries the word, with no ceiling.
+
 - The gesture reference is C. `renderer/src/gesture.c`, built into `libomx-panel-render`, is the one implementation of the
   gesture vocabulary of `docs/panel-gestures.md`; `renderer/include/omx_panel_gesture.h` (installed with the -devel
   package) exports `omx_gesture_open`, `omx_gesture_run` and `omx_gesture_close`: a control and a script of events in as JSON,

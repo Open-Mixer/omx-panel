@@ -31,7 +31,10 @@ export const ROLES = {
   delay: { time: T, feedback: PLAIN, tone: PLAIN, sync: CHOICE, division: CHOICE, pingpong: CHOICE, ...WET },
   reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
   pitch: { shift: ['semitone12TET', 'cent'], fine: ['cent'], ...WET },
-  utility: {}, // a trim, a width control, a balancer or a clipper: laid out from its groups, as the family none is
+  // omx-plugins' trim (gain), width (width, pseudo-stereo, bass mono), balancer (amount, range) and clipper (drive, ceiling,
+  // softness): one role per control they declare whose unit a token serves. The balancer's speed (dB/s) and slope (dB/oct) have
+  // no token, so no role takes them.
+  utility: { gain: DB, width: PLAIN, pseudo: CHOICE, pseudo_time: ['ms'], bass_mono: CHOICE, bass_mono_freq: FREQ, amount: PLAIN, range: DB, drive: DB, ceiling: LVL, softness: PLAIN },
 };
 
 /**
@@ -58,7 +61,7 @@ export const REQUIRED_ROLES = {
   delay: [['time'], ['feedback']],
   reverb: [['size', 'decay'], ['mix']],
   pitch: [['shift']],
-  utility: [],
+  utility: [['gain', 'width', 'amount', 'drive']],
 };
 
 /** The dynamics family's roles, the words of a dynamics control (`threshold`, `ratio`, `attack`, `release`): from REQUIRED_ROLES, never typed twice. */
