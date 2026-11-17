@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/schema/omx-panel/shapes/look_role.schema.json",
+  "type": "object",
+  "title": "LookRole",
+  "description": "One colour role of a panel (look-roles.json `roles`): the name a host sets, its family, what it draws, the floor its value must clear, and its one default.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^--[a-z0-9-]+$",
+      "description": "The role's name, the console's token name."
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "theme",
+        "accent",
+        "fixed",
+        "state"
+      ],
+      "description": "The family: theme and accent follow the look, fixed never moves, state is a lamp."
+    },
+    "draws": {
+      "type": "string",
+      "description": "What the role draws."
+    },
+    "ground": {
+      "type": "boolean",
+      "description": "The role is a ground: it is what the others are measured on, and carries no floor."
+    },
+    "floor": {
+      "type": "object",
+      "title": "Floor",
+      "description": "The contrast a role's value must clear against each ground it is drawn on.",
+      "properties": {
+        "ratio": {
+          "type": "number",
+          "description": "The least contrast ratio."
+        },
+        "on": {
+          "type": "array",
+          "description": "The grounds it is measured on, by role name.",
+          "items": {
+            "type": "string",
+            "description": "A ground role's name."
+          }
+        }
+      },
+      "required": [
+        "ratio",
+        "on"
+      ],
+      "additionalProperties": false
+    },
+    "apart": {
+      "type": "object",
+      "title": "Apart",
+      "description": "The contrast two roles that must be told apart keep between them.",
+      "properties": {
+        "ratio": {
+          "type": "number",
+          "description": "The least contrast ratio between the two."
+        },
+        "from": {
+          "type": "array",
+          "description": "The roles it must differ from, by name.",
+          "items": {
+            "type": "string",
+            "description": "A role's name."
+          }
+        }
+      },
+      "required": [
+        "ratio",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "default": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$",
+      "description": "The one default value of the role, the dark look's."
+    }
+  },
+  "required": [
+    "name",
+    "family",
+    "draws",
+    "default"
+  ],
+  "additionalProperties": false
+}

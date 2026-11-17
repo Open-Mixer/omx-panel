@@ -8,6 +8,7 @@ Build-Depends: debhelper-compat (= 13),
                pkgconf,
                nodejs (>= 18),
                npm,
+               python3,
                omx-contract-data (>= 3.18.0~) <!nocheck>,
                omx-contract-data (<< 4~) <!nocheck>,
                plugin-hostd-contract (>= 0.20.7~) <!nocheck>,
@@ -36,6 +37,18 @@ Description: panels for LV2 and CLAP plugins, generated from what each plugin de
  under /usr/share/omx-panel for a build that calls them.
  .
  Its documentation is on openmixer.org.
+
+Package: python3-omx-panel
+Section: python
+Architecture: all
+Multi-Arch: foreign
+Depends: python3, ${misc:Depends}
+Description: omx-panel's document shapes for Python
+ The Python package omx_panel: omx_panel.shapes.<name> holds the typed
+ dictionaries of the documents omx-panel owns (the gesture declaration with its
+ words, inputs and widgets, the gesture run's control, event and answer, a look
+ role, a refusal code), generated from the schemas the omx-panel package ships,
+ so a Python consumer imports the words instead of restating them.
 
 Package: libomx-panel-render0
 Section: libs
