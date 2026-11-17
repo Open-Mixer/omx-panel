@@ -15,8 +15,8 @@ export const EASY_RULE_MAX = 6;
 export const EASY_FILL = 4;
 
 /** The named dynamics roles, each checked to be one of the shared list: a reorder of that list moves nothing here. */
-function pick(names) {
-  for (const n of names) if (!DYNAMICS_ROLES.includes(n)) throw new Error(`easy: '${n}' is no dynamics role`);
+export function pick(names, roles = DYNAMICS_ROLES) {
+  for (const n of names) if (!roles.includes(n)) throw new Error(`easy: '${n}' is no dynamics role`);
   return names;
 }
 
