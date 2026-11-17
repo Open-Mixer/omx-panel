@@ -129,7 +129,8 @@ test('a package reached through a symlink is read like one installed in place', 
   const composed = scratch(join(tmpdir(), 'omx-panel-composed-'));
   mkdirSync(join(composed, '3'));
   for (const pkg of ['omx-contract', 'omx-plugins']) symlinkSync(join(installed, '3', pkg), join(composed, '3', pkg));
-  const set = { OMX_CONTRACT_PATH: composed, PKG_CONFIG: NO_PKG_CONFIG };
+  // the role meanings read through the composed directory, not from a file $OMX_ROLE_MEANINGS names (CI sets it)
+  const set = { OMX_CONTRACT_PATH: composed, PKG_CONFIG: NO_PKG_CONFIG, OMX_ROLE_MEANINGS: '' };
   assert.equal(lookup('v.paramUnitsFile()', set), join(composed, '3/omx-contract/param-contract.json'));
   assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13]]);
   assert.deepEqual(lookup('[...v.roleMeanings().keys()]', set), ['threshold']);
