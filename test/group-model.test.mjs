@@ -176,6 +176,19 @@ test('S8: a role a control\'s words claim wins over one its unit claims; the uni
   assert.deepEqual(matrixOf(trim).rows.map((r) => r.key), ['freq', 'gain', 'q']);
 });
 
+test('S8: only a real EQ band claims the eq family; a compressor band with a Mode, an imager band with a Width, keep their own stems', () => {
+  const on = { kind: 'toggle' };
+  const hz = { unit: 'hz', min: 20, max: 20000 };
+  const comp = only(bands(3, { on, freq: hz, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  const imager = only(bands(3, { on, freq: hz, amount: { unit: 'db', min: -18, max: 18 }, width: { min: 0, max: 2 } }));
+  for (const g of [comp, imager]) {
+    assert.equal(g.kind, 'repeated');
+    assert.equal(g.family, null, 'no eq family');
+    assert.ok(g.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${g.rows.map((r) => r.key)}`);
+  }
+  assert.deepEqual(comp.rows.map((r) => r.key), ['b#_freq', 'b#_threshold', 'b#_ratio', 'b#_mode']);
+});
+
 test('S9: every control opening with an edge word is taken from any list group, the remainder stays; HPF first, LPF last', () => {
   const f = (symbol, name, index, extra = {}) => c(symbol, name, index, { path: ['Filters'], ...extra });
   const controls = [
