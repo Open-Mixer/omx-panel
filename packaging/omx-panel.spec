@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.7
+Version: 0.13.8
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -22,14 +22,14 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: (omx-contract-data >= 3.16.0 with omx-contract-data < 4)
-BuildRequires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
+BuildRequires: (omx-contract-data >= 3.18.0 with omx-contract-data < 4)
+BuildRequires: (plugin-hostd-contract >= 0.20.7 with plugin-hostd-contract < 0.21)
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: (plugin-hostd >= 0.20.3 with plugin-hostd < 0.21)
+Recommends: (plugin-hostd >= 0.20.7 with plugin-hostd < 0.21)
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -37,13 +37,13 @@ BuildRequires: systemd-rpm-macros
 # the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
-BuildRequires: (omx-contract-devel >= 3.16.0 with omx-contract-devel < 4)
-BuildRequires: (pkgconfig(omxdsp) >= 0.32.2 with pkgconfig(omxdsp) < 0.33)
+BuildRequires: (omx-contract-devel >= 3.18.0 with omx-contract-devel < 4)
+BuildRequires: (pkgconfig(omxdsp) >= 0.32.3 with pkgconfig(omxdsp) < 0.33)
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: (omx-contract-data >= 3.16.0 with omx-contract-data < 4)
-Requires: (plugin-hostd-contract >= 0.20.3 with plugin-hostd-contract < 0.21)
+Requires: (omx-contract-data >= 3.18.0 with omx-contract-data < 4)
+Requires: (plugin-hostd-contract >= 0.20.7 with plugin-hostd-contract < 0.21)
 # the descriptors of omx-plugins' plugins, for modgui --installed
 Recommends: (omx-plugins-contract >= 0.19.3 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
@@ -212,6 +212,27 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 13 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
+- Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
+  hostd and plugin-hostd-contract >= 0.20.7 and below 0.21 (were 0.20.3):
+  every floor its newest version, served or released before it in the same pass, with its ceiling (D30). The
+  jobs' dnf lines, three of them still at 3.13.0, state the same.
+- New: the spectrum layer, drawn by the renderer on the console analyser's axes
+  (built against omx-dsp >= 0.32.3 and below 0.33); the time_response display
+  kind, a delay's taps and a reverb's decay; describe reads a plugin's served
+  panel as the declared form and takes parameter roles from it.
+- Fixes: the commit-msg hook takes the current stub from the checker's release
+  line; artifact retention is explicit (30 days on a tag, 2 otherwise); the
+  Makefile names the shared checks' checkout through OPENMIXER_DOTGITHUB; the
+  renderer tests remove their scratch directories and read readelf in the C
+  locale; debian/control floors libomx-contract-dev as the spec floors
+  omx-contract-devel; the omx-eq8 fixture matches the installed file.
+- Contract files keep the $schema the floor's reader reads.
+- The organisation's name: FreeMixer becomes Open-Mixer and OpenMixer; an
+  ordinary CI run builds against the channel, not the staging channel.
+- systemd: a sync drop-in's post step exits 0 when its opt-in unit is disabled
+  (plugin-qualify#56).
+
 * Thu Nov 12 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.7-1
 - tools/gesture-words.mjs ships as a command: executable, its declaration
   without the shebang. 0.13.6's DEBs failed lintian --fail-on warning

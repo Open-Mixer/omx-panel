@@ -48,8 +48,8 @@ const ANALOGUE_WORD = /phantom|(^|[^a-z])pad([^a-z]|$)|head[-_ ]?amp|headamp/;
 /** Whether `text` (a meaning in camelCase, a symbol, a name) names such a state, whole words only. */
 export const namesAnalogueState = (text) => ANALOGUE_WORD.test(text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase());
 export const METER_REFUSED = 'PANEL_METER_REFUSED';
-/** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
-const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
+/** A declared panel's widget names -> the standard widget. */
+const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
  * which the faces do not set), and so is any widget the extension has no value for. */
 const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };

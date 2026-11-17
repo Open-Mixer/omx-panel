@@ -66,7 +66,7 @@ check('arm: a read-only travel in no level unit is a display', widgetOf(travel('
 check('rms, vu and ppm are not measurement words (7.9)', MEASUREMENTS.some((m) => ['rms', 'vu', 'ppm'].includes(m)), false);
 check('the measurement words are the level kinds the descriptor spells, lra among them', MEASUREMENTS, ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra']);
 check('a declared fader wins', widgetOf(travel('dB'), 'fader'), { widget: 'fader' });
-check('a declared selector, and the older choice, are selectors', [widgetOf(travel(''), 'selector'), widgetOf(travel(''), 'choice')], [{ widget: 'selector' }, { widget: 'selector' }]);
+check('a declared selector is a selector', widgetOf(travel(''), 'selector'), { widget: 'selector' });
 check('a face serves knob, fader and switch as they are, every other widget as auto',
   ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'].map(servedWidget), ['knob', 'fader', 'switch', 'auto', 'auto', 'auto', 'auto', 'auto']);
 
