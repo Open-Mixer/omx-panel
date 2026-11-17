@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "title": "The frame budget of a drawn panel",
+  "description": "One drag frame of a drawn panel must fit one display frame. A host measures its own frames against this file and carries no figure of its own. docs/renderer.md, Frame budget.",
+  "dragFrame": {
+    "p99Ms": 16.7,
+    "width": 1024,
+    "height": 416,
+    "device": "Raspberry Pi 5",
+    "covers": ["input", "draw", "conversion", "blit"]
+  }
+}

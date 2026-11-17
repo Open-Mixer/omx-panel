@@ -29,7 +29,7 @@ static double mind(double a, double b) { return a < b ? a : b; }
 
 /** Source-over of `rgb` at `coverage` (0..1) onto pixel (x, y). */
 static void blend(omx_canvas *c, int x, int y, omx_rgb rgb, double coverage) {
-  if (coverage <= 0 || x < 0 || y < 0 || x >= c->w || y >= c->h) return;
+  if (coverage <= 0 || x < c->cx0 || y < c->cy0 || x >= c->cx1 || y >= c->cy1) return;
   uint8_t *p = c->px + (size_t)y * c->stride + (size_t)x * 4;
   int a = (int)omx_round(coverage * 255);
   if (a == 255) { /* what the arithmetic below gives for full coverage: the colour, opaque */
@@ -54,8 +54,8 @@ typedef int (*whole_fn)(const void *ctx, int x, int y);
 
 static void fill_shape(omx_canvas *c, double bx0, double by0, double bx1, double by1, inside_fn inside, whole_fn whole,
                        const void *ctx, omx_rgb rgb) {
-  int x0 = (int)maxd(0, floor(bx0)), y0 = (int)maxd(0, floor(by0));
-  int x1 = (int)mind(c->w, ceil(bx1)), y1 = (int)mind(c->h, ceil(by1));
+  int x0 = (int)maxd(c->cx0, floor(bx0)), y0 = (int)maxd(c->cy0, floor(by0));
+  int x1 = (int)mind(c->cx1, ceil(bx1)), y1 = (int)mind(c->cy1, ceil(by1));
   for (int y = y0; y < y1; y++) {
     for (int x = x0; x < x1; x++) {
       int n = 0;
@@ -88,8 +88,8 @@ void omx_fill_under(omx_canvas *c, const double *xs, const double *ys, size_t n,
   if (n < 2 || !nstops || !(alpha > 0)) return;
   double top = base_y;
   for (size_t k = 0; k < n; k++) top = mind(top, ys[k]);
-  int X0 = (int)maxd(0, floor(xs[0])), X1 = (int)mind(c->w, ceil(xs[n - 1]));
-  int Y0 = (int)maxd(0, floor(top)), Y1 = (int)mind(c->h, ceil(base_y));
+  int X0 = (int)maxd(c->cx0, floor(xs[0])), X1 = (int)mind(c->cx1, ceil(xs[n - 1]));
+  int Y0 = (int)maxd(c->cy0, floor(top)), Y1 = (int)mind(c->cy1, ceil(base_y));
   size_t seg = 0;
   for (int x = X0; x < X1; x++) {
     double cy[SS];
@@ -486,8 +486,8 @@ static int in_glyph(const void *v, double px, double py) {
 /* A glyph filled as fill_shape would fill it, sample for sample: for each row of samples only the edges that cross
  * it are tested, which is what the winding test keeps anyway, so the coverage is the same and costs a fraction. */
 static void fill_glyph(omx_canvas *c, double bx0, double by0, double bx1, double by1, const struct edges *es, omx_rgb rgb) {
-  int x0 = (int)maxd(0, floor(bx0)), y0 = (int)maxd(0, floor(by0));
-  int x1 = (int)mind(c->w, ceil(bx1)), y1 = (int)mind(c->h, ceil(by1));
+  int x0 = (int)maxd(c->cx0, floor(bx0)), y0 = (int)maxd(c->cy0, floor(by0));
+  int x1 = (int)mind(c->cx1, ceil(bx1)), y1 = (int)mind(c->cy1, ceil(by1));
   if (x1 <= x0 || y1 <= y0) return;
   int *count = malloc(sizeof *count * (size_t)(x1 - x0));
   struct edges row = {malloc(sizeof(double) * 4 * es->n), 0};
