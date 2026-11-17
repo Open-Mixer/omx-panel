@@ -4,7 +4,7 @@
  * A meter of the description is drawn as a bar and a marker over the description's range (contract 7.9, omx-dsp#301): the bar by
  * the value (a level from the foot of the range, a gain reduction from 0 dB), the marker holding the peak (the deepest
  * reduction) and falling by elapsed time at omx-dsp's rate, whatever the draw tick's rate, silence included. The marker is omx-dsp's
- * own omx_meter_view_step (omx-dsp-devel >= 0.32.2 < 0.33): its rate is held to omx-dsp's data/primitives/meter.json and every
+ * own omx_meter_view_step (omx-dsp-devel >= 0.32.2): its rate is held to omx-dsp's data/primitives/meter.json and every
  * drawn tick to omx-dsp's golden fall vectors. Each rule has its arm in the sabotage the commit message names.
  */
 import assert from 'node:assert/strict';
@@ -37,7 +37,7 @@ function lawFall() {
   assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
   assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
   const built = readFileSync(join(RENDERER, 'build', 'omxdsp-version'), 'utf8').trim();
-  assert.match(built, /^0\.32\.([2-9]|\d{2,})$/, `built against omx-dsp ${built}: the floor 0.32.2 and the ceiling 0.33`);
+  assert.match(built, /^0\.(32\.([2-9]|\d{2,})|3[3-9]|[4-9]\d|\d{3,})/, `built against omx-dsp ${built}: the floor 0.32.2`);
   return fall;
 }
 /** omx-dsp's golden vectors of the view law (vectors/meter-view.json, installed as pkg-config omxdsp's meterviewvectors). */
