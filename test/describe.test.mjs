@@ -146,10 +146,10 @@ for (const [role, words] of Object.entries(AFFIX)) {
     });
   }
 }
-test('every weak Q word (bandwidth, bw, width, w) beside every strong one (q, quality, resonance), in either order, yields the strong one', () => {
+test('every weak Q word (bandwidth, bw, width, w, and what the table adds) beside every strong one (q, quality, resonance), in either order, yields the strong one', () => {
   const STRONG = ['q', 'quality', 'resonance'];
   const weak = AFFIX.q.filter((w) => !STRONG.includes(w));
-  assert.deepEqual(weak, ['bandwidth', 'width', 'bw', 'w']);
+  for (const w of ['bandwidth', 'width', 'bw', 'w']) assert.ok(weak.includes(w), `${w} is a weak Q word`);
   for (const w of weak) {
     for (const s of STRONG) {
       const wc = bandOn('q', w), sc = bandOn('q', s, { travel: { min: 0.1, max: 10, unit: 'unknown', scale: 'linear', default: 0.7 }, name: s === 'q' ? 'Q' : s });
