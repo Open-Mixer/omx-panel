@@ -26,6 +26,40 @@
 /** The band shapes a curve function knows, and `-` for a choice value that is none of them. */
 export const SHAPES = ['off', 'bell', 'lowshelf', 'highshelf', 'highpass', 'lowpass', 'notch'];
 
+/**
+ * The EQ's words, ONE table (omx-panel#75): each parameter role's name words and each edge's (the filters and shelves an
+ * EQ's outer columns are). This file owns it; the band inference here and the group model's rows and edges
+ * (tools/group-model.mjs, docs/group-model.md S8, S9) both read it, and neither keeps a list of its own. A word of two
+ * letters is an abbreviation: in the band inference an edge's is read as a symbol prefix (`hp_freq`), its longer words in the names.
+ */
+export const EQ_WORDS = Object.freeze({
+  roles: Object.freeze({
+    type: Object.freeze(['filter type', 'filtertype', 'type', 'shape', 'ft', 'fm']),
+    slope: Object.freeze(['slope']),
+    freq: Object.freeze(['frequency', 'freq', 'cutoff', 'hz', 'fc', 'f']),
+    gain: Object.freeze(['boost', 'gain', 'level', 'cut', 'g']),
+    q: Object.freeze(['resonance', 'quality', 'q']),
+  }),
+  // the weaker words: a role the band inference reads when no word above claims it (a `mode` choice, a `width` in octaves), and
+  // the group model does not (beside a `type` or a `q`, a mode or a width is a parameter of its own)
+  // the role words name a Q outright (q, quality, resonance): a control called so is a band's Q before a bandwidth beside it
+  fallback: Object.freeze({ type: Object.freeze(['mode']), q: Object.freeze(['bandwidth', 'reso', 'bw', 'width', 'w']) }),
+  edges: Object.freeze([
+    Object.freeze({ edge: 'hpf', shape: 'highpass', side: 'left', words: Object.freeze(['hpf', 'hp', 'highpass', 'high pass', 'hi pass', 'lowcut', 'low cut', 'locut']) }),
+    Object.freeze({ edge: 'lowshelf', shape: 'lowshelf', side: 'left', words: Object.freeze(['lowshelf', 'low shelf', 'lo shelf', 'loshelf', 'ls']) }),
+    Object.freeze({ edge: 'highshelf', shape: 'highshelf', side: 'right', words: Object.freeze(['highshelf', 'high shelf', 'hi shelf', 'hishelf', 'hs']) }),
+    Object.freeze({ edge: 'lpf', shape: 'lowpass', side: 'right', words: Object.freeze(['lpf', 'lp', 'lowpass', 'low pass', 'lo pass', 'highcut', 'high cut', 'hicut']) }),
+  ]),
+});
+
+/** A table word as a pattern: its spaces any run of spaces (`sep`). */
+const wordPattern = (w, sep = '\\s*') => w.split(' ').map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join(sep);
+/** Whether `h` holds one of `words` as a whole word. */
+const holdsWord = (h, words) => new RegExp(`\\b(${words.map((w) => wordPattern(w)).join('|')})\\b`).test(h);
+const edgeShape = (shape) => EQ_WORDS.edges.find((e) => e.shape === shape);
+/** Whether `text` holds one of an edge's long words, anywhere (its abbreviations are not read in text). */
+const holdsEdge = (text, e, sep) => new RegExp(e.words.filter((w) => w.length > 2).map((w) => wordPattern(w, sep)).join('|')).test(text);
+
 /** The label of a control: its name, else its label, else its symbol. */
 const nameOf = (c) => c.name ?? c.label ?? '';
 const symbolOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : Number.isInteger(c.id) ? `p${c.id}` : nameOf(c));
@@ -48,31 +82,30 @@ export const statesMeaning = (c) => typeof c.meaning === 'string' && c.meaning !
 const degenerateQ = (c) => unitOf(c) !== 'oct' && typeof c.travel?.min === 'number' && c.travel.min <= 0 && typeof c.travel?.default === 'number' && c.travel.default <= 0;
 
 /** The band role a control plays, from its metadata alone; null for a control that is not a band control. */
-function roleOf(c) {
+export function bandRoleOf(c) {
   if (c.hidden || c.readonly || statesMeaning(c)) return null;
   const h = hay(c);
   const sym = symbolOf(c).toLowerCase();
   const unit = unitOf(c);
   const choice = c.kind === 'choice';
+  const R = EQ_WORDS.roles;
   if (isGlobalGain(h)) return null;
   if (c.kind === 'travel') {
-    if (unit === 'hz' || /\bfreq(uency)?\b/.test(h) || /^f[ _]?\d+$/.test(sym) || /^f[lh]$/.test(sym)) return 'freq';
+    if (unit === 'hz' || holdsWord(h, R.freq) || /^f[ _]?\d+$/.test(sym) || /^f[lh]$/.test(sym)) return 'freq';
   }
-  if (choice && /(filter\s*type|\btype\b|\bmode\b|^ft\b|^fm\b)/.test(h)) return 'type';
+  const F = EQ_WORDS.fallback;
+  if (choice && holdsWord(h, [...R.type, ...F.type])) return 'type';
   if (c.kind === 'travel') {
-    if (unit === 'db' || /\b(gain|boost|cut|level)\b/.test(h) || /^g[ _]?\d+$/.test(sym) || /^boost[lh]$/.test(sym)) return 'gain';
-    if (/\bq\b|quality|bandwidth|resonance|\bwidth\b|^q[ _]?\d+$|^bw\d*$/.test(h) || unit === 'oct') return degenerateQ(c) ? null : 'q';
+    if (unit === 'db' || holdsWord(h, R.gain) || /^g[ _]?\d+$/.test(sym) || /^boost[lh]$/.test(sym)) return 'gain';
+    if (holdsWord(h, [...R.q, ...F.q]) || /^q[ _]?\d+$|^bw\d*$/.test(h) || unit === 'oct') return degenerateQ(c) ? null : 'q';
   }
-  if (c.kind === 'toggle' || choice || /\b(active|enable|on|section|sec|bypass)\b|highpass|lowpass/.test(h)) return 'enable';
+  if (c.kind === 'toggle' || choice || /\b(active|enable|on|section|sec|bypass)\b/.test(h) || holdsEdge(h, edgeShape('highpass'), '') || holdsEdge(h, edgeShape('lowpass'), '')) return 'enable';
   return null;
 }
 
-/** Role affix tokens stripped to derive a band's group key (longest first). */
+/** Role affix tokens stripped to derive a band's group key (longest first): the table's words of each role, run together. */
 export const AFFIX = {
-  freq: ['frequency', 'freq', 'hz', 'f'],
-  gain: ['boost', 'gain', 'level', 'cut', 'g'],
-  q: ['bandwidth', 'resonance', 'quality', 'width', 'bw', 'q', 'w'],
-  type: ['filtertype', 'type', 'mode', 'ft', 'fm'],
+  ...Object.fromEntries(['freq', 'gain', 'q', 'type'].map((r) => [r, [...new Set([...EQ_WORDS.roles[r], ...(EQ_WORDS.fallback[r] ?? [])].map((w) => w.replace(/ /g, '')))].sort((a, b) => b.length - a.length)])),
   enable: ['active', 'section', 'sec', 'enable', 'on'],
 };
 
@@ -86,13 +119,13 @@ function bandKey(symbol, role) {
   return s.replace(/[_\-\s]+/g, '');
 }
 
-/** A band's shape from its key and the names of its controls. */
-function shapeOfNames(key, names) {
+/** A band's shape from its key and the names of its controls: an edge's long words in the names, its abbreviation as the key's prefix. */
+export function shapeOfNames(key, names) {
   const k = key.toLowerCase(), n = names.toLowerCase();
-  if (/low\s*shelf|lo\s*shelf|loshelf|lowshelf/.test(n) || k.startsWith('ls')) return 'lowshelf';
-  if (/high\s*shelf|hi\s*shelf|hishelf|highshelf/.test(n) || k.startsWith('hs')) return 'highshelf';
-  if (/high\s*pass|hi\s*pass|highpass/.test(n) || k.startsWith('hp')) return 'highpass';
-  if (/low\s*pass|lo\s*pass|lowpass/.test(n) || k.startsWith('lp')) return 'lowpass';
+  for (const shape of ['lowshelf', 'highshelf', 'highpass', 'lowpass']) {
+    const e = edgeShape(shape);
+    if (holdsEdge(n, e) || e.words.some((w) => w.length === 2 && k.startsWith(w))) return shape;
+  }
   if (/notch/.test(n)) return 'notch';
   return 'bell';
 }
@@ -101,10 +134,7 @@ function shapeOfNames(key, names) {
 export function shapeOfLabel(label) {
   const l = label.trim().toLowerCase();
   if (/^off$|bypass|none/.test(l)) return 'off';
-  if (/lo(w)?[\s-]*shelf/.test(l)) return 'lowshelf';
-  if (/hi(gh)?[\s-]*shelf/.test(l)) return 'highshelf';
-  if (/hi(gh)?[\s-]*pass/.test(l)) return 'highpass';
-  if (/lo(w)?[\s-]*pass/.test(l)) return 'lowpass';
+  for (const shape of ['lowshelf', 'highshelf', 'highpass', 'lowpass']) if (holdsEdge(l, edgeShape(shape), '[\\s-]*')) return shape;
   if (/notch/.test(l)) return 'notch';
   if (/bell|peak/.test(l)) return 'bell';
   return undefined;
@@ -140,12 +170,12 @@ export function inferBands(controls) {
   const groups = new Map();
   let order = 0;
   for (const c of controls) {
-    const role = roleOf(c);
+    const role = bandRoleOf(c);
     if (!role) continue;
     const key = bandKey(keyNameOf(c), role);
     if (!key) continue;
     const g = groups.get(key) ?? { order: order++ };
-    const strongQ = (x) => /\bq\b|quality|resonance/.test(hay(x));
+    const strongQ = (x) => holdsWord(hay(x), EQ_WORDS.roles.q);
     // first wins per role in descriptor order, but a real "q" beats a width fallback
     if (role === 'q' && g.q) { if (strongQ(c) && !strongQ(g.q)) g.q = c; }
     else if (!g[role]) g[role] = c;

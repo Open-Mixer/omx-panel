@@ -23,13 +23,29 @@ const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 /** The panels drawn: ours (omx-delay, a declared panel) and a third party's LV2 plugin (ZamComp, scanned), the latter
  * both as the layout lays it out from the scan alone and under the panel the worked example writes for it. Each names
  * the MOD GUI face the generator committed for it, where one exists. */
-/** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`, not yet released): a fixture that draws a curve needs it, and
- * is skipped without it unless OMX_PANEL_DSP=required. */
+/** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`): a fixture that draws a curve needs it, and its tests
+ * FAIL without it, naming it, never skip (docs/renderer.md); CI's renderer job installs it. */
 export const HAVE_TWIN = await import('@openmixer/omx-dsp').then(() => true, () => false);
-/** OMX_PANEL_DSP=required (the CI jobs set it): a missing twin is a failure of the whole file, never a skip. */
-export const TWIN_REQUIRED = process.env.OMX_PANEL_DSP === 'required';
-if (TWIN_REQUIRED && !HAVE_TWIN) throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
-export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' } : {});
+/** omx-dsp's twin module, or null where it is not installed; under OMX_PANEL_DSP=required (CI's `make test` job) a missing twin
+ * throws instead, so no curve case is skipped there. The one place that throw is written (test/modgui-curve.test.mjs and
+ * test/gestures.test.mjs import it). */
+export async function loadTwin() {
+  const twin = await import('@openmixer/omx-dsp').then((m) => m, () => null);
+  if (!twin && process.env.OMX_PANEL_DSP === 'required') throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
+  return twin;
+}
+/** Throw, naming the twin, when `fx` draws a curve and the twin is not installed. */
+export function requireTwin(fx) {
+  if (fx.needsTwin && !HAVE_TWIN) throw new Error(`omx-dsp's twin (@openmixer/omx-dsp) is not installed: fixture '${fx.name}' draws a curve and needs it (npm i --no-save '@openmixer/omx-dsp@>=0.32.2')`);
+}
+
+const { roleMeanings } = await import(join(ROOT, 'dist', 'tools', 'vocabulary.mjs'));
+/** Throw, naming it, when the role vocabulary declares no role: a layout then plays no meaning and an EQ derives no curve, so a
+ * fixture drawn so would be held to the wrong picture (docs/renderer.md). `make renderer-check` names the tree's stand-in. */
+export function requireVocabulary() {
+  if (roleMeanings().size > 0) return;
+  throw new Error(`no role vocabulary: $OMX_ROLE_MEANINGS (${process.env.OMX_ROLE_MEANINGS ?? 'unset'}) and the installed contract directories declare no role; run make renderer-check, or set OMX_ROLE_MEANINGS=test/fixtures/role-meanings/panel-roles.json`);
+}
 
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
@@ -40,9 +56,14 @@ export const FIXTURES = [
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
   { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
   // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
-  { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
+  { name: 'eq-marks', served: true, descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
   // a compressor with the descriptor's meters word: the band below the sections, a frame with the range and the unit
   { name: 'meters', descriptor: 'test/fixtures/meters/meters.descriptor.json', panel: 'test/fixtures/meters/meters.panel.json', stem: 'meters' },
+  // a repeated group (docs/group-model.md): an EQ's bands as columns, HPF first and LPF last; a compressor's four bands as rows
+  { name: 'omx-eq8', served: true, descriptor: 'test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json', stem: 'omx-eq8', needsTwin: true },
+  { name: 'mbc', served: true, descriptor: 'test/fixtures/group-model/mbc.descriptor.json', stem: 'mbc' },
+  // a repeated group whose heads have no on/off (four delay taps): each head's caption in a row of its own, the last
+  { name: 'taps', served: true, descriptor: 'test/fixtures/group-model/taps.descriptor.json', stem: 'taps' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
@@ -52,6 +73,7 @@ const { renderFace, layout, loadLook, resolvePanel } = modgui;
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
 export function resolved(fx) {
+  requireTwin(fx);
   const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));
   const panel = fx.panel ? JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')) : undefined;
   return resolvePanel(descriptor, { panel, stem: fx.stem });
@@ -63,8 +85,16 @@ export function face(fx, scale) {
   return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook(), scale));
 }
 
-/** The fixture's panel description, as `omx-panel layout` writes it, in a file. */
+/** The fixture's panel description, in a file: a repeated group's (`served`) as `omx-panel describe --layout` serves it, the
+ * merged section and its matrix, as a host draws it; the others as `omx-panel layout` writes them. */
 export function descriptionFile(fx, dir) {
+  requireVocabulary();
+  if (fx.served) {
+    const args = [OMX_PANEL, 'describe', '--layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
+    const file = join(dir, `${fx.name}.layout.json`);
+    writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8', maxBuffer: 1 << 26 }));
+    return file;
+  }
   const args = [OMX_PANEL, 'layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
   const file = join(dir, `${fx.name}.layout.json`);
   writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8' }));

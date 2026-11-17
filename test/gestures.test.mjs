@@ -11,6 +11,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { loadTwin } from '../renderer/test/harness.mjs';
 import { GESTURES, GESTURE_CODES, GestureError, memberOf, runGesture, timingsOf, wordOf, stepOf } from '../dist/tools/gestures.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -425,8 +426,7 @@ test('the MOD GUI draws the four widgets a plugin\'s parameters take, and refuse
 });
 
 // the curve needs omx-dsp's twin: a skip without it (test/modgui-curve.test.mjs), a failure under OMX_PANEL_DSP=required
-const haveTwin = await import('@openmixer/omx-dsp').then(() => true, () => false);
-if (!haveTwin && process.env.OMX_PANEL_DSP === 'required') throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
+const haveTwin = (await loadTwin()) !== null;
 test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', haveTwin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' }, async () => {
   const { generateModgui } = await import('../dist/tools/modgui-gen.mjs');
   const read = (f) => JSON.parse(readFileSync(join(ROOT, 'test/fixtures', f), 'utf8'));

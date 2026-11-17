@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas
+name: omx-dsp's TypeScript twin
+description: Installs @openmixer/omx-dsp at its floor, no ceiling, without saving it to package.json (the curve cases fail without it)
+inputs:
+  also:
+    description: Further packages to install in the same npm run (a second --no-save install prunes the first)
+    default: ''
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ALSO: ${{ inputs.also }}
+      run: npm i --no-save --no-audit --no-fund '@openmixer/omx-dsp@>=0.32.2' $ALSO

@@ -39,6 +39,7 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_target_rect;
     omx_panel_view_tick;
     omx_panel_view_visible;
+    omx_panel_view_visible_columns;
   local:
     *;
 };

@@ -26,8 +26,10 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
   .sort();
 /** Every catalog the tree carries, catalogs/<lang>.json, one per listed language. */
 const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `catalogs/${f}`);
+/** What zynthian-ui reads from the installed tree (tests/test_bar_xy_gestures.py): the gesture parity scripts and the descriptors they name. */
+const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/gesture-words.mjs', 'tools/modgui-test.sh'];
 

@@ -2,15 +2,15 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // The MOD GUI's static curve (the one-panel spec §7.4, Q6, §7.6): the polyline in the template and the screenshot, computed by omx-dsp's
 // TypeScript twin at the come-up values, with its caption word; a mark at each band an authored descriptor declares a planter's, and
-// none where no origin is declared. Needs the twin (`@openmixer/omx-dsp`, not yet released): skipped without it, unless OMX_PANEL_DSP=required.
+// none where no origin is declared. Needs the twin (`@openmixer/omx-dsp`): skipped without it, unless OMX_PANEL_DSP=required.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { generateModgui, resolvePanel, curveGeometry, STATIC_CURVE } from '../tools/modgui-gen.mjs';
 import { panelLayout } from '../tools/panel-description.mjs';
+import { loadTwin } from '../renderer/test/harness.mjs';
 
-const twin = await import('@openmixer/omx-dsp').then((m) => m, () => null);
-if (!twin && process.env.OMX_PANEL_DSP === 'required') throw new Error('OMX_PANEL_DSP=required but @openmixer/omx-dsp is not installed: the curve cases would be skipped');
+const twin = await loadTwin();
 const opts = twin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' };
 const read = (f) => JSON.parse(readFileSync(new URL(`./fixtures/${f}`, import.meta.url), 'utf8'));
 const eq = () => [read('eq-marks/eq.descriptor.json'), read('eq-marks/eq.panel.json')];

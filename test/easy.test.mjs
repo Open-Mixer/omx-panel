@@ -148,3 +148,9 @@ test('a scanned descriptor takes the easy of the descriptor its package installe
   assert.equal(easyFromInstalled({ ...clap, plugin: { id: 'other' } }, [authored]), undefined);
   assert.equal(easyFromInstalled({ ...clap, controls: [{ id: 0, name: 'Time' }] }, [authored]), undefined, 'a key this binary lacks: no list rather than half of one');
 });
+
+test('the Easy dynamics roles are named and checked against the shared list: a role the list lacks throws, naming it', async () => {
+  const { pick } = await import('../tools/easy.mjs');
+  assert.deepEqual(pick(['threshold', 'ratio']), ['threshold', 'ratio']);
+  assert.throws(() => pick(['release'], ['threshold', 'ratio']), /easy: 'release' is no dynamics role/);
+});

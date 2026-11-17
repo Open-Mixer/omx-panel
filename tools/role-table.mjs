@@ -58,3 +58,9 @@ export const REQUIRED_ROLES = {
   reverb: [['size', 'decay'], ['mix']],
   pitch: [['shift']],
 };
+
+/** The dynamics family's roles, the words of a dynamics control (`threshold`, `ratio`, `attack`, `release`): from REQUIRED_ROLES, never typed twice. */
+export const DYNAMICS_ROLES = Object.freeze(REQUIRED_ROLES.dynamics.flat());
+
+/** The words a dynamics control is called by in a name: the roles, and the knee and the short forms (`thresh`, `comp`). The group model reads them. */
+export const DYNAMICS_WORDS = Object.freeze([...DYNAMICS_ROLES, 'knee', 'thresh', 'comp']);
