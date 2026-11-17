@@ -105,6 +105,8 @@ const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
 export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
+/** The words of a dynamics control: a band holding one is not made an EQ by a fallback word alone (S8). */
+const DYNAMICS_WORDS = ['threshold', 'ratio', 'attack', 'release', 'knee'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
 const OFF_WORDS = new Set(['bypass', 'mute', 'off']);
 /** The role words: meaning-infer.mjs's EQ_WORDS, the one table (omx-panel#75). */
@@ -359,7 +361,9 @@ function instancesGroup(key, b, source, slotted, loose) {
   // a band is an EQ's when a word claims its Q or type outright, or when words claim its frequency and gain and the Q or type
   // is a fallback word (fil4's Bandwidth); a mode or a width beside a frequency or a gain only a unit claims is not
   const byWord = (role) => [...claims.values()].some((x) => x.byWord && x.role === role);
-  const named = byWord('q') || byWord('type') || (byWord('freq') && byWord('gain'));
+  // ... unless a dynamics word sits beside a fallback type: a frequency, gain, threshold, ratio and mode is a compressor band
+  const dynamic = complete.some((k) => paramWords(first.bySlot.get(k)).some((w) => DYNAMICS_WORDS.includes(w.toLowerCase())));
+  const named = byWord('q') || byWord('type') || (byWord('freq') && byWord('gain') && !dynamic);
   const family = isEqRoles(roleSet) && named ? 'eq' : null;
   const rowKey = (k) => (family === 'eq' && roles.get(k) && roles.get(k) !== 'on' && roles.get(k) !== 'off' && [...roles.values()].filter((r) => r === roles.get(k)).length === 1 ? roles.get(k) : k);
   let rowSlots = complete.filter((k) => k !== head);
