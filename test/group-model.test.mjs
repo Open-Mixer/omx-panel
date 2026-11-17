@@ -198,6 +198,16 @@ test('S8: a fallback type beside a dynamics word is no EQ: a dynamic-EQ-shaped c
   assert.equal(fil4.groups.find((g) => g.kind === 'repeated').family, 'eq');
 });
 
+test('S8: a fallback Q or type beside a dynamics word, abbreviated or not, is no EQ (Freq, Gain, Thresh, Comp, Mode; Freq, Gain, Bandwidth, Threshold, Ratio)', () => {
+  const base = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 } };
+  const abbreviated = only(bands(3, { ...base, thresh: { unit: 'db', min: -60, max: 0 }, comp: { min: 0, max: 1 }, mode: { kind: 'choice', options: 3 } }));
+  const dynamicEq = only(bands(3, { ...base, bandwidth: { min: 0.1, max: 4 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 } }));
+  for (const g of [abbreviated, dynamicEq]) {
+    assert.equal(g.kind, 'repeated');
+    assert.equal(g.family, null);
+  }
+});
+
 test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
   const on = { kind: 'toggle' };
   const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
