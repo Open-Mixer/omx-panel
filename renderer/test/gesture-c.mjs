@@ -54,6 +54,7 @@ export const RULES = [
   { name: 'rule: steps of one source within the claim are one gesture; another source is owned', control: knob(), events: [wheel(0, 1), wheel(100, 1), detent(200, 1), wheel(900, 1)] },
   { name: 'rule: an integer selector steps by one', control: { widget: 'selector', min: 0, max: 4, def: 0, value: 1, integer: true, target: { x: 0, y: 0, w: 40, h: 40 } }, events: [wheel(0, 1), wheel(400, 1), wheel(800, 9), wheel(1200, -20)] },
   { name: 'rule: a negative integer travel rounds as Math.round does', control: { widget: 'selector', min: -4, max: 4, def: 0, value: -1, integer: true, target: { x: 0, y: 0, w: 40, h: 40 } }, events: [wheel(0, 1), wheel(400, -3), wheel(800, 1)] },
+  { name: 'rule: a drag onto a negative half of an integer travel rounds as Math.round does', control: { widget: 'selector', min: -4, max: 4, def: 0, value: -1, integer: true, travelPx: 200, target: { x: 0, y: 0, w: 40, h: 200 } }, events: [D(0, 'p', 10, 50), M(20, 'p', 10, 63), M(40, 'p', 10, 75.5), U(60, 'p', 10, 75.5)] },
   { name: 'rule: reset is the declared default (double-tap, Backspace)', control: knob(), events: [...TAP(0, 'p', 10, 10), ...TAP(100, 'p', 10, 10), key(700, 'Backspace')] },
   { name: 'rule: no default refuses GESTURE_NO_DEFAULT', control: knob({ def: undefined }), events: [...TAP(0, 'p', 10, 10), ...TAP(100, 'p', 10, 10), key(700, 'Backspace')] },
   { name: 'rule: a double-tap past doubleTapMs is two taps', control: knob(), events: [...TAP(0, 'p', 10, 10), ...TAP(500, 'p', 10, 10)] },
@@ -124,4 +125,71 @@ export function viaC(cases, driver = DRIVER) {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+// ---- a seeded differential fuzz ---------------------------------------------------------------------------------------------
+
+/**
+ * `n` random controls (every widget, log and integer and stepped travels, read-only and hold) with random scripts (every event
+ * type, two pointers of any type, gaps either side of every declared timing), from a linear congruential generator seeded with
+ * `seed`: the same cases on every run.
+ */
+export function fuzzCases(seed, n) {
+  let s = seed >>> 0;
+  const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const R = (a, b) => a + rnd() * (b - a);
+  const member = (fixed) => {
+    const log = fixed ? fixed.scale === 'log' : rnd() < 0.3, integer = !fixed && !log && rnd() < 0.25;
+    const min = fixed ? fixed.min : log ? R(0.5, 50) : R(-30, 5), max = fixed ? fixed.max : min + (log ? R(10, 5000) : R(5, 100));
+    const m = { min: integer ? Math.round(min) : min, max: integer ? Math.round(max) : max, scale: log ? 'log' : 'linear', integer };
+    if (rnd() < 0.7) m.def = m.min + rnd() * (m.max - m.min);
+    if (rnd() < 0.3 && !log) m.step = R(0.1, 5);
+    if (rnd() < 0.7) m.value = m.min + rnd() * (m.max - m.min);
+    return m;
+  };
+  const control = () => {
+    const widget = pick(['knob', 'fader', 'selector', 'switch', 'xy', 'handle', 'bar', 'bar', 'meter']);
+    const flags = { ...(rnd() < 0.1 ? { readOnly: true } : {}), ...(rnd() < 0.15 ? { hold: true } : {}) };
+    if (widget === 'handle') {
+      return { widget, ...flags, target: { x: 0, y: 0, w: 60, h: 60 }, plot: { w: R(100, 500), h: R(100, 300) },
+        freq: member({ scale: 'log', min: 20, max: 20000 }), gain: member({ scale: 'linear', min: -18, max: 18 }), q: member({ scale: 'log', min: 0.3, max: 16 }) };
+    }
+    if (widget === 'bar') {
+      const bars = Array.from({ length: 2 + Math.floor(rnd() * 6) }, (_x, i) => ({ ...member(), symbol: `b${i}`, target: { x: 22 * i, y: 0, w: 20, h: 150 } }));
+      return { widget, ...flags, ...(rnd() < 0.3 ? { selected: pick(bars).symbol } : {}), bars };
+    }
+    return { widget, ...flags, ...member(), ...(rnd() < 0.5 ? { travelPx: R(50, 300) } : {}), ...(widget === 'fader' && rnd() < 0.3 ? { orientation: 'horizontal' } : {}), target: { x: 0, y: 0, w: 40, h: 200 } };
+  };
+  const events = (c) => {
+    let t = 0;
+    const width = c.widget === 'bar' ? 22 * c.bars.length : 60, barOf = () => (c.widget === 'bar' && rnd() < 0.5 ? { bar: pick(c.bars).symbol } : {});
+    return Array.from({ length: 1 + Math.floor(rnd() * 10) }, () => {
+      t += pick([0, 5, 20, 60, 120, 250, 310, 520, 900]);
+      const type = pick(['down', 'move', 'move', 'up', 'wheel', 'detent', 'key']);
+      if (type === 'down' || type === 'move' || type === 'up') return { t, type, id: pick(['a', 'b']), ptype: pick(['touch', 'touch', 'mouse', 'pen', 'fader']), x: R(-5, width + 5), y: R(-5, 155), ...(rnd() < 0.2 ? { fine: true } : {}) };
+      if (type === 'key') return { t, type, key: pick(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace']), ...(rnd() < 0.3 ? { shift: true } : {}), ...barOf() };
+      return { t, type, n: pick([-3, -1, 1, 2, 5]), ...(rnd() < 0.3 ? { coarse: true } : {}), ...(type === 'detent' && rnd() < 0.3 ? { encoder: 3 } : {}), ...barOf() };
+    });
+  };
+  return Array.from({ length: n }, (_x, i) => {
+    const c = control();
+    return { name: `fuzz ${seed}/${i}`, control: c, events: events(c), settings: rnd() < 0.2 ? { paintWithMouse: rnd() < 0.5 } : {} };
+  });
+}
+
+/**
+ * Whether two answers agree: every number equal, except where the control has a logarithmic travel, where two C libraries' `log` and
+ * `exp` (V8's and the platform's) may differ in the last digits, so a relative 1e-11 is allowed; and the words of the one refusal the
+ * reference words badly (a reset with no bar selected: 'null declares no default') are the same refusal in both.
+ */
+export function agree(a, b, tolerant) {
+  const words = (w) => (/^(null|undefined) declares no default$|^no bar is selected: /.test(w) ? 'no bar selected' : w);
+  if (typeof a === 'number' && typeof b === 'number') return a === b || (tolerant && Math.abs(a - b) <= 1e-11 * Math.max(Math.abs(a), Math.abs(b)));
+  if (typeof a === 'string' && typeof b === 'string') return words(a) === words(b);
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const keys = Object.keys({ ...a, ...b });
+    return Array.isArray(a) === Array.isArray(b) && keys.every((k) => agree(a[k], b[k], tolerant));
+  }
+  return Object.is(a, b);
 }

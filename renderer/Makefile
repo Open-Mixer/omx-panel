@@ -33,7 +33,7 @@ CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werr
 LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
 
 B := build
-LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/raster.o
+LIB_OBJ := $(B)/view.o $(B)/input.o $(B)/gesture.o $(B)/raster.o
 # the shared library, for a surface that loads the renderer at run time (Zynthian's Tk panel, through ctypes): the same
 # objects, the C API its only exported symbols. SOVERSION moves when the API breaks.
 SOVERSION := 0
@@ -59,7 +59,7 @@ $(B)/omxdsp-version: FORCE | $(B)
 	@$(PKG_CONFIG) --atleast-version=$(OMXDSP_FLOOR) omxdsp && ! $(PKG_CONFIG) --atleast-version=$(OMXDSP_CEILING) omxdsp || \
 	  { echo "the renderer needs omx-dsp-devel >= $(OMXDSP_FLOOR) and < $(OMXDSP_CEILING) (pkg-config omxdsp: $$($(PKG_CONFIG) --modversion omxdsp 2>&1))" >&2; exit 1; }
 	@$(PKG_CONFIG) --modversion omxdsp | cmp -s - $@ || $(PKG_CONFIG) --modversion omxdsp > $@
-$(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h src/look_roles.h src/gesture_words.h include/omx_panel_render.h | $(B)
+$(B)/%.o: src/%.c $(B)/omxdsp-version src/raster.h src/draw.h src/view.h src/look_roles.h src/gesture_words.h src/gesture.h include/omx_panel_render.h include/omx_panel_gesture.h | $(B)
 	$(CC) $(CFLAGS) -c -o $@ $<
 $(B)/libomx-panel-render.a: $(LIB_OBJ)
 	$(AR) rcs $@ $^
@@ -96,7 +96,7 @@ install: all
 	install -m 0644 $(B)/libomx-panel-render.a $(DESTDIR)$(LIBDIR)/
 	install -m 0755 $(B)/$(SONAME) $(DESTDIR)$(LIBDIR)/
 	ln -sf $(SONAME) $(DESTDIR)$(LIBDIR)/libomx-panel-render.so
-	install -m 0644 include/omx_panel_render.h $(DESTDIR)$(INCLUDEDIR)/
+	install -m 0644 include/omx_panel_render.h include/omx_panel_gesture.h $(DESTDIR)$(INCLUDEDIR)/
 	install -m 0644 $(B)/omx-panel-render.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0755 $(B)/omx-panel-render $(DESTDIR)$(BINDIR)/
 ifeq ($(WINDOW),1)

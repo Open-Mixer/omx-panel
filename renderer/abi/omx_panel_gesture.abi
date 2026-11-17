@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#
+# The ABI of include/omx_panel_gesture.h in libomx-panel-render.so.0: each exported function with the symbol version it is
+# bound to, one per line, and its C prototype after the colon. Adding a line is a minor addition; changing or removing one
+# moves SOVERSION (renderer/Makefile). test/shared.test.mjs holds this file to the header, to src/exports.map and to the
+# built library's dynamic symbols, in both directions: a function in one and not the others is red.
+omx_gesture_close@@OMX_PANEL_RENDER_0: void omx_gesture_close(omx_gesture_t *ctx)
+omx_gesture_open@@OMX_PANEL_RENDER_0: omx_gesture_t *omx_gesture_open(const char *gestures_json, const char *settings_json)
+omx_gesture_run@@OMX_PANEL_RENDER_0: size_t omx_gesture_run(omx_gesture_t *ctx, const char *control_json, const char *events_json, char *answer, size_t cap)

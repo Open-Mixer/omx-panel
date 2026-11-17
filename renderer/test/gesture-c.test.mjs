@@ -13,7 +13,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SCRIPTS } from '../../test/gesture-scripts.mjs';
-import { CASES, RULES, SHIPPED, viaC, viaJs } from './gesture-c.mjs';
+import { CASES, RULES, SHIPPED, agree, fuzzCases, viaC, viaJs } from './gesture-c.mjs';
+
+const viaJsControl = () => RULES.find((r) => r.name.startsWith('rule: a pinch of two touches')).control;
 
 const ANSWERS = viaC(CASES);
 
@@ -34,6 +36,17 @@ CASES.forEach((c, i) => {
     assert.deepStrictEqual(ANSWERS[i], viaJs(c));
   });
 });
+
+// ---- the rules at random: 3 x 1500 controls and scripts, the answers held to the JS reference's -----------------------------------
+
+for (const seed of [1, 2, 3]) {
+  test(`C equals the JS reference over 1500 random controls and scripts (seed ${seed})`, () => {
+    const cases = fuzzCases(seed, 1500), answers = viaC(cases);
+    const bad = cases.flatMap((c, i) => (agree(answers[i], viaJs(c), JSON.stringify(c.control).includes('"log"')) ? [] : [i]));
+    assert.deepEqual(bad, [], `cases that differ: ${bad.slice(0, 5).map((i) => JSON.stringify(cases[i]).slice(0, 300)).join('\n')}`);
+    assert.ok(answers.filter((a) => a.gestures?.length).length > 300, 'the random scripts do gesture');
+  });
+}
 
 // the shipped scripts' hand-worked expectations, held on the C answers (one step of the member's own travel, exact for a reset or a tap)
 const memberOf = (control, key) => (control.widget === 'handle' ? control[key] : control.widget === 'bar' ? control.bars.find((b) => b.symbol === key) : control);
@@ -96,6 +109,19 @@ test('rule answers: more and select never change a value', () => {
   assert.equal(more.gestures[0].word, 'more');
   assert.deepEqual(more.undo, []);
   assert.equal(more.value, 20);
+});
+
+test('finding: the JS reference throws on a move of the finger left of a pinch after the other lifted; the C unit ignores it', () => {
+  const handle = viaJsControl();
+  const events = [
+    { t: 0, type: 'down', id: 'a', ptype: 'touch', x: 20, y: 30 }, { t: 100, type: 'down', id: 'b', ptype: 'touch', x: 40, y: 30 },
+    { t: 150, type: 'up', id: 'b', ptype: 'touch', x: 40, y: 30 }, { t: 200, type: 'move', id: 'a', ptype: 'touch', x: 25, y: 30 },
+  ];
+  assert.throws(() => viaJs({ control: handle, events }), TypeError);
+  const [a] = viaC([{ control: handle, events }]);
+  assert.equal(a.error, undefined);
+  assert.equal(a.gestures.length, 1);
+  assert.equal(a.gesture.word, 'second');
 });
 
 test('a bad control or script is answered as an error, never a crash', () => {
