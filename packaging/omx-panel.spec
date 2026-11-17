@@ -22,7 +22,7 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: omx-contract-data >= 3.19.0
+BuildRequires: omx-contract-data >= 3.20.0
 BuildRequires: plugin-hostd-contract >= 0.20.8
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
@@ -37,12 +37,12 @@ BuildRequires: systemd-rpm-macros
 # the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
-BuildRequires: omx-contract-devel >= 3.19.0
+BuildRequires: omx-contract-devel >= 3.20.0
 BuildRequires: pkgconfig(omxdsp) >= 0.32.4
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: omx-contract-data >= 3.19.0
+Requires: omx-contract-data >= 3.20.0
 Requires: plugin-hostd-contract >= 0.20.8
 # the descriptors of omx-plugins' plugins, for modgui --installed
 Recommends: omx-plugins-contract >= 0.19.3
@@ -213,7 +213,7 @@ English source sentence.
 
 %changelog
 * Sun Nov 15 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.9-1
-- Built against omx-contract >= 3.19.0 (was 3.13.0 to 3.16.0 by package), the
+- Built against omx-contract >= 3.20.0 (was 3.13.0 to 3.16.0 by package), the
   3.19.0 pass's newest, floors only (no ceiling). The jobs' dnf lines state the
   same.
 - describe --panel: a declared panel's roles back its family over a scan's

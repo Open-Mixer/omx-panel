@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-- 0.13.9: built against omx-contract >= 3.19.0, the 3.19.0 pass's newest, floors only (no ceiling); the jobs' dnf
+- 0.13.9: built against omx-contract >= 3.20.0, the 3.19.0 pass's newest, floors only (no ceiling); the jobs' dnf
   lines state the same. Built against omx-dsp >= 0.32.4 (was 0.32.0), floors only. The renderer's spectrum layer, on
   the console analyser's axes, a single trace (#42); the renderer tests remove their scratch directories at exit (#46);
   the soname check reads readelf in the C locale (#47). A sync drop-in's post step exits 0 when its opt-in unit is
