@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { controlsOfDescriptor, inferGroupModel } from '../dist/tools/group-model.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURES = join(ROOT, 'test', 'fixtures');
@@ -123,4 +124,36 @@ test('an EQ with no high-pass and no low-pass keeps its band order: omx-dyneq, B
   const m = matrixOf('group-model/omx-plugins/omx-dyneq.descriptor.json');
   assert.deepEqual(m.heads.map((h) => h.label), Array.from({ length: 6 }, (_, i) => `Band ${i + 1}`));
   assert.deepEqual(m.heads.map((h) => h.edge), Array(6).fill(null));
+});
+
+// -- the two things a CLAP scan does not state (docs/group-model.md, "A descriptor of any origin is read"), each held on the
+// model itself, so the arm that fails names what was decided and not only that no matrix came out. These read dist/, as
+// every arm here does: `npm test` builds first, a bare `node --test` after an edit reads the build before it.
+const CLAP = 'descriptors/scanned-clap-omx-eq8.json';
+/** The CLAP scan's EQ group, and the layout key (`p<id>`) of the control a name names. */
+function clapBands() {
+  const d = descriptorOf(CLAP);
+  const key = (name) => `p${d.controls.find((c) => c.name === name).id}`;
+  const g = inferGroupModel(controlsOfDescriptor(d)).groups.find((x) => x.label === 'Bands');
+  return { g, key };
+}
+
+test('omx-eq8, CLAP scan: a band holds the controls whose NAME carries its number, whatever digits their ids have', () => {
+  const { g, key } = clapBands();
+  // read from the id's digits (`p7` .. `p10` for Band 1) the declared band disagrees with its controls and is refused
+  assert.deepEqual({ kind: g.kind, reason: g.reason ?? null, detail: g.detail ?? null }, { kind: 'repeated', reason: null, detail: null });
+  assert.deepEqual(g.instances.map((i) => i.label), Array.from({ length: 8 }, (_, i) => `Band ${i + 1}`));
+  for (const [i, band] of g.instances.entries()) {
+    const n = i + 1;
+    const { type, freq, gain, q } = band.parameters;
+    assert.deepEqual({ type, freq, gain, q }, { type: key(`Band ${n} Type`), freq: key(`Band ${n} Frequency`), gain: key(`Band ${n} Gain`), q: key(`Band ${n} Q`) }, `Band ${n}`);
+  }
+});
+
+test('omx-eq8, CLAP scan: a 0..1 whole-number travel called On is the band\'s head toggle, not a row', () => {
+  const { g, key } = clapBands();
+  assert.equal(g.kind, 'repeated', g.reason);
+  assert.deepEqual(g.instances.map((i) => i.on), Array.from({ length: 8 }, (_, i) => ({ symbol: key(`Band ${i + 1} On`), sense: 'on' })));
+  assert.deepEqual(g.edges.map((e) => [e.edge, e.on]), [['hpf', { symbol: key('HPF On'), sense: 'on' }], ['lpf', { symbol: key('LPF On'), sense: 'on' }]]);
+  assert.deepEqual(g.rows.map((r) => r.key), ['freq', 'gain', 'q', 'type'], 'no On row: the on/off is each head\'s');
 });
