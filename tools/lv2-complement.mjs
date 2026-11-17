@@ -221,7 +221,11 @@ function withInstances(verdict, instances) {
 export function planBundle(bundle, options = {}) {
   const plugins = bundle.plugins.map((uri) => {
     const triples = pluginTriples(bundle, uri);
-    return { uri, verdict: withInstances(inferGroups(readPluginPorts(triples, uri), readModguiLayout(triples, uri)), instanceGroups(inferGroupModel(controlsOfLv2(triples, uri)))) };
+    const plugin = readPluginPorts(triples, uri);
+    // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
+    const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
+    const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
+    return { uri, verdict: withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances) };
   });
   const plan = { bundle, plugins, write: false };
   if (!plugins.some((p) => p.verdict.outcome === 'grouped')) return plan;
