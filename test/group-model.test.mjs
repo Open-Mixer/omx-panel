@@ -10,7 +10,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
-import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, matrixOf, REASONS } from '../dist/tools/group-model.mjs';
+import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, instanceGroups, matrixOf, REASONS } from '../dist/tools/group-model.mjs';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const EXPECTED = join(FIXTURES, 'group-model', 'expected');
@@ -174,6 +174,52 @@ test('S8: a role a control\'s words claim wins over one its unit claims; the uni
   assert.deepEqual(m.cells[1], ['b1_gain', 'b2_gain', 'b3_gain']);
   const trim = only(bands(3, { on: { kind: 'toggle' }, freq: dyn.freq, q: dyn.q, trim: { unit: 'db', min: -18, max: 18 } }));
   assert.deepEqual(matrixOf(trim).rows.map((r) => r.key), ['freq', 'gain', 'q']);
+});
+
+test('S8: only a real EQ band claims the eq family; a compressor band with a Mode, an imager band with a Width, keep their own stems', () => {
+  const on = { kind: 'toggle' };
+  const hz = { unit: 'hz', min: 20, max: 20000 };
+  const comp = only(bands(3, { on, freq: hz, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  const imager = only(bands(3, { on, freq: hz, amount: { unit: 'db', min: -18, max: 18 }, width: { min: 0, max: 2 } }));
+  for (const g of [comp, imager]) {
+    assert.equal(g.kind, 'repeated');
+    assert.equal(g.family, null, 'no eq family');
+    assert.ok(g.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${g.rows.map((r) => r.key)}`);
+  }
+  assert.deepEqual(comp.rows.map((r) => r.key), ['b#_freq', 'b#_threshold', 'b#_ratio', 'b#_mode']);
+});
+
+test('S8: a fallback type beside a dynamics word is no EQ: a dynamic-EQ-shaped compressor band keeps its stems; fil4 stays an EQ', () => {
+  const band = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  assert.equal(band.kind, 'repeated');
+  assert.equal(band.family, null, 'freq, gain, threshold, ratio, mode is a compressor band');
+  assert.ok(band.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${band.rows.map((r) => r.key)}`);
+  const fil4 = JSON.parse(readFileSync(join(EXPECTED, 'x42-fil4.expected.json'), 'utf8'));
+  assert.equal(fil4.groups.find((g) => g.kind === 'repeated').family, 'eq');
+});
+
+test('S8: a fallback Q or type beside a dynamics word, abbreviated or not, is no EQ (Freq, Gain, Thresh, Comp, Mode; Freq, Gain, Bandwidth, Threshold, Ratio)', () => {
+  const base = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 } };
+  const abbreviated = only(bands(3, { ...base, thresh: { unit: 'db', min: -60, max: 0 }, comp: { min: 0, max: 1 }, mode: { kind: 'choice', options: 3 } }));
+  const dynamicEq = only(bands(3, { ...base, bandwidth: { min: 0.1, max: 4 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 } }));
+  for (const g of [abbreviated, dynamicEq]) {
+    assert.equal(g.kind, 'repeated');
+    assert.equal(g.family, null);
+  }
+});
+
+test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
+  const on = { kind: 'toggle' };
+  const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
+  const indexed = inferGroupModel(bands(3, stems));
+  assert.deepEqual(instanceGroups(indexed).map((g) => g.symbol), ['band_1', 'band_2', 'band_3']);
+  const declared = bands(3, stems).map((x) => ({ ...x, path: ['Bands', x.name.split(' ').slice(0, 2).join(' ')] }));
+  assert.equal(inferGroupModel(declared).groups[0].source, 'declared');
+  assert.deepEqual(instanceGroups(inferGroupModel(declared)), [], 'the plugin declared its instances');
+  const inside = bands(3, stems).map((x) => ({ ...x, path: ['Mixer'] }));
+  const model = inferGroupModel(inside);
+  assert.equal(model.groups[0].source, 'indexed');
+  assert.deepEqual(instanceGroups(model), [], 'a repeat inside a declared group stays that group\'s');
 });
 
 test('S9: every control opening with an edge word is taken from any list group, the remainder stays; HPF first, LPF last', () => {

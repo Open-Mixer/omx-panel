@@ -112,13 +112,20 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
   plus its number ("EQ 3"), else a section word its names hold plus its number ("Section 3"), else "Band" and the number
   for an EQ, else the number alone. The number is the one its names print, else its symbol's.
 - **S8, the EQ.** A repeated group is an EQ (`family: 'eq'`) when its rows hold a frequency (unit hertz, or a word
-  `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `bandwidth`, `resonance`)
-  or a type. Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
+  `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `resonance`) or a type,
+  **and a word names it**: either a Q or a type is claimed by one of the table's strong words, or words claim both the
+  frequency and the gain while the Q or type is a fallback word (`bandwidth`, `bw`, `reso`, `width`, `w` for a Q, `mode`
+  for a type: fil4's Bandwidth). A fallback Q or type does not make an EQ of a band that also holds a dynamics word (the dynamics family's roles in
+  `role-table.mjs`, `threshold`, `ratio`, `attack`, `release`, and `knee`, `thresh`, `comp`): a frequency, a gain, a
+  threshold, a ratio and a mode, or a bandwidth, is a dynamic-EQ-shaped band, `family: null`, not an EQ.
+  A band whose hertz and dB are only unit claims and whose Q or type is only a fallback word (a compressor band with a Mode,
+  an imager band with a Width) is not an EQ either: it keeps its own stems as row keys and draws no EQ columns.
+  Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
   edges below align with the bands. **A role a control's words claim wins over a role its unit claims**: a dB control
   that is not called `gain` (`threshold`, `range`) is no gain while another control of the band is, and keeps its own
   stem as its row key (omx-dyneq's `gain1` is the gain row; `threshold1` and `range1` are rows of their own, not three
   candidates for `gain` that key none). Where no control's words claim the role, the unit's claim stands (the
-  `gain`-less EQ whose one dB control is its gain). *Tests: omx-dyneq in the corpus; "S8: ...".*
+  `gain`-less EQ whose one dB control is its gain). *Tests: omx-dyneq and x42-fil4 in the corpus; "S8: ...".*
 - **S9, the EQ's edges.** An EQ's high-pass, low shelf, high shelf and low-pass are found by the words its control names
   open with (`HPF`, `Highpass`, `Low cut`; `Lowshelf`; `Highshelf`; `LPF`, `Lowpass`, `High cut`): among the EQ's own
   `parameters`, and in **any list group of the plugin**, whatever else that group holds: **every control whose name
@@ -276,8 +283,28 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
   the served matrix from `omx-panel describe --layout` and draws it (omx-panel#62; docs/renderer.md), inferring no group.
 - **the console**: the served panel description carries the model; the processing view draws a repeated group by its
   served `matrix` (a follow-up in openmixer, linked from omx-panel#61).
-- **the Zynthian builder**: a page never cuts inside an instance, and an instance is one screen (a follow-up in
-  zynthian-ui, linked from omx-panel#61).
+- **the Zynthian builder**, by its two paths (Open-Mixer/zynthian-ui#54), a page never cuts inside an instance and an
+  instance is one screen where it fits:
+  - **P1, the page cut** (the plugin-hostd engine, `omx-panel describe --pages --per-page N`): `pagesOf` takes the controls
+    of a section that carries a `matrix` by instance, each head of the served matrix (the EQ's HPF and LPF edges included) one
+    group. An instance's controls run in the head's order, **its on/off first**, then its rows from the top down, a cell
+    that is empty no slot. The section's own parameters (the count, an EQ's master on) come before the instances, in the
+    description's order. An instance of at most `perPage` controls is one page of its own, never sharing it with the
+    instance before or after (a page ends early); a longer one is the only thing split, on pages of its own, as any group.
+    A page of one instance is named by its head's label (`Band 3`), a continuation `Band 3 2`. *Tests: omx-eq8, eight band
+    screens each opening with the band's on/off, over `describe --pages`; the Calf multiband compressor's four bands;
+    "P1: ...". Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
+  - **P2, the lilv path** (the jalv engine, which reads each port's `pg:group`): lv2-complement writes **one `pg:group` per
+    instance**, from the model, for a repeated group the plugin does not already declare instance by instance (source
+    `indexed`; a plugin's own groups, source `declared`, are kept as they are). The instance's group node carries
+    `lv2:symbol` the instance's label as an LV2 symbol (`band_3`; a label that is a bare number reads "Section 3"), `lv2:name` the label, and the ports the instance holds, its
+    on/off included, ordered by the instance index so `displayPriority` falls with it. The group's own parameters, and the
+    ports of no instance, keep what the flat inference (`inferGroups`) gave them, less the ports the instances took, or no group
+    when it gave none: the instance groups replace the flat inference's for their ports, with no rule that keeps a flat grouping
+    for the sake of the node names a bundle already carries (so LSP's para-EQ groups move from `group_N` to `band_N`, swh
+    phasers' from `group_N` to `section_N`: accepted, there is no compatibility rule while developing). *Tests: the
+    Calf multiband compressor, whose flat inference refuses it (`unplaced-controls`), gets four instance groups; a plugin
+    already declaring its instances gets none added; "P2: ...". Sabotage: the instance groups dropped fails both.*
 
 The unit tokens (`unitToken`) stay this library's own for now: `vocabulary.mjs`'s `unitTokenOf` reads the installed
 contract's unit table and throws without it, while the group model reads LV2 unit URIs with no contract installed; moving

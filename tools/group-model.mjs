@@ -12,8 +12,9 @@
  *   c  the units, kinds and ranges of a parameter, matched across the instances (b's candidates and a's alike).
  * An inference that does not hold is never drawn as a guessed matrix: the group is a plain list and carries a REASON code.
  */
-import { nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
+import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
+import { DYNAMICS_WORDS } from './role-table.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // The reason codes: the only ways a candidate repeated group falls back to a plain list (docs/group-model.md, "Uncertain").
@@ -210,6 +211,34 @@ export function inferGroupModel(controls) {
   return { groups: groups.filter((g) => memberSymbols(g).length > 0).sort((a, b) => first(a) - first(b)) };
 }
 
+/**
+ * The instances of a served matrix, one per head (an EQ's HPF and LPF included), left to right: the head and the symbols it
+ * holds in the order a screen shows them, its on/off first, then its cells from the top row down (the head row and an empty
+ * cell are none). The one order of an instance: the page cut (`describe`) and the port groups (`instanceGroups`) both read it.
+ * @returns {{ head: { label: string, on: { symbol: string } | null, edge: string | null }, symbols: string[] }[]}
+ */
+export function matrixInstances(served) {
+  return served.heads.map((head, j) => ({
+    head,
+    symbols: [...new Set([head.on?.symbol, ...served.cells.flatMap((row, i) => (served.rows[i].head ? [] : [row[j]]))].filter((x) => typeof x === 'string'))],
+  }));
+}
+
+/**
+ * The instances of the repeated groups a plugin does not declare instance by instance (source `indexed`, no declared group
+ * above them), each one a port group: docs/group-model.md, P2. `{ symbol, name, ports }`, the ports in `matrixInstances`'s
+ * order; the name the instance's label (a bare number is "Section 3"), the symbol that name as an LV2 symbol. A group the
+ * plugin declares is its own and gives none.
+ * @param {{ groups: Group[] }} model
+ * @returns {{ symbol: string, name: string, ports: string[] }[]}
+ */
+export function instanceGroups(model) {
+  return model.groups.filter((g) => g.kind === 'repeated' && g.source === 'indexed' && g.key === '').flatMap((g) => matrixInstances(servedMatrix(g)).map(({ head, symbols }) => {
+    const name = /^\d+$/.test(head.label) ? `Section ${head.label}` : head.label;
+    return { symbol: lv2Symbol(name), name, ports: symbols };
+  }));
+}
+
 /** Every symbol a group holds: its own parameters, its instances' and its edges'. */
 export function memberSymbols(g) {
   return [
@@ -328,7 +357,13 @@ function instancesGroup(key, b, source, slotted, loose) {
   const roles = new Map([...claims].map(([k, x]) => [k, x.byWord || !wordRoles.has(x.role) ? x.role : null]));
   const head = complete.find((k) => roles.get(k) === 'on') ?? complete.find((k) => roles.get(k) === 'off') ?? null;
   const roleSet = new Set(roles.values());
-  const family = isEqRoles(roleSet) ? 'eq' : null;
+  // a band is an EQ's when a word claims its Q or type outright, or when words claim its frequency and gain and the Q or type
+  // is a fallback word (fil4's Bandwidth); a mode or a width beside a frequency or a gain only a unit claims is not
+  const byWord = (role) => [...claims.values()].some((x) => x.byWord && x.role === role);
+  // ... unless a dynamics word sits beside the fallback Q or type: a frequency, gain, threshold, ratio and mode is a compressor band
+  const dynamic = complete.some((k) => paramWords(first.bySlot.get(k)).some((w) => DYNAMICS_WORDS.includes(w.toLowerCase())));
+  const named = byWord('q') || byWord('type') || (byWord('freq') && byWord('gain') && !dynamic);
+  const family = isEqRoles(roleSet) && named ? 'eq' : null;
   const rowKey = (k) => (family === 'eq' && roles.get(k) && roles.get(k) !== 'on' && roles.get(k) !== 'off' && [...roles.values()].filter((r) => r === roles.get(k)).length === 1 ? roles.get(k) : k);
   let rowSlots = complete.filter((k) => k !== head);
   if (family === 'eq') {

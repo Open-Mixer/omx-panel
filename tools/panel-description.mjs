@@ -48,8 +48,8 @@ const ANALOGUE_WORD = /phantom|(^|[^a-z])pad([^a-z]|$)|head[-_ ]?amp|headamp/;
 /** Whether `text` (a meaning in camelCase, a symbol, a name) names such a state, whole words only. */
 export const namesAnalogueState = (text) => ANALOGUE_WORD.test(text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase());
 export const METER_REFUSED = 'PANEL_METER_REFUSED';
-/** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
-const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
+/** A declared panel's widget names -> the standard widget. */
+const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
  * which the faces do not set), and so is any widget the extension has no value for. */
 const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };
@@ -525,6 +525,9 @@ const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 /** The key a control carries its declared group under, for the page cut: a symbol, so no serialisation sees it. */
 export const GROUP = Symbol('group');
 
+/** The label of the repeated-group instance a control belongs to (`Band 3`), for the page cut: a symbol, so no serialisation sees it. */
+export const INSTANCE = Symbol('instance');
+
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
@@ -588,16 +591,26 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       const run = cs.slice(i, j);
       i = j;
       // a group that fits ends the page early rather than split; a longer one starts and ends on a page of its own
-      if (run.length > size || page.length + run.length > size) flush();
+      // an instance of a repeated group is never beside another control: a page of its own, ended after it
+      const alone = run[0][INSTANCE] !== undefined;
+      if (run.length > size || page.length + run.length > size || alone) flush();
       for (const c of run) {
         if (page.length === size) flush();
         page.push(c);
       }
-      if (run.length > size) flush();
+      if (run.length > size || alone) flush();
     }
     flush();
+    // a page of one repeated-group instance is named by it (`Band 3`, a continuation `Band 3 2`)
+    const seen = new Map();
     return pages.map((p, k) => {
       const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
+      const instance = p[0][INSTANCE];
+      if (instance !== undefined && p.every((c) => c[INSTANCE] === instance)) {
+        const n = (seen.get(instance) ?? 0) + 1;
+        seen.set(instance, n);
+        return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
+      }
       return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
     });
   })];

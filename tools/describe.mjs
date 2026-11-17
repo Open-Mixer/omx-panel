@@ -31,9 +31,9 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
-import { controlsOfDescriptor, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
-import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
 
@@ -402,6 +402,32 @@ function pagesOfDescription(description, effective, layout, servedOf, { perPage,
       ...(gov ? { visible: idOf.get(gov.param), mask: gov.values.reduce((m, v) => m | (1n << BigInt(v)), 0n), visibleWhen: { symbol: gov.param, default: default_(gov.param) } } : { visible: null, mask: 0n }),
     };
   });
-  return pagesOf({ sections: description.sections, controls, easy: description.easy }, { perPage, remote });
+  return pagesOf({ sections: description.sections, controls: byInstance(description.sections, controls), easy: description.easy }, { perPage, remote });
+}
+
+/**
+ * The controls with each repeated group's instances marked and ordered for the page cut (docs/group-model.md, P1): in a
+ * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order; the section's own controls (the count, an EQ's master on) come before the instances. Sections apart, the
+ * order of the array is not read, so the controls are sorted by (section, rank).
+ */
+function byInstance(sections, controls) {
+  const rank = new Map();
+  const mark = new Map();
+  sections.forEach((s, at) => {
+    if (!s.matrix) return;
+    matrixInstances(s.matrix).forEach(({ head, symbols }, j) => {
+      symbols.forEach((symbol, k) => {
+        if (rank.has(symbol)) return;
+        rank.set(symbol, [at, j + 1, k]);
+        mark.set(symbol, { group: `${s.key}#${j}`, label: head.label });
+      });
+    });
+  });
+  const place = (c) => rank.get(c.symbol) ?? [c.section, 0, 0];
+  const marked = controls.map((c) => (mark.has(c.symbol) ? { ...c, [GROUP]: mark.get(c.symbol).group, [INSTANCE]: mark.get(c.symbol).label } : c));
+  return marked.map((c, i) => ({ c, i })).sort((a, b) => {
+    const [x, y] = [place(a.c), place(b.c)];
+    return x[0] - y[0] || x[1] - y[1] || x[2] - y[2] || a.i - b.i;
+  }).map(({ c }) => c);
 }
 
