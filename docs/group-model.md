@@ -112,13 +112,19 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
   plus its number ("EQ 3"), else a section word its names hold plus its number ("Section 3"), else "Band" and the number
   for an EQ, else the number alone. The number is the one its names print, else its symbol's.
 - **S8, the EQ.** A repeated group is an EQ (`family: 'eq'`) when its rows hold a frequency (unit hertz, or a word
-  `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `bandwidth`, `resonance`)
-  or a type. Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
+  `frequency`, `freq`, `f`), a gain (unit dB, or `gain`, `g`, `level`), and a Q (`q`, `quality`, `resonance`) or a type,
+  **and a word names it**: either a Q or a type is claimed by one of the table's strong words, or words claim both the
+  frequency and the gain while the Q or type is a fallback word (`bandwidth`, `bw`, `reso`, `width`, `w` for a Q, `mode`
+  for a type: fil4's Bandwidth). A fallback type does not make an EQ of a band that also holds a dynamics word (`threshold`,
+  `ratio`, `attack`, `release`, `knee`): a frequency, a gain, a threshold, a ratio and a mode is a compressor band, not an EQ.
+  A band whose hertz and dB are only unit claims and whose Q or type is only a fallback word (a compressor band with a Mode,
+  an imager band with a Width) is not an EQ either: it keeps its own stems as row keys and draws no EQ columns.
+  Its rows that carry one of the roles `type`, `slope`, `freq`, `gain`, `q` are keyed by that role, so the
   edges below align with the bands. **A role a control's words claim wins over a role its unit claims**: a dB control
   that is not called `gain` (`threshold`, `range`) is no gain while another control of the band is, and keeps its own
   stem as its row key (omx-dyneq's `gain1` is the gain row; `threshold1` and `range1` are rows of their own, not three
   candidates for `gain` that key none). Where no control's words claim the role, the unit's claim stands (the
-  `gain`-less EQ whose one dB control is its gain). *Tests: omx-dyneq in the corpus; "S8: ...".*
+  `gain`-less EQ whose one dB control is its gain). *Tests: omx-dyneq and x42-fil4 in the corpus; "S8: ...".*
 - **S9, the EQ's edges.** An EQ's high-pass, low shelf, high shelf and low-pass are found by the words its control names
   open with (`HPF`, `Highpass`, `Low cut`; `Lowshelf`; `Highshelf`; `LPF`, `Lowpass`, `High cut`): among the EQ's own
   `parameters`, and in **any list group of the plugin**, whatever else that group holds: **every control whose name
@@ -294,7 +300,8 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
     on/off included, ordered by the instance index so `displayPriority` falls with it. The group's own parameters, and the
     ports of no instance, keep what the flat inference (`inferGroups`) gave them, less the ports the instances took, or no group
     when it gave none: the instance groups replace the flat inference's for their ports, with no rule that keeps a flat grouping
-    for the sake of the node names a bundle already carries. *Tests: the
+    for the sake of the node names a bundle already carries (so LSP's para-EQ groups move from `group_N` to `band_N`, swh
+    phasers' from `group_N` to `section_N`: accepted, there is no compatibility rule while developing). *Tests: the
     Calf multiband compressor, whose flat inference refuses it (`unplaced-controls`), gets four instance groups; a plugin
     already declaring its instances gets none added; "P2: ...". Sabotage: the instance groups dropped fails both.*
 
