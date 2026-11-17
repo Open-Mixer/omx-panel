@@ -146,6 +146,10 @@ what changed, then names the rectangles it repainted, so the host converts and b
   a resize, and a panel whose overall size changed (a governing value that grew or shrank it): the whole buffer is drawn and reported as
   one rectangle. The look is read when the view is made, so it never changes under one. `omx_panel_view_draw` always draws the whole
   buffer, and a host that did not keep the last draw's bytes calls it.
+- **A mark is held to the plot.** A mark whose frequency or depth is off the axes sits on the plot's edge, so a display draws at most the
+  letter over a mark's disc above its frame and `BLEED_DISPLAY` covers it.
+- **Short of memory** the view draws the whole buffer and reports it as one rectangle: the layout is the only allocation a dirty draw
+  makes, and what the view keeps to compare is taken once, when a draw is remembered (`renderer/test/dirty_alloc.c` fails each in turn).
 - **More changes than rectangles.** Up to `cap` rectangles are written; past that the pair whose covering rectangle adds the least area is
   merged until `cap` remain, so a change is never dropped. Rectangles that meet are merged first.
 
@@ -158,6 +162,16 @@ by a view made anew, and prints the step's rectangles.
 One drag frame at 1024 x 416 on the Raspberry Pi 5, covering the input, the draw, the conversion and the blit, has a p99 of at most
 16.7 ms, one frame of a 60 Hz display. The figure is declared once, in `schema/frame-budget.json`, and a host's measurement reads it
 from there instead of carrying its own (zynthian-ui's `tests/pi/blit_per_frame_on_the_pi.py`).
+
+`make -C renderer bench DESC=<layout.json> [CONTROL=<symbol>]` (`renderer/bench/dirty_frame.c`) times the renderer's share of a drag frame: one
+control moved 1000 times, each frame drawn in full and dirty into buffers of the same 1024 x 416 px, p50, p99 and max of each, and the end
+buffers held equal. The budget's p99 also covers the host's conversion and blit, which this does not time.
+
+| where | draw | p50 | p99 | max |
+|---|---|---|---|---|
+| x86_64, Fedora 44 container, `-O2`, the ZamComp panel, `thr` moved: 6720 of 425984 px | full | 3.52 ms | 3.57 ms | 4.91 ms |
+| | dirty | 0.217 ms | 0.234 ms | 0.275 ms |
+| Raspberry Pi 5 | | owed: the Pi's lock (`/root/pi-busy`) was held when this was written | | |
 
 ## Meters
 
