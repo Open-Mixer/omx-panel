@@ -9,12 +9,13 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { SCRIPTS } from '../../test/gesture-scripts.mjs';
 import { CASES, DRIVER, RENDERER, agree, fuzzCases, viaC, viaJs } from './gesture-c.mjs';
+import { tapWithNoTapCell, wheelForHiddenControl } from './gesture-c-doors.mjs';
 
 const SOURCE = readFileSync(join(RENDERER, 'src', 'gesture.c'), 'utf8');
 const CASES_ALL = [...CASES, ...fuzzCases(7, 600)];
@@ -90,6 +91,10 @@ const ARMS = [
   ['an event with no t is read (GESTURE_BAD_INPUT)', 'if (!is_num(cJSON_GetObjectItemCaseSensitive(j, "t"))) return bad', 'if (0) return bad'],
   ['a negative step is read (GESTURE_BAD_INPUT)', 'if (jhas(m, "step") && jnum(m, "step", 0) < 0) return bad', 'if (0) return bad'],
   ['a travelPx of zero is read (GESTURE_BAD_INPUT)', 'if (px && !(is_num(px) && px->valuedouble > 0)) return bad', 'if (0) return bad'],
+  ['a non-boolean fine flag is read (GESTURE_BAD_INPUT)', 'if (f && !cJSON_IsBool(f)) return bad(why, cap, "event %d: %s is true or false", i, flags[k]);', ''],
+  ['an unknown selected bar is read (GESTURE_BAD_INPUT)', 'if (!found) return bad(why, cap, "selected is a bar of the group");', ''],
+  ['a selected on a knob is read (GESTURE_BAD_INPUT)', 'if (present(c, "selected")) return bad(why, cap, "selected is for a bar group");', ''],
+  ['a timing that is no number is read (GESTURE_BAD_SETTING)', 'if (!ctx->refused && !cJSON_IsNumber(it)) {', 'if (0) {'],
   ['a control that is not an object is read (GESTURE_BAD_INPUT)', 'if (!cJSON_IsObject(control) || !cJSON_IsArray(events) || !e) answer_error', 'if (!control || !events || !e) answer_error'],
   ['a log travel is linear', 'double a = m->log ? log(m->min) : m->min, b = m->log ? log(m->max) : m->max;', 'double a = m->min, b = m->max;'],
 ];
@@ -101,3 +106,43 @@ for (const [name, find, replace] of ARMS) {
     assert.ok(red.length > 0, 'a case goes red');
   });
 }
+
+// ---- the two guards the shipped table never trips, each through its public door ----------------------------------------------
+
+/** The omx-panel-render command built from a renderer tree whose gesture.c is `source`, in a scratch directory. */
+function sabotagedCli(source) {
+  const dir = mkdtempSync(join(tmpdir(), 'gesture-sabotage-cli-'));
+  try {
+    for (const f of ['src', 'include', 'Makefile', 'omx-panel-render.pc.in']) cpSync(join(RENDERER, f), join(dir, 'renderer', f), { recursive: true });
+    cpSync(join(RENDERER, '..', 'package.json'), join(dir, 'package.json'));
+    writeFileSync(join(dir, 'renderer', 'src', 'gesture.c'), source);
+    execFileSync('make', ['-C', join(dir, 'renderer'), 'build/omx-panel-render', '-j4'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    return wheelForHiddenControl(join(dir, 'renderer', 'build', 'omx-panel-render'));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('sabotage: a step for a control in no target is not refused (through omx_panel_view_input)', () => {
+  const find = 'if (target == GE_NONE) return refuse(e, OMX_PANEL_REFUSED_NO_TARGET,';
+  assert.equal(SOURCE.split(find).length - 1, 1, 'the injection lands exactly once');
+  assert.deepEqual(wheelForHiddenControl(), { refused: ['GESTURE_NO_TARGET'], gestures: 0, thr: 0 }, 'the untouched command is right');
+  const got = sabotagedCli(SOURCE.replace(find, () => 'if (0) return refuse(e, OMX_PANEL_REFUSED_NO_TARGET,'));
+  assert.notDeepEqual(got, { refused: ['GESTURE_NO_TARGET'], gestures: 0, thr: 0 });
+  assert.ok(got.thr !== 0 || got.gestures > 0, 'the wrong control stepped');
+});
+
+test('sabotage: a tap with no tap cell is not refused (through the JSON door)', () => {
+  const find = 'if (!word) return refuse(e, OMX_PANEL_REFUSED_NOT_IN_TABLE, ev->t_ms, "a %s has no tap", t->widget);';
+  assert.equal(SOURCE.split(find).length - 1, 1, 'the injection lands exactly once');
+  const dir = mkdtempSync(join(tmpdir(), 'gesture-sabotage-'));
+  try {
+    writeFileSync(join(dir, 'gesture.c'), SOURCE.replace(find, () => 'if (!word) return;'));
+    const flags = execFileSync('pkg-config', ['--cflags', '--libs', 'libcjson'], { encoding: 'utf8' }).trim().split(/\s+/);
+    execFileSync('cc', ['-std=c11', '-D_DEFAULT_SOURCE', '-O1', `-I${join(RENDERER, 'include')}`, `-I${join(RENDERER, 'src')}`, '-o', join(dir, 'driver'), join(dir, 'gesture.c'),
+      join(RENDERER, 'test', 'gesture_driver.c'), ...flags, '-lm'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    assert.notDeepEqual(tapWithNoTapCell(join(dir, 'driver')), { refused: ['GESTURE_NOT_IN_TABLE'], gestures: 0, value: 20 });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

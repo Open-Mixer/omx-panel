@@ -31,7 +31,7 @@
  * `{symbol: value}` for a bar group, `gesture` the last of `gestures`, `undo` the ids of the gestures that changed a value, one
  * undo entry each. A refused setting, or a control or script neither this unit nor tools/gestures.mjs can read (`GESTURE_BAD_INPUT`: a travel
  * with no ends or a min not below its max, a negative step, a `travelPx` not above zero, a target with no size; an event with no `t`, no known
- * `type`, no `ptype`, `id` or position on a press, an `n` that is not a number, an `encoder` that is not an integer), answers
+ * `type`, no `ptype`, `id` or position on a press, an `n` that is not a number, an `encoder` that is not an integer, a `fine`, `coarse` or `shift` that is not a boolean, a `selected` that is no bar of the group), answers
  * `{"error": {"code", "why"}}` instead. `n` is a number, not an integer: a fraction counts.
  *
  * Nothing here is thread-safe on one context; two contexts share nothing.
@@ -72,7 +72,8 @@ omx_gesture_t *omx_gesture_open(const char *gestures_json, const char *settings_
  * @param events_json   The events, a JSON array.
  * @param answer        Where the answer goes; may be NULL to ask only how long it is.
  * @param cap           The size of `answer` in bytes.
- * @return The length of the whole answer in bytes, not counting the NUL: a value of `cap` or more says it was cut. 0 for a NULL context.
+ * @return The length of the whole answer in bytes, not counting the NUL: a value of `cap` or more says it was cut. 0, with `answer` empty,
+ *         for a NULL context or when memory ran out while the answer was built; every answer is longer than 0 bytes.
  */
 size_t omx_gesture_run(omx_gesture_t *ctx, const char *control_json, const char *events_json, char *answer, size_t cap);
 

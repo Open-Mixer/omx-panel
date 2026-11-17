@@ -927,8 +927,12 @@ omx_gesture_t *omx_gesture_open(const char *gestures_json, const char *settings_
   cJSON *tm = cJSON_GetObjectItemCaseSensitive(s, "timings"), *it;
   cJSON_ArrayForEach(it, tm) {
     if (ctx->refused) break;
-    double ms = cJSON_IsNumber(it) ? it->valuedouble : NAN;
-    ctx->refused = ge_set_timing(probe, it->string, ms, ctx->why, sizeof ctx->why);
+    /* a value that is no number is worded as the reference words it, after the name is known: `claimMs is x: a time ...` */
+    ctx->refused = ge_set_timing(probe, it->string, cJSON_IsNumber(it) ? it->valuedouble : 1e9, ctx->why, sizeof ctx->why);
+    if (!ctx->refused && !cJSON_IsNumber(it)) {
+      ctx->refused = OMX_PANEL_REFUSED_BAD_SETTING;
+      say(ctx->why, sizeof ctx->why, "%s is %s: a time in ms above zero", it->string, cJSON_IsString(it) ? it->valuestring : cJSON_IsNull(it) ? "null" : cJSON_IsTrue(it) ? "true" : cJSON_IsFalse(it) ? "false" : "[object Object]");
+    }
   }
   if (!ctx->refused && cJSON_IsFalse(cJSON_GetObjectItemCaseSensitive(s, "paintWithTouch")))
     ctx->refused = OMX_PANEL_REFUSED_PAINT_REQUIRED, say(ctx->why, sizeof ctx->why, "painting is required on touch");
@@ -1146,8 +1150,15 @@ static int valid_control(const cJSON *c, char *why, size_t cap) {
       if (!cJSON_IsObject(b) || !jstr(b, "symbol")) return bad(why, cap, "every bar has a symbol");
       if (!valid_member(b, jstr(b, "symbol"), why, cap) || !valid_target(b, jstr(b, "symbol"), why, cap)) return 0;
     }
+    if (present(c, "selected")) {
+      const char *sel = jstr(c, "selected");
+      int found = 0;
+      cJSON_ArrayForEach(b, bars) found |= sel && !strcmp(jstr(b, "symbol"), sel);
+      if (!found) return bad(why, cap, "selected is a bar of the group");
+    }
     return 1;
   }
+  if (present(c, "selected")) return bad(why, cap, "selected is for a bar group");
   if (!valid_member(c, "value", why, cap)) return 0;
   const cJSON *px = cJSON_GetObjectItemCaseSensitive(c, "travelPx");
   if (px && !(is_num(px) && px->valuedouble > 0)) return bad(why, cap, "travelPx is above zero");
@@ -1164,6 +1175,11 @@ static int valid_events(const cJSON *events, char *why, size_t cap) {
     int pointer = type && (!strcmp(type, "down") || !strcmp(type, "move") || !strcmp(type, "up"));
     if (!pointer && !(type && (!strcmp(type, "wheel") || !strcmp(type, "detent") || !strcmp(type, "key"))))
       return bad(why, cap, "event %d: type is down, move, up, wheel, detent or key", i);
+    static const char *const flags[] = {"fine", "coarse", "shift"};
+    for (int k = 0; k < 3; k++) {
+      const cJSON *f = cJSON_GetObjectItemCaseSensitive(j, flags[k]);
+      if (f && !cJSON_IsBool(f)) return bad(why, cap, "event %d: %s is true or false", i, flags[k]);
+    }
     if (pointer) {
       const char *pt = jstr(j, "ptype");
       const cJSON *id = cJSON_GetObjectItemCaseSensitive(j, "id");
@@ -1313,7 +1329,7 @@ size_t omx_gesture_run(omx_gesture_t *ctx, const char *control_json, const char 
     for (size_t i = 0; selected && c.tg.kind == GE_BAR && i < c.n; i++)
       if (!strcmp(c.names[i], selected)) ge_select(e, 0, (int)i);
     sc = door_events_read(events, &c, &ids, &nev);
-    if (!sc) answer_error(&out, "GESTURE_BAD_INPUT", "out of memory");
+    if (!sc) out.bad = 1; /* memory ran out: nothing is answered, omx_gesture_run returns 0 */
     else {
       int sel_kind = 0, sel_member = ge_selected_member(e, 0); /* what the last select named: 1 a bar's member, 2 the handle, 3 the control */
       if (sel_member >= 0) sel_kind = 1;

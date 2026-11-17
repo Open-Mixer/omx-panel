@@ -15,7 +15,8 @@ import { test } from 'node:test';
 import { SCRIPTS } from '../../test/gesture-scripts.mjs';
 import { readFileSync } from 'node:fs';
 import { GESTURES, GESTURE_CODES } from '../../dist/tools/gestures.mjs';
-import { CASES, RULES, SHIPPED, agree, fuzzCases, viaC, viaJs } from './gesture-c.mjs';
+import { tapWithNoTapCell, wheelForHiddenControl } from './gesture-c-doors.mjs';
+import { CASES, DRIVER, RULES, SHIPPED, agree, fuzzCases, viaC, viaJs } from './gesture-c.mjs';
 
 const viaJsControl = () => RULES.find((r) => r.name.startsWith('rule: a pinch of two touches')).control;
 
@@ -152,4 +153,12 @@ test('every refusal code, the JS reference\'s and the C unit\'s, is declared in 
   assert.deepEqual(Object.keys(GESTURES.codes).sort(), [...codes].sort());
   const [bad] = viaC([{ control: { widget: 'bar', bars: [] }, events: [] }]);
   assert.ok(codes.has(bad.error.code));
+});
+
+test('a step for a control that is in no target is refused GESTURE_NO_TARGET through the renderer, and no other control steps', () => {
+  assert.deepEqual(wheelForHiddenControl(), { refused: ['GESTURE_NO_TARGET'], gestures: 0, thr: 0 });
+});
+
+test('a tap on a widget whose declaration has no tap cell is refused GESTURE_NOT_IN_TABLE through the JSON door', () => {
+  assert.deepEqual(tapWithNoTapCell(DRIVER), { refused: ['GESTURE_NOT_IN_TABLE'], gestures: 0, value: 20 });
 });

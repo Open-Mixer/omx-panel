@@ -117,7 +117,7 @@ const refuseInput = (why) => { throw new GestureError(GESTURE_CODES.badInput, wh
  * Input neither the reference nor the C unit can read is refused as GESTURE_BAD_INPUT, in the same words as the C unit's
  * (renderer/src/gesture.c, valid_control and valid_events): a control whose travel has no ends, an end not above the other, a log travel from
  * zero or below, a negative step, a drawn length that is not above zero, a target with no size; an event with no time or a type
- * that is none of the six, a press without a position, a pointer type that is none of the four, a notch count that is not a number.
+ * that is none of the six, a press without a position, a pointer type that is none of the four, a notch count that is not a number, a `fine`, `coarse` or `shift` that is not a boolean, a `selected` that is no bar of the group.
  */
 function validateInput(control, events) {
   if (!isObject(control) || !Array.isArray(events)) refuseInput('the control is a JSON object and the events a JSON array');
@@ -150,7 +150,9 @@ function validateInput(control, events) {
       member(b, b.symbol);
       target(b, b.symbol);
     }
+    if (control.selected !== undefined && !control.bars.some((b) => b.symbol === control.selected)) refuseInput('selected is a bar of the group');
   } else {
+    if (control.selected !== undefined) refuseInput('selected is for a bar group');
     member(control, 'value');
     if (control.travelPx !== undefined && !(isNum(control.travelPx) && control.travelPx > 0)) refuseInput('travelPx is above zero');
     target(control, 'value');
@@ -160,6 +162,7 @@ function validateInput(control, events) {
     if (!isNum(e.t)) refuseInput(`event ${i}: t is a number`);
     const pointer = ['down', 'move', 'up'].includes(e.type);
     if (!pointer && !['wheel', 'detent', 'key'].includes(e.type)) refuseInput(`event ${i}: type is down, move, up, wheel, detent or key`);
+    for (const k of ['fine', 'coarse', 'shift']) if (e[k] !== undefined && typeof e[k] !== 'boolean') refuseInput(`event ${i}: ${k} is true or false`);
     if (pointer) {
       if (typeof e.id !== 'string' && !isNum(e.id)) refuseInput(`event ${i}: id is a string or a number`);
       if (!['touch', 'mouse', 'pen', 'fader'].includes(e.ptype)) refuseInput(`event ${i}: ptype is touch, mouse, pen or fader`);

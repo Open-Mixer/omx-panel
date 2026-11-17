@@ -120,6 +120,13 @@ export const RULES = [
     ['a detent of encoder 3e9', knob(), [{ t: 0, type: 'detent', n: 1, encoder: 3e9 }]],
     ['a key with no key', knob(), [{ t: 0, type: 'key' }]],
     ['the second event is bad', knob(), [{ t: 0, type: 'wheel', n: 1 }, { t: 1, type: 'wheel', n: null }]],
+    ['a fine flag that is a number', knob(), [{ t: 0, type: 'down', id: 'p', ptype: 'touch', x: 1, y: 1 }, { t: 5, type: 'move', id: 'p', ptype: 'touch', x: 1, y: 40, fine: 1 }]],
+    ['a fine flag that is null', knob(), [{ t: 0, type: 'move', id: 'p', ptype: 'touch', x: 1, y: 40, fine: null }]],
+    ['a coarse flag that is a string', knob(), [{ t: 0, type: 'wheel', n: 1, coarse: 'yes' }]],
+    ['a shift flag that is a string', knob(), [{ t: 0, type: 'key', key: 'ArrowUp', shift: 'no' }]],
+    ['a selected bar that is not in the group', bars({ selected: 'zz' }), []],
+    ['a selected bar that is a number', bars({ selected: 2 }), []],
+    ['a selected on a knob', knob({ selected: 'value' }), []],
     ['a control that is a number', 5, []],
     ['a control that is an array', [], []],
     ['events that are an object', knob(), { t: 0 }],
@@ -144,6 +151,12 @@ export const RULES = [
     ['a bar with no symbol', bars({ bars: [{ min: 0, max: 1, target: { x: 0, y: 0, w: 5, h: 5 } }] }), []],
     ['a bar with a bad step', bars({ bars: [{ symbol: 'a', min: 0, max: 1, step: -2, target: { x: 0, y: 0, w: 5, h: 5 } }] }), []],
   ].map(([name, control, events]) => ({ name: `rule: ${name} is GESTURE_BAD_INPUT`, control, events })),
+  { name: 'rule: a timing that is a string is GESTURE_BAD_SETTING, worded as the reference words it', control: knob(), settings: { timings: { claimMs: 'x' } }, events: [] },
+  { name: 'rule: a timing that is null is GESTURE_BAD_SETTING', control: knob(), settings: { timings: { claimMs: null } }, events: [] },
+  { name: 'rule: a timing that is true is GESTURE_BAD_SETTING', control: knob(), settings: { timings: { longPressMs: true } }, events: [] },
+  { name: 'rule: a timing of -5 and one after it', control: knob(), settings: { timings: { doubleTapMs: -5, claimMs: 'x' } }, events: [] },
+  { name: 'rule: an unknown timing with a string value is named first', control: knob(), settings: { timings: { bogus: 'x' } }, events: [] },
+  { name: 'rule: a safety hold of a string', control: knob(), settings: { timings: { safetyHoldMs: 'long' } }, events: [] },
   { name: 'rule: an xy has no wheel', control: knob({ widget: 'xy' }), events: [wheel(0, 1), key(100, 'ArrowUp')] },
   { name: 'rule: an unknown key is no step', control: knob(), events: [key(0, 'Enter')] },
 ];
@@ -165,12 +178,12 @@ export function viaJs(c) {
 }
 
 /** The C reference's answers to `cases`, through `driver` (build/gesture_driver, or one built from a mutated gesture.c). */
-export function viaC(cases, driver = DRIVER) {
+export function viaC(cases, driver = DRIVER, declaration = DECLARATION) {
   const dir = mkdtempSync(join(tmpdir(), 'gesture-c-'));
   try {
     const file = join(dir, 'cases.json');
     writeFileSync(file, JSON.stringify(cases.map((c) => ({ settings: JSON.stringify(c.settings ?? {}), control: JSON.stringify(c.control), events: JSON.stringify(c.events) }))));
-    return JSON.parse(execFileSync(driver, [DECLARATION, file], { encoding: 'utf8', maxBuffer: 1 << 26 }));
+    return JSON.parse(execFileSync(driver, [declaration, file], { encoding: 'utf8', maxBuffer: 1 << 26 }));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -229,9 +242,9 @@ export function fuzzCases(seed, n) {
 }
 
 /**
- * Whether two answers agree: every number equal, except where the control has a logarithmic travel, where two C libraries' `log` and
- * `exp` (V8's and the platform's) may differ in the last digits, so a relative 1e-11 is allowed; and the words of the one refusal the
- * reference words badly (a reset with no bar selected: 'null declares no default') are the same refusal in both.
+ * Whether two answers agree: every number identical (-0 and 0 are different), every string equal, except where the control has a
+ * logarithmic travel, where two C libraries' `log` and `exp` (V8's and the platform's) may differ in the last digits, so a
+ * relative 1e-11 is allowed.
  */
 export function agree(a, b, tolerant) {
   if (typeof a === 'number' && typeof b === 'number') return Object.is(a, b) || (tolerant && Math.abs(a - b) <= 1e-11 * Math.max(Math.abs(a), Math.abs(b)));

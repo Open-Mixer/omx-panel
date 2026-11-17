@@ -249,8 +249,8 @@ unit's WebAssembly build.
 `renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
 `./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
 `tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
-its code and words. So do 104 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
-`renderer/test/gesture-c-sabotage.test.mjs` breaks 45 rules in a copy of the source and watches each go red.
+its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
+`renderer/test/gesture-c-sabotage.test.mjs` breaks 51 rules in a copy of the source and watches each go red.
 
 Where the two references differ (each a finding of the first run, none reached by a shipped script; the first disappears when the JS loads this unit as wasm):
 
