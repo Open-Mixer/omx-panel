@@ -31,7 +31,7 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
-import { controlsOfDescriptor, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
 import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
@@ -407,8 +407,7 @@ function pagesOfDescription(description, effective, layout, servedOf, { perPage,
 
 /**
  * The controls with each repeated group's instances marked and ordered for the page cut (docs/group-model.md, P1): in a
- * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`), its on/off first, then its cells from the
- * top row down; the section's own controls (the count, an EQ's master on) come before the instances. Sections apart, the
+ * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order; the section's own controls (the count, an EQ's master on) come before the instances. Sections apart, the
  * order of the array is not read, so the controls are sorted by (section, rank).
  */
 function byInstance(sections, controls) {
@@ -416,13 +415,11 @@ function byInstance(sections, controls) {
   const mark = new Map();
   sections.forEach((s, at) => {
     if (!s.matrix) return;
-    const m = s.matrix;
-    m.heads.forEach((h, j) => {
-      const symbols = [h.on?.symbol, ...m.cells.flatMap((row, i) => (m.rows[i].head ? [] : [row[j]]))].filter((x) => typeof x === 'string');
+    matrixInstances(s.matrix).forEach(({ head, symbols }, j) => {
       symbols.forEach((symbol, k) => {
         if (rank.has(symbol)) return;
         rank.set(symbol, [at, j + 1, k]);
-        mark.set(symbol, { group: `${s.key}#${j}`, label: h.label });
+        mark.set(symbol, { group: `${s.key}#${j}`, label: head.label });
       });
     });
   });

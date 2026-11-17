@@ -12,7 +12,7 @@
  *   c  the units, kinds and ranges of a parameter, matched across the instances (b's candidates and a's alike).
  * An inference that does not hold is never drawn as a guessed matrix: the group is a plain list and carries a REASON code.
  */
-import { nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
+import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -208,6 +208,34 @@ export function inferGroupModel(controls) {
   // a group sits where its first control does; the controls an EQ took as its edges from beside do not move it
   const first = (g) => Math.min(...memberSymbols({ ...g, edges: [] }).map((s) => bySymbol.get(s)?.index ?? Infinity));
   return { groups: groups.filter((g) => memberSymbols(g).length > 0).sort((a, b) => first(a) - first(b)) };
+}
+
+/**
+ * The instances of a served matrix, one per head (an EQ's HPF and LPF included), left to right: the head and the symbols it
+ * holds in the order a screen shows them, its on/off first, then its cells from the top row down (the head row and an empty
+ * cell are none). The one order of an instance: the page cut (`describe`) and the port groups (`instanceGroups`) both read it.
+ * @returns {{ head: { label: string, on: { symbol: string } | null, edge: string | null }, symbols: string[] }[]}
+ */
+export function matrixInstances(served) {
+  return served.heads.map((head, j) => ({
+    head,
+    symbols: [...new Set([head.on?.symbol, ...served.cells.flatMap((row, i) => (served.rows[i].head ? [] : [row[j]]))].filter((x) => typeof x === 'string'))],
+  }));
+}
+
+/**
+ * The instances of the repeated groups a plugin does not declare instance by instance (source `indexed`, no declared group
+ * above them), each one a port group: docs/group-model.md, P2. `{ symbol, name, ports }`, the ports in `matrixInstances`'s
+ * order; the name the instance's label (a bare number is "Section 3"), the symbol that name as an LV2 symbol. A group the
+ * plugin declares is its own and gives none.
+ * @param {{ groups: Group[] }} model
+ * @returns {{ symbol: string, name: string, ports: string[] }[]}
+ */
+export function instanceGroups(model) {
+  return model.groups.filter((g) => g.kind === 'repeated' && g.source === 'indexed' && g.key === '').flatMap((g) => matrixInstances(servedMatrix(g)).map(({ head, symbols }) => {
+    const name = /^\d+$/.test(head.label) ? `Section ${head.label}` : head.label;
+    return { symbol: lv2Symbol(name), name, ports: symbols };
+  }));
 }
 
 /** Every symbol a group holds: its own parameters, its instances' and its edges'. */
