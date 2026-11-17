@@ -5,13 +5,14 @@
  * frequency or depth lies off the axes sits on the frame's edge); the MOD GUI face places its marks through curveGeometry
  * (tools/modgui-gen.mjs), which the PNG face and the template's SVG both read, so it must hold them by the same rule. The parity
  * tests elsewhere use in-range marks only; this one gives both faces the same curve and off-axis marks and holds their pixels equal.
- * The curve and the marks are given here, not computed by omx-dsp's twin, so the test needs no twin.
+ * The curve and the marks are given here; the two faces lay the fixture out alike only with omx-dsp's twin installed (the
+ * parity tests' own rule), so the raster cases skip without it. The geometry case needs no twin.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { FIXTURES, ROOT, compare, decodePng, descriptionFile, render, resolved, scratch, stateFile } from './harness.mjs';
+import { FIXTURES, ROOT, compare, decodePng, descriptionFile, render, resolved, scratch, skipWithoutTwin, stateFile } from './harness.mjs';
 
 const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'eq-marks');
@@ -39,20 +40,24 @@ function faces(marks) {
   return { mod, ren: render(descriptionFile(fx, dir), file) };
 }
 
-test('control: an in-range mark on the given curve is the same pixels in both faces', () => {
+test('control: an in-range mark on the given curve is the same pixels in both faces', skipWithoutTwin(fx), () => {
   const { mod, ren } = faces([IN]);
-  assert.ok(compare(mod, ren).exact, 'the MOD GUI and the renderer agree where no mark is held');
+  const c = compare(mod, ren);
+  assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
+  assert.ok(c.exact, `the MOD GUI and the renderer agree where no mark is held (${c.off} pixels differ, worst ${c.worst})`);
 });
 
-test('a mark deeper than the axis (depth 12 on a +-6 dB plot) sits on the top edge in both faces: the same pixels', () => {
+test('a mark deeper than the axis (depth 12 on a +-6 dB plot) sits on the top edge in both faces: the same pixels', skipWithoutTwin(fx), () => {
   const { mod, ren } = faces([ABOVE]);
   const c = compare(mod, ren);
+  assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
   assert.ok(c.exact, `the MOD GUI draws the held mark where the renderer does (${c.off} pixels differ, worst ${c.worst})`);
 });
 
-test('a mark past the frequency axis sits on the right edge in both faces: the same pixels', () => {
+test('a mark past the frequency axis sits on the right edge in both faces: the same pixels', skipWithoutTwin(fx), () => {
   const { mod, ren } = faces([RIGHT]);
   const c = compare(mod, ren);
+  assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
   assert.ok(c.exact, `the MOD GUI draws the held mark where the renderer does (${c.off} pixels differ, worst ${c.worst})`);
 });
 
