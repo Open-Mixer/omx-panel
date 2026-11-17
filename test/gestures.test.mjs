@@ -11,6 +11,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { SCRIPTS, controlOf } from './gesture-scripts.mjs';
 import { GESTURES, GESTURE_CODES, GestureError, memberOf, runGesture, timingsOf, wordOf, stepOf } from '../dist/tools/gestures.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -77,24 +78,7 @@ test('no section-word exception is used', () => {
 
 // ---- the scripted gestures of the parity fixtures ---------------------------------------------------------------
 
-const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/gestures/scripts.json'), 'utf8')).scripts;
-const descriptor = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
-const travelOf = (dsc, symbol) => dsc.controls.find((c) => c.symbol === symbol).travel;
-
-/** A fixture's control, built from its descriptor's own travels and the surface geometry the script file gives. */
-function controlOf(s) {
-  const c = s.control, dsc = s.descriptor ? descriptor(s.descriptor) : null;
-  if (c.widget === 'handle') {
-    const one = (k) => memberOf({ travel: travelOf(dsc, c.members[k]) }, c.start[k] !== undefined ? { value: c.start[k] } : {});
-    return { widget: 'handle', target: c.target, plot: c.plot, freq: one('freq'), gain: one('gain'), q: one('q') };
-  }
-  if (c.widget === 'bar' && c.members) return { widget: 'bar', bars: c.members.map((b) => ({ ...b, ...(c.start?.[b.symbol] !== undefined ? { value: c.start[b.symbol] } : {}) })) };
-  if (c.widget === 'bar') {
-    const { w, pitch, h } = c.geometry;
-    return { widget: 'bar', bars: c.symbols.map((symbol, i) => memberOf({ travel: travelOf(dsc, symbol) }, { symbol, target: { x: i * pitch, y: 0, w, h }, ...(c.start[symbol] !== undefined ? { value: c.start[symbol] } : {}) })) };
-  }
-  return { widget: c.widget, ...memberOf({ travel: travelOf(dsc, c.member) }, { target: c.target, travelPx: c.travelPx, ...(c.start.value !== undefined ? { value: c.start.value } : {}) }) };
-}
+/* SCRIPTS and controlOf are test/gesture-scripts.mjs's, shared with the C reference's test (renderer/test/gesture-c.test.mjs). */
 const membersOf = (control) => (control.widget === 'handle' ? { freq: control.freq, gain: control.gain, q: control.q } : control.widget === 'bar' ? Object.fromEntries(control.bars.map((b) => [b.symbol, b])) : { value: control });
 
 for (const s of SCRIPTS) {
