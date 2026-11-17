@@ -229,6 +229,39 @@ of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retarget
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
 
+### The gesture unit
+
+The arithmetic of every gesture is one C unit, `renderer/src/gesture.c`, built into `libomx-panel-render`: drag past 10 px
+(dead travel), fine at 0.3, step (declared, else 1%; coarse is 5), second (a handle's Q), reset to the declared default,
+more and select (never a value), toggle on release inside, painting across a bar group (columns jumped over are
+interpolated, one gesture id per sweep), ownership and the claim, the safety hold. `input.c` keeps only the renderer's
+mapping: which of the view's controls form a target, where each sits on the surface, and what a gesture changed in the
+controls; it hands the engine (`src/gesture.h`, internal) the targets and the event on every call.
+
+The same unit has a JSON door, `renderer/include/omx_panel_gesture.h`, three calls and no struct across them:
+`omx_gesture_open(gestures_json, settings_json)`, `omx_gesture_run(ctx, control_json, events_json, answer, cap)` and
+`omx_gesture_close(ctx)`. A run takes one control (the member the JavaScript reference's `runGesture` takes) and a
+script of events, replays it through a fresh engine and answers as JSON what `runGesture` answers. The ABI of the three is
+`renderer/abi/omx_panel_gesture.abi`, held to the header, the export map and the built library by
+`renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
+unit's WebAssembly build.
+
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
+`tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
+its code and words. So do 54 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
+`renderer/test/gesture-c-sabotage.test.mjs` breaks 30 rules in a copy of the source and watches each go red.
+
+Where the two references differ (each a finding of the first run, none reached by a shipped script):
+
+- A logarithmic travel's value agrees to a relative 1e-11, not bit for bit: `log` and `exp` are the platform's in C and V8's in
+  JavaScript, and `exp(log(x))` doubles the last digit's difference. The shipped log-frequency scripts are exact.
+- An integer travel rounds half up (`floor(v + 0.5)`, JavaScript's `Math.round`); the first C port used `round()`, which rounds
+  a negative half away from zero. The unit now rounds as the reference does.
+- A reset with no bar selected is refused `GESTURE_NO_DEFAULT` in both; the reference words it `null declares no default`, the
+  unit `no bar is selected: there is no default to reset`. The refused gesture's id is spent in both.
+- The reference throws on a move of the finger left of a pinch after the other lifted; the unit ignores that move.
+
 Still to come: redrawing only what changed.
 
 `renderer/build/omx-panel-render` is the library's front door for tests and tools: it draws a description
