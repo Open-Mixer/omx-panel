@@ -51,7 +51,7 @@
     "GESTURE_NO_TARGET": "A step with no bar or handle member to take it.",
     "GESTURE_PAINT_REQUIRED_ON_TOUCH": "Painting is required on touch and cannot be turned off.",
     "GESTURE_BAD_SETTING": "An unknown timing, or one not above zero.",
-    "GESTURE_BAD_INPUT": "The control or the script given to the C reference cannot be read: not JSON, no target, or no members."
+    "GESTURE_BAD_INPUT": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number."
   },
   "exceptions": []
 }

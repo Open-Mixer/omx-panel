@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * Copyright (C) 2026 Pau Aliagas
  *
  * gesture.h — the gesture engine inside libomx_panel (internal: not installed, not exported). It is the one implementation of
  * the gesture vocabulary of docs/panel-gestures.md: a set of TARGETS (a single control, a bar group, a curve handle), each with
@@ -119,7 +119,8 @@ double ge_value_of_norm(const ge_member_t *m, double n);
  * key is for; GE_NONE says the host found none for the control it named (refused as no target); GE_AUTO (-1) takes the target at the event's x, y for a wheel and the selected bar, else the only handle, for a key or a
  * detent (a press always takes the target it lands on). */
 void ge_begin(ge_engine *e);
-void ge_event(ge_engine *e, const omx_panel_event_t *ev, int target, int member);
+/* `n` is the notches of a wheel or a detent, signed, as the reference has it (a double); NAN says there is none. */
+void ge_event(ge_engine *e, const omx_panel_event_t *ev, int target, int member, double n);
 void ge_tick(ge_engine *e, double t_ms);
 
 const ge_change_t *ge_changes(const ge_engine *e, size_t *n);

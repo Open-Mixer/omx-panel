@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// Copyright (C) 2026 Pau Aliagas
 /*
  * The shipped scripted gestures (test/fixtures/gestures/scripts.json, exported as @openmixer/omx-panel/gestures/scripts.json)
  * and the control each script runs against, built from its fixture descriptor's own travels and the surface geometry the script

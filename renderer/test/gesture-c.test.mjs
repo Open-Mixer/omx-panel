@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// Copyright (C) 2026 Pau Aliagas
 /*
  * The C gesture reference (renderer/src/gesture.c, include/omx_panel_gesture.h: omx_gesture_open, omx_gesture_run,
  * omx_gesture_close) against the shipped scripted fixtures (test/fixtures/gestures/scripts.json, exported by the package as

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * Copyright (C) 2026 Pau Aliagas
  *
  * gesture_driver — the test driver of the gesture unit: it runs cases through omx_gesture_run, the C reference of
  * docs/panel-gestures.md, and prints the answers. test/gesture-c.test.mjs feeds it the shipped scripted fixtures and holds its
@@ -36,7 +36,11 @@ int main(int argc, char **argv) {
   if (argc != 3) return fprintf(stderr, "usage: gesture_driver <gestures.json> <cases.json>\n"), 2;
   char *decl = slurp(argv[1]), *text = slurp(argv[2]);
   cJSON *cases = text ? cJSON_Parse(text) : NULL;
-  if (!decl || !cJSON_IsArray(cases)) return fprintf(stderr, "gesture_driver: cannot read the declaration or the cases\n"), 2;
+  if (!decl || !cJSON_IsArray(cases)) {
+    fprintf(stderr, "gesture_driver: cannot read the declaration or the cases\n");
+    cJSON_Delete(cases), free(decl), free(text);
+    return 2;
+  }
   int rc = 0;
   printf("[");
   cJSON *c;

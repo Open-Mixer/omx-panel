@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * Copyright (C) 2026 Pau Aliagas
  */
 /**
  * @file omx_panel_gesture.h
@@ -29,7 +29,10 @@
  * The answer is `{value, gestures: [{id, word, input, begin, end, changes, fine, shown}], gesture, begin, end, undo, selected,
  * refused: [{code, t, why}], cancelled: [{t, why}]}`: `value` a number for a single control, `{freq, gain, q}` for a handle,
  * `{symbol: value}` for a bar group, `gesture` the last of `gestures`, `undo` the ids of the gestures that changed a value, one
- * undo entry each. A refused setting or a control or script that cannot be read answers `{"error": {"code", "why"}}` instead.
+ * undo entry each. A refused setting, or a control or script neither this unit nor tools/gestures.mjs can read (`GESTURE_BAD_INPUT`: a travel
+ * with no ends or a min not below its max, a negative step, a `travelPx` not above zero, a target with no size; an event with no `t`, no known
+ * `type`, no `ptype`, `id` or position on a press, an `n` that is not a number, an `encoder` that is not an integer), answers
+ * `{"error": {"code", "why"}}` instead. `n` is a number, not an integer: a fraction counts.
  *
  * Nothing here is thread-safe on one context; two contexts share nothing.
  */

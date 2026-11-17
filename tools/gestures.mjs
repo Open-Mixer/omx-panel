@@ -37,6 +37,7 @@ export const GESTURE_CODES = {
   noTarget: 'GESTURE_NO_TARGET',
   paintRequired: 'GESTURE_PAINT_REQUIRED_ON_TOUCH',
   badSetting: 'GESTURE_BAD_SETTING',
+  badInput: 'GESTURE_BAD_INPUT',
 };
 
 export class GestureError extends Error {
@@ -108,6 +109,69 @@ export function memberOf(control, extra = {}) {
   return { min: t.min, max: t.max, def: t.default, scale: t.scale === 'log' ? 'log' : 'linear', ...(t.step !== undefined ? { step: t.step } : {}), integer: t.scale === 'stepped', ...extra };
 }
 
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const refuseInput = (why) => { throw new GestureError(GESTURE_CODES.badInput, why); };
+
+/**
+ * Input neither the reference nor the C unit can read is refused as GESTURE_BAD_INPUT, in the same words as the C unit's
+ * (renderer/src/gesture.c, valid_control and valid_events): a control whose travel has no ends, an end not above the other, a log travel from
+ * zero or below, a negative step, a drawn length that is not above zero, a target with no size; an event with no time or a type
+ * that is none of the six, a press without a position, a pointer type that is none of the four, a notch count that is not a number.
+ */
+function validateInput(control, events) {
+  if (!isObject(control) || !Array.isArray(events)) refuseInput('the control is a JSON object and the events a JSON array');
+  const target = (o, name) => {
+    const t = o.target;
+    if (!isObject(t) || !isNum(t.x) || !isNum(t.y) || !(isNum(t.w) && t.w > 0) || !(isNum(t.h) && t.h > 0)) refuseInput(`${name}: target is {x, y, w, h}, the size above zero`);
+  };
+  const member = (m, name) => {
+    if (!isNum(m.min) || !isNum(m.max)) refuseInput(`${name}: min and max are numbers`);
+    if (!(m.min < m.max)) refuseInput(`${name}: min is not below max`);
+    if (m.scale === 'log' && !(m.min > 0)) refuseInput(`${name}: a log travel's min is above zero`);
+    for (const k of ['def', 'value', 'step']) if (m[k] !== undefined && !isNum(m[k])) refuseInput(`${name}: ${k} is a number`);
+    if (m.step !== undefined && m.step < 0) refuseInput(`${name}: step is below zero`);
+    if (m.integer !== undefined && typeof m.integer !== 'boolean') refuseInput(`${name}: integer is true or false`);
+  };
+  if (typeof control.widget !== 'string') refuseInput('widget is a string');
+  for (const k of ['readOnly', 'hold']) if (control[k] !== undefined && typeof control[k] !== 'boolean') refuseInput(`${k} is true or false`);
+  if (control.widget === 'handle') {
+    for (const k of ['freq', 'gain', 'q']) {
+      if (!isObject(control[k])) refuseInput('a handle has freq, gain and q members');
+      member(control[k], k);
+    }
+    const p = control.plot;
+    if (!isObject(p) || !(isNum(p.w) && p.w > 0) || !(isNum(p.h) && p.h > 0)) refuseInput('plot is {w, h}, above zero');
+    target(control, 'handle');
+  } else if (control.widget === 'bar') {
+    if (!Array.isArray(control.bars) || control.bars.length === 0) refuseInput('a bar group has bars');
+    for (const b of control.bars) {
+      if (!isObject(b) || typeof b.symbol !== 'string') refuseInput('every bar has a symbol');
+      member(b, b.symbol);
+      target(b, b.symbol);
+    }
+  } else {
+    member(control, 'value');
+    if (control.travelPx !== undefined && !(isNum(control.travelPx) && control.travelPx > 0)) refuseInput('travelPx is above zero');
+    target(control, 'value');
+  }
+  events.forEach((e, i) => {
+    if (!isObject(e)) refuseInput(`event ${i} is an object`);
+    if (!isNum(e.t)) refuseInput(`event ${i}: t is a number`);
+    const pointer = ['down', 'move', 'up'].includes(e.type);
+    if (!pointer && !['wheel', 'detent', 'key'].includes(e.type)) refuseInput(`event ${i}: type is down, move, up, wheel, detent or key`);
+    if (pointer) {
+      if (typeof e.id !== 'string' && !isNum(e.id)) refuseInput(`event ${i}: id is a string or a number`);
+      if (!['touch', 'mouse', 'pen', 'fader'].includes(e.ptype)) refuseInput(`event ${i}: ptype is touch, mouse, pen or fader`);
+      if (!isNum(e.x) || !isNum(e.y)) refuseInput(`event ${i}: x and y are numbers`);
+    } else {
+      if (e.n !== undefined && !isNum(e.n)) refuseInput(`event ${i}: n is a number`);
+      if (e.type === 'key' && typeof e.key !== 'string') refuseInput(`event ${i}: key is a string`);
+      if (e.encoder !== undefined && !(isNum(e.encoder) && Number.isInteger(e.encoder) && Math.abs(e.encoder) <= 2147483647)) refuseInput(`event ${i}: encoder is an integer`);
+    }
+  });
+}
+
 const inside = (r, x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 const startOf = (m) => m.value ?? m.def ?? m.min;
 const POINTER = new Set(['down', 'move', 'up']);
@@ -121,6 +185,7 @@ export function runGesture(control, events, settings = {}) {
   const T = timingsOf(settings.timings);
   const G = GESTURES.thresholds;
   if (settings.paintWithTouch === false) throw new GestureError(GESTURE_CODES.paintRequired, 'painting is required on touch');
+  validateInput(control, events);
   const paintWith = (ptype) => (ptype === 'mouse' ? settings.paintWithMouse === true : true);
 
   const kind = control.widget;

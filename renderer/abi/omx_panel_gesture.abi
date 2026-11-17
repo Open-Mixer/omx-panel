@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# Copyright (C) 2026 Pau Aliagas
 #
 # The ABI of include/omx_panel_gesture.h in libomx-panel-render.so.0: each exported function with the symbol version it is
 # bound to, one per line, and its C prototype after the colon. Adding a line is a minor addition; changing or removing one

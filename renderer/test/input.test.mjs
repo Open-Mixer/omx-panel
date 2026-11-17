@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * The renderer answers input with the one gesture vocabulary (one-panel spec 7.8). tools/gestures.mjs is the reference and
- * schema/gestures.json the declaration; the renderer keeps no timing or threshold of its own (it reads that file), so
+ * The renderer answers input with the one gesture vocabulary (one-panel spec 7.8). gesture.c is the reference (tools/gestures.mjs
+ * answers equal to it, renderer/test/gesture-c.test.mjs) and schema/gestures.json the declaration; the renderer keeps no timing or threshold of its own (it reads that file), so
  * every check here runs the renderer's `--input` over a fixture's description and holds what it answers to the reference module:
  *
  *   - the 7.5 fixtures' scripted gestures (test/fixtures/gestures/scripts.json), retargeted onto the renderer's own cells: the value

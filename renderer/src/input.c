@@ -260,7 +260,7 @@ size_t omx_panel_view_input(omx_panel_view_t *v, const omx_panel_event_t *e, omx
     for (size_t k = 0; k < in->nt && target == GE_NONE; k++)
       if ((member = member_of_ctl(&in->t[k], e->control)) >= 0) target = (int)k;
   }
-  ge_event(in->ge, e, target, member);
+  ge_event(in->ge, e, target, member, e->kind == OMX_PANEL_EVENT_WHEEL || e->kind == OMX_PANEL_EVENT_DETENT ? (double)e->n : NAN);
   return finish(v, out, cap, a);
 }
 

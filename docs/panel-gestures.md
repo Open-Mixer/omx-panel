@@ -70,7 +70,8 @@ layered on it there, and none is used.
 `schema/gestures.json` declares each code with its sentence under `codes`; the reference and the C unit answer no other.
 `GESTURE_READ_ONLY`, `GESTURE_CONTROL_OWNED`, `GESTURE_NO_DEFAULT`, `GESTURE_NOT_IN_TABLE`, `GESTURE_HOLD_SHORT`,
 `GESTURE_HOLD_BELOW_FLOOR`, `GESTURE_NO_TARGET`, `GESTURE_PAINT_REQUIRED_ON_TOUCH`, `GESTURE_BAD_SETTING` and
-`GESTURE_BAD_INPUT` (the C unit's answer to a control or script it cannot read).
+`GESTURE_BAD_INPUT` (input neither reference can read, refused in the same words by the C unit and by `tools/gestures.mjs`).
+The codes are not yet in the shape of `schema/codes.json`; that is tracked in issue #106.
 
 ## The timings
 

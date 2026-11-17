@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// Copyright (C) 2026 Pau Aliagas
 /*
  * What the C gesture reference's tests share: the cases (the shipped scripted fixtures of test/fixtures/gestures/scripts.json,
  * and the rules of docs/panel-gestures.md each as a small control and script), the C driver's answers (build/gesture_driver,
@@ -95,6 +95,55 @@ export const RULES = [
   { name: 'rule: a bar group\'s selected bar resets by Backspace', control: bars({ selected: 'b2', bars: bars().bars.map((b, i) => ({ ...b, value: i })) }), events: [key(0, 'Backspace'), key(100, 'Backspace', { bar: 'b4' })] },
   { name: 'rule: a bar double-tap resets only that bar', control: bars({ bars: bars().bars.map((b, i) => ({ ...b, value: i })) }), events: [...TAP(0, 'p', 79, 100), ...TAP(100, 'p', 79, 100)] },
   { name: 'rule: a bar that declares no default has nothing to reset', control: bars({ bars: bars().bars.map((b) => ({ ...b, def: undefined })) }), events: [...TAP(0, 'p', 79, 100), ...TAP(100, 'p', 79, 100)] },
+  // the notch count is a number, not an int32: a fraction counts and so does a number past 2^31
+  { name: 'rule: a wheel of half a notch is half a step', control: knob(), events: [wheel(0, 0.5)] },
+  { name: 'rule: a wheel of 1e300 notches runs to the end', control: knob(), events: [wheel(0, 1e300), wheel(400, -1e300)] },
+  { name: 'rule: a detent of 3e9 and of 4294967296.5 notches', control: knob(), events: [detent(0, 3e9), detent(400, -4294967296.5)] },
+  { name: 'rule: a coarse wheel of -2.5 notches', control: knob({ step: 3 }), events: [wheel(0, -2.5, { coarse: true })] },
+  { name: 'rule: a key and a wheel with no n', control: knob(), events: [key(0, 'ArrowUp'), { t: 400, type: 'wheel' }, { t: 800, type: 'key', key: 'ArrowDown', n: 3 }] },
+  { name: 'rule: two encoders are two sources', control: knob(), events: [detent(0, 1, { encoder: 1 }), detent(100, 1, { encoder: 2 }), detent(200, 1, { encoder: 2 })] },
+  // Math.round exactly: 0.49999999999999994, the odd integers of [2^52, 2^53), negative halves and -0
+  ...[0.49999999999999994, 4503599627370497, 9007199254740991, -2.5, -0.5, -0.49999999999999994, 2.5, 1.5].map((min) => (
+    { name: `rule: an integer travel from ${min} rounds as Math.round does`, control: { widget: 'selector', min, max: min + 10, def: min, value: min, integer: true, target: { x: 0, y: 0, w: 40, h: 40 } }, events: [wheel(0, -1), wheel(400, 1), wheel(800, -3)] })),
+  // what neither reference can read is refused, in the same words
+  ...[
+    ['an event with no type', knob(), [{ t: 0, x: 1, y: 1 }]],
+    ['an event of an unknown type', knob(), [{ t: 0, type: 'tap', id: 'p', ptype: 'touch', x: 1, y: 1 }]],
+    ['an event with no t', knob(), [{ type: 'down', id: 'p', ptype: 'touch', x: 1, y: 1 }]],
+    ['an event whose t is a string', knob(), [{ t: '0', type: 'down', id: 'p', ptype: 'touch', x: 1, y: 1 }]],
+    ['a press with no position', knob(), [{ t: 0, type: 'down', id: 'p', ptype: 'touch' }]],
+    ['a press with no id', knob(), [{ t: 0, type: 'down', ptype: 'touch', x: 1, y: 1 }]],
+    ['a press with no pointer type', knob(), [{ t: 0, type: 'down', id: 'p', x: 1, y: 1 }]],
+    ['a press of an unknown pointer type', knob(), [{ t: 0, type: 'down', id: 'p', ptype: 'stylus', x: 1, y: 1 }]],
+    ['a wheel whose n is a string', knob(), [{ t: 0, type: 'wheel', n: '2' }]],
+    ['a detent of encoder 1.5', knob(), [{ t: 0, type: 'detent', n: 1, encoder: 1.5 }]],
+    ['a detent of encoder 3e9', knob(), [{ t: 0, type: 'detent', n: 1, encoder: 3e9 }]],
+    ['a key with no key', knob(), [{ t: 0, type: 'key' }]],
+    ['the second event is bad', knob(), [{ t: 0, type: 'wheel', n: 1 }, { t: 1, type: 'wheel', n: null }]],
+    ['a control that is a number', 5, []],
+    ['a control that is an array', [], []],
+    ['events that are an object', knob(), { t: 0 }],
+    ['a negative step', knob({ step: -1 }), []],
+    ['a travelPx of 0', knob({ travelPx: 0 }), []],
+    ['a negative travelPx', knob({ travelPx: -5 }), []],
+    ['min equal to max', knob({ min: 5, max: 5 }), []],
+    ['min above max', knob({ min: 9, max: 5 }), []],
+    ['no max', knob({ max: undefined }), []],
+    ['a log travel from zero', knob({ scale: 'log', min: 0, max: 10 }), []],
+    ['a log travel from below zero', knob({ scale: 'log', min: -1, max: 10 }), []],
+    ['a default that is a string', knob({ def: '5' }), []],
+    ['an integer flag that is a number', knob({ integer: 1 }), []],
+    ['a hold flag that is a string', knob({ hold: 'yes' }), []],
+    ['a read-only flag that is a number', knob({ readOnly: 1 }), []],
+    ['a target with no height', knob({ target: { x: 0, y: 0, w: 10, h: 0 } }), []],
+    ['no target', knob({ target: undefined }), []],
+    ['no widget', knob({ widget: undefined }), []],
+    ['a handle with no q', handle({ q: undefined }), []],
+    ['a handle with no plot', handle({ plot: undefined }), []],
+    ['a bar group with no bars', bars({ bars: [] }), []],
+    ['a bar with no symbol', bars({ bars: [{ min: 0, max: 1, target: { x: 0, y: 0, w: 5, h: 5 } }] }), []],
+    ['a bar with a bad step', bars({ bars: [{ symbol: 'a', min: 0, max: 1, step: -2, target: { x: 0, y: 0, w: 5, h: 5 } }] }), []],
+  ].map(([name, control, events]) => ({ name: `rule: ${name} is GESTURE_BAD_INPUT`, control, events })),
   { name: 'rule: an xy has no wheel', control: knob({ widget: 'xy' }), events: [wheel(0, 1), key(100, 'ArrowUp')] },
   { name: 'rule: an unknown key is no step', control: knob(), events: [key(0, 'Enter')] },
 ];
@@ -141,8 +190,9 @@ export function fuzzCases(seed, n) {
   const R = (a, b) => a + rnd() * (b - a);
   const member = (fixed) => {
     const log = fixed ? fixed.scale === 'log' : rnd() < 0.3, integer = !fixed && !log && rnd() < 0.25;
+    const edge = integer && rnd() < 0.3 ? pick([0.49999999999999994, 4503599627370497, -2.5, -0.5, 2.5, -0.49999999999999994]) : undefined;
     const min = fixed ? fixed.min : log ? R(0.5, 50) : R(-30, 5), max = fixed ? fixed.max : min + (log ? R(10, 5000) : R(5, 100));
-    const m = { min: integer ? Math.round(min) : min, max: integer ? Math.round(max) : max, scale: log ? 'log' : 'linear', integer };
+    const m = edge === undefined ? { min: integer ? Math.round(min) : min, max: integer ? Math.round(max) : max, scale: log ? 'log' : 'linear', integer } : { min: edge, max: edge + 10, scale: 'linear', integer };
     if (rnd() < 0.7) m.def = m.min + rnd() * (m.max - m.min);
     if (rnd() < 0.3 && !log) m.step = R(0.1, 5);
     if (rnd() < 0.7) m.value = m.min + rnd() * (m.max - m.min);
@@ -169,7 +219,7 @@ export function fuzzCases(seed, n) {
       const type = pick(['down', 'move', 'move', 'up', 'wheel', 'detent', 'key']);
       if (type === 'down' || type === 'move' || type === 'up') return { t, type, id: pick(['a', 'b']), ptype: pick(['touch', 'touch', 'mouse', 'pen', 'fader']), x: R(-5, width + 5), y: R(-5, 155), ...(rnd() < 0.2 ? { fine: true } : {}) };
       if (type === 'key') return { t, type, key: pick(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace']), ...(rnd() < 0.3 ? { shift: true } : {}), ...barOf() };
-      return { t, type, n: pick([-3, -1, 1, 2, 5]), ...(rnd() < 0.3 ? { coarse: true } : {}), ...(type === 'detent' && rnd() < 0.3 ? { encoder: 3 } : {}), ...barOf() };
+      return { t, type, n: pick([-3, -1, 1, 2, 5, 0.5, -2.5, 1e300, -1e300, 3e9, 4294967296.5]), ...(rnd() < 0.3 ? { coarse: true } : {}), ...(type === 'detent' && rnd() < 0.3 ? { encoder: pick([3, 3, 1, 2]) } : {}), ...barOf() };
     });
   };
   return Array.from({ length: n }, (_x, i) => {
@@ -184,7 +234,7 @@ export function fuzzCases(seed, n) {
  * reference words badly (a reset with no bar selected: 'null declares no default') are the same refusal in both.
  */
 export function agree(a, b, tolerant) {
-  if (typeof a === 'number' && typeof b === 'number') return a === b || (tolerant && Math.abs(a - b) <= 1e-11 * Math.max(Math.abs(a), Math.abs(b)));
+  if (typeof a === 'number' && typeof b === 'number') return Object.is(a, b) || (tolerant && Math.abs(a - b) <= 1e-11 * Math.max(Math.abs(a), Math.abs(b)));
   if (typeof a === 'string' && typeof b === 'string') return a === b;
   if (a && b && typeof a === 'object' && typeof b === 'object') {
     const keys = Object.keys({ ...a, ...b });

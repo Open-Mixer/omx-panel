@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+// Copyright (C) 2026 Pau Aliagas
 /*
  * Sabotage rows for the C gesture reference: each arm breaks one rule of docs/panel-gestures.md in a copy of src/gesture.c,
  * builds a driver from the copy and runs the same cases as gesture-c.test.mjs (the shipped scripts, the rules, the seeded fuzz);
@@ -75,7 +75,22 @@ const ARMS = [
   ['a sweep is more than one gesture id', 'p->painting = 1;\n    g->word', 'p->painting = 1;\n    p->g = open_g(e, p->target, OMX_PANEL_WORD_PAINT, IN_SWEEP, ev->t_ms, 1);\n    g = gest_at(e, p->g);\n    g->word'],
   ['columns jumped over are not entered', 'int count = dir == 0 ? 1 : abs(col - from);', 'int count = 1;'],
   ['a painted bar takes the height of the column it entered in the wrong place', 'return ge_value_of_norm(&t->m[m], clamp01((r[1] + r[3] - y) / r[3]));', 'return ge_value_of_norm(&t->m[m], clamp01((r[1] + r[3] - y) / (r[3] * 1.1)));'],
-  ['an integer travel rounds half away from zero, not as the reference does', 'double r = floor(v + 0.5);', 'double r = round(v);'],
+  ['an integer travel rounds a negative half away from zero', 'if (v - r == 0.5) r += 1;', ''],
+  ['an integer travel rounds as floor(v + 0.5)', 'double r = round(v);', 'double r = floor(v + 0.5);'],
+  ['a negative that rounds to zero is +0', 'return r == 0 && signbit(v) ? -0.0 : r;', 'return r;'],
+  ['the notch count is an int32', 's->n = jhas(j, "n") ? jnum(j, "n", 0) : NAN,', 's->n = jhas(j, "n") ? (double)(int32_t)jnum(j, "n", 0) : NAN,'],
+  ['a key with no n steps by zero', 'double count = (isnan(n) ? 1 : fabs(n)) *', 'double count = (isnan(n) ? 0 : fabs(n)) *'],
+  ['every encoder but 3 is one source', 'snprintf(source, sizeof source, "detent%d", (int)ev->encoder);', 'snprintf(source, sizeof source, "detent%d", ev->encoder == 3 ? 3 : 1);'],
+  ['a step the item is not in the table (GESTURE_NOT_IN_TABLE)', 'if (!word) return refuse(e, OMX_PANEL_REFUSED_NOT_IN_TABLE, ev->t_ms, "a %s has no %s"', 'if (0) return refuse(e, OMX_PANEL_REFUSED_NOT_IN_TABLE, ev->t_ms, "a %s has no %s"'],
+  ['a step with no member is refused as another code (GESTURE_NO_TARGET)', 'if (key < 0 || (size_t)key >= t->n) return refuse(e, OMX_PANEL_REFUSED_NO_TARGET,', 'if (key < 0 || (size_t)key >= t->n) return refuse(e, OMX_PANEL_REFUSED_NOT_IN_TABLE,'],
+  ['painting may be turned off for touch (GESTURE_PAINT_REQUIRED_ON_TOUCH)', 'cJSON_IsFalse(cJSON_GetObjectItemCaseSensitive(s, "paintWithTouch"))', '0'],
+  ['a time of zero is a setting (GESTURE_BAD_SETTING)', 'if (!(ms > 0)) {', 'if (0) {'],
+  ['an unknown timing is a setting (GESTURE_BAD_SETTING)', 'if (k < 0) {\n    for', 'if (0) {\n    for'],
+  ['an event of no type is read as a key (GESTURE_BAD_INPUT)', 'if (!pointer && !(type && (!strcmp(type, "wheel") || !strcmp(type, "detent") || !strcmp(type, "key"))))', 'if (0)'],
+  ['an event with no t is read (GESTURE_BAD_INPUT)', 'if (!is_num(cJSON_GetObjectItemCaseSensitive(j, "t"))) return bad', 'if (0) return bad'],
+  ['a negative step is read (GESTURE_BAD_INPUT)', 'if (jhas(m, "step") && jnum(m, "step", 0) < 0) return bad', 'if (0) return bad'],
+  ['a travelPx of zero is read (GESTURE_BAD_INPUT)', 'if (px && !(is_num(px) && px->valuedouble > 0)) return bad', 'if (0) return bad'],
+  ['a control that is not an object is read (GESTURE_BAD_INPUT)', 'if (!cJSON_IsObject(control) || !cJSON_IsArray(events) || !e) answer_error', 'if (!control || !events || !e) answer_error'],
   ['a log travel is linear', 'double a = m->log ? log(m->min) : m->min, b = m->log ? log(m->max) : m->max;', 'double a = m->min, b = m->max;'],
 ];
 

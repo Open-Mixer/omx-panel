@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * Copyright (C) 2026 Pau Aliagas
  *
  * gesture.c — the one implementation of the gesture vocabulary (docs/panel-gestures.md, schema/gestures.json): drag past 10 px,
  * fine at 0.3, step (the declared step, else 1% of the travel; coarse is 5), second (a handle's Q: pinch, encoder 3, wheel,
@@ -75,7 +75,7 @@ typedef struct {
   double pinch_d0, pinch_q0;
   int pinch_g, pinch_a, pinch_b;
   int claim_on;
-  char claim_source[16];
+  char claim_source[24];
   double claim_until;
   int tap_on, tap_key, tap_type;
   double tap_t;
@@ -285,9 +285,12 @@ double ge_norm_of(const ge_member_t *m, double v) {
   double a = m->log ? log(m->min) : m->min, b = m->log ? log(m->max) : m->max;
   return clamp01(((m->log ? log(v) : v) - a) / (b - a));
 }
-/* JavaScript's Math.round: halves go up, and a negative that rounds to zero is -0. */
+/* JavaScript's Math.round, exactly: halves go up (round() takes a negative half away from zero), and a negative that rounds to zero is
+ * -0. Not floor(v + 0.5): that adds a half in floating point and is wrong for 0.49999999999999994 and for the odd integers of
+ * [2^52, 2^53). */
 static double round_half_up(double v) {
-  double r = floor(v + 0.5);
+  double r = round(v);
+  if (v - r == 0.5) r += 1;
   return r == 0 && signbit(v) ? -0.0 : r;
 }
 /* The value at a place on the travel, in the control's unit; an integer travel lands on an integer. */
@@ -723,7 +726,7 @@ static void on_up(ge_engine *e, const omx_panel_event_t *ev) {
 
 /* ------------------------------------------------------------------------------------------------- wheels, detents and keys */
 
-static void on_input(ge_engine *e, const omx_panel_event_t *ev, int target, int member) {
+static void on_input(ge_engine *e, const omx_panel_event_t *ev, int target, int member, double n) {
   const decl *d = e->d;
   int ti = -1;
   if (target == GE_NONE) return refuse(e, OMX_PANEL_REFUSED_NO_TARGET, ev->t_ms, "no bar or handle member selected for the step");
@@ -744,9 +747,9 @@ static void on_input(ge_engine *e, const omx_panel_event_t *ev, int target, int 
   else if (ev->key == OMX_PANEL_KEY_BACKSPACE) input = IN_BACKSPACE;
   else input = ev->shift ? (t->kind == GE_HANDLE ? IN_ARROW_SECOND : IN_ARROW_COARSE) : IN_ARROW;
   if (read_only(e, t)) return refuse(e, OMX_PANEL_REFUSED_READ_ONLY, ev->t_ms, "a %s that is read-only takes no gesture", t->widget);
-  char source[16];
-  snprintf(source, sizeof source, "%s%s", ev->kind == OMX_PANEL_EVENT_WHEEL ? "wheel" : ev->kind == OMX_PANEL_EVENT_DETENT ? "detent" : "key",
-           ev->kind == OMX_PANEL_EVENT_DETENT && ev->encoder ? (ev->encoder == 3 ? "3" : "?") : "");
+  char source[24]; /* the reference's: the kind and the encoder, 'detent3' */
+  if (ev->kind == OMX_PANEL_EVENT_DETENT && ev->encoder) snprintf(source, sizeof source, "detent%d", (int)ev->encoder);
+  else snprintf(source, sizeof source, "%s", ev->kind == OMX_PANEL_EVENT_WHEEL ? "wheel" : ev->kind == OMX_PANEL_EVENT_DETENT ? "detent" : "key");
   if (t->owner_n || (t->claim_on && ev->t_ms < t->claim_until && strcmp(t->claim_source, source)))
     return refuse(e, OMX_PANEL_REFUSED_CONTROL_OWNED, ev->t_ms, "the control belongs to another input");
   int word = word_of(e, t, input);
@@ -761,8 +764,9 @@ static void on_input(ge_engine *e, const omx_panel_event_t *ev, int target, int 
     default: break;
     }
   }
-  int dir = ev->kind == OMX_PANEL_EVENT_KEY ? arrow_dir : (ev->n > 0) - (ev->n < 0);
-  double count = (ev->kind == OMX_PANEL_EVENT_KEY ? 1 : fabs((double)ev->n)) *
+  /* the notches are a double, as the reference has them: a fraction counts, and so does a number past 2^31; NAN is no n at all */
+  int dir = arrow_member >= 0 ? arrow_dir : isnan(n) ? 0 : (n > 0) - (n < 0);
+  double count = (isnan(n) ? 1 : fabs(n)) *
                  (input == IN_WHEEL_COARSE || input == IN_DETENT_COARSE || input == IN_ARROW_COARSE ? d->coarse_steps : 1);
   int key;
   if (word == OMX_PANEL_WORD_SECOND) key = 2;
@@ -800,13 +804,13 @@ void ge_begin(ge_engine *e) {
 
 void ge_tick(ge_engine *e, double t_ms) { tick_to(e, t_ms); }
 
-void ge_event(ge_engine *e, const omx_panel_event_t *ev, int target, int member) {
+void ge_event(ge_engine *e, const omx_panel_event_t *ev, int target, int member, double n) {
   tick_to(e, ev->t_ms);
   switch (ev->kind) {
   case OMX_PANEL_EVENT_DOWN: on_down(e, ev, target); break;
   case OMX_PANEL_EVENT_MOVE: on_move(e, ev); break;
   case OMX_PANEL_EVENT_UP: on_up(e, ev); break;
-  default: on_input(e, ev, target, member); break;
+  default: on_input(e, ev, target, member, n); break;
   }
 }
 
@@ -980,7 +984,7 @@ static const char *idtab_name(void *ctx, uint32_t id) {
   return id < t->n ? t->name[id] : "?";
 }
 
-typedef struct { omx_panel_event_t ev; int member; size_t order; } scripted;
+typedef struct { omx_panel_event_t ev; double n; int member; size_t order; } scripted;
 static int by_time(const void *a, const void *b) {
   const scripted *x = a, *y = b;
   return x->ev.t_ms < y->ev.t_ms ? -1 : x->ev.t_ms > y->ev.t_ms ? 1 : x->order < y->order ? -1 : x->order > y->order;
@@ -1078,6 +1082,108 @@ static int door_control_read(door_control *c, const cJSON *control) {
   return rect_of(control, tg->rect);
 }
 
+/* ---- what neither reference can read is refused, in the same words as tools/gestures.mjs's validateInput ---- */
+
+static int is_num(const cJSON *o) { return cJSON_IsNumber(o) && isfinite(o->valuedouble); }
+static int present(const cJSON *o, const char *k) { return cJSON_GetObjectItemCaseSensitive(o, k) != NULL; }
+
+static int bad(char *why, size_t cap, const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(why, cap, fmt, ap);
+  va_end(ap);
+  return 0;
+}
+
+/* The five numbers of a travel and its flags; `name` is what the member is called in the words. */
+static int valid_member(const cJSON *m, const char *name, char *why, size_t cap) {
+  const cJSON *min = cJSON_GetObjectItemCaseSensitive(m, "min"), *max = cJSON_GetObjectItemCaseSensitive(m, "max");
+  if (!is_num(min) || !is_num(max)) return bad(why, cap, "%s: min and max are numbers", name);
+  if (!(min->valuedouble < max->valuedouble)) return bad(why, cap, "%s: min is not below max", name);
+  const char *sc = jstr(m, "scale");
+  if (sc && !strcmp(sc, "log") && !(min->valuedouble > 0)) return bad(why, cap, "%s: a log travel's min is above zero", name);
+  static const char *const numbers[] = {"def", "value", "step"};
+  for (int k = 0; k < 3; k++)
+    if (present(m, numbers[k]) && !is_num(cJSON_GetObjectItemCaseSensitive(m, numbers[k]))) return bad(why, cap, "%s: %s is a number", name, numbers[k]);
+  if (jhas(m, "step") && jnum(m, "step", 0) < 0) return bad(why, cap, "%s: step is below zero", name);
+  const cJSON *in = cJSON_GetObjectItemCaseSensitive(m, "integer");
+  if (in && !cJSON_IsBool(in)) return bad(why, cap, "%s: integer is true or false", name);
+  return 1;
+}
+
+static int valid_target(const cJSON *o, const char *name, char *why, size_t cap) {
+  const cJSON *t = cJSON_GetObjectItemCaseSensitive(o, "target");
+  if (!cJSON_IsObject(t) || !is_num(cJSON_GetObjectItemCaseSensitive(t, "x")) || !is_num(cJSON_GetObjectItemCaseSensitive(t, "y")) ||
+      !(is_num(cJSON_GetObjectItemCaseSensitive(t, "w")) && jnum(t, "w", 0) > 0) || !(is_num(cJSON_GetObjectItemCaseSensitive(t, "h")) && jnum(t, "h", 0) > 0))
+    return bad(why, cap, "%s: target is {x, y, w, h}, the size above zero", name);
+  return 1;
+}
+
+static int valid_control(const cJSON *c, char *why, size_t cap) {
+  const char *widget = jstr(c, "widget");
+  if (!widget) return bad(why, cap, "widget is a string");
+  for (int k = 0; k < 2; k++) {
+    static const char *const flags[] = {"readOnly", "hold"};
+    const cJSON *f = cJSON_GetObjectItemCaseSensitive(c, flags[k]);
+    if (f && !cJSON_IsBool(f)) return bad(why, cap, "%s is true or false", flags[k]);
+  }
+  if (!strcmp(widget, "handle")) {
+    static const char *const names[] = {"freq", "gain", "q"};
+    for (int k = 0; k < 3; k++) {
+      const cJSON *m = cJSON_GetObjectItemCaseSensitive(c, names[k]);
+      if (!cJSON_IsObject(m)) return bad(why, cap, "a handle has freq, gain and q members");
+      if (!valid_member(m, names[k], why, cap)) return 0;
+    }
+    const cJSON *pl = cJSON_GetObjectItemCaseSensitive(c, "plot");
+    if (!cJSON_IsObject(pl) || !(is_num(cJSON_GetObjectItemCaseSensitive(pl, "w")) && jnum(pl, "w", 0) > 0) || !(is_num(cJSON_GetObjectItemCaseSensitive(pl, "h")) && jnum(pl, "h", 0) > 0))
+      return bad(why, cap, "plot is {w, h}, above zero");
+    return valid_target(c, "handle", why, cap);
+  }
+  if (!strcmp(widget, "bar")) {
+    const cJSON *bars = cJSON_GetObjectItemCaseSensitive(c, "bars"), *b;
+    if (!cJSON_IsArray(bars) || cJSON_GetArraySize(bars) == 0) return bad(why, cap, "a bar group has bars");
+    cJSON_ArrayForEach(b, bars) {
+      if (!cJSON_IsObject(b) || !jstr(b, "symbol")) return bad(why, cap, "every bar has a symbol");
+      if (!valid_member(b, jstr(b, "symbol"), why, cap) || !valid_target(b, jstr(b, "symbol"), why, cap)) return 0;
+    }
+    return 1;
+  }
+  if (!valid_member(c, "value", why, cap)) return 0;
+  const cJSON *px = cJSON_GetObjectItemCaseSensitive(c, "travelPx");
+  if (px && !(is_num(px) && px->valuedouble > 0)) return bad(why, cap, "travelPx is above zero");
+  return valid_target(c, "value", why, cap);
+}
+
+static int valid_events(const cJSON *events, char *why, size_t cap) {
+  int i = 0;
+  const cJSON *j;
+  cJSON_ArrayForEach(j, events) {
+    const char *type = jstr(j, "type");
+    if (!cJSON_IsObject(j)) return bad(why, cap, "event %d is an object", i);
+    if (!is_num(cJSON_GetObjectItemCaseSensitive(j, "t"))) return bad(why, cap, "event %d: t is a number", i);
+    int pointer = type && (!strcmp(type, "down") || !strcmp(type, "move") || !strcmp(type, "up"));
+    if (!pointer && !(type && (!strcmp(type, "wheel") || !strcmp(type, "detent") || !strcmp(type, "key"))))
+      return bad(why, cap, "event %d: type is down, move, up, wheel, detent or key", i);
+    if (pointer) {
+      const char *pt = jstr(j, "ptype");
+      const cJSON *id = cJSON_GetObjectItemCaseSensitive(j, "id");
+      if (!cJSON_IsString(id) && !is_num(id)) return bad(why, cap, "event %d: id is a string or a number", i);
+      if (!(pt && (!strcmp(pt, "touch") || !strcmp(pt, "mouse") || !strcmp(pt, "pen") || !strcmp(pt, "fader"))))
+        return bad(why, cap, "event %d: ptype is touch, mouse, pen or fader", i);
+      if (!is_num(cJSON_GetObjectItemCaseSensitive(j, "x")) || !is_num(cJSON_GetObjectItemCaseSensitive(j, "y"))) return bad(why, cap, "event %d: x and y are numbers", i);
+    } else {
+      if (present(j, "n") && !is_num(cJSON_GetObjectItemCaseSensitive(j, "n"))) return bad(why, cap, "event %d: n is a number", i);
+      if (!strcmp(type, "key") && !jstr(j, "key")) return bad(why, cap, "event %d: key is a string", i);
+      if (present(j, "encoder")) {
+        double en = jnum(j, "encoder", NAN);
+        if (!is_num(cJSON_GetObjectItemCaseSensitive(j, "encoder")) || en != floor(en) || fabs(en) > 2147483647.0) return bad(why, cap, "event %d: encoder is an integer", i);
+      }
+    }
+    i++;
+  }
+  return 1;
+}
+
 /* The events' JSON onto the engine's, in time order (a stable sort by t). Bars a wheel or key names are matched by symbol. */
 static scripted *door_events_read(const cJSON *events, const door_control *c, idtab *ids, size_t *nev) {
   size_t n = (size_t)cJSON_GetArraySize(events);
@@ -1094,7 +1200,7 @@ static scripted *door_events_read(const cJSON *events, const door_control *c, id
     s->ev.type = !pt || !strcmp(pt, "touch") ? OMX_PANEL_POINTER_TOUCH : !strcmp(pt, "mouse") ? OMX_PANEL_POINTER_MOUSE : !strcmp(pt, "pen") ? OMX_PANEL_POINTER_PEN : OMX_PANEL_POINTER_FADER;
     s->ev.pointer = intern(ids, cJSON_GetObjectItemCaseSensitive(j, "id"));
     s->ev.fine = jtrue(j, "fine"), s->ev.coarse = jtrue(j, "coarse"), s->ev.shift = jtrue(j, "shift");
-    s->ev.n = (int32_t)jnum(j, "n", 0), s->ev.encoder = (int32_t)jnum(j, "encoder", 0), s->ev.control = -1;
+    s->n = jhas(j, "n") ? jnum(j, "n", 0) : NAN, s->ev.encoder = (int32_t)jnum(j, "encoder", 0), s->ev.control = -1; /* an encoder is an integer: door_validate */
     s->ev.key = !key ? (omx_panel_key_t)-1 : !strcmp(key, "Backspace") ? OMX_PANEL_KEY_BACKSPACE : !strcmp(key, "ArrowUp") ? OMX_PANEL_KEY_UP : !strcmp(key, "ArrowDown") ? OMX_PANEL_KEY_DOWN
                 : !strcmp(key, "ArrowLeft") ? OMX_PANEL_KEY_LEFT : !strcmp(key, "ArrowRight") ? OMX_PANEL_KEY_RIGHT : (omx_panel_key_t)-1;
     const char *bar = jstr(j, "bar");
@@ -1192,7 +1298,9 @@ size_t omx_gesture_run(omx_gesture_t *ctx, const char *control_json, const char 
   idtab ids = {0};
   scripted *sc = NULL;
   size_t nev = 0;
+  char vwhy[200];
   if (!cJSON_IsObject(control) || !cJSON_IsArray(events) || !e) answer_error(&out, "GESTURE_BAD_INPUT", "the control is a JSON object and the events a JSON array");
+  else if (!valid_control(control, vwhy, sizeof vwhy) || !valid_events(events, vwhy, sizeof vwhy)) answer_error(&out, "GESTURE_BAD_INPUT", vwhy);
   else if (!door_control_read(&c, control) || ge_add(e, &c.tg) != 0) answer_error(&out, "GESTURE_BAD_INPUT", "the control has no target, or no members, the engine can hold");
   else {
     cJSON *s = ctx->settings_json ? cJSON_Parse(ctx->settings_json) : NULL, *it;
@@ -1211,7 +1319,7 @@ size_t omx_gesture_run(omx_gesture_t *ctx, const char *control_json, const char 
       if (sel_member >= 0) sel_kind = 1;
       for (size_t i = 0; i < nev; i++) {
         ge_begin(e);
-        ge_event(e, &sc[i].ev, 0, sc[i].member);
+        ge_event(e, &sc[i].ev, 0, sc[i].member, sc[i].n);
         int st, sm;
         ge_selected(e, &st, &sm);
         if (st >= 0) sel_kind = c.tg.kind == GE_BAR ? 1 : c.tg.kind == GE_HANDLE ? 2 : 3, sel_member = sm;
