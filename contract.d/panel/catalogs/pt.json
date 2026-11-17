@@ -1,0 +1,241 @@
+{
+  "kind": "catalog",
+  "lang": "pt",
+  "owner": "omx-panel",
+  "messages": {
+    "PANEL_DISPLAY_KINDS.gain_reduction_bar": {
+      "text": "Uma barra que mostra a redução de ganho.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "03ad40765c387734861a7a8fb00a021f7cf65907d692710647cd9726663f853f"
+    },
+    "PANEL_DISPLAY_KINDS.transfer_curve": {
+      "text": "A curva de transferência da dinâmica: o nível de saída em função do de entrada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "6025ca94dd504e70ce62f6c57cb83c633fa8604705f440486f354524fb3b819a"
+    },
+    "PANEL_DISPLAY_KINDS.eq_response": {
+      "text": "A resposta em frequência do equalizador.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "0877c82ba2901b0b7a9f5ad0430069cd3a07270ba376f08938b5295580634940"
+    },
+    "PANEL_DISPLAY_KINDS.meter": {
+      "text": "Um medidor de nível.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2ca8f607dd30ba6ce17aea6ba8ef8b32f270b4ee043ada7d4b891fb23e2e8b5"
+    },
+    "PANEL_DISPLAY_KINDS.time_response": {
+      "text": "A resposta no tempo: as repetições de um atraso ou a cauda de uma reverberação.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ba75ee20c1bd3ded3b9f24b00af1eea2cebd05afcce7a8050fcb705eff254d35"
+    },
+    "PANEL_DISPLAY_SOURCES.curve": {
+      "text": "Uma curva que o plugin declara.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "850e649623c182a6b46558f20c630e2bcad638ace266205cfc665723ae909bd5"
+    },
+    "PANEL_DISPLAY_SOURCES.family": {
+      "text": "Os dados que a família de painéis implica.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9140db72be08d430d1fb8534b75cfeb039bf9e00057ec287241839d56b5b264b"
+    },
+    "PANEL_DISPLAY_SOURCES.gain_adjustment": {
+      "text": "O ganho que o processador aplica.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "dfb3bafbca9720e7d55452673fb05325a01b2eb8f7394b7053f2d36cddf9abad"
+    },
+    "PANEL_DISPLAY_SOURCES.meters": {
+      "text": "As leituras dos medidores do plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "617533371cf411b2cf39e880a0f97fe42bf541fd22cb5a4b856a5a792d8f1e22"
+    },
+    "PANEL_FAMILIES.deesser": {
+      "text": "A família de painel de um de-esser.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "2e80851594f548fe38bf9b71c6a179e0fe226ae660b7ec422d111f08f577eaee"
+    },
+    "PANEL_FAMILIES.delay": {
+      "text": "Uma família de painéis para delay.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "39632e3c2f4ccd94068f32d088de776ac7caec3b90b9ad88876743e955182d11"
+    },
+    "PANEL_FAMILIES.drive": {
+      "text": "Uma família de painéis para saturadores ou distorções.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5984a37474e21563302bf0bf66b47511cf99b5967cf7842f6801639a0243a47f"
+    },
+    "PANEL_FAMILIES.dynamics": {
+      "text": "A família de painel de um compressor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "fa2c2b321a53cef9faff3d5cc52438413529b6d8dcc3f48cccd286d51f3a01ce"
+    },
+    "PANEL_FAMILIES.eq": {
+      "text": "A família de painel de um equalizador, paramétrico ou gráfico.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "1be3fd049d5af58fa4d3f884df995604775d9ca1fc991382d6afd2a33c8852aa"
+    },
+    "PANEL_FAMILIES.filter": {
+      "text": "A família de painel de um filtro.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5765a92579509e3b59550271c259e7e9c97c3c4c0728a1869f71e2bbf3769767"
+    },
+    "PANEL_FAMILIES.gate": {
+      "text": "A família de painel de um gate ou de um expansor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "335c1e42f489bcccc2bc5ab2f2ee13bf2d8c5f33bb30772a59dc3b0b0b9669a5"
+    },
+    "PANEL_FAMILIES.limiter": {
+      "text": "A família de painel de um limiter.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c7d6dec58579dc0d58e0fa0718612d33b66440c2e756da2089b1d4c9399e4896"
+    },
+    "PANEL_FAMILIES.modulation": {
+      "text": "Uma família de painéis para chorus, flanger, phaser ou tremolo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "16011b067f1656202cc6c9bb5ed5c5468161eab515c589454e915a9e46202e79"
+    },
+    "PANEL_FAMILIES.none": {
+      "text": "Um plugin sem família: seu painel é disposto a partir de seus grupos e seus papéis.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c0fdc99c45116d4cff42136cf0158a8daaee2016eab2f865fc99f8ec28a5219a"
+    },
+    "PANEL_FAMILIES.pitch": {
+      "text": "Uma família de painéis para pitch shifter.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "7e5d400f3ec6105e741da32756a023f90b260dba103556d4ea8cb383e1a3ebac"
+    },
+    "PANEL_FAMILIES.reverb": {
+      "text": "Uma família de painéis para reverb.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "05ef5c056ad778a381dc2f2122deb6b774359a8658883a4d9cef2f16e81fad8b"
+    },
+    "PANEL_FAMILIES.utility": {
+      "text": "Uma família de painéis para utilitários: um trim, um controlo de largura, um equilibrador ou um clipper.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "403438fa1cccb39d52e91587502cf94860f203012166395e4317cdb64629f803"
+    },
+    "PANEL_PLACEMENTS.bus": {
+      "text": "Uma instância num bus.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8ca00e6dcf4cf5613a411bb25981b76beeba669fba1eeed1d2b32dc6bdffa4a0"
+    },
+    "PANEL_PLACEMENTS.insert": {
+      "text": "Uma instância na cadeia de insert.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2f1de26ee7dc81a7fd07063d3e99a009021901acc17fe13e7a47fc0f48efe6a"
+    },
+    "PANEL_PLACEMENTS.master": {
+      "text": "Uma instância no master.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "de46ff87d59217184fc58d8c8747b66ac9464fb58f8d6e628b7eb7fd65bc9d11"
+    },
+    "PANEL_PLACEMENTS.return": {
+      "text": "Uma instância numa pista de retorno.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "307e4ce780d050bd2508c8aa43271d077aa66074cc49d160a0c2a9c0deea9a46"
+    },
+    "PANEL_STANDARD_WIDGETS.curve": {
+      "text": "Uma curva de resposta ou transferência, desenhada como um gráfico.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0a7920fd9b263d3ebb3e32117e05a7f58280c4cdc0734d3fae6481ebe0087668"
+    },
+    "PANEL_STANDARD_WIDGETS.display": {
+      "text": "Um valor mostrado como texto.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "6e013d5873685d59d99827aaaf6a77533d25983f85b9215685b2e5f55009bbb1"
+    },
+    "PANEL_STANDARD_WIDGETS.fader": {
+      "text": "Um controle longo, desenhado como um fader.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "efbf109439a8c3888f791465c872ef57bcbae7cc0899165676ab95ef228ffeff"
+    },
+    "PANEL_STANDARD_WIDGETS.knob": {
+      "text": "Um controle rotativo, desenhado como um botão.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e6c672d8c14ebe015ee1a3e8cb7b2aad90b4876151b8957390ec05bc0bb6cc30"
+    },
+    "PANEL_STANDARD_WIDGETS.meter": {
+      "text": "Uma leitura, desenhada como um medidor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "9a9066901c13f888069e833a57740d7b910de67f72d77fefd10c1d02b7279e0f"
+    },
+    "PANEL_STANDARD_WIDGETS.selector": {
+      "text": "Um controle de valores inteiros ou rotulados, desenhado como um seletor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ebc164759fd083dc7d7ee184182e9d60e40c491722195f36d21cb59170c66964"
+    },
+    "PANEL_STANDARD_WIDGETS.switch": {
+      "text": "Um interruptor, desenhado como um switch.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "98b2658b477130cc95ff55c83b96ce1ece461a4cf0c5b2aac7f63c1ef3ba5566"
+    },
+    "PANEL_STANDARD_WIDGETS.xy": {
+      "text": "Dois controles desenhados juntos como um ponto em um plano.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ea76439d1a2cdf7fdf71fc2f5e5c0aaeb95c12e111b4fd03311f05b0f72ef53d"
+    },
+    "PANEL_WIDGETS.auto": {
+      "text": "Deixado de fora de uma declaração de painel: o layout escolhe o widget do controle.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a22458b4a94ae0983acc62a8fc805ccac81b52521ef3801d93587c89733b2676"
+    },
+    "PANEL_WIDGETS.fader": {
+      "text": "Um controle linear.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "f850832e569562ebd52de79dd1b082e1dee30ab7893f7173ae1ae6ac614092da"
+    },
+    "PANEL_WIDGETS.knob": {
+      "text": "Um controle rotativo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "dafbc707b0588ef18141ce808852c376a358804a6d9d33252556fc4fefbc9277"
+    },
+    "PANEL_WIDGETS.selector": {
+      "text": "Um controle que escolhe um de alguns valores.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "bc89412b58b3c796dd602bacb38091876f4c8342856f9ec50672a8deb67d4791"
+    },
+    "PANEL_WIDGETS.switch": {
+      "text": "Um controle de dois estados.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "3a108468ff6ad2eef53811db2720e3738b3427f03ad7b8a0515b64de399a8383"
+    }
+  }
+}

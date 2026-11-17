@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display sources and placements of a panel",

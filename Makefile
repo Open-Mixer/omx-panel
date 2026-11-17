@@ -88,7 +88,9 @@ install-renderer:
 
 install: build
 	install -d $(DESTDIR)$(CONTRACTDIR)/panel $(DESTDIR)$(INCLUDEDIR)/omxdomain
+	install -d $(DESTDIR)$(CONTRACTDIR)/panel/catalogs
 	install -m 0644 contract.d/panel/panel.json $(DESTDIR)$(CONTRACTDIR)/panel/
+	install -m 0644 contract.d/panel/catalogs/*.json $(DESTDIR)$(CONTRACTDIR)/panel/catalogs/
 	install -m 0644 include/omxdomain/panel_vocabulary.h $(DESTDIR)$(INCLUDEDIR)/omxdomain/
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/

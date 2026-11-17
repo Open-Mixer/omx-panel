@@ -24,7 +24,7 @@ domain it uses and a change in one domain touches no other domain's consumers.
 
 ## The panel domain
 
-Its words and codes are those omx-contract 3.19.0 held in `data/panel.json` (`PANEL_FAMILIES`, `PANEL_WIDGETS`,
+Its words and codes are those omx-contract main held in `data/panel.json` at b2e9bba (the last commit before they left; no release carried them) (`PANEL_FAMILIES`, `PANEL_WIDGETS`,
 `PANEL_STANDARD_WIDGETS`, `PANEL_DISPLAY_KINDS`, `PANEL_DISPLAY_SOURCES`, `PANEL_PLACEMENTS`); a word is a `oneOf` entry
 `{ const, title, description, x-code, x-text }`, its code its place in the order. The C names are unchanged,
 `OMX_PANEL_FAMILIES_GATE` and `OMX_PANEL_PLACEMENTS(X)`, so a consumer changes its include and nothing else:
@@ -36,5 +36,7 @@ Its words and codes are those omx-contract 3.19.0 held in `data/panel.json` (`PA
 `include/omxdomain/panel_vocabulary.h` is rendered by omx-contract's renderer, never written by hand and never by a
 generator of omx-panel's, at omx-panel's build: `make contract-check` (`OMX_CONTRACT_CLI` names the omx-contract
 command) runs `render --target c --package panel --contract-dir contract.d --out include/omxdomain --check`, and
-`make contract` rewrites it. `make install` puts the document at `$(CONTRACTDIR)/panel/panel.json` and the header at
+`make contract` rewrites it. CI checks out omx-contract at the commit that reads domains, builds it and runs this check on every run (a missing renderer is red there, never a skip), and plants `time_response` 4u -> 5u in the header to see the check go red.
+
+The translations of the words are `contract.d/panel/catalogs/<lang>.json` (six languages, one entry per word, moved from omx-contract's catalogs with nothing dropped). The family word is validated by `schema/skin-package.schema.json` `$defs.family` (a plain string in omx-contract's override schema), held equal to the domain's `PANEL_FAMILIES` by `test/panel-domain.test.mjs`. `make install` puts the document at `$(CONTRACTDIR)/panel/panel.json` and the header at
 `$(INCLUDEDIR)/omxdomain/`.

@@ -55,6 +55,16 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
+      # the panel domain's header is the render of its document by omx-contract's own renderer (docs/contract-domains.md): the
+      # commit of omx-contract that reads a domain, until its next release carries it (omx-contract#79)
+      - name: omx-contract's renderer, at the commit that reads domains
+        uses: actions/checkout@v4
+        with:
+          repository: Open-Mixer/omx-contract
+          ref: 3105c344e7a04d2c09bb7088f4fe0cd9fa73216f
+          path: omx-contract-renderer
+      - name: Build the renderer
+        run: cd omx-contract-renderer && npm ci --no-audit --no-fund && npm run build
       - id: handback-install
         name: Install the build and the validator's dependency
         run: npm ci
@@ -69,7 +79,18 @@ jobs:
           OMX_PANEL_LILV: required
           # the curve cases (the static curve, the eq marks) run here, or the job fails: no skip for a missing twin
           OMX_PANEL_DSP: required
+          # the panel domain's header is re-rendered and compared here, or the job fails: no skip for a missing renderer
+          OMX_CONTRACT_CLI: ${{ github.workspace }}/omx-contract-renderer/bin/omx-contract.mjs
         run: make test
+      - name: Sabotage, a planted code in the panel header (time_response 4u to 5u) is red
+        env:
+          OMX_CONTRACT_CLI: ${{ github.workspace }}/omx-contract-renderer/bin/omx-contract.mjs
+        run: |
+          set -eu
+          sed -i 's/X(4u, "time_response"/X(5u, "time_response"/' include/omxdomain/panel_vocabulary.h
+          git diff --quiet include/omxdomain/panel_vocabulary.h && { echo "the plant did not land"; exit 1; }
+          if node --test test/panel-domain.test.mjs; then echo "the plant stayed green: the header test does not guard the header"; exit 1; fi
+          git checkout include/omxdomain/panel_vocabulary.h
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
         uses: Open-Mixer/.github/.github/actions/spdx-check@openmixer-v1

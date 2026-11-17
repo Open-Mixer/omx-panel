@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { DISPLAY_KINDS, DISPLAY_SOURCES, PLACEMENTS, STANDARD_WIDGETS } from '../tools/panel-description.mjs';
+import { DISPLAY_KINDS, FAMILIES, DISPLAY_SOURCES, PLACEMENTS, STANDARD_WIDGETS } from '../tools/panel-description.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const doc = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8'));
@@ -36,13 +36,31 @@ test('the words the tools read are the domain\'s: display kinds, sources, placem
   assert.deepEqual(words('PANEL_STANDARD_WIDGETS'), STANDARD_WIDGETS);
 });
 
-test('the same words and codes as omx-contract 3.19.0 held them (the order of each item is its codes)', () => {
+test('the same words and codes as omx-contract main @b2e9bba held them (the order of each item is its codes)', () => {
   assert.deepEqual(words('PANEL_DISPLAY_KINDS').indexOf('time_response'), 4, 'time_response is code 4');
   assert.deepEqual(words('PANEL_FAMILIES'), ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility']);
   assert.deepEqual(words('PANEL_WIDGETS'), ['auto', 'knob', 'fader', 'switch', 'selector']);
 });
 
-test('the committed header is the render of the document', { skip: process.env.OMX_CONTRACT_CLI ? false : 'OMX_CONTRACT_CLI (omx-contract.mjs) is not set' }, () => {
+test('the families a descriptor, a skin and the layout accept are the domain\'s: the schema validates the family word', () => {
+  assert.deepEqual(words('PANEL_FAMILIES'), FAMILIES);
+  assert.deepEqual(JSON.parse(readFileSync(join(ROOT, 'schema/skin-package.schema.json'), 'utf8')).$defs.family.enum, words('PANEL_FAMILIES'));
+});
+
+test('every word has its sentence in every language, nothing dropped: 6 catalogs, one entry per word', () => {
+  const keys = Object.entries(doc.components.schemas).flatMap(([item, s]) => s.oneOf.map((e) => `${item}.${e.const}`)).sort();
+  for (const lang of ['ca', 'de', 'es', 'fr', 'it', 'pt']) {
+    const c = JSON.parse(readFileSync(join(ROOT, `contract.d/panel/catalogs/${lang}.json`), 'utf8'));
+    assert.equal(c.kind, 'catalog');
+    assert.equal(c.lang, lang);
+    assert.deepEqual(Object.keys(c.messages).sort(), keys, lang);
+  }
+});
+
+// In CI the render must run: a missing omx-contract renderer is red there, never a skip.
+const CLI = process.env.OMX_CONTRACT_CLI;
+test('the committed header is the render of the document', { skip: CLI || process.env.CI ? false : 'OMX_CONTRACT_CLI (omx-contract.mjs) is not set' }, () => {
+  assert.ok(CLI, 'CI sets OMX_CONTRACT_CLI to the omx-contract renderer');
   const r = spawnSync('node', [process.env.OMX_CONTRACT_CLI, 'render', '--target', 'c', '--package', 'panel', '--contract-dir', join(ROOT, 'contract.d'), '--out', join(ROOT, 'include/omxdomain'), '--check'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
