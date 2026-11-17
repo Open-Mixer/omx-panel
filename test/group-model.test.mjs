@@ -10,7 +10,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseTurtle } from '../dist/tools/turtle-read.mjs';
-import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, matrixOf, REASONS } from '../dist/tools/group-model.mjs';
+import { controlsOfDescriptor, controlsOfLv2, inferGroupModel, instanceGroups, matrixOf, REASONS } from '../dist/tools/group-model.mjs';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const EXPECTED = join(FIXTURES, 'group-model', 'expected');
@@ -187,6 +187,20 @@ test('S8: only a real EQ band claims the eq family; a compressor band with a Mod
     assert.ok(g.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${g.rows.map((r) => r.key)}`);
   }
   assert.deepEqual(comp.rows.map((r) => r.key), ['b#_freq', 'b#_threshold', 'b#_ratio', 'b#_mode']);
+});
+
+test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
+  const on = { kind: 'toggle' };
+  const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
+  const indexed = inferGroupModel(bands(3, stems));
+  assert.deepEqual(instanceGroups(indexed).map((g) => g.symbol), ['band_1', 'band_2', 'band_3']);
+  const declared = bands(3, stems).map((x) => ({ ...x, path: ['Bands', x.name.split(' ').slice(0, 2).join(' ')] }));
+  assert.equal(inferGroupModel(declared).groups[0].source, 'declared');
+  assert.deepEqual(instanceGroups(inferGroupModel(declared)), [], 'the plugin declared its instances');
+  const inside = bands(3, stems).map((x) => ({ ...x, path: ['Mixer'] }));
+  const model = inferGroupModel(inside);
+  assert.equal(model.groups[0].source, 'indexed');
+  assert.deepEqual(instanceGroups(model), [], 'a repeat inside a declared group stays that group\'s');
 });
 
 test('S9: every control opening with an edge word is taken from any list group, the remainder stays; HPF first, LPF last', () => {
