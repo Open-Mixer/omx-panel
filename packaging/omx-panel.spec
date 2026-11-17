@@ -111,6 +111,9 @@ make test
 %dir %{_sysconfdir}/omx/
 %config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/
+# the panel domain (docs/contract-domains.md): its document in the contract directory and its rendered header
+%{_datadir}/omx-contract/contract.d/panel/
+%{_includedir}/omxdomain/
 # the catalogs are the language packs' (one per listed language, each /usr/share/omx-panel/catalogs/<lang>.json)
 %exclude %{_datadir}/omx-panel/catalogs/*.json
 %dir %{_datadir}/omx/
