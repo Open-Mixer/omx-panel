@@ -79,6 +79,10 @@
       "types": "./dist/tools/group-infer.d.mts",
       "default": "./dist/tools/group-infer.mjs"
     },
+    "./group-model": {
+      "types": "./dist/tools/group-model.d.mts",
+      "default": "./dist/tools/group-model.mjs"
+    },
     "./lv2-complement": {
       "types": "./dist/tools/lv2-complement.d.mts",
       "default": "./dist/tools/lv2-complement.mjs"

@@ -7,6 +7,8 @@ touchscreen cuts each group into screens of four) shows them as screens of four 
 `tools/group-infer.mjs` (`@openmixer/omx-panel/group-infer`) infers the groups such a plugin lacks from what it
 already states, or says it cannot with confidence. It is a pure
 function, no file written. The bundle that carries the result to lilv is [lv2-complement.md](lv2-complement.md)'s.
+Which of a plugin's groups are one group repeated (bands, voices) and how a surface draws them is the group model's,
+[group-model.md](group-model.md), which reads this module's ports and words.
 Why most LV2 plugins on a Zynthian need it is the technical note
 [Why most LV2 plugins on a Zynthian need inferred port groups](https://openmixer.org/notes/why-lv2-plugins-on-zynthian-need-inferred-port-groups).
 
