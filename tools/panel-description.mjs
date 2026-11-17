@@ -28,7 +28,7 @@ import { meaningOfRole, servedToken } from './vocabulary.mjs';
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
 /** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch'];
+export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility'];
 
 /** The widgets a face serves, by enum value. */
 export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];

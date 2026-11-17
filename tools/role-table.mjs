@@ -31,6 +31,7 @@ export const ROLES = {
   delay: { time: T, feedback: PLAIN, tone: PLAIN, sync: CHOICE, division: CHOICE, pingpong: CHOICE, ...WET },
   reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
   pitch: { shift: ['semitone12TET', 'cent'], fine: ['cent'], ...WET },
+  utility: {}, // a trim, a width control, a balancer or a clipper: laid out from its groups, as the family none is
 };
 
 /**
@@ -57,6 +58,7 @@ export const REQUIRED_ROLES = {
   delay: [['time'], ['feedback']],
   reverb: [['size', 'decay'], ['mix']],
   pitch: [['shift']],
+  utility: [],
 };
 
 /** The dynamics family's roles, the words of a dynamics control (`threshold`, `ratio`, `attack`, `release`): from REQUIRED_ROLES, never typed twice. */
