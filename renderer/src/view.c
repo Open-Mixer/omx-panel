@@ -647,6 +647,10 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   free(cps);
 }
 
+/* A mark is held inside the plot: a band whose frequency or depth lies off the axes sits on the plot's edge, so what a display draws never
+ * leaves its frame by more than the letter over the disc (BLEED_DISPLAY). */
+static double hold(double v, double lo, double hi) { return v < lo ? lo : v > hi ? hi : v; }
+
 /* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (its scene
  * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
  * from the top and a label on each line inside the window; under it the trace's area to the foot in the meter gradient (red at
@@ -691,7 +695,7 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   for (size_t k = 1; k < c->n; k++)
     d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->accent);
   for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
-    double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
+    double qx = hold(AX(c->mark_freq[k]), ix, ix + iw), qy = AY(mid + c->mark_depth[k]);
     char one[2] = {c->mark_letter[k], 0};
     d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
     text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
@@ -776,7 +780,7 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
     /* the marks, on the log axis at the band's own depth: a disc and its planter's letter above */
     for (size_t k = 0; k < c->nmarks; k++) {
       double u = (log10(c->mark_freq[k]) - x0) / (x1 - x0);
-      double qx = ix + u * iw, qy = iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih;
+      double qx = hold(ix + u * iw, ix, ix + iw), qy = hold(iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih, iy, iy + ih);
       char one[2] = {c->mark_letter[k], 0};
       d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
       text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
@@ -850,7 +854,7 @@ static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, co
  * a mark's letter above its disc), in logical px. A repaint clip reaches this far into the elements it is tested against, and the
  * rectangle a changed element reports is grown by the same: one number for both, so a pixel the element drew is always repainted. */
 #define BLEED 4
-#define BLEED_DISPLAY 8
+#define BLEED_DISPLAY 10
 
 /* Whether the box (device px) can reach into the clip (x0, y0, x1, y1, device px) from `bleed` px away; NULL clip is the whole buffer. */
 static int reaches(const int *clip, double x, double y, double w, double h, double bleed) {
