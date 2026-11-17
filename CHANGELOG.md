@@ -9,6 +9,28 @@
   the console analyser's axes, a single trace (#42); the renderer tests remove their scratch directories at exit (#46);
   the soname check reads readelf in the C locale (#47). A sync drop-in's post step exits 0 when its opt-in unit is
   disabled (34acf1f, plugin-qualify#56). The organisation's name (#29); an ordinary CI run builds against the channel (#30).
+  Since 0.13.8, from main: a contract directory's walks follow a linked package directory, so a composed directory
+  (omx-plugins' private ones) reads the param-contract units and role meanings like an installed one (#95); the group
+  model, groups to repeated instances to parameters, one library for every surface (#63, #92); the renderer draws a
+  section's matrix as the description gives it (#64); the gesture parity scripts and descriptors ship under
+  /usr/share/omx-panel/test (#88); omx-panel's back-compat machinery removed (#81); the test audit (#85); the shared
+  checks at openmixer-v1 (#71).
+- 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
+  This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
+  omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the
+  declared form (both below); and fixes: the commit-msg hook takes the current stub from the checker's release line,
+  artifact retention is explicit (30 days on a tag, 2 otherwise), the Makefile names the shared checks' checkout through
+  OPENMIXER_DOTGITHUB, the renderer tests remove their scratch directories and read readelf in the C locale, debian/control
+  floors libomx-contract-dev as the spec floors omx-contract-devel, and the omx-eq8 fixture matches the installed file
+  apart from its version lines.
+- The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
+  section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
+  end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve
+  (`omx_panel_view_set_curve`) and the stems as `omx_panel_view_set_stems` (one per tap: time, level, shade, leg letter), each
+  array when present. The closed forms of the delay and reverb families name it, the served panel reads it back to the family's
+  graph word, the skin schema lists it. `describe` refuses a graph word that names no display kind by name: it used to drop the
+  display in silence, which is how the reverb's picture went missing. omx-plugins' omx-reverb joins the fixtures.
+
 - 0.13.8: describe given a plugin's own panel takes each parameter's role from the panel's declaration in place of a
   scan's `unknown` meaning (#43: on the Pi, omx-comp 0.19.3's panel over plugin-hostd's scan descriptor answered family
   `none`, `panel.describe.family-not-backed`, and the console drew knobs alone). A declared panel's roles back its

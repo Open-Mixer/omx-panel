@@ -194,7 +194,7 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 | `selector` | a choice |
 | `meter` | a read-only travel in a level unit (`dB`, `dBFS`, `dBTP`, `dBu`, `LUFS`, `LU`) |
 | `display` | any other read-only control |
-| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`) |
+| `curve` | a section's graph a host computes (`eq-curve`, `dynamics-curve`, `transfer-curve`; `delay-taps` and `decay-envelope`, the two words of the `time_response` display) |
 | `xy` | no descriptor word names a pair of controls yet; nothing takes it |
 
 ### Meters
@@ -252,7 +252,8 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
    also sit on its remote page; a slot of no control is blank. The served description carries none.
 3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
    every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
-   its own, never mixed with its neighbour. A control with no group is its own. A derived page holds a control once, so the Easy
+   its own, never mixed with its neighbour. **A repeated group is cut by instance**: where a section carries a group-model
+   `matrix` (docs/group-model.md, P1), each instance is one group, its on/off first, and one page where it fits. A control with no group is its own. A derived page holds a control once, so the Easy
    controls are not repeated. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
 
 Every page carries `perPage` slots, a short page's last ones `null`. Below two encoders a bar group (the Bars section)

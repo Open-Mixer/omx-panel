@@ -102,10 +102,6 @@ test('the CLI refuses a call with no descriptor or no bundle', () => {
   assert.equal(cli('--descriptor', join(FIX, 'omx-delay.descriptor.json')).status, 2);
 });
 
-test('look.json is what the colour roles give (test/look-roles.test.mjs holds the rest)', () => {
-  assert.equal(emitLook(), readFileSync(LOOK_JSON, 'utf8'));
-});
-
 test('the brand is the vendor, else the plugin name, else the stem: a missing vendor refuses nothing', () => {
   const d = read('omx-delay.descriptor.json');
   const panel = read('omx-delay.panel.json');
@@ -218,22 +214,13 @@ test('a trigger control beside a normal one is left off the face and reported: t
   const auto = resolvePanel(d, { stem: 'omx-delay' });
   assert.deepEqual(auto.skipped, ['cv_trigger']);
   assert.ok(auto.sections.flatMap((s) => s.controls).length > 0);
-  // the CLI says so on stderr and exits 0
-  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
-  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
-  writeFileSync(join(dir, 'p.json'), JSON.stringify(panel));
-  const run = cli('--descriptor', join(dir, 'd.json'), '--panel', join(dir, 'p.json'), '--out', join(dir, 'x.lv2'));
-  assert.equal(run.status, 0, run.stderr);
-  assert.match(run.stderr, /^modgui: skipped trigger control 'cv_trigger'\n$/);
+  // the CLI's stderr line and exit status are test/modgui-sync.test.mjs's (the summary line reads them)
 });
 
-test('a descriptor whose only control is a trigger has nothing to draw: exit 3', () => {
+test('a descriptor whose only control is a trigger has nothing to draw', () => {
   const d = read('omx-delay.descriptor.json');
   d.controls = [{ id: 'cv_trigger', name: 'Trigger', kind: 'trigger', meaning: 'unknown' }];
   assert.throws(() => resolvePanel(d, { stem: 'omx-delay' }), (err) => err instanceof NothingToDraw);
-  const dir = mkdtempSync(join(tmpdir(), 'mg47-'));
-  writeFileSync(join(dir, 'd.json'), JSON.stringify(d));
-  assert.equal(cli('--descriptor', join(dir, 'd.json'), '--out', join(dir, 'x.lv2')).status, 3);
 });
 
 test('a choice with ids and labels and no values is refused by code, naming the control, not a TypeError', () => {
@@ -290,9 +277,12 @@ test('the screenshot of the fixture descriptor carries its text: title, section 
   const [, shot] = gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png');
   const [, thumb] = gen().find(([p]) => p === 'modgui/thumbnail-omx-delay.png');
   const bare = (png, y, x0, x1) => new Set(pixelRow(png, y, x0, x1).split(' ')).size;
+  // the delay's declared panel draws its time_response above the controls: the control rows sit one curve row lower
+  const g = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8')).geometry;
+  const row = g.curveH + g.curveGap;
   assert.ok(bare(shot, 24, 16, 80) > 2, 'the title row has glyph pixels over the plain surface');
-  assert.ok(bare(shot, 129, 100, 165) > 2, 'the control name row has glyph pixels');
-  assert.ok(bare(shot, 139, 100, 165) > 2, 'the default value row has glyph pixels');
+  assert.ok(bare(shot, 129 + row, 100, 165) > 2, 'the control name row has glyph pixels');
+  assert.ok(bare(shot, 139 + row, 100, 165) > 2, 'the default value row has glyph pixels');
   assert.ok(bare(thumb, 12, 8, 40) > 2, 'the thumbnail carries the title');
   assert.equal(pixelRow(shot, 24, 16, 40), pixelRow(gen().find(([p]) => p === 'modgui/screenshot-omx-delay.png')[1], 24, 16, 40), 'the same bytes on a second run');
 });

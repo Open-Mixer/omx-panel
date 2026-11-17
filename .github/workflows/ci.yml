@@ -58,6 +58,8 @@ jobs:
       - id: handback-install
         name: Install the build and the validator's dependency
         run: npm ci
+      # omx-dsp's TypeScript twin the curve cases read
+      - uses: ./.github/actions/omx-dsp-twin
       - id: handback-test
         name: Tests over the built tree (the layout, the MOD GUI, the look, the skin facts and schema, the importer, the command)
         env:
@@ -65,6 +67,8 @@ jobs:
           OMX_PANEL_REAL_BUNDLES: required
           # the lilv proofs (the complements and the modgui sync read by a real lilv world) run here, or the job fails
           OMX_PANEL_LILV: required
+          # the curve cases (the static curve, the eq marks) run here, or the job fails: no skip for a missing twin
+          OMX_PANEL_DSP: required
         run: make test
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
@@ -72,9 +76,6 @@ jobs:
       - id: handback-copies
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
-      - id: handback-look
-        name: look.json and the renderer's role list are what the colour roles give
-        run: make look
       - name: The renderer's gesture word names and omx_panel_word_t are what gestures.json gives (#23)
         run: node tools/gesture-words.mjs --check
       - id: handback-example
@@ -106,6 +107,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
+      # omx-dsp's TypeScript twin: the fixtures that draw a curve (omx-eq8, eq-marks, dyn-curve) fail without it, never skip (docs/renderer.md)
+      - uses: ./.github/actions/omx-dsp-twin
       - name: The renderer, and its golden images and parity with the MOD GUI face
         run: make renderer-check
 
@@ -138,9 +141,16 @@ jobs:
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
-      - name: The tree, the renderer, playwright-core and omx-dsp's twin
-        run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.4'
+      - name: The tree and the renderer
+        run: npm ci && make && make renderer
+      # one npm install: a second --no-save install would prune what the first put in
+      - uses: ./.github/actions/omx-dsp-twin
+        with:
+          also: playwright-core@1.57.0
+      # the role vocabulary the layout reads, this tree's stand-in, as make renderer-check names it (docs/renderer.md)
       - name: The three surfaces from one stream
+        env:
+          OMX_ROLE_MEANINGS: ${{github.workspace}}/test/fixtures/role-meanings/panel-roles.json
         run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -180,6 +190,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
+      - uses: ./.github/actions/omx-dsp-twin
       - name: The renderer with its window, every test run under Xvfb
         env:
           OMX_PANEL_WINDOW_REQUIRED: '1'
@@ -193,6 +204,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # ruling D25: the DEB builds on the oldest suite of the release set, bookworm only when OMX_RELEASE_MATRIX is full
+    env:
+      DEB_SUITE: ${{ vars.OMX_RELEASE_MATRIX == 'full' && 'bookworm' || 'trixie' }}
     steps:
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
@@ -212,9 +226,9 @@ jobs:
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
-      - name: The DEB (bookworm)
+      - name: The DEB (the release set's oldest suite)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
             curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
@@ -231,7 +245,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q cpio binutils
             tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
             tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
       - uses: actions/upload-artifact@v4
@@ -268,7 +282,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [bookworm, trixie]
+        # ruling D25: the release set's suites, bookworm only when OMX_RELEASE_MATRIX is full
+        suite: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["bookworm", "trixie"]' || '["trixie"]') }}
     container:
       image: debian:${{ matrix.suite }}
     steps:
@@ -292,7 +307,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['fedora:44', 'debian:bookworm']
+        # ruling D25: the release set's cells; bookworm (a full cell) only when OMX_RELEASE_MATRIX is full
+        image: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["fedora:44", "debian:bookworm", "debian:trixie"]' || '["fedora:44", "debian:trixie"]') }}
     container:
       image: ${{ matrix.image }}
     steps:
@@ -341,7 +357,6 @@ jobs:
           name: omx-panel
           owner: omx-panel
           spec: packaging/omx-panel.spec
-          moved: ca:0.13.6
           gate: tools/catalogs-gate.sh
 
   public-sources:

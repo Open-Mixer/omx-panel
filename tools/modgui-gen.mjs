@@ -32,6 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
+import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment } from './raster.mjs';
 import { parseTurtle } from './turtle-read.mjs';
@@ -145,8 +146,9 @@ export class NothingToDraw extends Error {
   code = 'MODGUI_NOTHING_TO_DRAW';
 }
 
-/** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. */
-const CURVES = ['eq_response', 'transfer_curve'];
+/** The display kinds that are a curve on the face: a frame with the curve's basis word in its caption place. A time_response
+ * draws its frame and word; its stems and envelope are the renderer's (omx_panel_view_set_stems) until the twin answers the kind. */
+const CURVES = ['eq_response', 'transfer_curve', 'time_response'];
 
 /**
  * The curve function of omx-dsp, its TypeScript twin (`@openmixer/omx-dsp`, `curvePoints`): never vendored here. A tree that does not
@@ -294,6 +296,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q) } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
+  sections.splice(0, sections.length, ...withRepeats(descriptor, declared, sections));
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
@@ -317,6 +320,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
+    if (sec.matrix) continue; // a repeated group's matrix places every control; no bar row is cut out of it
     const word = panel.sections.find((p) => p.key === sec.key)?.bars;
     const items = sec.controls.map((k) => ({ symbol: k.symbol, label: k.name, control: controls.find((x) => keyOf(x) === k.symbol) }));
     const { runs, refusal } = barsOf(items, word);
@@ -335,20 +339,91 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
 }
 
+/**
+ * A repeated group's controls (docs/group-model.md) drawn as one section: its own parameters first, then the group's SERVED
+ * matrix (group-model.mjs `servedMatrix`, the one `omx-panel describe` serves), read as given: the heads `drawnHeads` keeps
+ * at the count's come-up value (L6), each cell at its row and column, never flowed. The section is where the group's
+ * instances were, titled by the matrix; the edges (an EQ's high-pass and low-pass) are taken from whatever section holds
+ * them, which keeps the rest of its controls. The count is a selector. A group some of whose controls are not drawn (an Easy
+ * section took them), or whose instance section holds anything else beside the group, is left as it is.
+ */
+export function withRepeats(descriptor, declared, sections) {
+  const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, declared ? { panel: declared } : {}));
+  let out = sections;
+  for (const g of groups) {
+    if (g.kind !== 'repeated') continue;
+    const placed = placeMatrix(g, out.map((s, id) => ({ id, symbols: s.controls.map((k) => k.symbol) })));
+    if (!placed) continue;
+    const drawn = new Map(out.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
+    const count = g.count ? drawn.get(g.count.symbol) : undefined;
+    if (count && count.widget !== 'selector') Object.assign(count, { widget: 'selector', options: optionsOf({ min: count.min, max: count.max }) });
+    const homeSection = out[placed.home];
+    // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
+    const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
+    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // count leaves out is not on the face
+    const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
+      const sym = matrix.cells[li][h];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+    }));
+    const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
+    // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
+    const rest = (s) => ({ ...s, controls: s.controls.filter((k) => !placed.members.has(k.symbol)) });
+    const holdsAfter = ({ s, id }) => !placed.folded.includes(id) && (rest(s).controls.length > 0 || s.displays.length > 0);
+    out = mergedSections(placed, out.map((s, id) => ({ s, id })), { idOf: (x) => x.id, holdsAfter })
+      .map(({ section: x, home: isHome }) => (isHome ? merged : placed.donors.includes(x.id) ? rest(x.s) : x.s));
+  }
+  return out;
+}
+
+/**
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
+ */
+function matrixCells(s, top) {
+  const g = GEOMETRY;
+  const mx = s.matrix;
+  const heads = drawnHeads(mx);
+  const by = new Map(s.controls.map((k) => [k.symbol, k]));
+  const at = (col, li) => (mx.orientation === 'columns'
+    ? { x: g.sectionPad + col * g.cellW, y: top + li * g.cellH }
+    : { x: g.sectionPad + li * g.cellW, y: top + col * g.cellH });
+  const controls = [];
+  const captions = [];
+  heads.forEach((h, col) => mx.rows.forEach((r, li) => {
+    const sym = mx.cells[li][h];
+    if (sym) controls.push({ ...by.get(sym), ...at(col, li) });
+    else if (r.head) captions.push({ text: mx.heads[h].label, ...at(col, li) });
+  }));
+  const across = mx.orientation === 'columns' ? heads.length : mx.rows.length;
+  const down = mx.orientation === 'columns' ? mx.rows.length : heads.length;
+  return { controls, captions, across, down };
+}
+
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
 export function layout(panel) {
   const g = GEOMETRY;
-  // a curve row needs a width of its own: three cells
-  const most = Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(s.controls.length, s.displays.length > 0 ? 3 : 0))));
+  // a curve row needs a width of its own: three cells; a matrix is as wide as its columns
+  const across = (s) => (s.matrix ? matrixCells(s, 0).across : 0);
+  const flowedCount = (s) => (s.matrix ? s.controls.length - matrixCells(s, 0).controls.length : s.controls.length);
+  const most = Math.max(Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(flowedCount(s), s.displays.length > 0 ? 3 : 0)))), ...panel.sections.map(across));
   const sectionW = most * g.cellW + 2 * g.sectionPad;
   let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const rows = Math.ceil(s.controls.length / ROW_CONTROLS);
+    const inGrid = new Set(s.matrix ? s.matrix.cells.flat().filter(Boolean) : []);
+    const flowed = s.controls.filter((k) => !inGrid.has(k.symbol));
+    const rows = Math.ceil(flowed.length / ROW_CONTROLS);
     const curves = s.displays.length * (g.curveH + g.curveGap);
-    const h = g.sectionTitleH + curves + rows * g.cellH + g.sectionPad / 2;
+    const top = g.sectionTitleH + curves + rows * g.cellH;
+    const grid = s.matrix ? matrixCells(s, top) : { controls: [], captions: [], down: 0 };
+    const h = top + grid.down * g.cellH + g.sectionPad / 2;
     const sec = {
       ...s, x: g.pad, y, w: sectionW, h,
-      controls: s.controls.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+      controls: [
+        ...flowed.map((c, j) => ({ ...c, x: g.sectionPad + (j % ROW_CONTROLS) * g.cellW, y: g.sectionTitleH + curves + Math.floor(j / ROW_CONTROLS) * g.cellH })),
+        ...grid.controls,
+      ],
+      ...(s.matrix ? { captions: grid.captions } : {}),
     };
     y += h + g.sectionGap;
     return sec;
@@ -476,6 +551,9 @@ export function renderFace(lay, look, scale) {
         drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
       }
     });
+    for (const cap of sec.captions ?? []) {
+      drawText(c, font, fitText(font, cap.text, TEXT.small * s, (g.cellW - 4) * s), (sec.x + cap.x + g.cellW / 2) * s, (sec.y + cap.y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+    }
     for (const k of sec.controls) {
       // a control the come-up values hide is not on the screenshot, as the face hides it
       if (!k.shown) continue;
@@ -630,7 +708,7 @@ export function emitTemplate(panel, lay, source) {
   };
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${(s.captions ?? []).map((cap) => `            <span class="omx-control-title omx-caption" style="position:absolute;margin-top:0;text-align:center;left:${cap.x}px;top:${cap.y + TEXT.nameBase - TEXT.small}px;width:${g.cellW}px">${esc(cap.text)}</span>\n`).join('')}${s.controls.map(control).join('\n')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">Meters</h2>

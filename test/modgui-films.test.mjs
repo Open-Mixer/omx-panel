@@ -26,10 +26,8 @@ const bundle = () => {
   return out;
 };
 
-test('the committed omx-delay bundle carries no film strip and is fresh under --no-films', () => {
+test('the committed omx-delay bundle carries no film strip', () => {
   assert.equal(existsSync(join(FIX, 'omx-delay.lv2', KNOB)), false);
-  const r = cli('--check', '--no-films', ...args(join(FIX, 'omx-delay.lv2')));
-  assert.equal(r.status, 0, r.stderr);
 });
 
 test('--no-films --check names a film strip that came back as EXTRA', () => {

@@ -10,7 +10,7 @@
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "stems": {"<display>": [{"x", "y", "shade", "letter"}]}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
@@ -36,7 +36,7 @@
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
-    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n";
+    "                        [--raw <file>] [--png <file>] [--rects] [--visible-columns <width>] [--window] [--input <script.json>]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -201,6 +201,26 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
       ok = 0;
     }
     free(f), free(dp), free(l);
+  }
+  /* "stems": {"<display index>": [{"x", "y", "shade", "letter"}, ...]}, the taps of a time_response: ms, dB, 0..1, one letter */
+  cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "stems")) {
+    int n = cJSON_IsArray(it) ? cJSON_GetArraySize(it) : -1;
+    double *sx = malloc((size_t)(n > 0 ? n : 1) * sizeof *sx), *sy = malloc((size_t)(n > 0 ? n : 1) * sizeof *sy),
+           *sh = malloc((size_t)(n > 0 ? n : 1) * sizeof *sh);
+    char *l = malloc((size_t)(n > 0 ? n : 1));
+    int good = n >= 0 && sx && sy && sh && l;
+    for (int k = 0; good && k < n; k++) {
+      cJSON *m = cJSON_GetArrayItem(it, k), *xx = cJSON_GetObjectItemCaseSensitive(m, "x"), *yy = cJSON_GetObjectItemCaseSensitive(m, "y"),
+            *ss = cJSON_GetObjectItemCaseSensitive(m, "shade");
+      const char *le = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(m, "letter"));
+      good = cJSON_IsNumber(xx) && cJSON_IsNumber(yy) && cJSON_IsNumber(ss) && le && le[0] && !le[1];
+      if (good) sx[k] = xx->valuedouble, sy[k] = yy->valuedouble, sh[k] = ss->valuedouble, l[k] = le[0];
+    }
+    if (!good || !omx_panel_view_set_stems(v, (uint32_t)strtoul(it->string, NULL, 10), sx, sy, sh, l, (uint32_t)n)) {
+      fprintf(stderr, "omx-panel-render: state's stems '%s' are no stems of a time response of the panel or are refused\n", it->string);
+      ok = 0;
+    }
+    free(sx), free(sy), free(sh), free(l);
   }
   /* "spectrum": {"<display index>": {"hz": [...], "db": [...], "peak": [...], "dbMin", "dbMax", "gridDb"}}, a null level is silence */
   cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "spectrum")) {
@@ -373,7 +393,7 @@ static int run_input(omx_panel_view_t *v, const char *path, uint32_t width, uint
 int main(int argc, char **argv) {
   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL;
   double scale = 1;
-  long width = 0, height = 0;
+  long width = 0, height = 0, vcw = 0;
   int bgra = 0, straight = 0, rects = 0, window = 0;
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i], *val = i + 1 < argc ? argv[i + 1] : NULL;
@@ -386,6 +406,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--raw")) raw = val;
     else if (!strcmp(a, "--png")) png = val;
     else if (!strcmp(a, "--input")) input = val;
+    else if (!strcmp(a, "--visible-columns")) vcw = strtol(val, NULL, 10);
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
@@ -394,7 +415,7 @@ int main(int argc, char **argv) {
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png && !rects && !input) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
+  if (!desc || (!raw && !png && !rects && !input && vcw <= 0) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
       (window && width)) {
     fputs(USAGE, stderr);
     return 2;
@@ -454,6 +475,7 @@ int main(int argc, char **argv) {
     if (omx_panel_view_control_rect(v, b.width, b.height, scale, i, r)) printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
     else puts("hidden");
   }
+  if (ok && vcw > 0) printf("visible-columns %u\n", omx_panel_view_visible_columns(v, (uint32_t)vcw, scale));
   if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
   free(b.pixels);
 #ifdef OMX_PANEL_WINDOW

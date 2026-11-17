@@ -27,7 +27,7 @@
  * A reader whose source is not installed throws, naming what to install; nothing is guessed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
@@ -102,15 +102,20 @@ function addRoleMeanings(into, file) {
   }
 }
 
+/** Whether `path` is a directory, in place or reached through a link: a composed contract directory links the installed
+ * packages beside a tree's own (omx-plugins' round trip and gen --check arms), and a Dirent's isDirectory is false for
+ * a link, so every walk of a contract directory asks this. */
+const isDir = (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;
+
 /** The JSON files of every package of every contract directory: where an installed package's items are. */
 function contractFiles() {
   const files = [];
   for (const dir of contractDirs()) {
     const major = join(dir, '3');
     if (!existsSync(major)) continue;
-    for (const pkg of readdirSync(major, { withFileTypes: true })) {
-      if (!pkg.isDirectory()) continue;
-      const at = join(major, pkg.name);
+    for (const pkg of readdirSync(major)) {
+      const at = join(major, pkg);
+      if (!isDir(at)) continue;
       for (const f of readdirSync(at)) if (f.endsWith('.json')) files.push(join(at, f));
     }
   }
@@ -161,13 +166,16 @@ export const lv2UnitTable = once(() => {
 /** The sheet of the param-contract units is omx-contract's: OMX_PARAM_CONTRACT_UNITS, in its param-contract.json. */
 export const PARAM_UNITS_ITEM = 'OMX_PARAM_CONTRACT_UNITS';
 
-/** The file that declares it: `<contractdir>/3/omx-contract/param-contract.json` (omx-contract-data, from 3.6.0). It is
- * read as that one file, never through the merged contract directory, so an older package that still installs the
- * same item (omx-plugins-contract before 0.17.0) cannot make the read refuse or answer. */
+/** The file that declares it: the first JSON file of the merged contract directory that holds the item (omx-contract's
+ * `3/omx-contract/param-contract.json`, from omx-contract-data 3.6.0), found like every other item. */
 export function paramUnitsFile() {
-  const dir = packageDir('omx-contract');
-  const file = dir && join(dir, 'param-contract.json');
-  return file && existsSync(file) ? file : undefined;
+  return contractFiles().find((file) => {
+    try {
+      return PARAM_UNITS_ITEM in (JSON.parse(readFileSync(file, 'utf8')) ?? {});
+    } catch {
+      return false;
+    }
+  });
 }
 
 /** The param-contract units' values, by name in capitals without underscores (SEMITONE12TET): `Map<name, value>`. */
@@ -224,17 +232,17 @@ export function installedDescriptorFile(ref) {
 export function installedDescriptorFiles() {
   const names = (dir, keep) => {
     try {
-      return readdirSync(dir, { withFileTypes: true }).filter(keep).map((e) => e.name);
+      return readdirSync(dir).filter((name) => keep(name, join(dir, name)));
     } catch {
       return [];
     }
   };
   const seen = new Map();
   for (const d of contractDirs()) {
-    const majors = names(d, (e) => e.isDirectory() && /^[0-9]+$/.test(e.name)).sort((a, b) => Number(b) - Number(a));
+    const majors = names(d, (name, at) => isDir(at) && /^[0-9]+$/.test(name)).sort((a, b) => Number(b) - Number(a));
     for (const major of majors) {
-      for (const pkg of names(join(d, major), (e) => e.isDirectory())) {
-        for (const f of names(join(d, major, pkg, 'plugins'), (e) => !e.isDirectory() && e.name.endsWith('.json'))) {
+      for (const pkg of names(join(d, major), (name, at) => isDir(at))) {
+        for (const f of names(join(d, major, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
           const ref = `${pkg}/${f}`;
           if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
         }

@@ -37,6 +37,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inferGroups, readModguiLayout, readPluginPorts } from './group-infer.mjs';
+import { controlsOfLv2, inferGroupModel, instanceGroups } from './group-model.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
@@ -67,7 +68,7 @@ export class Refusal extends Error {
 /** The writer's identity in a marker: a hash of the modules that decide what is written. A changed rule rewrites. */
 export function writerId() {
   const h = createHash('sha256');
-  for (const f of ['lv2-complement.mjs', 'group-infer.mjs', 'turtle-read.mjs']) h.update(f).update('\0').update(readFileSync(join(TOOLS, f))).update('\0');
+  for (const f of ['lv2-complement.mjs', 'group-infer.mjs', 'group-model.mjs', 'turtle-read.mjs']) h.update(f).update('\0').update(readFileSync(join(TOOLS, f))).update('\0');
   return h.digest('hex');
 }
 
@@ -181,6 +182,31 @@ function versionOf(bundle, uri) {
 }
 
 /**
+ * The verdict with one group per instance of the repeated groups the plugin does not declare (docs/group-model.md, P2): a
+ * verdict that grouped keeps its other groups, less the ports the instances took; one that refused (the flat inference could not place every control)
+ * becomes the instance groups alone; one that needs nothing stays as it is. The generated groups count down from the
+ * number of groups, below any priority the plugin states itself.
+ * @param {any} verdict
+ * @param {{ symbol: string, name: string, ports: string[] }[]} instances
+ */
+function withInstances(verdict, instances) {
+  if (instances.length === 0 || (verdict.outcome !== 'grouped' && verdict.outcome !== 'no-confident-grouping')) return verdict;
+  const taken = new Set(instances.flatMap((g) => g.ports));
+  const base = (verdict.outcome === 'grouped' ? verdict.groups : []).map((g) => ({ ...g, ports: g.ports.filter((p) => !taken.has(p)) })).filter((g) => g.ports.length > 0);
+  const symbols = new Set(base.map((g) => g.symbol));
+  const named = instances.map((g) => {
+    let symbol = g.symbol;
+    for (let k = 2; symbols.has(symbol); k++) symbol = `${g.symbol}_${k}`;
+    symbols.add(symbol);
+    return { ...g, symbol };
+  });
+  const stated = base.some((g) => g.rule === 1);
+  let next = stated ? Math.min(...base.map((g) => g.displayPriority)) - 1 : base.length + named.length;
+  const kept = stated ? base : base.map((g) => ({ ...g, displayPriority: next-- }));
+  return { outcome: 'grouped', groups: [...kept, ...named.map((g) => ({ ...g, displayPriority: next--, rule: 0 }))], placedBy: verdict.placedBy ?? {} };
+}
+
+/**
  * @typedef {{ uri: string, verdict: any, version?: any }} PlannedPlugin
  * @typedef {{ bundle: InstalledBundle, plugins: PlannedPlugin[], write: boolean, refusal?: Refusal }} Plan
  */
@@ -195,7 +221,11 @@ function versionOf(bundle, uri) {
 export function planBundle(bundle, options = {}) {
   const plugins = bundle.plugins.map((uri) => {
     const triples = pluginTriples(bundle, uri);
-    return { uri, verdict: inferGroups(readPluginPorts(triples, uri), readModguiLayout(triples, uri)) };
+    const plugin = readPluginPorts(triples, uri);
+    // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
+    const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
+    const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
+    return { uri, verdict: withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances) };
   });
   const plan = { bundle, plugins, write: false };
   if (!plugins.some((p) => p.verdict.outcome === 'grouped')) return plan;

@@ -9,9 +9,11 @@
  * value, with an arm that breaks its input and reads the result change.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { describe, DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { MEASUREMENTS } from '../dist/tools/panel-description.mjs';
+import { contractSchemaFile } from '../dist/tools/vocabulary.mjs';
 
 const travel = (name, meaning, t = {}, extra = {}) => ({ name, kind: 'travel', ...(meaning ? { meaning } : {}), travel: { min: 0, max: 1, unit: 'unknown', scale: 'linear', default: 0, ...t }, ...extra });
 const dyn = () => ['threshold', 'ratio', 'attack', 'release'].map((n) => travel(n, n, { min: n === 'ratio' ? 1 : -60, max: n === 'ratio' ? 20 : 0, unit: n === 'ratio' ? 'ratio' : n === 'threshold' ? 'dB' : 'ms' }));
@@ -43,8 +45,16 @@ test('held and clip default to false when the descriptor does not say; clip is d
   const m = describe(descriptor(dyn(), [meter('a', 'level', { measurement: 'lufs-m', unit: 'LUFS', min: -70, max: 0, clip: true }), meter('b', 'level', { measurement: 'peak' })])).description.meters;
   assert.deepEqual(m.map((x) => [x.held, x.clip]), [[false, false], [false, false]]);
 });
-test('the measurements are the descriptor\'s six, and rms, vu and ppm are not among them', () => {
-  assert.deepEqual(MEASUREMENTS, ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra']);
+test('the measurements are the installed descriptor schema\'s level words (its gain-reduction is the other kind\'s), and rms, vu and ppm are not among them', () => {
+  // omx-contract's descriptor schema is the one list: its `measurement` enum (every meter control states one)
+  const found = [];
+  (function walk(n) {
+    if (Array.isArray(n)) return n.forEach(walk);
+    if (n && typeof n === 'object') for (const [k, v] of Object.entries(n)) { if (k === 'measurement' && Array.isArray(v?.enum)) found.push(v.enum); else walk(v); }
+  })(JSON.parse(readFileSync(contractSchemaFile(), 'utf8')));
+  assert.ok(found.length > 0, 'the schema declares no measurement enum');
+  for (const e of found) assert.deepEqual(e, found[0], 'the schema names its measurement words once');
+  assert.deepEqual(MEASUREMENTS, found[0].filter((w) => w !== 'gain-reduction'));
   for (const w of ['rms', 'vu', 'ppm']) assert.ok(!MEASUREMENTS.includes(w));
 });
 test('a dynamics family\'s gain reduction is its section\'s gain_reduction_bar, read from the meters', () => {

@@ -33,15 +33,15 @@ check: build spdx public-sources look copies
 test:
 	npm test
 
-OPENMIXER_DOTGITHUB ?= $(or $(FREEMIXER_DOTGITHUB),../freemixer-dotgithub)
+OPENMIXER_DOTGITHUB ?= ../openmixer-dotgithub
 
 # Every file a comment can be written in opens with its licence and copyright: Open-Mixer/.github's spdx-check, from a
-# checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
+# checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI runs the action.
 spdx:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
-# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
+# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI
 # runs it through the public-sources-check workflow.
 public-sources:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
@@ -63,8 +63,10 @@ renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
 # run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
+# the role vocabulary the layout reads: this tree's stand-in, as npm test reads it, unless the caller names one (docs/renderer.md)
 renderer-check: build
-	sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
+	OMX_ROLE_MEANINGS="$${OMX_ROLE_MEANINGS:-$(CURDIR)/test/fixtures/role-meanings/panel-roles.json}" \
+	  sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
 
 # a host that is not JavaScript reads the gesture word names and the compare values from what the panel ships (#23):
 # the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)

@@ -38,6 +38,9 @@ typedef struct {
   int64_t value;
   /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
   char *bar;
+  /* a repeated group's matrix (the section's `matrix`): `placed` when the matrix names the control, `cut` while the matrix's
+   * count closes its instance up (view.c apply_counts) */
+  int placed, cut;
   /* the travel the host gave (input.c): the control's own unit; none given is 0..1, linear, no default */
   struct { double min, max, def, step; int given, has_def, log, integer; } travel;
   int read_only, hold;
@@ -52,9 +55,15 @@ typedef struct {
   int section;
   int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
   int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
+  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
+  /* the stems a host hands a time_response (omx_panel_view_set_stems): one per tap, from the floor to its level, its paint dimmed
+   * by its shade (0..1) and its leg letter above (' ' for none); none by default */
+  double *stem_x, *stem_y, *stem_shade;
+  char *stem_letter;
+  size_t nstems;
   /* the marks a host hands with the points: one per band a planter owns, none by default */
   double *mark_freq, *mark_depth;
   char *mark_letter;
@@ -68,6 +77,23 @@ typedef struct {
 
 /* One meter of the description's `meters` (contract 7.9): its range is the description's, its reading the host's. A meter whose
  * symbol is a control of a section is that control's reading and is not drawn again; the others stand in a band of their own. */
+/* A section's `matrix` (docs/renderer.md): the group model's matrixOf as the description carries it, read and never re-derived.
+ * `cell` is nrows x nheads control indices, -1 for an empty cell; `on` a head's on/off control, -1 for none. */
+typedef struct {
+  char *label;
+  int on, edge;
+} mhead;
+typedef struct {
+  int section, columns; /* columns: a head is a column; else a head is a row */
+  size_t nheads, nrows;
+  mhead *heads;
+  char **row_label;
+  int *cell;
+  int count_ctl;        /* the control that says how many instances run, -1 for none */
+  int64_t count;        /* its value: the description's default until the host gives one */
+  int head_row;         /* the head row, always the last: its cells are the heads' on/off, a null cell the head's caption */
+} matrix;
+
 typedef struct {
   char *symbol, *label, *unit;
   double min, max;
@@ -101,6 +127,8 @@ struct omx_panel_view {
   size_t ndisplays;
   meter *meters;
   size_t nmeters, nband;
+  matrix *matrices;
+  size_t nmatrices;
   char *brand, *name;
   int row_controls;
   geometry g;
