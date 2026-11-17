@@ -65,6 +65,13 @@ layered on it there, and none is used.
   It has no long-press: the hold is its press.
 - Steps of one source within the claim are one gesture, one undo entry.
 
+## The refusal codes
+
+`schema/gestures.json` declares each code with its sentence under `codes`; the reference and the C unit answer no other.
+`GESTURE_READ_ONLY`, `GESTURE_CONTROL_OWNED`, `GESTURE_NO_DEFAULT`, `GESTURE_NOT_IN_TABLE`, `GESTURE_HOLD_SHORT`,
+`GESTURE_HOLD_BELOW_FLOOR`, `GESTURE_NO_TARGET`, `GESTURE_PAINT_REQUIRED_ON_TOUCH`, `GESTURE_BAD_SETTING` and
+`GESTURE_BAD_INPUT` (the C unit's answer to a control or script it cannot read).
+
 ## The timings
 
 Declared defaults in `schema/gestures.json`; no component keeps a timing constant. Each surface shows them in its own

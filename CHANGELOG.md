@@ -11,7 +11,7 @@
   renderer's mapping of controls onto targets and calls the unit for the arithmetic. The 20 shipped scripts, 54 rules and
   4500 seeded random scripts give the same answers from C and from `tools/gestures.mjs`; the ABI is
   `renderer/abi/omx_panel_gesture.abi`. `tools/gestures.mjs` is unchanged and stays the JavaScript reference until its
-  wasm loader lands. An integer travel now rounds half up, as `Math.round` does, where the renderer rounded a negative half
+  wasm loader lands. `schema/gestures.json` now declares every refusal code with its sentence (`codes`), including the C unit's `GESTURE_BAD_INPUT`. An integer travel now rounds half up, as `Math.round` does, where the renderer rounded a negative half
   away from zero.
 - The gesture parity scripts are exported by name: `@openmixer/omx-panel/gestures/scripts.json` resolves to
   `dist/test/fixtures/gestures/scripts.json`, the file the installed tree already carries, so the console reads the

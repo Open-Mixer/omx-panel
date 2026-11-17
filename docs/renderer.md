@@ -252,15 +252,14 @@ unit's WebAssembly build.
 its code and words. So do 54 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
 `renderer/test/gesture-c-sabotage.test.mjs` breaks 30 rules in a copy of the source and watches each go red.
 
-Where the two references differ (each a finding of the first run, none reached by a shipped script):
+Where the two references differ (each a finding of the first run, none reached by a shipped script; the first disappears when the JS loads this unit as wasm):
 
 - A logarithmic travel's value agrees to a relative 1e-11, not bit for bit: `log` and `exp` are the platform's in C and V8's in
   JavaScript, and `exp(log(x))` doubles the last digit's difference. The shipped log-frequency scripts are exact.
 - An integer travel rounds half up (`floor(v + 0.5)`, JavaScript's `Math.round`); the first C port used `round()`, which rounds
   a negative half away from zero. The unit now rounds as the reference does.
-- A reset with no bar selected is refused `GESTURE_NO_DEFAULT` in both; the reference words it `null declares no default`, the
-  unit `no bar is selected: there is no default to reset`. The refused gesture's id is spent in both.
-- The reference throws on a move of the finger left of a pinch after the other lifted; the unit ignores that move.
+- A reset with no bar selected is refused `GESTURE_NO_DEFAULT` in both, in the same words (`null declares no default`); the refused gesture's id is spent in both.
+- (A JS bug, for the wasm lane to retire with the JS: the reference throws on a move of the finger left of a pinch after the other lifted; the unit ignores that move.)
 
 Still to come: redrawing only what changed.
 

@@ -13,6 +13,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SCRIPTS } from '../../test/gesture-scripts.mjs';
+import { readFileSync } from 'node:fs';
+import { GESTURES, GESTURE_CODES } from '../../dist/tools/gestures.mjs';
 import { CASES, RULES, SHIPPED, agree, fuzzCases, viaC, viaJs } from './gesture-c.mjs';
 
 const viaJsControl = () => RULES.find((r) => r.name.startsWith('rule: a pinch of two touches')).control;
@@ -131,4 +133,23 @@ test('a bad control or script is answered as an error, never a crash', () => {
     { control: { widget: 'knob', min: 0, max: 1, target: { x: 0, y: 0, w: 1, h: 1 } }, events: { t: 0 } },
   ]);
   for (const a of [bars, noTarget, notArray]) assert.equal(a.error.code, 'GESTURE_BAD_INPUT');
+});
+
+test('a reset with no bar selected is worded as the JS reference words it', () => {
+  const none = { control: { widget: 'bar', bars: [{ symbol: 'b0', min: 0, max: 1, def: 0, target: { x: 0, y: 0, w: 10, h: 10 } }] }, events: [{ t: 0, type: 'key', key: 'Backspace' }] };
+  const [c] = viaC([none]);
+  assert.equal(c.refused[0].why, 'null declares no default');
+  assert.equal(c.refused[0].why, viaJs(none).refused[0].why);
+});
+
+test('every refusal code, the JS reference\'s and the C unit\'s, is declared in schema/gestures.json with its sentence, and named in docs/panel-gestures.md', () => {
+  const md = readFileSync(new URL('../../docs/panel-gestures.md', import.meta.url), 'utf8');
+  const codes = new Set([...Object.values(GESTURE_CODES), 'GESTURE_BAD_INPUT']);
+  for (const code of codes) {
+    assert.equal(typeof GESTURES.codes?.[code], 'string', `${code} is declared with a sentence`);
+    assert.ok(md.includes(`\`${code}\``), `${code} is in docs/panel-gestures.md`);
+  }
+  assert.deepEqual(Object.keys(GESTURES.codes).sort(), [...codes].sort());
+  const [bad] = viaC([{ control: { widget: 'bar', bars: [] }, events: [] }]);
+  assert.ok(codes.has(bad.error.code));
 });

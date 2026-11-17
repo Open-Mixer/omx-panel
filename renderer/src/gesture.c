@@ -773,7 +773,7 @@ static void on_input(ge_engine *e, const omx_panel_event_t *ev, int target, int 
     /* a bar with none selected has no default to reset */
     if (t->kind == GE_BAR && key < 0) {
       e->seq++; /* the reference opens the gesture, finds nothing to reset and drops it: its id is spent */
-      return refuse(e, OMX_PANEL_REFUSED_NO_DEFAULT, ev->t_ms, "no bar is selected: there is no default to reset");
+      return refuse(e, OMX_PANEL_REFUSED_NO_DEFAULT, ev->t_ms, "null declares no default");
     }
     int g = open_g(e, ti, OMX_PANEL_WORD_RESET, input, ev->t_ms, 0);
     reset_member(e, g, (size_t)(t->kind == GE_BAR ? key : 0), ev->t_ms);

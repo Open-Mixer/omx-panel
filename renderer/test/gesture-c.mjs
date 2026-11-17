@@ -184,9 +184,8 @@ export function fuzzCases(seed, n) {
  * reference words badly (a reset with no bar selected: 'null declares no default') are the same refusal in both.
  */
 export function agree(a, b, tolerant) {
-  const words = (w) => (/^(null|undefined) declares no default$|^no bar is selected: /.test(w) ? 'no bar selected' : w);
   if (typeof a === 'number' && typeof b === 'number') return a === b || (tolerant && Math.abs(a - b) <= 1e-11 * Math.max(Math.abs(a), Math.abs(b)));
-  if (typeof a === 'string' && typeof b === 'string') return words(a) === words(b);
+  if (typeof a === 'string' && typeof b === 'string') return a === b;
   if (a && b && typeof a === 'object' && typeof b === 'object') {
     const keys = Object.keys({ ...a, ...b });
     return Array.isArray(a) === Array.isArray(b) && keys.every((k) => agree(a[k], b[k], tolerant));
