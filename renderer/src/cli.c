@@ -7,6 +7,7 @@
  *   omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]
  *                    [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]
  *                    [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]
+ *                    [--steps <script.json> --steps-out <dir> [--cap 1..64]]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
@@ -36,7 +37,8 @@
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
-    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n";
+    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n"
+    "                        [--steps <script.json> --steps-out <dir> [--cap 1..64]]\n";
 
 static uint32_t crc_table[256];
 static void crc_init(void) {
@@ -117,14 +119,11 @@ static char *slurp(const char *path) {
   return b;
 }
 
-static int apply_state(omx_panel_view_t *v, const char *path) {
-  char *text = slurp(path);
-  if (!text) { fprintf(stderr, "omx-panel-render: cannot read %s\n", path); return 0; }
-  cJSON *root = cJSON_Parse(text);
-  free(text);
-  if (!cJSON_IsObject(root)) { fprintf(stderr, "omx-panel-render: %s is not a JSON object\n", path); cJSON_Delete(root); return 0; }
-  omx_panel_view_set_title(v, cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "brand")),
-                           cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "name")));
+/* One state object applied to the view: what a file given to --state holds, and each step of --steps. */
+static int apply_json(omx_panel_view_t *v, cJSON *root) {
+  const char *brand = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "brand")),
+             *name = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "name"));
+  if (brand || name) omx_panel_view_set_title(v, brand, name);
   cJSON *it;
   int ok = 1;
   cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "values")) {
@@ -245,6 +244,16 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
     }
     free(h), free(d), free(pk);
   }
+  return ok;
+}
+
+static int apply_state(omx_panel_view_t *v, const char *path) {
+  char *text = slurp(path);
+  if (!text) { fprintf(stderr, "omx-panel-render: cannot read %s\n", path); return 0; }
+  cJSON *root = cJSON_Parse(text);
+  free(text);
+  if (!cJSON_IsObject(root)) { fprintf(stderr, "omx-panel-render: %s is not a JSON object\n", path); cJSON_Delete(root); return 0; }
+  int ok = apply_json(v, root);
   cJSON_Delete(root);
   return ok;
 }
@@ -390,8 +399,75 @@ static int run_input(omx_panel_view_t *v, const char *path, uint32_t width, uint
   return ok ? 0 : 1;
 }
 
+static int write_raw(const char *dir, const char *kind, size_t k, const omx_panel_buffer_t *b) {
+  char path[1024];
+  snprintf(path, sizeof path, "%s/%s.%zu.raw", dir, kind, k);
+  FILE *f = fopen(path, "wb");
+  size_t n = (size_t)b->width * b->height * 4;
+  int ok = f && fwrite(b->pixels, 1, n, f) == n;
+  if (f && fclose(f)) ok = 0;
+  return ok;
+}
+
+/* --steps: the view drawn in full into one buffer, then each step of the script (an array of state objects, the --state words) applied and
+ * drawn by omx_panel_view_draw_dirty into that same buffer. Per step k, in `dir`: before.<k>.raw (the buffer before the step), after.<k>.raw (the
+ * dirty draw) and full.<k>.raw (a view made anew, given the --state and every step so far, drawn in full). One line of JSON on stdout per step:
+ * {"step": k, "rects": [[x, y, width, height], ...], "width": w, "height": h}. Step 0 is the first draw. A step's "size": [w, h] gives
+ * the buffer another size from that step on. */
+static int run_steps(const char *desc, const char *data, const char *state, const char *steps, const char *dir, omx_panel_pixel_format_t format,
+                     long width, long height, double scale, size_t cap) {
+  char err[512];
+  char *text = slurp(steps);
+  cJSON *list = text ? cJSON_Parse(text) : NULL;
+  free(text);
+  if (!cJSON_IsArray(list)) { fprintf(stderr, "omx-panel-render: %s is not a JSON array of states\n", steps); cJSON_Delete(list); return 1; }
+  omx_panel_view_t *v = omx_panel_view_create_from_files(desc, data, err, sizeof err);
+  if (!v) { fprintf(stderr, "omx-panel-render: %s\n", err); cJSON_Delete(list); return 1; }
+  int ok = !state || apply_state(v, state);
+  if (!width) {
+    uint32_t w, h;
+    omx_panel_view_natural_size(v, &w, &h);
+    width = lround(w * scale), height = lround(h * scale);
+  }
+  size_t bytes = (size_t)width * height * 4;
+  omx_panel_buffer_t b = {calloc(1, bytes), (uint32_t)width, (uint32_t)height, (uint32_t)width * 4, scale, format};
+  omx_panel_buffer_t ref = b;
+  ref.pixels = calloc(1, bytes);
+  int n = cJSON_GetArraySize(list);
+  for (int k = 0; ok && k <= n; k++) {
+    if (k) {
+      cJSON *step = cJSON_GetArrayItem(list, k - 1), *size = cJSON_GetObjectItemCaseSensitive(step, "size");
+      ok = write_raw(dir, "before", (size_t)k, &b) && apply_json(v, step);
+      if (ok && cJSON_IsArray(size) && cJSON_GetArraySize(size) == 2) { /* a buffer of another size: the host's resize */
+        b.width = ref.width = (uint32_t)cJSON_GetArrayItem(size, 0)->valuedouble, b.height = ref.height = (uint32_t)cJSON_GetArrayItem(size, 1)->valuedouble;
+        b.stride = ref.stride = b.width * 4;
+        free(b.pixels), free(ref.pixels);
+        b.pixels = calloc(1, (size_t)b.width * b.height * 4), ref.pixels = calloc(1, (size_t)b.width * b.height * 4);
+      }
+    }
+    omx_panel_rect_t rects[64];
+    size_t count = 0;
+    ok = ok && omx_panel_view_draw_dirty(v, &b, rects, cap, &count) && write_raw(dir, "after", (size_t)k, &b);
+    omx_panel_view_t *r = ok ? omx_panel_view_create_from_files(desc, data, err, sizeof err) : NULL;
+    ok = ok && r && (!state || apply_state(r, state));
+    for (int j = 0; ok && j < k; j++) ok = apply_json(r, cJSON_GetArrayItem(list, j));
+    ok = ok && omx_panel_view_draw(r, &ref) && write_raw(dir, "full", (size_t)k, &ref);
+    omx_panel_view_destroy(r);
+    if (!ok) break;
+    printf("{\"step\":%d,\"rects\":[", k);
+    for (size_t i = 0; i < count; i++) printf("%s[%u,%u,%u,%u]", i ? "," : "", rects[i].x, rects[i].y, rects[i].width, rects[i].height);
+    printf("],\"width\":%u,\"height\":%u}\n", b.width, b.height);
+  }
+  if (!ok) fprintf(stderr, "omx-panel-render: the steps could not be drawn or written\n");
+  free(b.pixels), free(ref.pixels);
+  omx_panel_view_destroy(v);
+  cJSON_Delete(list);
+  return ok ? 0 : 1;
+}
+
 int main(int argc, char **argv) {
-  const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL;
+  const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL, *stepfile = NULL, *stepdir = NULL;
+  size_t cap = 64;
   double scale = 1;
   long width = 0, height = 0;
   int bgra = 0, straight = 0, rects = 0, window = 0;
@@ -406,6 +482,9 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--raw")) raw = val;
     else if (!strcmp(a, "--png")) png = val;
     else if (!strcmp(a, "--input")) input = val;
+    else if (!strcmp(a, "--steps")) stepfile = val;
+    else if (!strcmp(a, "--steps-out")) stepdir = val;
+    else if (!strcmp(a, "--cap") && strtol(val, NULL, 10) >= 1 && strtol(val, NULL, 10) <= 64) cap = (size_t)strtol(val, NULL, 10);
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
@@ -414,7 +493,7 @@ int main(int argc, char **argv) {
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png && !rects && !input) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
+  if (!desc || (!raw && !png && !rects && !input && !stepfile) || (!stepfile != !stepdir) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
       (window && width)) {
     fputs(USAGE, stderr);
     return 2;
@@ -425,6 +504,11 @@ int main(int argc, char **argv) {
     return 1;
   }
 #endif
+  if (stepfile) {
+    omx_panel_pixel_format_t sf = bgra ? (straight ? OMX_PANEL_PIXEL_BGRA8_STRAIGHT : OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
+                                       : (straight ? OMX_PANEL_PIXEL_RGBA8_STRAIGHT : OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED);
+    return run_steps(desc, data, state, stepfile, stepdir, sf, width, height, scale, cap);
+  }
   char err[512];
   omx_panel_view_t *v = omx_panel_view_create_from_files(desc, data, err, sizeof err);
   if (!v) { fprintf(stderr, "omx-panel-render: %s\n", err); return 1; }

@@ -11,6 +11,7 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_create_from_files;
     omx_panel_view_destroy;
     omx_panel_view_draw;
+    omx_panel_view_draw_dirty;
     omx_panel_view_find;
     omx_panel_view_gesture;
     omx_panel_view_gesture_count;
