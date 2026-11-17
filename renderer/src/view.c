@@ -528,6 +528,7 @@ typedef struct {
   int *curves;       /* one per section: how many curve rows it holds, above its controls */
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
   box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
+  int ok;            /* 0: the layout could not be allocated, and nothing else of it is set */
 } laid;
 
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
@@ -535,7 +536,11 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
             calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), {0, 0, 0, 0}};
+            calloc(v->nsections ? v->nsections : 1, sizeof(int)), {0, 0, 0, 0}, 1};
+  if (!L.sections || !L.cx || !L.cy || !L.drawn || !L.curves) {
+    free(L.sections), free(L.cx), free(L.cy), free(L.drawn), free(L.curves);
+    return (laid){0};
+  }
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
   /* a hidden control takes no cell; a section the values empty takes no space (one declared empty keeps its title) */
@@ -581,6 +586,7 @@ static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), fre
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
   laid L = lay_out(v, v->row_controls);
+  if (!L.ok) return;
   if (w) *w = (uint32_t)ceil(L.w);
   if (h) *h = (uint32_t)ceil(L.h);
   lay_free(&L);
@@ -797,6 +803,10 @@ static laid place(const omx_panel_view_t *v, uint32_t width, uint32_t height, do
   double k = -1;
   for (int per_row = v->row_controls; per_row >= 1; per_row--) {
     laid T = lay_out(v, per_row);
+    if (!T.ok) {
+      lay_free(&L);
+      return (laid){0};
+    }
     double kx = omx_round(T.w * scale) <= width ? 1 : width / (T.w * scale);
     double ky = omx_round(T.h * scale) <= height ? 1 : height / (T.h * scale);
     if (fmin(kx, ky) > k) {
@@ -814,6 +824,7 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint
   if (!v || index >= v->ncontrols || !shown(&v->controls[index]) || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   const box *sec = &L.sections[v->controls[index].section];
   rect[0] = (sec->x + L.cx[index]) * s, rect[1] = (sec->y + L.cy[index]) * s;
   rect[2] = v->g.cellW * s, rect[3] = v->g.cellH * s;
@@ -825,6 +836,7 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
   if (!v || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   for (size_t i = 0; i < v->ncontrols; i++) {
     shown_out[i] = shown(&v->controls[i]);
     if (!shown_out[i]) continue;
@@ -861,13 +873,14 @@ static int reaches(const int *clip, double x, double y, double w, double h, doub
   return !clip || (x - bleed < clip[2] && x + w + bleed > clip[0] && y - bleed < clip[3] && y + h + bleed > clip[1]);
 }
 
-void omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d, const int *clip) {
+bool omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d, const int *clip) {
   const geometry *g = &v->g;
   const textsizes *T = &v->t;
   const palette *col = &v->col;
   omx_font *font = v->font;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
 
   d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
   d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
@@ -938,6 +951,7 @@ void omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32
     }
   }
   lay_free(&L);
+  return true;
 }
 
 void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
@@ -977,7 +991,9 @@ struct omx_redraw {
   int format;
   double lw, lh, s; /* the panel's size at the last draw */
   size_t n;
-  elem *el;
+  elem *el, *now; /* the last draw's elements, and room for the next draw's: one block, swapped each draw */
+  void *bx;       /* room for the boxes a draw collects (2 * n): in the same block */
+  void *block;
 };
 
 static uint64_t mix(uint64_t h, const void *p, size_t n) {
@@ -1090,14 +1106,15 @@ static void premultiply(const omx_panel_buffer_t *b, const omx_panel_rect_t *r) 
 
 /* Clear a rectangle to transparent and draw the panel into it, as a full draw draws that part: drawn with straight alpha, then a
  * premultiplied buffer gets each colour times its alpha, rounded to the nearest. */
-static void paint_rect(const omx_panel_view_t *v, const omx_panel_buffer_t *b, const omx_panel_rect_t *r, int whole) {
+static bool paint_rect(const omx_panel_view_t *v, const omx_panel_buffer_t *b, const omx_panel_rect_t *r, int whole) {
   for (uint32_t y = r->y; y < r->y + r->height; y++) memset(b->pixels + (size_t)y * b->stride + (size_t)r->x * 4, 0, (size_t)r->width * 4);
   int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
   omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra, (int)r->x, (int)r->y, (int)(r->x + r->width), (int)(r->y + r->height)};
   const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text};
   int clip[4] = {cv.cx0, cv.cy0, cv.cx1, cv.cy1};
-  omx_panel_view_paint_clip(v, b->width, b->height, b->scale, &d, whole ? NULL : clip);
+  if (!omx_panel_view_paint_clip(v, b->width, b->height, b->scale, &d, whole ? NULL : clip)) return false;
   premultiply(b, r);
+  return true;
 }
 
 static bool valid_buffer(const omx_panel_buffer_t *b) {
@@ -1105,18 +1122,31 @@ static bool valid_buffer(const omx_panel_buffer_t *b) {
          (unsigned)b->format <= OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
 }
 
+/* Forget what the buffer holds: the next draw into it is a whole one. */
 static void redraw_free(omx_panel_view_t *v) {
-  if (v->rd) free(v->rd->el), free(v->rd);
+  if (v->rd) free(v->rd->block), free(v->rd);
+  v->rd = NULL;
 }
 
-/* Remember what is now on the buffer: its identity, the panel's size and every element. */
+typedef struct { int x0, y0, x1, y1; } ibox;
+
+/* Remember what is now on the buffer: its identity, the panel's size and every element. The memory it needs is taken here, once, so a
+ * draw into the same buffer allocates nothing of its own; short of memory the view forgets, and the next draw is a whole one. */
 static void remember(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
   size_t n = elem_count(v);
   double s;
   laid L = place(v, b->width, b->height, b->scale, &s);
-  if (!v->rd) v->rd = calloc(1, sizeof *v->rd);
-  struct omx_redraw *r = v->rd;
-  if (r->n != n) free(r->el), r->el = malloc(n * sizeof *r->el), r->n = n;
+  struct omx_redraw *r = L.ok ? calloc(1, sizeof *r) : NULL;
+  if (r) r->block = malloc(2 * n * sizeof(elem) + 2 * n * sizeof(ibox));
+  if (!r || !r->block) {
+    if (r) free(r);
+    redraw_free(v);
+    lay_free(&L);
+    return;
+  }
+  redraw_free(v);
+  v->rd = r;
+  r->n = n, r->el = r->block, r->now = r->el + n, r->bx = r->now + n;
   elements(v, &L, s, r->el);
   r->pixels = b->pixels, r->width = b->width, r->height = b->height, r->stride = b->stride, r->scale = b->scale, r->format = (int)b->format;
   r->lw = L.w, r->lh = L.h, r->s = s;
@@ -1126,12 +1156,14 @@ static void remember(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
 bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
   if (!v || !valid_buffer(b)) return false;
   omx_panel_rect_t all = {0, 0, b->width, b->height};
-  paint_rect(v, b, &all, 1);
+  if (!paint_rect(v, b, &all, 1)) {
+    redraw_free(v); /* the buffer was cleared and not drawn: it holds no draw to repaint over */
+    return false;
+  }
   remember(v, b);
   return true;
 }
 
-typedef struct { int x0, y0, x1, y1; } ibox;
 
 static int boxes_meet(const ibox *a, const ibox *b) { return a->x0 < b->x1 && b->x0 < a->x1 && a->y0 < b->y1 && b->y0 < a->y1; }
 static void box_cover(ibox *a, const ibox *b) {
@@ -1198,18 +1230,19 @@ bool omx_panel_view_draw_dirty(omx_panel_view_t *v, const omx_panel_buffer_t *b,
   struct omx_redraw *r = v->rd;
   double s;
   laid L = place(v, b->width, b->height, b->scale, &s);
-  size_t n = elem_count(v);
-  int full = !r || r->n != n || r->pixels != b->pixels || r->width != b->width || r->height != b->height || r->stride != b->stride ||
-             r->scale != b->scale || r->format != (int)b->format || r->lw != L.w || r->lh != L.h || r->s != s;
+  /* a full draw stands for a layout that could not be made (short of memory), as for the cases the header names */
+  int full = !L.ok || !r || r->n != elem_count(v) || r->pixels != b->pixels || r->width != b->width || r->height != b->height ||
+             r->stride != b->stride || r->scale != b->scale || r->format != (int)b->format || r->lw != L.w || r->lh != L.h || r->s != s;
   if (full) {
     lay_free(&L);
-    omx_panel_view_draw(v, b);
+    if (!omx_panel_view_draw(v, b)) return false;
     rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
     *count = 1;
     return true;
   }
-  elem *now = malloc(n * sizeof *now);
-  ibox *bx = malloc(2 * n * sizeof *bx);
+  size_t n = r->n;
+  elem *now = r->now;
+  ibox *bx = r->bx;
   elements(v, &L, s, now);
   lay_free(&L);
   size_t nb = 0;
@@ -1221,11 +1254,15 @@ bool omx_panel_view_draw_dirty(omx_panel_view_t *v, const omx_panel_buffer_t *b,
   nb = merge_boxes(bx, nb, cap);
   for (size_t i = 0; i < nb; i++) {
     rects[i] = (omx_panel_rect_t){(uint32_t)bx[i].x0, (uint32_t)bx[i].y0, (uint32_t)(bx[i].x1 - bx[i].x0), (uint32_t)(bx[i].y1 - bx[i].y0)};
-    paint_rect(v, b, &rects[i], 0);
+    if (!paint_rect(v, b, &rects[i], 0)) { /* cannot happen after place() answered, but a repaint that did not finish is made whole */
+      redraw_free(v);
+      if (!omx_panel_view_draw(v, b)) return false;
+      rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+      *count = 1;
+      return true;
+    }
   }
-  free(r->el);
-  r->el = now;
-  free(bx);
+  r->now = r->el, r->el = now;
   *count = nb;
   return true;
 }
