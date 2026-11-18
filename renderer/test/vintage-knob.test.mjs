@@ -60,7 +60,12 @@ test('under the vintage style the cap\'s highlight, the rim and the pointer are 
   const cap = LOOK.drawings['knob-vintage'].gradients.cap.attrs;
   // the cap is a circle of radius 16.9 about (24, 24): the gradient's centre is a fraction of its bounding box
   const gx = 24 - 16.9 + cap.cx * 33.8, gy = 24 - 16.9 + cap.cy * 33.8;
-  assert.deepEqual(pixel(img, at.cx + (gx - 24) * k, at.cy + (gy - 24) * k), hex(FINISH['--knob-cap-hi']), 'the cap\'s highlight');
+  // the gradient's own centre falls between pixel centres: the colour there is the first stop's within a few levels of the 255 (the
+  // gradient's whole span from cap-hi to face is far more), where the rim and the pointer, solid fills, are exact
+  const near = (a, b, tol) => a.every((v, i) => Math.abs(v - b[i]) <= tol);
+  const hi = pixel(img, at.cx + (gx - 24) * k, at.cy + (gy - 24) * k);
+  assert.ok(near(hi, hex(FINISH['--knob-cap-hi']), 3), `the cap's highlight: ${hi} is not within 3 of ${hex(FINISH['--knob-cap-hi'])}`);
+  assert.ok(!near(hi, hex(FINISH['--knob-face']), 12), 'the highlight is not the cap\'s base colour');
   // the rim: the ring between the knurl circle (17.6) and the edge circle (19.4), seven and a half degrees from a notch
   const th = (7.5 * Math.PI) / 180;
   assert.deepEqual(pixel(img, at.cx + Math.sin(th) * 18.5 * k, at.cy + Math.cos(th) * 18.5 * k), hex(FINISH['--knob-edge']), 'the rim');
