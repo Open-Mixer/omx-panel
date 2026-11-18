@@ -134,6 +134,7 @@ struct omx_panel_view {
   geometry g;
   textsizes t;
   palette col;
+  omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */
