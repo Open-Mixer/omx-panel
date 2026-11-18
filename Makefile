@@ -13,14 +13,14 @@ MANDIR ?= $(DATADIR)/man
 LIBDIR ?= $(PREFIX)/lib
 INCLUDEDIR ?= $(PREFIX)/include
 CONTRACTDIR ?= $(DATADIR)/omx-contract/contract.d
-# omx-contract's command (omx-contract.mjs or `omx-contract`), which renders the panel domain (docs/contract-domains.md)
-OMX_CONTRACT_CLI ?= omx-contract
+# omx-contract's domain installer (install-contract-dir.sh --domain), which installs the panel domain as it is
+OMX_CONTRACT_INSTALLER ?= $(shell pkg-config --variable=datadir omx-contract 2>/dev/null)/install-contract-dir.sh
 SYSCONFDIR ?= /etc
 UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: contract contract-check all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
+.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads
 
 all: build
 
@@ -53,12 +53,6 @@ look:
 	node tools/look.mjs --check
 	node tools/look-pin.mjs --self
 
-# The panel domain's header is the render of its document by omx-contract's renderer (docs/contract-domains.md).
-contract:
-	$(OMX_CONTRACT_CLI) render --target c --package panel --contract-dir contract.d --out include/omxdomain
-contract-check:
-	$(OMX_CONTRACT_CLI) render --target c --package panel --contract-dir contract.d --out include/omxdomain --check
-
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
 	node tools/copies-check.mjs --self-test
@@ -87,12 +81,12 @@ install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
 
-install: build
-	install -d $(DESTDIR)$(CONTRACTDIR)/panel $(DESTDIR)$(INCLUDEDIR)/omxdomain
-	install -d $(DESTDIR)$(CONTRACTDIR)/panel/catalogs
-	install -m 0644 contract.d/panel/panel.json $(DESTDIR)$(CONTRACTDIR)/panel/
-	install -m 0644 contract.d/panel/catalogs/*.json $(DESTDIR)$(CONTRACTDIR)/panel/catalogs/
-	install -m 0644 include/omxdomain/panel_vocabulary.h $(DESTDIR)$(INCLUDEDIR)/omxdomain/
+# The panel domain (docs/contract-domains.md), as it is, by omx-contract's one domain installer: the loader reads
+# $(CONTRACTDIR)/panel/panel.json and its catalogs/.
+install-contract:
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
+
+install: build install-contract
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/
 	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/

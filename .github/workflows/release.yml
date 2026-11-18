@@ -57,9 +57,9 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7'
           # the omx-contract CLI the header test renders with (OMX_CONTRACT_CLI below), at the floor the data package names
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.19.1'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
