@@ -36,7 +36,7 @@ function buildDepends(control) {
 
 test('the spec builds against the omx-contract CLI package and the packaged omx-dsp-wasm at its floor', () => {
   const spec = read('packaging/omx-panel.spec');
-  assert.match(spec, /^BuildRequires: omx-contract$/m, 'the spec lacks BuildRequires: omx-contract (the CLI the suite runs)');
+  assert.match(spec, /^BuildRequires: omx-contract >= 3\.19\.1$/m, 'the spec lacks BuildRequires: omx-contract >= 3.19.1 (the CLI renders a domain from that floor)');
   assert.match(spec, new RegExp(`^BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR.replace(/\./g, '\\.')}$`, 'm'),
     `the spec lacks BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR}`);
 });
@@ -48,8 +48,8 @@ test('the spec %check exports OMX_CONTRACT_CLI to the installed CLI', () => {
 
 test('the DEB build-depends on omx-contract and omx-dsp-wasm at its floor', () => {
   const deps = buildDepends(read('debian/control'));
-  assert.ok(deps.some((d) => /^omx-contract(\s|$)/.test(d)), `Build-Depends has no omx-contract: ${deps.join(' | ')}`);
-  assert.ok(deps.includes(`omx-dsp-wasm (>= ${WASM_FLOOR})`), `Build-Depends has no omx-dsp-wasm (>= ${WASM_FLOOR}): ${deps.join(' | ')}`);
+  assert.ok(deps.includes('omx-contract (>= 3.19.1~)'), `Build-Depends has no omx-contract (>= 3.19.1~): ${deps.join(' | ')}`);
+  assert.ok(deps.includes(`omx-dsp-wasm (>= ${WASM_FLOOR}~)`), `Build-Depends has no omx-dsp-wasm (>= ${WASM_FLOOR}~): ${deps.join(' | ')}`);
 });
 
 test('debian/rules exports OMX_CONTRACT_CLI for the test run', () => {
@@ -64,8 +64,8 @@ test('no vendored copy of the omx-dsp twin is kept in the tree', () => {
 });
 
 test('the sabotage arm: a spec without the CLI build dependency is red', () => {
-  const spec = read('packaging/omx-panel.spec').replace(/^BuildRequires: omx-contract$\n/m, '');
-  assert.doesNotMatch(spec, /^BuildRequires: omx-contract$/m);
-  const control = read('debian/control').replace(/omx-dsp-wasm \(>= 0\.33\.0\)/, '');
+  const spec = read('packaging/omx-panel.spec').replace(/^BuildRequires: omx-contract >= 3\.19\.1\n/m, '');
+  assert.doesNotMatch(spec, /^BuildRequires: omx-contract >= 3\.19\.1$/m);
+  const control = read('debian/control').replace(/omx-dsp-wasm \(>= 0\.33\.0~\)/, '');
   assert.equal(buildDepends(control).some((d) => d.startsWith('omx-dsp-wasm')), false);
 });
