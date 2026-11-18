@@ -1,0 +1,7 @@
+{
+  "comment": "SHA-256 of what the vintage knob drew BEFORE its drawing moved into look.json (omx-panel#123, PR 1): the film strip of each finish (renderFilm) and the screenshot of the omx-delay fixture's vintage face. The scene replaces the hand SVG; these bytes may not move.",
+  "film-knob-vintage-aluminium": "b5430041d453d71d4085ac2daf8e0a9b7a83466c3a6b5c0c310f906d0044ba8f",
+  "film-knob-vintage-graphite": "59d816ca0e57e103f4d53e72e59ee8f4542af72d535f0289729b9db22022faf5",
+  "film-knob-vintage-black": "fd57410b817bb44d5e5041510a9da7a938129fa067ca5679e2745ee762c9aba8",
+  "face-omx-delay-vintage-screenshot": "0076ba525244dce0a5404b149e12941fa1ca41c3c3623d115c0686849bad9d7b"
+}
