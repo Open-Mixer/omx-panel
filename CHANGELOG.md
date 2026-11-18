@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The `utility` panel family's content (omx-contract's `PANEL_FAMILIES`, 3.19), the family of a trim, a width control, a
+  balancer or a clipper: the role table gives it `gain`, `width`, `pseudo`, `pseudo_time`, `bass_mono`, `bass_mono_freq`,
+  `amount`, `range`, `drive`, `ceiling` and `softness` (one per control omx-trim, omx-width, omx-balancer and omx-clipper
+  declare whose unit a token serves; the balancer's dB/s speed and dB/oct slope have none), `gain`, `width`, `amount` or
+  `drive` as the one required role, and an Easy row. A utility is declared, never inferred. The packaging floors move to
+  omx-contract 3.19.1, the release that carries the word, with no ceiling.
+
 - Tiers and edge bands: a control's `tier` (`panel.tiers`, easy or advanced, default advanced; the `modgui-tier` setting, `--tier`, `$OMX_MODGUI_TIER`, default advanced; Easy draws only the easy controls) and a section's `edges` (an EQ's first band is the plugin's HPF, its last the LPF; the curve carries their roll-off). Declared in `schema/panel.schema.json`.
 
 - The MOD GUI stylesheet is held to the installed look: `test/modgui-stylesheet-is-the-look.test.mjs` generates the default (vintage) stylesheet and requires every colour in it to be one `tools/look.json` holds, and the vintage values (accent, border, curve stroke, enclosure, keys) to be in it. The `console` and `3d` looks' curve line is the `--curve-stroke` role, as the renderer draws it. The matrix layout of the MOD GUI is the served group-model matrix, with a come-up-hidden column taking no room.
