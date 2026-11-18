@@ -109,7 +109,7 @@ export function stateFile(fx, dir, readings = {}) {
   const curves = {}, marks = {};
   let at = 0;
   for (const sec of p.sections) for (const dsp of sec.displays) {
-    if (dsp.curve?.points) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
+    if (dsp.curve?.points?.length) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
     if (dsp.curve?.marks?.length) marks[at] = dsp.curve.marks.map((m) => ({ freq: m.freq, depth: m.depthDb, letter: modgui.ORIGIN_LETTER[m.origin] }));
     at++;
   }
