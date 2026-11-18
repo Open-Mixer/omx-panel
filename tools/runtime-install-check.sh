@@ -8,7 +8,8 @@
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
-#   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
+#   3. each recommendation, and the contract package of the descriptor read in 4 (omx-plugins-contract), installed
+#      after it, adds none either;
 #   4. `omx-panel vocabulary omx-plugins/omx-delay` reads the meanings, plugin-hostd's LV2 table and an installed
 #      descriptor from /usr/share/omx-contract, with no omx-contract.pc and no variable set.
 #
@@ -118,9 +119,9 @@ stand_in() {
 }
 for m in "${missing[@]}"; do stand_in "$m"; done
 
-# 3. the recommendation, on its own
+# 3. each recommendation, and the contract package of the descriptor 4 reads, on its own
 # a rich RPM recommendation, (name >= a with name < b), is read by its name
-for r in $(echo "$weak" | awk '{print $1}' | sed 's/^(//'); do
+for r in $({ echo "$weak" | awk '{print $1}' | sed 's/^(//'; echo "${DESCRIPTOR%%/*}-contract"; } | grep -v '^$' | awk '!seen[$0]++'); do
   before=$(installed)
   if published "$r"; then
     listed "$r" && fail "$r is published: remove it from NOT_YET_PUBLISHED"
