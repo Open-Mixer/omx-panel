@@ -47,9 +47,11 @@ function declared() {
   return new Map(Object.values(doc.codes ?? {}).map((e) => [e.code, e]));
 }
 
-test('omx-contract is at least the schema version this declaration is written against', () => {
+test('the installed omx-contract package is at least the floor this declaration is written against', () => {
+  // The package version, not x-omx-schema-version: a patch release (3.19.1) keeps the schema version at 3.19.0.
+  const installed = JSON.parse(readFileSync(new URL('../node_modules/@openmixer/omx-contract/package.json', import.meta.url), 'utf8')).version;
   assert.ok(gte(floor, '3.11.0'), `the floor is ${floor}; text and args on codes are 3.11.0`);
-  assert.ok(gte(schema['x-omx-schema-version'], floor), `schema is ${schema['x-omx-schema-version']}, need >= ${floor}`);
+  assert.ok(gte(installed, floor), `omx-contract is ${installed}, need >= ${floor}`);
 });
 
 /** One entry: the code word, its source sentence and its args (omx-contract#90: the source only, no other language). */
