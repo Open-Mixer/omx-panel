@@ -87,7 +87,11 @@ $(B)/omx-panel-render.pc: omx-panel-render.pc.in | $(B)
 $(B)/gesture_driver: test/gesture_driver.c $(B)/libomx-panel-render.a include/omx_panel_gesture.h | $(B)
 	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
 
-check: all $(B)/gesture_driver
+# the scene painter's test driver (test/scene_driver.c): paints a drawing of look.json for test/scene.test.mjs
+$(B)/scene_driver: test/scene_driver.c $(B)/libomx-panel-render.a src/scene.h | $(B)
+	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
+
+check: all $(B)/gesture_driver $(B)/scene_driver
 	node --test test/*.test.mjs
 
 install: all
