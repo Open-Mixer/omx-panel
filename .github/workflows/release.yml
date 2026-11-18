@@ -64,7 +64,25 @@ jobs:
           fetch-tags: true
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install the real MOD bundles the importer proof reads
+        # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
+        # bundle reads them where they are installed, and no MOD file is copied into this tree.
+        run: |
+          dnf copr enable -y ycollet/audinux
+          dnf install -y --setopt=install_weak_deps=False caps-lv2
+      # the panel domain's header is the render of its document by omx-contract's own renderer (docs/contract-domains.md): the
+      # commit of omx-contract that reads a domain, until its next release carries it (omx-contract#79)
+      - name: omx-contract's renderer, at the commit that reads domains
+        uses: actions/checkout@v4
+        with:
+          repository: Open-Mixer/omx-contract
+          ref: 3105c344e7a04d2c09bb7088f4fe0cd9fa73216f
+          path: omx-contract-renderer
+      - name: Build the renderer
+        run: cd omx-contract-renderer && npm ci --no-audit --no-fund && npm run build
       - run: npm ci
+      # omx-dsp's TypeScript twin the curve cases read
+      - uses: ./.github/actions/omx-dsp-twin
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
@@ -75,6 +93,8 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
+          # the panel domain's header is re-rendered and compared here (test 630): the renderer ci builds above
+          OMX_CONTRACT_CLI: ${{ github.workspace }}/omx-contract-renderer/bin/omx-contract.mjs
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |
