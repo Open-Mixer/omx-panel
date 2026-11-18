@@ -26,7 +26,7 @@ BuildRequires: omx-contract-data >= 3.19.1
 BuildRequires: plugin-hostd-contract >= 0.20.7
 # %%check re-renders the panel domain's header with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract
+BuildRequires: omx-contract >= 3.19.1
 BuildRequires: omx-dsp-wasm >= 0.33.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
