@@ -163,6 +163,8 @@ const TWIN = await import('@openmixer/omx-dsp').catch((err) => {
 export const STATIC_CURVE = Object.freeze({ sampleRate: 48000, points: 128 });
 /** The one letter a mark wears: one per planter family, as the console's band-origin.ts names it. */
 export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', hrp: 'H', 'room-mode': 'R' });
+/** A delay tap's leg as the letter above its stem: a tap that lands on both legs carries none. */
+export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
 /** The terms of a curve request from a layout's roles, each at its come-up value, in the unit the description gives the role. */
 function curveTerms(descriptor, x) {
@@ -184,7 +186,29 @@ function curveTerms(descriptor, x) {
 function staticCurve(descriptor, x, dsp) {
   if (!TWIN) return { code: 'no-twin' };
   const answer = TWIN.curvePoints({ kind: dsp.kind, family: x.family, ...STATIC_CURVE, terms: curveTerms(descriptor, x) });
-  return 'code' in answer ? { code: answer.code } : { points: answer.points, marks: answer.marks };
+  return 'code' in answer ? { code: answer.code } : { points: answer.points, marks: answer.marks, stems: answer.stems ?? [] };
+}
+
+/**
+ * A time_response inside its frame: x is time in ms from 0 to the content's end (the last point or stem), y is level in dB on the window from
+ * the floor, -60, to 0, raised to the next 6 dB when a level exceeds 0; the 0 dB line is the axis, the envelope a polyline, each stem a segment
+ * from the floor to its level with its shade and its leg letter. The mapping of renderer/src/view.c `draw_time`, operation for operation.
+ */
+function timeGeometry(pts, stems, ix, iy, iw, ih, s) {
+  if (pts.length < 2 && stems.length === 0) return null;
+  let xmax = 0, ymax = 0;
+  for (const p of pts) xmax = Math.max(xmax, p.x), ymax = Math.max(ymax, p.y);
+  for (const t of stems) xmax = Math.max(xmax, t.x), ymax = Math.max(ymax, t.y);
+  if (!(xmax > 0)) xmax = 1;
+  const lo = -60, hi = ymax > 0 ? Math.ceil(ymax / 6) * 6 : 0;
+  const qy = (v) => iy + ih - ((v - lo) / (hi - lo)) * ih;
+  const y0 = qy(0);
+  return {
+    axis: [ix, y0, ix + iw, y0],
+    poly: pts.length < 2 ? [] : pts.map((p) => [ix + (p.x / xmax) * iw, qy(Math.max(p.y, lo))]),
+    marks: [],
+    stems: stems.filter((t) => t.y > lo).map((t) => ({ x: ix + (t.x / xmax) * iw, y0: iy + ih, y1: qy(t.y), shade: t.shade, letter: LEG_LETTER[t.leg] ?? ' ', top: iy + TEXT.small * s })),
+  };
 }
 
 /**
@@ -193,9 +217,10 @@ function staticCurve(descriptor, x, dsp) {
  * to the next 6 dB; a transfer_curve on linear dB, input and output on one span), so the two rasterisers draw one stroke.
  */
 export function curveGeometry(curve, kind, cw, ch, s) {
-  const pts = curve?.points;
-  if (!pts || pts.length < 2) return null;
+  const pts = curve?.points ?? [], stems = curve?.stems ?? [];
   const ix = 5 * s, iy = 5 * s, iw = cw - 10 * s, ih = ch - 10 * s - 12 * s;
+  if (kind === 'time_response') return timeGeometry(pts, stems, ix, iy, iw, ih, s);
+  if (pts.length < 2) return null;
   const eq = kind === 'eq_response';
   let lo, hi, x0, x1, axis;
   if (eq) {
@@ -547,6 +572,12 @@ export function renderFace(lay, look, scale) {
       const [ax, ay, bx, by] = geo.axis;
       segment(c, cx + ax, cy + ay, cx + bx, cy + by, Math.max(0.5, 0.5 * s), col.rim);
       for (let k = 1; k < geo.poly.length; k++) segment(c, cx + geo.poly[k - 1][0], cy + geo.poly[k - 1][1], cx + geo.poly[k][0], cy + geo.poly[k][1], Math.max(0.75, 0.75 * s), col.curve);
+      for (const t of geo.stems ?? []) {
+        // a stem's paint is the frame's body leant toward the accent by its shade (renderer's `towards`)
+        const paint = col.body.map((b, i) => Math.round(b + (col.accent[i] - b) * t.shade));
+        segment(c, cx + t.x, cy + t.y0, cx + t.x, cy + t.y1, Math.max(1, 1.25 * s), paint);
+        if (t.letter !== ' ') drawText(c, font, t.letter, cx + t.x, cy + Math.max(t.y1 - 3 * s, t.top), TEXT.small * s, col.ink, 'centre');
+      }
       for (const m of geo.marks) {
         disc(c, cx + m.at[0], cy + m.at[1], Math.max(2, 2.5 * s), col.ink);
         drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, col.ink, 'centre');
@@ -705,7 +736,9 @@ export function emitTemplate(panel, lay, source) {
     if (!geo) return '';
     const n = (v) => Math.round(v * 100) / 100;
     const marks = geo.marks.map((m) => `<circle cx="${n(m.at[0])}" cy="${n(m.at[1])}" r="2.5"/><text x="${n(m.at[0])}" y="${n(m.at[1] - 5)}" text-anchor="middle">${m.letter}</text>`).join('');
-    return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/><polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>${marks}</svg>`;
+    const stems = (geo.stems ?? []).map((t) => `<line class="omx-curve-stem" x1="${n(t.x)}" y1="${n(t.y0)}" x2="${n(t.x)}" y2="${n(t.y1)}" stroke-opacity="${n(t.shade)}"/>${t.letter === ' ' ? '' : `<text x="${n(t.x)}" y="${n(Math.max(t.y1 - 3, t.top))}" text-anchor="middle">${t.letter}</text>`}`).join('');
+    const line = geo.poly.length < 2 ? '' : `<polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>`;
+    return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/>${line}${stems}${marks}</svg>`;
   };
   const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
@@ -779,6 +812,7 @@ ${P} .omx-selector-option.selected { color: ${tok['--accent']}; }
 ` : ''}${panel.sections.some((x) => x.displays.length > 0) ? `${P} .omx-curve { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${tok['--surface-3']}; }
 ${P} .omx-curve-plot { position: absolute; left: 0; top: 0; }
 ${P} .omx-curve-axis { stroke: ${tok['--border-strong']}; stroke-width: 0.5; }
+${P} .omx-curve-stem { stroke: ${tok['--accent']}; stroke-width: 1.25; }
 ${P} .omx-curve-line { stroke: ${tok['--curve-stroke']}; stroke-width: 1.5; stroke-linejoin: round; }
 ${P} .omx-curve-plot circle { fill: ${tok['--ink']}; }
 ${P} .omx-curve-plot text { fill: ${tok['--ink']}; font-size: 10px; }
