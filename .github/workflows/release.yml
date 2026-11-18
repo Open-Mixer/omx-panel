@@ -30,10 +30,6 @@ on:
         description: 'Build fc44 x86_64 and trixie amd64 only and publish them to the staging channel for the next layer; publishes nothing to the real channel'
         type: boolean
         default: false
-      staged-deps:
-        description: 'Ignored by the shared workflows, kept for this wave only'
-        type: string
-        default: ''
 
 # A called workflow cannot exceed its caller's token. build-rpm.yml and build-deb.yml run a report-failure job that
 # asks for `issues: write` and `actions: read`; without both here GitHub refuses to start the run at all.
@@ -61,7 +57,7 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -82,9 +78,9 @@ jobs:
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |
-          git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/freemixer-dotgithub"
-          git -c advice.detachedHead=false -C "$RUNNER_TEMP/freemixer-dotgithub" checkout -q v1
-      - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/freemixer-dotgithub"
+          git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/openmixer-dotgithub"
+          git -c advice.detachedHead=false -C "$RUNNER_TEMP/openmixer-dotgithub" checkout -q openmixer-v1
+      - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/openmixer-dotgithub"
       - name: The bump covers every change since the previous tag
         run: |
           prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)
@@ -95,7 +91,6 @@ jobs:
     uses: Open-Mixer/.github/.github/workflows/build-rpm.yml@openmixer-v1
     with:
       staged: ${{ inputs.staged == true }}
-      staged-deps: ${{ inputs.staged-deps || '' }}
       package-name: omx-panel
       # omx-panel, and the renderer's shared library with its development files (each installed by the install checks)
       binary-names: omx-panel omx-panel-render omx-panel-render-devel
@@ -113,7 +108,6 @@ jobs:
     uses: Open-Mixer/.github/.github/workflows/build-deb.yml@openmixer-v1
     with:
       staged: ${{ inputs.staged == true }}
-      staged-deps: ${{ inputs.staged-deps || '' }}
       package-name: omx-panel
       binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}

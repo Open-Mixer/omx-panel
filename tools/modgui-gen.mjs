@@ -32,6 +32,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
+import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { SLOPE_UNITS } from './vocabulary.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
@@ -356,6 +357,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
+  sections.splice(0, sections.length, ...withRepeats(descriptor, declared, sections));
   for (const symbol of Object.keys(panel.widgets ?? {})) if (!seen.has(symbol)) throw new Error(`modgui-gen: widgets names '${symbol}', which the panel does not draw`);
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
@@ -376,32 +378,10 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
     if (!err.code) throw err;
     meters = [];
   }
-  // a repeated group is an aligned matrix (the owner's rule: group items are aligned, an EQ's bands are columns from HPF to LPF, each
-  // column stacking its parameters in one order, the on/off at its head): the controls the band, high-pass and low-pass roles bind
-  // are the matrix's cells, by role and index, wherever the panel is declared or derived
-  try {
-    const xr = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
-    const cell = new Map();
-    for (const r of xr.roles ?? []) {
-      const m = /^(band|hpf|lpf)_(on|type|freq|gain|q|slope)$/.exec(r.role);
-      if (m) cell.set(r.symbol, { col: m[1] === 'band' ? `b${r.index + 1}` : m[1], row: m[2] === 'slope' ? 'type' : m[2] });
-    }
-    for (const sec of sections) {
-      const mem = sec.controls.filter((k) => cell.has(k.symbol));
-      const cols = new Set(mem.map((k) => cell.get(k.symbol).col));
-      const rows = MATRIX_ROWS.filter((r) => mem.some((k) => cell.get(k.symbol).row === r));
-      if ([...cols].filter((c) => /^b\d+$/.test(c)).length < 2 || rows.length < 2) continue;
-      const order = [...(cols.has('hpf') ? ['hpf'] : []), ...[...cols].filter((c) => /^b\d+$/.test(c)).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))), ...(cols.has('lpf') ? ['lpf'] : [])];
-      for (const k of mem) Object.assign(k, { col: cell.get(k.symbol).col, mxrow: cell.get(k.symbol).row, ri: rows.indexOf(cell.get(k.symbol).row) });
-      for (const k of mem) delete k.span;
-      sec.matrix = { cols: order, rows, labels: Object.fromEntries(order.map((c) => [c, c === 'hpf' ? 'HPF' : c === 'lpf' ? 'LPF' : c.slice(1)])) };
-    }
-  } catch (err) {
-    if (!err.code) throw err;
-  }
   // a bar group is a row of faders (the one-panel spec §7.4): each bar an ordinary fader port, MOD's own fader film moving it live,
   // its label the bar's. A declared section's `bars` word wins over the rule (tools/bars.mjs); the rule's refusals are by code.
   for (const sec of sections) {
+    if (sec.matrix) continue; // a repeated group's matrix places every control; no bar row is cut out of it
     const word = panel.sections.find((p) => p.key === sec.key)?.bars;
     const items = sec.controls.map((k) => ({ symbol: k.symbol, label: k.name, control: controls.find((x) => keyOf(x) === k.symbol) }));
     const { runs, refusal } = barsOf(items, word);
@@ -420,6 +400,71 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
 }
 
+/**
+ * A repeated group's controls (docs/group-model.md) drawn as one section: its own parameters first, then the group's SERVED
+ * matrix (group-model.mjs `servedMatrix`, the one `omx-panel describe` serves), read as given: the heads `drawnHeads` keeps
+ * at the count's come-up value (L6), each cell at its row and column, never flowed. The section is where the group's
+ * instances were, titled by the matrix; the edges (an EQ's high-pass and low-pass) are taken from whatever section holds
+ * them, which keeps the rest of its controls. The count is a selector. A group some of whose controls are not drawn (an Easy
+ * section took them), or whose instance section holds anything else beside the group, is left as it is.
+ */
+export function withRepeats(descriptor, declared, sections) {
+  const { groups } = inferGroupModel(controlsOfDescriptor(descriptor, declared ? { panel: declared } : {}));
+  let out = sections;
+  for (const g of groups) {
+    if (g.kind !== 'repeated') continue;
+    const placed = placeMatrix(g, out.map((s, id) => ({ id, symbols: s.controls.map((k) => k.symbol) })));
+    if (!placed) continue;
+    const drawn = new Map(out.flatMap((s) => s.controls.map((k) => [k.symbol, k])));
+    const count = g.count ? drawn.get(g.count.symbol) : undefined;
+    if (count && count.widget !== 'selector') Object.assign(count, { widget: 'selector', options: optionsOf({ min: count.min, max: count.max }) });
+    const homeSection = out[placed.home];
+    // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
+    const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
+    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // count leaves out is not on the face
+    const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
+      const sym = matrix.cells[li][h];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+    }));
+    const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
+    // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
+    const rest = (s) => ({ ...s, controls: s.controls.filter((k) => !placed.members.has(k.symbol)) });
+    const holdsAfter = ({ s, id }) => !placed.folded.includes(id) && (rest(s).controls.length > 0 || s.displays.length > 0);
+    out = mergedSections(placed, out.map((s, id) => ({ s, id })), { idOf: (x) => x.id, holdsAfter })
+      .map(({ section: x, home: isHome }) => (isHome ? merged : placed.donors.includes(x.id) ? rest(x.s) : x.s));
+  }
+  return out;
+}
+
+/**
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
+ */
+function matrixCells(s, top) {
+  const g = GEOMETRY;
+  const mx = s.matrix;
+  const by = new Map(s.controls.map((k) => [k.symbol, k]));
+  // a head whose every control the come-up values hide takes no column (an edge keeps its head)
+  const heads = drawnHeads(mx).filter((h) => mx.heads[h].edge || mx.rows.some((r, li) => by.get(mx.cells[li][h])?.shown !== false && mx.cells[li][h]));
+  const at = (col, li) => (mx.orientation === 'columns'
+    ? { x: g.sectionPad + col * g.cellW, y: top + li * g.cellH }
+    : { x: g.sectionPad + li * g.cellW, y: top + col * g.cellH });
+  const controls = [];
+  const captions = [];
+  heads.forEach((h, col) => mx.rows.forEach((r, li) => {
+    const sym = mx.cells[li][h];
+    if (sym) controls.push({ ...by.get(sym), ...at(col, li), mxdy: at(col, li).y - top });
+    else if (r.head) captions.push({ text: mx.heads[h].label, ...at(col, li), mxdy: at(col, li).y - top });
+  }));
+  // the controls of a head left out stay on the face, hidden by the rule that hides them, where they take no room
+  const kept = new Set(heads);
+  drawnHeads(mx).forEach((h) => { if (!kept.has(h)) mx.rows.forEach((r, li) => { const sym = mx.cells[li][h]; if (sym) controls.push({ ...by.get(sym), x: g.sectionPad, y: top }); }); });
+  const across = mx.orientation === 'columns' ? heads.length : mx.rows.length;
+  const down = mx.orientation === 'columns' ? mx.rows.length : heads.length;
+  return { controls, captions, across, down };
+}
+
 /** Every box of the face, in px at scale 1: what the template positions and the raster paints. */
 /** How many cells wide a selector is: one, or as many as its widest label needs (an enumeration of long labels, the strip's stage order, is a
  * row-wide selector, never an ellipsis); the shown text is measured in the default look's font at the selector's 10 px. */
@@ -434,16 +479,15 @@ function emitFontFace(f) {
   return `@font-face { font-family: 'Gelasio'; font-style: normal; font-weight: 400 700; src: url(/resources/${relative(MODGUI_DIR, f.font)}{{{ns}}}) format('woff2'); }\n`;
 }
 
-/** The rows of an aligned matrix, top to bottom: the on/off at the head of each column. */
-const MATRIX_ROWS = ['on', 'type', 'freq', 'gain', 'q'];
-/** The height of a matrix column's header. */
-const MATRIX_HEAD_H = 20;
-/** The gap above a matrix header: the column labels sit clear of the scribbles above. */
-const MATRIX_HEAD_GAP = 6;
-
 export function layout(panel) {
   const g = GEOMETRY;
-  // a curve row needs a width of its own: three cells
+  // a curve row needs a width of its own: three cells; a matrix is as wide as its columns
+  const inGridOf = (s) => new Set(s.matrix ? s.matrix.cells.flat().filter(Boolean) : []);
+  const across = (s) => (s.matrix ? matrixCells(s, 0).across : 0);
+  const flowedOf = (s) => s.controls.filter((k) => !inGridOf(s).has(k.symbol));
+  const most = Math.max(Math.min(ROW_CONTROLS, Math.max(...panel.sections.map((s) => Math.max(flowedOf(s).filter((c) => c.shown !== false).length, s.displays.length > 0 ? 3 : 0)))), ...panel.sections.map(across));
+  const sectionW = most * g.cellW + 2 * g.sectionPad;
+  let y = g.sectionTop;
   // an edge band (the filters of an EQ) is a row of its own; the other controls flow on
   const place = (controls) => {
     let col = 0, row = 0, prev;
@@ -456,29 +500,21 @@ export function layout(panel) {
       return at;
     }), rows: controls.length === 0 ? 0 : row + 1 };
   };
-  // a matrix section (an EQ's bands): the cells hold the columns whose controls the come-up values show, the others flow above
-  const shownIn = (s) => s.controls.filter((c) => c.shown !== false);
-  const colsOf = (s) => (s.matrix ? s.matrix.cols.filter((col) => s.controls.some((c) => c.col === col && c.shown !== false)) : []);
-  const widthOf = (s) => (s.matrix
-    ? Math.max(Math.min(shownIn(s).filter((c) => c.col === undefined).length, ROW_CONTROLS), colsOf(s).length)
-    : Math.min(s.controls.length, ROW_CONTROLS));
-  const most = Math.min(Math.max(ROW_CONTROLS, ...panel.sections.map((s) => colsOf(s).length)), Math.max(...panel.sections.map((s) => Math.max(widthOf(s), s.displays.length > 0 ? 3 : 0))));
-  const sectionW = most * g.cellW + 2 * g.sectionPad;
-  let y = g.sectionTop;
   const sections = panel.sections.map((s) => {
-    const loose = s.controls.filter((c) => c.col === undefined);
-    const grid = place(loose.filter((c) => c.shown !== false));
-    const rows = grid.rows;
-    let shownAt = 0;
+    const flowed = flowedOf(s);
+    const grid0 = place(flowed.filter((c) => c.shown !== false));
     const curves = s.displays.length * (g.curveH + g.curveGap);
-    const cols = colsOf(s);
-    const mxTop = g.sectionTitleH + curves + rows * g.cellH;
-    const h = mxTop + (cols.length ? MATRIX_HEAD_H + s.matrix.rows.length * g.cellH : 0) + g.sectionPad / 2;
-    const placed = loose.map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: g.sectionTitleH + curves } : { ...c, x: g.sectionPad + grid.at[shownAt].col * g.cellW, y: g.sectionTitleH + curves + grid.at[shownAt++].row * g.cellH }));
-    const cells = s.matrix ? s.matrix.cols.flatMap((col) => s.controls.filter((c) => c.col === col).sort((a, b) => a.ri - b.ri).map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: mxTop } : { ...c, x: g.sectionPad + cols.indexOf(col) * g.cellW, y: mxTop + MATRIX_HEAD_H + c.ri * g.cellH }))) : [];
+    const top = g.sectionTitleH + curves + grid0.rows * g.cellH;
+    const grid = s.matrix ? matrixCells(s, top) : { controls: [], captions: [], down: 0 };
+    const h = top + grid.down * g.cellH + g.sectionPad / 2;
+    let shownAt = 0;
     const sec = {
-      ...s, x: g.pad, y, w: sectionW, h, controls: [...placed, ...cells],
-      ...(s.matrix ? { heads: s.matrix.cols.map((col) => ({ col, label: s.matrix.labels[col], shown: cols.includes(col), x: g.sectionPad + Math.max(0, cols.indexOf(col)) * g.cellW, y: mxTop + MATRIX_HEAD_GAP })), mxTop } : {}),
+      ...s, x: g.pad, y, w: sectionW, h,
+      controls: [
+        ...flowed.map((c) => (c.shown === false ? { ...c, x: g.sectionPad, y: g.sectionTitleH + curves } : { ...c, x: g.sectionPad + grid0.at[shownAt].col * g.cellW, y: g.sectionTitleH + curves + grid0.at[shownAt++].row * g.cellH })),
+        ...grid.controls,
+      ],
+      ...(s.matrix ? { captions: grid.captions, mxDown: grid.down } : {}),
     };
     y += h + g.sectionGap;
     return sec;
@@ -575,7 +611,7 @@ function drawKnob(c, cx, cy, r, f, col, look) {
   disc(c, cx, cy, r - Math.max(1, r * 0.08), col.body);
   const th = (-135 + 270 * Math.min(1, Math.max(0, f))) * (Math.PI / 180);
   const sx = Math.sin(th), sy = -Math.cos(th); // the segment snaps its ends
-  segment(c, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, Math.max(0.75, r * 0.08), col.accent);
+  segment(c, cx + sx * r * 0.28, cy + sy * r * 0.28, cx + sx * r * 0.78, cy + sy * r * 0.78, Math.max(0.75, r * 0.08), col.pointer);
 }
 
 /** A selector: a box, and a mark along its foot at the selected option's place among `n`. */
@@ -612,6 +648,7 @@ function drawSwitch(c, x, y, w, h, on, col) {
 const palette = (tok) => ({
   surface: rgbOf(tok['--surface']), section: rgbOf(tok['--surface-2']), body: rgbOf(tok['--surface-3']),
   rim: rgbOf(tok['--border-strong']), ink: rgbOf(tok['--ink']), inkDim: rgbOf(tok['--ink-dim']), accent: rgbOf(tok['--accent']),
+  pointer: rgbOf(tok['--knob-pointer']), curve: rgbOf(tok['--curve-stroke']),
 });
 
 /** The first #rrggbb a look token names, as [r, g, b]; the plugin's enclosure where it names that. */
@@ -686,6 +723,9 @@ export function renderFace(lay, look, scale) {
         drawText(c, font, m.letter, cx + m.at[0], cy + m.at[1] - 5 * s, TEXT.small * s, tx.screen, 'centre');
       }
     });
+    for (const cap of sec.captions ?? []) {
+      drawText(c, font, fitText(font, cap.text, TEXT.small * s, (g.cellW - 4) * s), (sec.x + cap.x + g.cellW / 2) * s, (sec.y + cap.y + TEXT.nameBase) * s, TEXT.small * s, col.inkDim, 'centre');
+    }
     for (const k of sec.controls) {
       // a control the come-up values hide is not on the screenshot, as the face hides it
       if (!k.shown) continue;
@@ -838,7 +878,7 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
   // a governed control names its governing port and the mask of the values that show it; the script reads them
   const band = (k) => (k.band ? ` data-band="${esc(k.band)}"` : '');
   const vis = (k) => (k.visibleWhen ? ` data-visible-port="${k.visibleWhen.symbol}" data-visible-mask="${k.visibleWhen.mask.toString(16)}"` : '');
-  const mx = (k) => (k.col === undefined ? '' : ` data-mx-col="${k.col}" data-mx-row="${k.mxrow}" data-mx-ri="${k.ri}"`);
+  const mx = (k) => (k.mxdy === undefined ? '' : ` data-mx-dy="${k.mxdy}"`);
   const at = (k) => `left:${k.x}px;top:${k.y}px${k.shown ? '' : ';display:none'}`;
   const control = (k) => {
     // a readout is a display: its symbol and range, no default and no port role (MOD has none for an output port)
@@ -876,9 +916,9 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
     const marks = geo.marks.map((m) => `<circle cx="${n(m.at[0])}" cy="${n(m.at[1])}" r="2.5"/><text x="${n(m.at[0])}" y="${n(m.at[1] - 5)}" text-anchor="middle">${m.letter}</text>`).join('');
     return `<svg class="omx-curve-plot" width="${w}" height="${g.curveH}" viewBox="0 0 ${w} ${g.curveH}"><line class="omx-curve-axis" x1="${n(geo.axis[0])}" y1="${n(geo.axis[1])}" x2="${n(geo.axis[2])}" y2="${n(geo.axis[3])}"/><polyline class="omx-curve-line" fill="none" points="${geo.poly.map((p) => `${n(p[0])},${n(p[1])}`).join(' ')}"/>${marks}</svg>`;
   };
-  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" data-curves="${s.displays.length * (g.curveH + g.curveGap)}"${s.matrix ? ` data-matrix="1" data-mx-rows="${s.matrix.rows.length}"` : ''} style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
+  const sections = lay.sections.map((s) => `        <div class="omx-section" data-section="${s.key}" data-curves="${s.displays.length * (g.curveH + g.curveGap)}"${s.matrix ? ` data-matrix="1" data-mx-down="${s.mxDown}"` : ''} style="left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px">
             <h2 class="omx-section-title">${esc(s.label)}</h2>
-${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}${(s.heads ?? []).map((h) => `\n            <div class="omx-colhead" data-mx-col="${h.col}" style="left:${h.x}px;top:${h.y}px${h.shown ? '' : ';display:none'}">${h.label}</div>`).join('')}
+${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}${(s.captions ?? []).map((h) => `\n            <div class="omx-colhead" data-mx-dy="${h.mxdy}" style="left:${h.x}px;top:${h.y}px">${esc(h.text)}</div>`).join('')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">Meters</h2>
@@ -890,7 +930,7 @@ ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data
             <div class="mod-pedal-${dir}-image"></div>
         </div>
         {{/effect.ports.${kind}.${dir}}}`).join('\n');
-  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family} omx-look-${lookName}" data-omx-pedal data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-head-h="${MATRIX_HEAD_H}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
+  return `<div class="omx-pedal{{{cns}}} omx-family-${panel.family} omx-look-${lookName}" data-omx-pedal data-cell-w="${g.cellW}" data-cell-h="${g.cellH}" data-title-h="${g.sectionTitleH}" data-section-pad="${g.sectionPad}" data-section-gap="${g.sectionGap}" data-section-top="${g.sectionTop}" data-pad="${g.pad}" data-row-controls="${ROW_CONTROLS}" data-base-w="${lay.w - 2 * g.pad}" style="width:${lay.w}px;height:${lay.h}px">
 ${banner('    <!-- ', source).map((l) => `${l} -->`).join('\n')}
     <!-- Template format: MOD Devices' modgui (mod-ui, https://github.com/moddevices/mod-ui, and the
          MOD SDK's icon-template documentation) — Mustache, mod-role / mod-port-symbol, the {{{cns}}}
@@ -1094,11 +1134,11 @@ function (event, funcs) {
             }
             var curves = parseFloat(sec.getAttribute('data-curves')) || 0;
             var matrix = sec.getAttribute('data-matrix') === '1';
-            var col = 0, row = 0, prev = null, any = false, cells = [];
+            var col = 0, row = 0, prev = null, any = false;
             for (var c = 0; c < sec.children.length; c++) {
                 var k = sec.children[c];
                 if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
-                if (matrix && k.getAttribute('data-mx-col')) { cells.push(k); continue; }
+                if (matrix && k.getAttribute('data-mx-dy') !== null) continue;
                 var band = k.getAttribute('data-band') || '';
                 var span = parseFloat(k.getAttribute('data-span')) || 1;
                 if (any && (col + span > n('data-row-controls') || band !== prev)) { col = 0; row++; }
@@ -1110,24 +1150,12 @@ function (event, funcs) {
             var top = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h');
             var h = top + n('data-section-pad') / 2;
             if (matrix) {
-                // an aligned matrix: a column per band that has a shown control, in the order the template lists them (HPF, the bands, LPF),
-                // each parameter on its row, the same y in every column
-                var order = [], at = {};
-                for (var m = 0; m < cells.length; m++) {
-                    var key = cells[m].getAttribute('data-mx-col');
-                    if (!(key in at)) { at[key] = order.length; order.push(key); }
-                    cells[m].style.left = (n('data-section-pad') + at[key] * n('data-cell-w')) + 'px';
-                    cells[m].style.top = (top + n('data-head-h') + parseFloat(cells[m].getAttribute('data-mx-ri')) * n('data-cell-h')) + 'px';
+                // the matrix keeps its columns where the generator put them; its cells move down with the flowed rows above
+                for (var m = 0; m < sec.children.length; m++) {
+                    var cell = sec.children[m], dy = cell.getAttribute && cell.getAttribute('data-mx-dy');
+                    if (dy !== null && dy !== undefined && cell.style.display !== 'none') cell.style.top = (top + parseFloat(dy)) + 'px';
                 }
-                for (var c2 = 0; c2 < sec.children.length; c2++) {
-                    var head = sec.children[c2];
-                    if (head.className.indexOf('omx-colhead') < 0) continue;
-                    var hk = head.getAttribute('data-mx-col');
-                    head.style.display = hk in at ? '' : 'none';
-                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = (top + 6) + 'px'; }
-                }
-                if (order.length) h += n('data-head-h') + parseFloat(sec.getAttribute('data-mx-rows')) * n('data-cell-h');
-                wide = Math.max(wide, order.length * n('data-cell-w') + 2 * n('data-section-pad'));
+                h += parseFloat(sec.getAttribute('data-mx-down')) * n('data-cell-h');
             }
             sec.style.top = y + 'px';
             sec.style.height = h + 'px';

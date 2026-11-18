@@ -108,11 +108,11 @@ function (event, funcs) {
             }
             var curves = parseFloat(sec.getAttribute('data-curves')) || 0;
             var matrix = sec.getAttribute('data-matrix') === '1';
-            var col = 0, row = 0, prev = null, any = false, cells = [];
+            var col = 0, row = 0, prev = null, any = false;
             for (var c = 0; c < sec.children.length; c++) {
                 var k = sec.children[c];
                 if (k.className.indexOf('omx-control') < 0 || k.style.display === 'none') continue;
-                if (matrix && k.getAttribute('data-mx-col')) { cells.push(k); continue; }
+                if (matrix && k.getAttribute('data-mx-dy') !== null) continue;
                 var band = k.getAttribute('data-band') || '';
                 var span = parseFloat(k.getAttribute('data-span')) || 1;
                 if (any && (col + span > n('data-row-controls') || band !== prev)) { col = 0; row++; }
@@ -124,24 +124,12 @@ function (event, funcs) {
             var top = n('data-title-h') + curves + (any ? row + 1 : 0) * n('data-cell-h');
             var h = top + n('data-section-pad') / 2;
             if (matrix) {
-                // an aligned matrix: a column per band that has a shown control, in the order the template lists them (HPF, the bands, LPF),
-                // each parameter on its row, the same y in every column
-                var order = [], at = {};
-                for (var m = 0; m < cells.length; m++) {
-                    var key = cells[m].getAttribute('data-mx-col');
-                    if (!(key in at)) { at[key] = order.length; order.push(key); }
-                    cells[m].style.left = (n('data-section-pad') + at[key] * n('data-cell-w')) + 'px';
-                    cells[m].style.top = (top + n('data-head-h') + parseFloat(cells[m].getAttribute('data-mx-ri')) * n('data-cell-h')) + 'px';
+                // the matrix keeps its columns where the generator put them; its cells move down with the flowed rows above
+                for (var m = 0; m < sec.children.length; m++) {
+                    var cell = sec.children[m], dy = cell.getAttribute && cell.getAttribute('data-mx-dy');
+                    if (dy !== null && dy !== undefined && cell.style.display !== 'none') cell.style.top = (top + parseFloat(dy)) + 'px';
                 }
-                for (var c2 = 0; c2 < sec.children.length; c2++) {
-                    var head = sec.children[c2];
-                    if (head.className.indexOf('omx-colhead') < 0) continue;
-                    var hk = head.getAttribute('data-mx-col');
-                    head.style.display = hk in at ? '' : 'none';
-                    if (hk in at) { head.style.left = (n('data-section-pad') + at[hk] * n('data-cell-w')) + 'px'; head.style.top = (top + 6) + 'px'; }
-                }
-                if (order.length) h += n('data-head-h') + parseFloat(sec.getAttribute('data-mx-rows')) * n('data-cell-h');
-                wide = Math.max(wide, order.length * n('data-cell-w') + 2 * n('data-section-pad'));
+                h += parseFloat(sec.getAttribute('data-mx-down')) * n('data-cell-h');
             }
             sec.style.top = y + 'px';
             sec.style.height = h + 'px';

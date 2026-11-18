@@ -1,0 +1,226 @@
+{
+ "input": "group-model/lv2/lsp-para-equalizer-x8-mono/para_equalizer_x8_mono.ttl",
+ "uri": "http://lsp-plug.in/plugins/lv2/para_equalizer_x8_mono",
+ "groups": [
+  {
+   "key": "",
+   "label": null,
+   "kind": "repeated",
+   "source": "indexed",
+   "family": "eq",
+   "parameters": [
+    "g_in",
+    "g_out",
+    "mode",
+    "react",
+    "shift",
+    "zoom",
+    "fsel",
+    "quant",
+    "insp_id",
+    "insp_r",
+    "insp_on",
+    "ife",
+    "ofe",
+    "rfe",
+    "frqs",
+    "decramp"
+   ],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "#0",
+     "label": "Band 0",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#1",
+     "label": "Band 1",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#2",
+     "label": "Band 2",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#3",
+     "label": "Band 3",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#4",
+     "label": "Band 4",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#5",
+     "label": "Band 5",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#6",
+     "label": "Band 6",
+     "on": null,
+     "sense": null
+    },
+    {
+     "key": "#7",
+     "label": "Band 7",
+     "on": null,
+     "sense": null
+    }
+   ],
+   "lines": [
+    {
+     "key": "freq",
+     "label": "Frequency"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "slope",
+     "label": "Filter slope"
+    },
+    {
+     "key": "q",
+     "label": "Quality factor"
+    },
+    {
+     "key": "type",
+     "label": "Filter type"
+    },
+    {
+     "key": "fm_#",
+     "label": "Filter mode"
+    },
+    {
+     "key": "xs_#",
+     "label": "Filter solo"
+    },
+    {
+     "key": "xm_#",
+     "label": "Filter mute"
+    },
+    {
+     "key": "w_#",
+     "label": "Filter Width"
+    },
+    {
+     "key": "hue_#",
+     "label": "Hue"
+    }
+   ],
+   "cells": [
+    [
+     "f_0",
+     "f_1",
+     "f_2",
+     "f_3",
+     "f_4",
+     "f_5",
+     "f_6",
+     "f_7"
+    ],
+    [
+     "g_0",
+     "g_1",
+     "g_2",
+     "g_3",
+     "g_4",
+     "g_5",
+     "g_6",
+     "g_7"
+    ],
+    [
+     "s_0",
+     "s_1",
+     "s_2",
+     "s_3",
+     "s_4",
+     "s_5",
+     "s_6",
+     "s_7"
+    ],
+    [
+     "q_0",
+     "q_1",
+     "q_2",
+     "q_3",
+     "q_4",
+     "q_5",
+     "q_6",
+     "q_7"
+    ],
+    [
+     "ft_0",
+     "ft_1",
+     "ft_2",
+     "ft_3",
+     "ft_4",
+     "ft_5",
+     "ft_6",
+     "ft_7"
+    ],
+    [
+     "fm_0",
+     "fm_1",
+     "fm_2",
+     "fm_3",
+     "fm_4",
+     "fm_5",
+     "fm_6",
+     "fm_7"
+    ],
+    [
+     "xs_0",
+     "xs_1",
+     "xs_2",
+     "xs_3",
+     "xs_4",
+     "xs_5",
+     "xs_6",
+     "xs_7"
+    ],
+    [
+     "xm_0",
+     "xm_1",
+     "xm_2",
+     "xm_3",
+     "xm_4",
+     "xm_5",
+     "xm_6",
+     "xm_7"
+    ],
+    [
+     "w_0",
+     "w_1",
+     "w_2",
+     "w_3",
+     "w_4",
+     "w_5",
+     "w_6",
+     "w_7"
+    ],
+    [
+     "hue_0",
+     "hue_1",
+     "hue_2",
+     "hue_3",
+     "hue_4",
+     "hue_5",
+     "hue_6",
+     "hue_7"
+    ]
+   ]
+  }
+ ]
+}

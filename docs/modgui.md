@@ -29,6 +29,10 @@ Every control's symbol, travel, default and label is the descriptor's. A toggle 
 integer travel of at most 16 steps, a selector over its values; every other travel a knob. The template lays out
 every section and every control; `modgui.ttl` lists the input controls of the first section as `modgui:port`. With `--easy-first` the Easy controls ([panel-layout.md](panel-layout.md)) are that first section, so a pedal's listed ports are them; a plugin's package turns it on when it regenerates its committed files, and `omx-modgui-sync` always does.
 
+A repeated group ([group-model.md](group-model.md): an EQ's bands, a multiband compressor's bands) whose controls fill
+some sections exactly is one section drawn as its matrix: each parameter on one row and each band in one column, never
+flowed, an EQ always with its bands as columns, HPF leftmost and LPF rightmost, each band's on/off at its head.
+
 A bar group ([panel-layout.md](panel-layout.md) "Bars"; a declared section's `bars: true` or `false` wins over the rule) is a row of
 faders: each control of a run is the fader widget, an ordinary `input-control-port` MOD moves live with its own fader film, its title
 the bar's label (`16'`, `1`..`16`). A declared `bars: true` that fails the rule's checks is refused by its code. A section whose
@@ -57,12 +61,42 @@ A fixed-code deflate and no zlib, so their bytes depend only on the descriptor, 
 
 `schema/look-roles.json` declares the colour roles of a panel once: every colour a panel description makes a surface
 draw, under the console's token names, each with its family (theme, accent, fixed, state), the contrast floor its
-value clears on the grounds it is drawn on, and one default. The values are each host's: the console sets every role
-in every theme of its own `tokens.css`, Zynthian's theme maps its palette onto every role. The MOD GUI's host supplies
-nothing, so it wears the defaults, the dark look the file names: `tools/look.mjs` writes them, with the font, into
-`tools/look.json`, and the renderer's role list into `renderer/src/look_roles.h`; `omx-panel look --check` refuses
-either when it is not what the role file gives. No surface spells a colour, and every token a surface reads is a
-role (`test/look-roles.test.mjs`). The package exports the file as `@openmixer/omx-panel/look-roles.json`.
+value clears on the grounds it is drawn on, and one default. The defaults are the vintage look, the console's own
+default: the dark theme, the orange accent, the aluminium finish, the vintage style, which the file names as its
+`look`. Each default is the value the console's `tokens.css` resolves for that token at that look.
+
+`tools/look.json` is the one public source of the vintage tokens. `tools/look.mjs` writes it from the role file,
+every role at its default and the font, and the renderer's role list into `renderer/src/look_roles.h`;
+`omx-panel look --check` refuses either when it is not what the role file gives. The package carries it as
+`dist/tools/look.json`, exported as `@openmixer/omx-panel/look.json` and installed as
+`/usr/share/omx-panel/tools/look.json`. Its readers:
+
+- the MOD GUI generator, whose host supplies nothing, so the MOD GUI wears it as it is;
+- the renderer, when its host passes no look of its own;
+- the Zynthian UI, which maps its colours from it, and its pixel test, which reads the colours it expects from it:
+  no copy of the console's sheet and no second list of colours on that side;
+- the console, whose `tokens.css` is held to it token by token by the console's own check, at the look the file
+  names. A value that moves moves here first, and reaches the console with the release that carries it.
+
+A host may still value the roles itself (a console theme, a Zynthian palette); it then values every one of them.
+
+Two roles belong to one drawing each, and no surface draws either in `--accent`:
+
+- `--knob-pointer` colours a knob's pointer: the line from the knob's centre toward its rim that shows the value.
+  Fixed family: it does not follow the accent.
+- `--curve-stroke` colours a curve's stroke: the line through the points of an `eq_response`, a `transfer_curve`
+  or a `time_response` display, over a bare frame and over a spectrum alike. Accent family: at the vintage look
+  its value is the accent's. The spectrum's own trace, a time response's stems, a fill, a lit switch and the head
+  line stay `--accent`.
+
+A look that lacks any role is refused, and the refusal names the role: `tools/look.mjs` (`checkRoles` over a host's
+values), the MOD GUI generator and the renderer's `read_look` each refuse it, whether or not the surface draws that
+role. There is no stand-in: a look without `--knob-pointer` or `--curve-stroke` is not drawn with `--accent` in its
+place. No surface spells a colour, and every token a surface reads is a role (`test/look-roles.test.mjs`). The
+package also exports the role file, as `@openmixer/omx-panel/look-roles.json`.
+
+The knob is still drawn flat (rim, body, pointer): the metal face, rim and relief the vintage style names are not
+drawn yet.
 
 ## The test
 

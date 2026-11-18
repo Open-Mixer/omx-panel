@@ -10,11 +10,11 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { modgui, skipWithoutTwin, CLI, DATA, FIXTURES, RENDERER, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
+import { modgui, CLI, DATA, FIXTURES, RENDERER, ROOT, compare, decodePng, descriptionFile, face, render, scratch, stateFile } from './harness.mjs';
 
 for (const fx of FIXTURES) {
   for (const scale of [1, 0.5, 2]) {
-    test(`${fx.name} at ${scale}x is the MOD GUI face, pixel for pixel`, skipWithoutTwin(fx), () => {
+    test(`${fx.name} at ${scale}x is the MOD GUI face, pixel for pixel`, () => {
       const dir = scratch();
       const want = face(fx, scale);
       const drawn = render(descriptionFile(fx, dir), stateFile(fx, dir), { scale });
@@ -28,7 +28,7 @@ for (const fx of FIXTURES) {
     // screenshot of the same fixture is COMMITTED here (golden/modgui-<fixture>-flat.png), written by the generator and held both ways:
     // the generator's output must be the committed file byte for byte (a drift guard: rewrite it with OMX_PANEL_RENDER_UPDATE=1 after a
     // change meant to move it), and the renderer must draw the committed file pixel for pixel.
-    test(`${fx.name}: the committed flat-look MOD GUI screenshot is what the generator writes and what the renderer draws`, skipWithoutTwin(fx), () => {
+    test(`${fx.name}: the committed flat-look MOD GUI screenshot is what the generator writes and what the renderer draws`, () => {
       const dir = scratch();
       const file = join(RENDERER, 'test', 'golden', `modgui-${fx.name}-flat.png`);
       const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));

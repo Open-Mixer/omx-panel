@@ -233,7 +233,10 @@ What a face serves keeps the extension's widget enum: `knob`, `fader` and `switc
 ## Sections with no declared panel
 
 Each distinct `group` path is a section, in the order its first control comes; its label is the path
-joined with ` / `, its key the path's segments in the key grammar, joined with dots. Controls with no
+joined with ` / `, its key the path's segments in the key grammar, joined with dots. The sections that are one
+repeated group (an EQ's bands and its filters) are then served as ONE section carrying the group's `matrix`
+([group-model.md](group-model.md), L7), whatever the descriptor's origin: the high-pass is its first band and the
+low-pass its last, though the plugin declares both before its bands. Controls with no
 group go to a section `controls`. A hidden control is left out, and so is a control meaning `bypass`:
 the header draws the one bypass of a panel, and the param stays served for it to set. The layout also carries the ports: the
 audio inputs and outputs with their channels, whether one is a side-chain, and the note inputs.
@@ -252,8 +255,12 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
    also sit on its remote page; a slot of no control is blank. The served description carries none.
 3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
    every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
-   its own, never mixed with its neighbour. A control with no group is its own. A derived page holds a control once, so the Easy
-   controls are not repeated. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
+   its own, never mixed with its neighbour. **A repeated group is cut by instance**: where a section carries a group-model
+   `matrix` (docs/group-model.md, P1), each instance is one group, its on/off first, and one page where it fits; the
+   instances come in the matrix's order (an EQ's high-pass first, its bands in their number order, its low-pass last:
+   the drawing's order, the audio order untouched) and keep the same places, a place an instance has no control at left
+   blank. A control with no group is its own. A derived page holds a control once, so the Easy
+   controls are not repeated: in an instance, the slot of a control the Easy pages took stays, blank. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
 
 Every page carries `perPage` slots, a short page's last ones `null`. Below two encoders a bar group (the Bars section)
 is plain controls, one a page. `omx-panel layout --pages [--per-page N]` cuts the layout; `omx-panel describe --pages

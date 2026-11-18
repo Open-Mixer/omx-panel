@@ -11,7 +11,7 @@
     },
     "family": {
       "description": "A panel family, tools/panel-description.mjs FAMILIES.",
-      "enum": ["none", "gate", "dynamics", "limiter", "deesser", "eq", "filter", "drive", "modulation", "delay", "reverb", "pitch"]
+      "enum": ["none", "gate", "dynamics", "limiter", "deesser", "eq", "filter", "drive", "modulation", "delay", "reverb", "pitch", "utility"]
     },
     "label": {
       "type": "object",

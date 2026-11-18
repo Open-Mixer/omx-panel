@@ -1,0 +1,126 @@
+{
+ "input": "group-model/lv2/calf-multiband-compressor/MultibandCompressor.ttl",
+ "uri": "http://calf.sourceforge.net/plugins/MultibandCompressor",
+ "groups": [
+  {
+   "key": "",
+   "label": null,
+   "kind": "repeated",
+   "source": "indexed",
+   "family": null,
+   "parameters": [
+    "bypass",
+    "level_in",
+    "level_out",
+    "freq0",
+    "freq1",
+    "freq2",
+    "mode",
+    "notebook"
+   ],
+   "orientation": "rows",
+   "heads": [
+    {
+     "key": "#0",
+     "label": "1",
+     "on": "bypass0",
+     "sense": "off"
+    },
+    {
+     "key": "#1",
+     "label": "2",
+     "on": "bypass1",
+     "sense": "off"
+    },
+    {
+     "key": "#2",
+     "label": "3",
+     "on": "bypass2",
+     "sense": "off"
+    },
+    {
+     "key": "#3",
+     "label": "4",
+     "on": "bypass3",
+     "sense": "off"
+    }
+   ],
+   "lines": [
+    {
+     "key": "threshold#",
+     "label": "Threshold"
+    },
+    {
+     "key": "ratio#",
+     "label": "Ratio"
+    },
+    {
+     "key": "attack#",
+     "label": "Attack"
+    },
+    {
+     "key": "release#",
+     "label": "Release"
+    },
+    {
+     "key": "makeup#",
+     "label": "Makeup"
+    },
+    {
+     "key": "knee#",
+     "label": "Knee"
+    },
+    {
+     "key": "detection#",
+     "label": "Detection"
+    },
+    {
+     "key": "solo#",
+     "label": "Solo"
+    }
+   ],
+   "cells": [
+    [
+     "threshold0",
+     "ratio0",
+     "attack0",
+     "release0",
+     "makeup0",
+     "knee0",
+     "detection0",
+     "solo0"
+    ],
+    [
+     "threshold1",
+     "ratio1",
+     "attack1",
+     "release1",
+     "makeup1",
+     "knee1",
+     "detection1",
+     "solo1"
+    ],
+    [
+     "threshold2",
+     "ratio2",
+     "attack2",
+     "release2",
+     "makeup2",
+     "knee2",
+     "detection2",
+     "solo2"
+    ],
+    [
+     "threshold3",
+     "ratio3",
+     "attack3",
+     "release3",
+     "makeup3",
+     "knee3",
+     "detection3",
+     "solo3"
+    ]
+   ]
+  }
+ ]
+}

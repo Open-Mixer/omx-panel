@@ -103,6 +103,19 @@ test('a Q whose default is zero is no band\'s Q: the width in octaves beside it 
   assert.equal(qOf({ min: 0.1, default: 0.7 }), 'q_0');
 });
 
+test('a band holding a Bandwidth and a Q, in either order: the Q is its Q', () => {
+  const t = (symbol, name, unit, min, max, def) => ({ symbol, name, kind: 'travel', travel: { min, max, unit, default: def } });
+  const freq = t('b1_freq', 'Band 1 Frequency', 'Hz', 20, 20000, 1000);
+  const gain = t('b1_gain', 'Band 1 Gain', 'dB', -18, 18, 0);
+  const bw = t('b1_bw', 'Band 1 Bandwidth', '', 0.1, 4, 1);
+  const q = t('b1_q', 'Band 1 Q', '', 0.1, 10, 0.7);
+  const qOf = (...controls) => inferBands(controls).roles.find((r) => r.role === 'band_q')?.symbol;
+  assert.equal(qOf(freq, gain, bw, q), 'b1_q');
+  assert.equal(qOf(freq, gain, q, bw), 'b1_q');
+  // arm: with no Q beside it the Bandwidth is the band's Q
+  assert.equal(qOf(freq, gain, bw), 'b1_bw');
+});
+
 // -- params facts: a choice and a default the console served
 test('mda Leslie: a choice whose values lie between integers is served as the console served it, unlabelled, its default an integer', () => {
   const d = fixture('scanned-lv2-mda-leslie.json');

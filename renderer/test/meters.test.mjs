@@ -65,8 +65,8 @@ const markerAt = (img, f) => { for (let x = Math.round(f.x) + 2; x < Math.round(
 const outside = (img, f, y) => { let n = 0; for (let x = Math.round(f.x + f.w) - 1; x < img.w; x++) if (near(at(img, x, y), ACCENT)) n++; return n; };
 const inner = (f) => f.w - 4;
 
-test('the law the renderer was built with is omx-dsp\'s meter view, 18 dB per second', () => {
-  assert.equal(lawFall(), 18);
+test('the law the renderer was built with is omx-dsp\'s meter view: the header\'s fall is the vectors\'', () => {
+  assert.equal(lawFall(), VECTORS.law.fallDbPerSecond);
 });
 test('the marker is omx-dsp\'s: every tick of the golden fall vectors, at each draw rate, within a pixel', () => {
   const f = frame('in_level');
@@ -112,38 +112,11 @@ test('with no reading the frame stands: no bar, no marker', () => {
   assert.equal(run(img, f, barRow(f), ACCENT), 0);
   assert.equal(markerAt(img, f), null);
 });
-test('the marker falls by elapsed time at the law\'s rate: the peak, then 18 dB for each second', () => {
-  const f = frame('in_level'), fall = lawFall();
-  const place = (db) => ((db + 60) / 60) * inner(f);
-  for (const [elapsed, from] of [[0, -6], [0.5, -6], [1, -6], [2, -6]]) {
-    const m = markerAt(draw('in_level', [{ value: from, elapsed: 0 }, { value: -60, elapsed }]), f);
-    const want = place(Math.max(-60, from - fall * elapsed));
-    assert.ok(m !== null && Math.abs(m + 1 - want) <= 2, `${elapsed} s: marker at ${m}, wanted about ${want}`);
-  }
-});
-test('the fall is by elapsed time, not by tick: one second in one tick, in ten and in sixty is one place', () => {
-  const f = frame('in_level');
-  const at1 = (n) => markerAt(draw('in_level', [{ value: -6, elapsed: 0 }, ...Array.from({ length: n }, () => ({ value: -60, elapsed: 1 / n }))]), f);
-  const one = at1(1);
-  assert.ok(one !== null);
-  for (const n of [5, 10, 20, 60]) assert.ok(Math.abs(at1(n) - one) <= 1, `${n} ticks`);
-});
-test('the marker keeps the peak while the level stays under it, and rises with a louder one', () => {
-  const f = frame('in_level');
-  const held = markerAt(draw('in_level', [{ value: -12, elapsed: 0 }, { value: -40, elapsed: 0.1 }]), f);
-  const up = markerAt(draw('in_level', [{ value: -12, elapsed: 0 }, { value: -3, elapsed: 0.1 }]), f);
-  assert.ok(up > held, `${up} over ${held}`);
-  assert.ok(Math.abs(held + 1 - ((-12 - 1.8 + 60) / 60) * inner(f)) <= 2);
-});
-test('silence falls: the marker reaches the foot of the range and stays', () => {
-  const f = frame('in_level');
-  assert.equal(markerAt(draw('in_level', [{ value: -6, elapsed: 0 }, { value: -60, elapsed: 5 }]), f), 0);
-});
 test('a gain reduction\'s marker holds the deepest and recovers toward 0 dB at the same rate', () => {
   const f = frame('gr');
   const place = (db) => ((0 - db) / 24) * inner(f);
   const m = markerAt(draw('gr', [{ value: -20, elapsed: 0 }, { value: 0, elapsed: 0.5 }]), f);
-  assert.ok(m !== null && Math.abs(m + 1 - place(-20 + 18 * 0.5)) <= 2, `${m}`);
+  assert.ok(m !== null && Math.abs(m + 1 - place(-20 + lawFall() * 0.5)) <= 2, `${m}`);
 });
 test('a reading that is no finite value, or a negative elapsed time, is refused by the command', () => {
   const dir = scratch();

@@ -12,12 +12,15 @@ DATADIR ?= $(PREFIX)/share
 MANDIR ?= $(DATADIR)/man
 LIBDIR ?= $(PREFIX)/lib
 INCLUDEDIR ?= $(PREFIX)/include
+CONTRACTDIR ?= $(DATADIR)/omx-contract/contract.d
+# omx-contract's command (omx-contract.mjs or `omx-contract`), which renders the panel domain (docs/contract-domains.md)
+OMX_CONTRACT_CLI ?= omx-contract
 SYSCONFDIR ?= /etc
 UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
+.PHONY: contract contract-check all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
 
 all: build
 
@@ -33,15 +36,15 @@ check: build spdx public-sources look copies
 test:
 	npm test
 
-OPENMIXER_DOTGITHUB ?= $(or $(FREEMIXER_DOTGITHUB),../freemixer-dotgithub)
+OPENMIXER_DOTGITHUB ?= ../openmixer-dotgithub
 
 # Every file a comment can be written in opens with its licence and copyright: Open-Mixer/.github's spdx-check, from a
-# checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
+# checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI runs the action.
 spdx:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
-# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
+# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI
 # runs it through the public-sources-check workflow.
 public-sources:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
@@ -49,6 +52,12 @@ public-sources:
 look:
 	node tools/look.mjs --check
 	node tools/look-pin.mjs --self
+
+# The panel domain's header is the render of its document by omx-contract's renderer (docs/contract-domains.md).
+contract:
+	$(OMX_CONTRACT_CLI) render --target c --package panel --contract-dir contract.d --out include/omxdomain
+contract-check:
+	$(OMX_CONTRACT_CLI) render --target c --package panel --contract-dir contract.d --out include/omxdomain --check
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
@@ -64,8 +73,10 @@ renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
 # run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
+# the role vocabulary the layout reads: this tree's stand-in, as npm test reads it, unless the caller names one (docs/renderer.md)
 renderer-check: build
-	sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
+	OMX_ROLE_MEANINGS="$${OMX_ROLE_MEANINGS:-$(CURDIR)/test/fixtures/role-meanings/panel-roles.json}" \
+	  sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
 
 # a host that is not JavaScript reads the gesture word names and the compare values from what the panel ships (#23):
 # the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)
@@ -77,6 +88,11 @@ install-renderer:
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
 
 install: build
+	install -d $(DESTDIR)$(CONTRACTDIR)/panel $(DESTDIR)$(INCLUDEDIR)/omxdomain
+	install -d $(DESTDIR)$(CONTRACTDIR)/panel/catalogs
+	install -m 0644 contract.d/panel/panel.json $(DESTDIR)$(CONTRACTDIR)/panel/
+	install -m 0644 contract.d/panel/catalogs/*.json $(DESTDIR)$(CONTRACTDIR)/panel/catalogs/
+	install -m 0644 include/omxdomain/panel_vocabulary.h $(DESTDIR)$(INCLUDEDIR)/omxdomain/
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/
 	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/

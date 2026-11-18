@@ -3,7 +3,7 @@
 /*
  * The window draws what the buffer draws. The two share the layout, the widget code and where every text is cut; NanoVG
  * on OpenGL rasterises differently from the CPU, so the window is held to the buffer by structure, not pixel for pixel:
- * the same size; in every control's cell the accent (a knob's pointer, a fader's line, a switch, a meter's fill) in the
+ * the same size; in every control's cell the accent (a fader's line, a switch, a meter's fill) in the
  * same place and of about the same amount; its text over the same extent and of about the same amount; and the image,
  * block by block, the same within a tolerance.
  *

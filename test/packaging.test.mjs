@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -67,4 +68,58 @@ test('sabotage: a floor or ceiling moved on one side, or missing, is named', () 
     "pkgconfig(omxdsp): the spec's ceiling is 0.33, debian/control's for libomxdsp-dev is 0.34",
   ]);
   assert.deepEqual(buildFloorsApart(spec, 'Source: x\nBuild-Depends: libomxdsp-dev (>= 0.32.2~)\n')[0], 'omx-contract-devel: the spec floors it at 3.16.0, debian/control states no floor for libomx-contract-dev');
+});
+
+// zynthian-ui finds the omx-panel tree from the installed schema/gestures.json and reads the gesture parity scripts and
+// the descriptors they name under test/fixtures (tests/test_bar_xy_gestures.py). `make install` copies dist/ whole to
+// /usr/share/omx-panel, so what dist/ holds is what the RPM and the DEB ship (Pi 0.13.8: scripts.json absent).
+test('the package carries the gesture parity scripts and every descriptor they name, at the paths zynthian-ui reads', () => {
+  const rel = 'test/fixtures/gestures/scripts.json';
+  const { scripts } = JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
+  const named = [...new Set(scripts.map((s) => s.descriptor).filter(Boolean))];
+  assert.ok(named.length > 0);
+  for (const f of [rel, ...named]) assert.ok(existsSync(join(ROOT, 'dist', f)), `dist/${f} is not in the built package`);
+});
+
+// The console's gesture lane reads the same parity scripts from the npm package: npm packs them, and the package exports
+// them by name, so a reader resolves `<package>/gestures/scripts.json` without a path into dist/.
+test('the npm package exports the gesture parity scripts by name', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const rel = 'dist/test/fixtures/gestures/scripts.json';
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(packed.status, 0, packed.stderr);
+  assert.ok(JSON.parse(packed.stdout)[0].files.map((f) => f.path).includes(rel), `the packed file list has no ${rel}`);
+  assert.equal(pkg.exports['./gestures/scripts.json'], `./${rel}`, "package.json exports no './gestures/scripts.json'");
+  // resolved through the exports map, as a consumer resolves it
+  const at = createRequire(join(ROOT, 'package.json')).resolve(`${pkg.name}/gestures/scripts.json`);
+  assert.equal(at, join(ROOT, rel));
+  assert.ok(Array.isArray(JSON.parse(readFileSync(at, 'utf8')).scripts), 'the exported file holds no scripts');
+});
+
+// tools/look.json is the one public source of the vintage tokens (docs/modgui.md "The look"): the package carries it
+// where its readers take it from. The build copies it into dist/ (tools/copy-data.mjs), npm packs dist/, the package
+// exports it by name, and `make install` copies dist/ whole to /usr/share/omx-panel, where the renderer's data
+// directory is tools/.
+test('the package carries look.json, the vintage tokens with the knob pointer and the curve stroke, where its readers take it', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  // the build's own list: what it does not name, a clean build does not carry
+  assert.match(readFileSync(join(ROOT, 'tools/copy-data.mjs'), 'utf8'), /export const DATA = \[[^\n]*'tools\/look\.json'/, 'tools/copy-data.mjs DATA does not list tools/look.json');
+  assert.ok(existsSync(join(ROOT, 'dist/tools/look.json')), 'dist/tools/look.json is not in the built package');
+  assert.equal(readFileSync(join(ROOT, 'dist/tools/look.json'), 'utf8'), readFileSync(join(ROOT, 'tools/look.json'), 'utf8'), 'dist/tools/look.json is not tools/look.json');
+  // what npm packs
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(packed.status, 0, packed.stderr);
+  const files = JSON.parse(packed.stdout)[0].files.map((f) => f.path);
+  assert.ok(files.includes('dist/tools/look.json'), 'the packed file list has no dist/tools/look.json');
+  // a reader that imports the package reaches it by name
+  assert.equal(pkg.exports['./look.json'], './dist/tools/look.json', "package.json exports no './look.json'");
+  // the installed tree: dist/ whole under the package directory, the renderer's data directory its tools/
+  assert.match(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /^\tcp -R dist\/\. \$\(DESTDIR\)\$\(PKGDIR\)\/$/m);
+  assert.match(readFileSync(join(ROOT, 'renderer/Makefile'), 'utf8'), /-DOMX_PANEL_DATA_DIR='"\$\(DATADIR\)\/omx-panel\/tools"'/);
+  // and what it carries is the vintage look, every role and the two of one drawing each
+  const look = JSON.parse(readFileSync(join(ROOT, 'dist/tools/look.json'), 'utf8'));
+  assert.deepEqual([look.theme, look.accent, look.finish, look.style], ['dark', 'orange', 'aluminium', 'vintage']);
+  const roles = JSON.parse(readFileSync(join(ROOT, 'dist/schema/look-roles.json'), 'utf8')).roles.map((r) => r.name);
+  for (const n of ['--knob-pointer', '--curve-stroke']) assert.ok(roles.includes(n), `${n} is no role of the shipped role file`);
+  for (const n of [...roles, '--knob-pointer', '--curve-stroke']) assert.match(look.tokens[n] ?? '', /^#[0-9a-f]{6}$/, `the shipped look.json sets no ${n}`);
 });

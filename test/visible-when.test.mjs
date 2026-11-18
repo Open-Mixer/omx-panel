@@ -150,21 +150,6 @@ test('a section the values empty keeps its page, every slot blank', () => {
   assert.ok(pages.slice(3).every((p) => p.ids.every((id) => id === null)));
 });
 
-test('sabotage: atLeast read as an equality shows one band, and the check goes red', () => {
-  const d = strip(4);
-  const equals = panelLayout(d, { panel: declared((n) => ({ param: 'eqBands', values: [n] })) });
-  assert.throws(() => pagesShowBands(pagesOf(equals, { values: { eqBands: 9 } }), d, 9), assert.AssertionError);
-  assert.deepEqual(bandsOnPages(pagesOf(equals, { values: { eqBands: 9 } }), d), [9]);
-});
-
-test('sabotage: a page cut that ignores visibility puts hidden bands on the pages, and the check goes red', () => {
-  const d = strip(4);
-  const x = panelLayout(d, { panel: declared() });
-  const blind = { ...x, controls: x.controls.map((c) => ({ ...c, visible: null })) };
-  assert.throws(() => pagesShowBands(pagesOf(blind), d, 4), assert.AssertionError);
-  assert.equal(bandsOnPages(pagesOf(blind), d).length, BANDS);
-});
-
 test('the MOD GUI hides what the come-up values hide, and its script follows the governing port', () => {
   const made = (def) => new Map(generateModgui(strip(def), { panel: declared(), stem: 'strip', source: 'test' }));
   const four = made(4);

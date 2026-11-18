@@ -14,14 +14,14 @@ import { CLI, DATA, FIXTURES, ROOT, descriptionFile, render, rects, scratch, sta
 
 const fx = FIXTURES.find((f) => f.name === 'dyn-curve');
 const look = JSON.parse(readFileSync(join(ROOT, 'tools/look.json'), 'utf8')).tokens;
-const ACCENT = [1, 3, 5].map((i) => parseInt(look['--accent'].slice(i, i + 2), 16));
+const STROKE = [1, 3, 5].map((i) => parseInt(look['--curve-stroke'].slice(i, i + 2), 16));
 const geometry = JSON.parse(readFileSync(join(DATA, 'look/geometry.json'), 'utf8')).geometry;
 
 const BODY = [1, 3, 5].map((i) => parseInt(look['--surface-3'].slice(i, i + 2), 16));
-/** The stroke's pixels inside `frame`: a pixel that is the accent over the frame's body, part way (the stroke is a hairline, so its
- * edge pixels blend): along the body-to-accent line by at least 0.4 and off it by less than 25. */
+/** The stroke's pixels inside `frame`: a pixel that is the curve stroke (--curve-stroke) over the frame's body, part way (the stroke is a hairline, so its
+ * edge pixels blend): along the body-to-stroke line by at least 0.4 and off it by less than 25. */
 function strokes(img, frame) {
-  const out = [], d = ACCENT.map((c, k) => c - BODY[k]), dd = d.reduce((s, v) => s + v * v, 0);
+  const out = [], d = STROKE.map((c, k) => c - BODY[k]), dd = d.reduce((s, v) => s + v * v, 0);
   for (let y = frame.y + 5; y < frame.y + frame.h - 17; y++) for (let x = frame.x + 5; x < frame.x + frame.w - 5; x++) {
     const i = (y * img.w + x) * 4, p = [0, 1, 2].map((k) => img.data[i + k] - BODY[k]);
     const t = p.reduce((s, v, k) => s + v * d[k], 0) / dd;

@@ -6,6 +6,8 @@
 
 - Tiers and edge bands: a control's `tier` (`panel.tiers`, easy or advanced, default advanced; the `modgui-tier` setting, `--tier`, `$OMX_MODGUI_TIER`, default advanced; Easy draws only the easy controls) and a section's `edges` (an EQ's first band is the plugin's HPF, its last the LPF; the curve carries their roll-off). Declared in `schema/panel.schema.json`.
 
+- The MOD GUI stylesheet is held to the installed look: `test/modgui-stylesheet-is-the-look.test.mjs` generates the default (vintage) stylesheet and requires every colour in it to be one `tools/look.json` holds, and the vintage values (accent, border, curve stroke, enclosure, keys) to be in it. The `console` and `3d` looks' curve line is the `--curve-stroke` role, as the renderer draws it. The matrix layout of the MOD GUI is the served group-model matrix, with a come-up-hidden column taking no room.
+
 - The MOD GUI has three looks, the `modgui-look` setting (values `vintage`, `console`, `3d`; default `vintage`;
   `omx-panel modgui --look <name>`, else `$OMX_MODGUI_LOOK`; an unknown look is refused by name, exit 2). Declared once in
   `schema/modgui-looks.json` and emitted into `tools/look.json`. `vintage` is the owner's reference (cream enclosure, dark label
@@ -16,6 +18,54 @@
   film strips are one SVG each (`tools/look/knob-*.svg`), painted by `tools/svg-knob.mjs`. `tools/look-contrast.mjs` lists
   the contrast of every text pair. The console look is no longer byte for byte what it was (the scribble strip).
 
+- The gesture reference is C. `renderer/src/gesture.c`, built into `libomx-panel-render`, is the one implementation of the
+  gesture vocabulary of `docs/panel-gestures.md`; `renderer/include/omx_panel_gesture.h` (installed with the -devel
+  package) exports `omx_gesture_open`, `omx_gesture_run` and `omx_gesture_close`: a control and a script of events in as JSON,
+  the answer `tools/gestures.mjs` gives out as JSON, so one call shape serves every runtime. `input.c` now holds only the
+  renderer's mapping of controls onto targets and calls the unit for the arithmetic. The 20 shipped scripts, 117 rules and
+  4500 seeded random scripts give the same answers from C and from `tools/gestures.mjs`; the ABI is
+  `renderer/abi/omx_panel_gesture.abi`. `tools/gestures.mjs` keeps its arithmetic and stays the
+  JavaScript reference until its wasm loader lands; it gains `validateInput` only. `schema/gestures.json` now declares every
+  refusal code with its sentence (`codes`), including `GESTURE_BAD_INPUT`, which both references answer, in the same words, to
+  input neither can read. An integer travel now rounds as `Math.round` does, exactly, where the renderer rounded a negative half
+  away from zero, and a wheel's notch count is a number, not an int32.
+- The gesture parity scripts are exported by name: `@openmixer/omx-panel/gestures/scripts.json` resolves to
+  `dist/test/fixtures/gestures/scripts.json`, the file the installed tree already carries, so the console reads the
+  same scripts as the Zynthian UI without a path into `dist/`.
+- The look is the vintage look, and `tools/look.json` is the one public source of its tokens. The role defaults of
+  `schema/look-roles.json` move from the dark, cyan, modern look to the console's default: dark, orange accent
+  (`--accent` `#e8732c`), aluminium, vintage (`--glass` `#05070a`). The package carries the file as
+  `dist/tools/look.json`, now exported as `@openmixer/omx-panel/look.json`, and installs it as
+  `/usr/share/omx-panel/tools/look.json`; its readers are the MOD GUI generator, the renderer, the Zynthian UI and its
+  pixel test, and the console's check of its own `tokens.css`.
+  Two new roles, each one drawing, neither drawn in `--accent` any more: `--knob-pointer` (a knob's pointer, the
+  console's cream `#f4efe2`) and `--curve-stroke` (the line of an `eq_response`, a `transfer_curve` or a
+  `time_response` display; the accent's value at this look). The renderer and the MOD GUI generator draw both from
+  the roles. A look that lacks either is refused by the role's name, as for every role; nothing stands in for a
+  missing role. A host that passes its own look (`look.json` in the renderer's data directory, a console theme, a
+  Zynthian palette) must now value both, or the renderer refuses it.
+  Every MOD GUI image, stylesheet and golden image moves with the look. The knob is still drawn flat: its metal face,
+  rim and relief are not in this change. docs/modgui.md "The look"; `test/look-roles.test.mjs`,
+  `renderer/test/look-roles.test.mjs`, `test/packaging.test.mjs`.
+
+- An EQ's band matrix on every screen (the owner's rule: the high-pass the first band, the low-pass the last, the bands
+  between in their number order, aligned; the audio order untouched). The group model reads a descriptor of any origin:
+  one a scan wrote states no `symbol`, the model read none of its controls, and a host, which draws from a scan, got
+  omx-eq8 as the sections HPF, LPF, Band 1 .. Band 8 with no matrix. Its controls are now keyed as the layout keys them;
+  a CLAP scan's instance number is read from the parameter's name and its 0..1 whole-number travel is a toggle. The page
+  cut keeps every instance's places: a place an instance has no control at (an empty cell, or a control the Easy pages
+  took) is a blank slot, so slot k is the same parameter on every band's screen. A surface that pages an EQ sees one more
+  screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
+  docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
+
+- 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
+  This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
+  omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the
+  declared form (both below); and fixes: the commit-msg hook takes the current stub from the checker's release line,
+  artifact retention is explicit (30 days on a tag, 2 otherwise), the Makefile names the shared checks' checkout through
+  OPENMIXER_DOTGITHUB, the renderer tests remove their scratch directories and read readelf in the C locale, debian/control
+  floors libomx-contract-dev as the spec floors omx-contract-devel, and the omx-eq8 fixture matches the installed file
+  apart from its version lines.
 - The `time_response` display kind (ruling 6, the lost FX graphics; the processing-view spec, amendment 2026-09-16h): a delay
   section's `delay-taps` and a reverb section's `decay-envelope` are one display kind, x time in ms from 0 to the content's
   end, y level in dB with the floor at -60, drawn by the renderer from what the host sets: the envelope as the display's curve

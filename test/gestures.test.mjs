@@ -11,6 +11,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { SCRIPTS, controlOf } from './gesture-scripts.mjs';
 import { GESTURES, GESTURE_CODES, GestureError, memberOf, runGesture, timingsOf, wordOf, stepOf } from '../dist/tools/gestures.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -48,26 +49,25 @@ test('the table is keyed by standard widget plus a bar and a handle; every cell 
   const at = panelLayout.indexOf('| Standard widget |');
   const section = panelLayout.slice(at, panelLayout.indexOf('\n\n', at));
   const standard = [...section.matchAll(/^\| `(\w+)` \|/gm)].map((x) => x[1]);
-  assert.deepEqual(standard, ['knob', 'fader', 'switch', 'selector', 'meter', 'display', 'curve', 'xy']);
-  assert.deepEqual(Object.keys(GESTURES.table).sort(), [...standard, 'bar', 'handle'].sort());
+  // the schema's widget enum is the one list: the doc's table names each of its widgets, and the declaration's table keys are those plus a bar and a handle
+  const schema = JSON.parse(readFileSync(join(ROOT, 'schema/panel.schema.json'), 'utf8'));
+  assert.deepEqual([...standard].sort(), [...schema.$defs.widget.enum].sort());
+  assert.deepEqual(Object.keys(GESTURES.table).sort(), [...schema.$defs.widget.enum, 'bar', 'handle'].sort());
   for (const [widget, row] of Object.entries(GESTURES.table)) {
     for (const [input, word] of Object.entries(row)) {
       assert.ok(GESTURES.inputs.includes(input), `${widget}.${input} is no declared input`);
       assert.ok(word in GESTURES.words, `${widget}.${input} is '${word}', no declared word`);
     }
   }
-  assert.deepEqual(Object.keys(GESTURES.words), ['drag', 'fine', 'step', 'second', 'reset', 'more', 'select', 'toggle', 'paint']);
+  // a declared word is one some cell uses, and (above) every cell's word is declared
+  const used = new Set(Object.values(GESTURES.table).flatMap((row) => Object.values(row)));
+  assert.deepEqual(Object.keys(GESTURES.words).sort(), [...used].sort());
 });
 
 test('a wheel notch, an encoder detent and an arrow key are one step, on every control that steps', () => {
   for (const widget of ['knob', 'fader', 'selector', 'bar']) {
     for (const input of ['wheel', 'wheelCoarse', 'detent', 'detentCoarse', 'arrow', 'arrowCoarse']) assert.equal(wordOf({ widget }, input), 'step', `${widget} ${input}`);
   }
-});
-
-test('the schema widget enum is the list docs/panel-layout.md gives', () => {
-  const schema = JSON.parse(readFileSync(join(ROOT, 'schema/panel.schema.json'), 'utf8'));
-  assert.deepEqual(schema.$defs.widget.enum, ['knob', 'fader', 'switch', 'selector', 'meter', 'display', 'curve', 'xy']);
 });
 
 test('no section-word exception is used', () => {
@@ -78,24 +78,7 @@ test('no section-word exception is used', () => {
 
 // ---- the scripted gestures of the parity fixtures ---------------------------------------------------------------
 
-const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/gestures/scripts.json'), 'utf8')).scripts;
-const descriptor = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
-const travelOf = (dsc, symbol) => dsc.controls.find((c) => c.symbol === symbol).travel;
-
-/** A fixture's control, built from its descriptor's own travels and the surface geometry the script file gives. */
-function controlOf(s) {
-  const c = s.control, dsc = s.descriptor ? descriptor(s.descriptor) : null;
-  if (c.widget === 'handle') {
-    const one = (k) => memberOf({ travel: travelOf(dsc, c.members[k]) }, c.start[k] !== undefined ? { value: c.start[k] } : {});
-    return { widget: 'handle', target: c.target, plot: c.plot, freq: one('freq'), gain: one('gain'), q: one('q') };
-  }
-  if (c.widget === 'bar' && c.members) return { widget: 'bar', bars: c.members.map((b) => ({ ...b, ...(c.start?.[b.symbol] !== undefined ? { value: c.start[b.symbol] } : {}) })) };
-  if (c.widget === 'bar') {
-    const { w, pitch, h } = c.geometry;
-    return { widget: 'bar', bars: c.symbols.map((symbol, i) => memberOf({ travel: travelOf(dsc, symbol) }, { symbol, target: { x: i * pitch, y: 0, w, h }, ...(c.start[symbol] !== undefined ? { value: c.start[symbol] } : {}) })) };
-  }
-  return { widget: c.widget, ...memberOf({ travel: travelOf(dsc, c.member) }, { target: c.target, travelPx: c.travelPx, ...(c.start.value !== undefined ? { value: c.start.value } : {}) }) };
-}
+/* SCRIPTS and controlOf are test/gesture-scripts.mjs's, shared with the C reference's test (renderer/test/gesture-c.test.mjs). */
 const membersOf = (control) => (control.widget === 'handle' ? { freq: control.freq, gain: control.gain, q: control.q } : control.widget === 'bar' ? Object.fromEntries(control.bars.map((b) => [b.symbol, b])) : { value: control });
 
 for (const s of SCRIPTS) {
@@ -425,9 +408,11 @@ test('the MOD GUI draws the four widgets a plugin\'s parameters take, and refuse
   assert.throws(() => widgetFor({ widgets: { a: 'meter' } }, 'a', p), /does not draw/);
 });
 
-test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', async () => {
-  const twin = await import('@openmixer/omx-dsp').then((x) => x, () => null);
-  if (!twin) return; // the curve needs the twin; test/modgui-curve.test.mjs skips the same way
+// The curve needs the omx-dsp twin: without it this arm is a named skip, never a silent pass; under
+// OMX_PANEL_DSP=required it runs and fails by name instead (the generator refuses to load).
+const TWIN = await import('@openmixer/omx-dsp').then((x) => x, () => null);
+
+test('the gesture guard refuses a gesture-less widget NAMED for a parameter, not the drawing of a curve: the eq-marks face keeps its polyline and marks', { skip: TWIN || process.env.OMX_PANEL_DSP === 'required' ? false : 'the curve needs @openmixer/omx-dsp (the twin), which is not installed' }, async () => {
   const { generateModgui } = await import('../dist/tools/modgui-gen.mjs');
   const read = (f) => JSON.parse(readFileSync(join(ROOT, 'test/fixtures', f), 'utf8'));
   const page = new Map(generateModgui(read('eq-marks/eq.descriptor.json'), { panel: read('eq-marks/eq.panel.json'), stem: 'x', source: 'test' })).get('modgui/icon-x.html').toString();
