@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/FreeMixer/omx-contract/raw/v3/schema/omx-contract.schema.json",
+  "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
   "requires": {"omx-contract-schema": ">= 3.0.0"},
   "origin": "scanned",
   "plugin": {"id": "urn:openmixer:eq16", "format": "lv2", "uri": "urn:openmixer:eq16", "name": "omx eq16", "doc": "The OpenMixer console's channel EQ, 16-band form: 16 parametric bands (bell, shelves, notch, all-pass) and a high-pass and a low-pass filter at 12 or 24 dB/oct, stereo, zero latency; every band ships off, so a racked instance is a wire.", "features": ["audio-effect"]},
