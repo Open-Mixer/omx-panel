@@ -337,7 +337,22 @@ void omx_scene_paint(omx_canvas *c, const omx_scene *s, double ox, double oy, do
       double th = (-a * M_PI) / 180;
       p.co[r] = round9(cos(th)), p.si[r] = round9(sin(th));
     }
-    /* the frame: a rotated shape stays inside it */
-    omx_paint(c, ox, oy, ox + s->view_box * k, oy + s->view_box * k, inside, colour_at, &p);
+    /* the shape's own box, carried through its rotations to the canvas (a pixel outside it has no sample inside the shape, so the
+     * pixels painted are the same as over the whole frame, only fewer are looked at) */
+    double b[4];
+    bbox(sh, b);
+    double lx = 1e300, ly = 1e300, hx = -1e300, hy = -1e300;
+    for (int q = 0; q < 4; q++) {
+      double x = b[0] + (q & 1 ? b[2] : 0), y = b[1] + (q & 2 ? b[3] : 0);
+      for (int r = sh->nrot - 1; r >= 0; r--) {
+        double dx = x - sh->rot[r].cx, dy = y - sh->rot[r].cy;
+        double nx = sh->rot[r].cx + dx * p.co[r] + dy * p.si[r];
+        double ny = sh->rot[r].cy - dx * p.si[r] + dy * p.co[r];
+        x = nx, y = ny;
+      }
+      x = ox + x * k, y = oy + y * k;
+      lx = fmin(lx, x), hx = fmax(hx, x), ly = fmin(ly, y), hy = fmax(hy, y);
+    }
+    omx_paint(c, fmax(lx - 1, ox), fmax(ly - 1, oy), fmin(hx + 1, ox + s->view_box * k), fmin(hy + 1, oy + s->view_box * k), inside, colour_at, &p);
   }
 }

@@ -56,7 +56,7 @@ function drawn(style, mutate, scale = 1) {
   return { img: render(p.description, p.state, { data, scale }), at: knob(p, data, scale) };
 }
 
-for (const scale of [1, 2, 1.5]) test(`under the vintage style, at ${scale}x, the cap's highlight, the rim and the pointer are where the scene puts them`, () => {
+for (const scale of [1, 2, 3]) test(`under the vintage style, at ${scale}x, the cap's highlight, the rim and the pointer are where the scene puts them`, () => {
   const { img, at } = drawn('vintage', undefined, scale);
   const k = (2 * at.r) / GEOMETRY.knob;
   const cap = LOOK.drawings['knob-vintage'].gradients.cap.attrs;
