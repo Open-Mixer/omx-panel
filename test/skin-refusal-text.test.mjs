@@ -17,6 +17,7 @@ import { SKIN_REFUSAL_CODES } from '../dist/src/skin-package.js';
 import { DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
+import { gte } from './semver.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
 const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.meta.url);
@@ -25,12 +26,6 @@ const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.m
 const CATALOG_LANGS = readdirSync(new URL('../catalogs/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
-const gte = (a, b) => {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) { if (pa[i] !== pb[i]) return pa[i] > pb[i]; }
-  return true;
-};
 
 /** Every code the package puts in a refusal, read off the modules that emit them. */
 const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];

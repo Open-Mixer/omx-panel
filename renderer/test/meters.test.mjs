@@ -13,6 +13,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { FIXTURES, RENDERER, descriptionFile, render, scratch, stateFile } from './harness.mjs';
+import { gte } from '../../test/semver.mjs';
 
 const modgui = await import(join(RENDERER, '..', 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'meters');
@@ -37,9 +38,16 @@ function lawFall() {
   assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
   assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
   const built = readFileSync(join(RENDERER, 'build', 'omxdsp-version'), 'utf8').trim();
-  assert.match(built, /^0\.(32\.([2-9]|\d{2,})|3[3-9]|[4-9]\d|\d{3,})/, `built against omx-dsp ${built}: the floor 0.32.2`);
+  assert.ok(atOrAboveFloor(built), `built against omx-dsp ${built}: the floor 0.32.2`);
   return fall;
 }
+/** The built omx-dsp is at or above the renderer's floor (renderer/Makefile OMXDSP_FLOOR): no ceiling, a later major passes. */
+const atOrAboveFloor = (v) => gte(v, '0.32.2');
+test('a built omx-dsp at or above the floor passes: a later major is not refused', () => {
+  assert.ok(atOrAboveFloor('1.0.0'), 'omx-dsp 1.0.0 is above the floor 0.32.2');
+  assert.ok(atOrAboveFloor('0.32.2'), 'the floor itself passes');
+  assert.ok(!atOrAboveFloor('0.32.1'), 'below the floor is refused');
+});
 /** omx-dsp's golden vectors of the view law (vectors/meter-view.json, installed as pkg-config omxdsp's meterviewvectors). */
 const VECTORS = JSON.parse(readFileSync(pc('meterviewvectors'), 'utf8'));
 
