@@ -8,7 +8,7 @@
  * schemas, the look, the modgui terms, the test script, the fixture bundles), and the commands keep their execute bit. `npm run build`
  * runs it after tsc.
  */
-import { chmodSync, copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,27 +29,37 @@ const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.
 /** What zynthian-ui reads from the installed tree (tests/test_bar_xy_gestures.py): the gesture parity scripts and the descriptors they name. */
 const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/look/console-vintage.json', 'tools/look/knob-3d.svg', 'tools/look/knob-vintage.svg', 'tools/look/fader-vintage.svg', 'schema/modgui-looks.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Gelasio.woff2', 'tools/fonts/Gelasio-OFL.txt', 'tools/look/font-gelasio.json', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/gesture-words.mjs', 'tools/modgui-test.sh'];
 
-// A shipped module that starts with a shebang is a command: it ships executable and its declaration carries no
-// shebang, or the release's lintian --fail-on warning refuses the DEB (script-not-executable; 0.13.6's
-// tools/gesture-words.mjs). Listing it is the one way it ships.
-const unlisted = MODULES.filter((f) => readFileSync(join(ROOT, f), 'utf8').startsWith('#!') && !COMMANDS.includes(f));
-if (unlisted.length > 0) {
-  console.error(`copy-data: ${unlisted.join(', ')} start with a shebang and are not in COMMANDS: list each, or drop its shebang`);
-  process.exit(1);
+/** Copy the modules and the data into `dist` (the build's second half): nothing happens on import, the command line calls this. */
+export function copyData(dist = DIST) {
+  // A shipped module that starts with a shebang is a command: it ships executable and its declaration carries no
+  // shebang, or the release's lintian --fail-on warning refuses the DEB (script-not-executable; 0.13.6's
+  // tools/gesture-words.mjs). Listing it is the one way it ships.
+  const unlisted = MODULES.filter((f) => readFileSync(join(ROOT, f), 'utf8').startsWith('#!') && !COMMANDS.includes(f));
+  if (unlisted.length > 0) throw new Error(`copy-data: ${unlisted.join(', ')} start with a shebang and are not in COMMANDS: list each, or drop its shebang`);
+  for (const f of [...MODULES, ...DATA]) {
+    mkdirSync(dirname(join(dist, f)), { recursive: true });
+    copyFileSync(join(ROOT, f), join(dist, f));
+  }
+  for (const f of COMMANDS) chmodSync(join(dist, f), 0o755);
+  // tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
+  for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
+    const d = join(dist, f.replace(/\.mjs$/, '.d.mts'));
+    if (!existsSync(d)) continue;
+    const text = readFileSync(d, 'utf8');
+    if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
+  }
 }
-for (const f of [...MODULES, ...DATA]) {
-  mkdirSync(dirname(join(DIST, f)), { recursive: true });
-  copyFileSync(join(ROOT, f), join(DIST, f));
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    copyData();
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  console.log(`copy-data: ${MODULES.length} modules and ${DATA.length} data files into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);
 }
-for (const f of COMMANDS) chmodSync(join(DIST, f), 0o755);
-// tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
-for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
-  const d = join(DIST, f.replace(/\.mjs$/, '.d.mts'));
-  const text = readFileSync(d, 'utf8');
-  if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
-}
-console.log(`copy-data: ${MODULES.length} modules and ${DATA.length} data files into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);

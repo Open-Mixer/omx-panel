@@ -17,7 +17,7 @@ import { FIXTURES, RENDERER, descriptionFile, render, scratch, stateFile } from 
 const modgui = await import(join(RENDERER, '..', 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'meters');
 const g = modgui.GEOMETRY;
-const look = modgui.loadLook().tokens;
+const look = modgui.loadLook('console').tokens;
 const hex = (t) => [1, 3, 5].map((i) => parseInt(look[t].slice(i, i + 2), 16));
 const ACCENT = hex('--accent'), INK = hex('--ink');
 const p = modgui.resolvePanel(JSON.parse(readFileSync(join(RENDERER, '..', fx.descriptor), 'utf8')), { panel: JSON.parse(readFileSync(join(RENDERER, '..', fx.panel), 'utf8')), stem: fx.stem });

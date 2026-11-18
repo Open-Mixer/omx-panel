@@ -78,6 +78,16 @@ while IFS= read -r row; do
     *data-default=*)
       if [ -f "$TEMPLATE" ] && grep -qF "$row" "$TEMPLATE" && grep -qF "mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
         pass "template draws $sym with its declared travel and default"
+        # (a2) the value a control shows is MOD's own: a scribble bound to the port (mod-role input-control-value), empty in the
+        # template, whichever look drew it; a selector's own value element is bound the same way
+        if grep -qE "omx-selector-image\" mod-role=\"input-control-port\" mod-port-symbol=\"$sym\"" "$TEMPLATE"; then
+          grep -qF "<div class=\"omx-selector-value\" mod-role=\"input-control-value\" mod-port-symbol=\"$sym\">" "$TEMPLATE" \
+            && pass "template binds $sym's value display to the port" || fail "template binds $sym's value display to the port"
+        elif grep -qE "<div class=\"omx-scribble\" mod-role=\"input-control-value\" mod-port-symbol=\"$sym\" data-unit=\"[^\"]*\"></div>" "$TEMPLATE"; then
+          pass "template binds $sym's scribble to the port, with no static value text"
+        else
+          fail "template binds $sym's scribble to the port, with no static value text"
+        fi
       else
         fail "template draws $sym with its declared travel and default ($row)"
       fi ;;

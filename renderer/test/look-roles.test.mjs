@@ -121,7 +121,9 @@ test('a knob\'s pointer is drawn in --knob-pointer, and nothing of a knob in --a
   assert.ok(knobs.length >= 3, `${knobs.length} knobs`);
   const img = render(p.description, p.state, { scale: 2, data: apart() });
   for (const [c, i] of knobs) {
-    const inPointer = painted(img, cells[i], POINTER), inAccent = painted(img, cells[i], ACCENT_HEX);
+    // the knob itself: the cell's top, above the scribble strip that carries the value (its text is the accent's)
+    const [cx, cy, cw] = cells[i], knob = [cx, cy, cw, (g.knobTop + g.knob) * 2];
+    const inPointer = painted(img, knob, POINTER), inAccent = painted(img, knob, ACCENT_HEX);
     assert.ok(inPointer >= 20, `the knob ${c.symbol}: ${inPointer} pixels in --knob-pointer ${POINTER}, ${inAccent} in --accent ${ACCENT_HEX}`);
     assert.equal(inAccent, 0, `the knob ${c.symbol}: ${inAccent} pixels in --accent ${ACCENT_HEX}`);
   }
@@ -163,7 +165,7 @@ test('a time response\'s envelope is stroked in --curve-stroke; its stems stay -
 const { renderFace, layout, loadLook } = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 test('the MOD GUI face is the renderer\'s at a look whose pointer and curve stroke are not the accent\'s', () => {
   const fx = FIXTURES.find((f) => f.name === 'dyn-curve'), p = PANELS.find((x) => x.name === 'dyn-curve');
-  const r = resolved(fx), base = loadLook();
+  const r = resolved(fx), base = loadLook('console');
   const look = { ...base, tokens: { ...base.tokens, '--knob-pointer': POINTER, '--curve-stroke': CURVE } };
   const face = decodePng(renderFace({ ...layout(r), brand: r.brand, name: r.name ?? r.stem }, look, 1));
   assert.ok(painted(face, PLOT, CURVE) >= 100, `the MOD GUI face: ${painted(face, PLOT, CURVE)} pixels in --curve-stroke ${CURVE}`);

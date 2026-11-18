@@ -42,6 +42,19 @@ static int hex_colour(const char *s, omx_rgb *out) {
   return 1;
 }
 
+/* A colour the console look (looks.console of look.json) sets: `#rrggbb`, or a colour role's name in braces, read in `tok`. */
+static int look_colour(cJSON *flat, cJSON *tok, const char *name, omx_rgb *out, char *err, size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(flat, name));
+  char role[48];
+  if (s && s[0] == '{' && s[1] == '-' && strlen(s) < sizeof role + 2 && s[strlen(s) - 1] == '}') {
+    snprintf(role, sizeof role, "%.*s", (int)strlen(s) - 2, s + 1);
+    s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, role));
+  }
+  if (hex_colour(s, out)) return 1;
+  fail(err, n, "look: looks.console %s is not a colour or a role's name%s", name, NULL);
+  return 0;
+}
+
 static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n) {
   cJSON *root = cJSON_Parse(json);
   cJSON *tok = cJSON_GetObjectItemCaseSensitive(root, "tokens");
@@ -72,6 +85,12 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
       cJSON_Delete(root);
       return 0;
     }
+  }
+  /* the scribble strip's two colours are the console look's (the flat look the roles give): a colour or a role's name in braces */
+  cJSON *flat = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(root, "looks"), "console");
+  if (!look_colour(flat, tok, "--scribble-bg", &v->col.scribbleBg, err, n) || !look_colour(flat, tok, "--scribble-ink", &v->col.scribbleInk, err, n)) {
+    cJSON_Delete(root);
+    return 0;
   }
   cJSON_Delete(root);
   return 1;
@@ -105,9 +124,11 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
   NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
+  NUM(g, scribbleW, &v->g, "geometry"); NUM(g, scribbleH, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
-  NUM(t, nameBase, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
+  NUM(t, nameBase, &v->t, "text"); NUM(t, nameBaseStrip, &v->t, "text"); NUM(t, valueBase, &v->t, "text");
+  NUM(t, readingBase, &v->t, "text");
   cJSON_Delete(root);
   return 1;
 bad:
@@ -1119,12 +1140,19 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
         reading = 1;
       }
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
-      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + T->nameBase) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      /* a selector's and a display's label stands under its control; every other label sits on its value strip (geometry.json) */
+      int strip = !reading && (k->bar || k->w != W_SELECTOR);
+      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
       if (!k->bar && k->w == W_SELECTOR)
         text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
              T->small * s, col->ink, OMX_ALIGN_CENTRE);
-      else if (!reading || k->text[0])
-        text(d, font, k->text, 0, w, mid, (y + T->valueBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      else if (strip) {
+        /* the scribble strip: a recessed well the value is set in */
+        double sw = g->scribbleW * s;
+        d->round_rect(d->ctx, mid - sw / 2, (y + g->cellH - g->scribbleH) * s, sw, g->scribbleH * s, 3 * s, col->scribbleBg);
+        text(d, font, k->text, 0, sw - 4 * s, mid, (y + T->valueBase) * s, T->small * s, col->scribbleInk, OMX_ALIGN_CENTRE);
+      } else if (k->text[0])
+        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
     }
   }
   if (v->nband) {

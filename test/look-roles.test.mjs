@@ -149,12 +149,12 @@ test('a look missing --knob-pointer or --curve-stroke is refused by name: a host
 });
 
 test('the MOD GUI draws the pointer in --knob-pointer and the curve line in --curve-stroke, neither in --accent', () => {
-  const base = loadLook();
+  const base = loadLook('console');
   const read_ = reads('tools/modgui-gen.mjs', text('tools/modgui-gen.mjs'));
   for (const n of OWN) assert.ok(read_.includes(n), `the generator reads ${n}`);
   for (const n of OWN) assert.ok(reads('renderer/src/view.c', text('renderer/src/view.c')).includes(n), `the renderer reads ${n}`);
   // the knob film is a knob's rim, body and pointer and nothing else: the accent moves no byte of it, the pointer does
-  const film = (tokens) => renderFilm({ ...base.tokens, ...tokens });
+  const film = (tokens) => renderFilm({ ...base, tokens: { ...base.tokens, ...tokens } });
   assert.ok(film({ '--accent': '#010203' }).equals(film({})), 'the accent moved the knob film: the pointer is still drawn in it');
   assert.ok(!film({ '--knob-pointer': '#010203' }).equals(film({})), '--knob-pointer moved nothing of the knob film');
   // the template's curve line is stroked by the stylesheet
@@ -217,9 +217,9 @@ test('positive control: the ratchet sees the reads it judges (--accent in the ge
 
 test('arm: a hex colour, an rgb() and a named colour in the generator are red; so is a token that is no role', () => {
   const gen = text('tools/modgui-gen.mjs');
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
   assert.match(surfaceFaults('g', gen.replace("tok['--accent']", "tok['--tab-line']"), NAMES).join('\n'), /reads --tab-line, which is no role/);
 });
 
@@ -238,11 +238,11 @@ const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 /** The MOD GUI of omx-delay, every file it writes, at `look`. */
 function modguiAt(look) {
   const out = generateModgui(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay', source: 'look-roles test' }, look);
-  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look.tokens), renderFaderFilm(look.tokens)]);
+  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look), renderFaderFilm(look)]);
 }
 
-test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws', () => {
-  const base = loadLook();
+test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws (the console look reads them all)', () => {
+  const base = loadLook('console');
   const drawn = [...new Set(reads('tools/modgui-gen.mjs', text('tools/modgui-gen.mjs')))].filter((n) => NAMES.includes(n));
   assert.ok(drawn.length >= 7, `the MOD GUI reads ${drawn.join(' ')}`);
   const was = modguiAt(base);

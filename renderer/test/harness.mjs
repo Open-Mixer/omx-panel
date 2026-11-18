@@ -60,7 +60,7 @@ export const FIXTURES = [
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
 
-const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+export const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const { renderFace, layout, loadLook, resolvePanel } = modgui;
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
@@ -74,7 +74,7 @@ export function resolved(fx) {
 /** The MOD GUI generator's face of the fixture at `scale`, as pixels. */
 export function face(fx, scale) {
   const p = resolved(fx);
-  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook(), scale));
+  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook('console'), scale));
 }
 
 /** The fixture's panel description, in a file: a repeated group's (`served`) as `omx-panel describe --layout` serves it, the
@@ -106,15 +106,16 @@ export function stateFile(fx, dir, readings = {}) {
     else values[k.symbol] = { fraction: modgui.travelFraction(k, k.def), text };
   }
   // the points and marks the MOD GUI's static curve was drawn from, handed to the renderer as a host would
-  const curves = {}, marks = {};
+  const curves = {}, marks = {}, stems = {};
   let at = 0;
   for (const sec of p.sections) for (const dsp of sec.displays) {
-    if (dsp.curve?.points) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
+    if (dsp.curve?.stems?.length) stems[at] = dsp.curve.stems.map((t) => ({ x: t.x, y: t.y, shade: t.shade, letter: modgui.LEG_LETTER[t.leg] ?? ' ' }));
+    if (dsp.curve?.points?.length) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
     if (dsp.curve?.marks?.length) marks[at] = dsp.curve.marks.map((m) => ({ freq: m.freq, depth: m.depthDb, letter: modgui.ORIGIN_LETTER[m.origin] }));
     at++;
   }
   const file = join(dir, `${fx.name}.state.json`);
-  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks }, null, 2));
+  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks, stems }, null, 2));
   return file;
 }
 
