@@ -12,7 +12,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { DATA, TOOLS, render, rects, scratch } from './harness.mjs';
+import { DATA, ROOT, TOOLS, render, rects, scratch } from './harness.mjs';
 
 const LOOK = JSON.parse(readFileSync(join(TOOLS, 'look.json'), 'utf8'));
 const GEOMETRY = JSON.parse(readFileSync(join(TOOLS, 'look/geometry.json'), 'utf8')).geometry;
@@ -31,8 +31,10 @@ function panel() {
 
 /** The data directory with the style `style` (a copy of the tree's tools, the look's style set). */
 function dataWith(style, mutate = () => {}) {
-  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-style-'));
+  const base = mkdtempSync(join(tmpdir(), 'omx-panel-style-'));
+  const dir = join(base, 'tools');
   cpSync(TOOLS, dir, { recursive: true });
+  cpSync(join(ROOT, 'schema'), join(base, 'schema'), { recursive: true }); // the gesture declaration sits beside the tools directory
   const look = structuredClone(LOOK);
   look.style = style;
   mutate(look);
