@@ -24,6 +24,10 @@ BuildRequires: npm
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.19.1
 BuildRequires: plugin-hostd-contract >= 0.20.7
+# %%check re-renders the panel domain's header with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
+# and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
+BuildRequires: omx-contract
+BuildRequires: omx-dsp-wasm >= 0.33.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
@@ -90,7 +94,7 @@ test -d node_modules || npm ci --no-audit --no-fund
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 
 %check
-make test
+OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 
 %files
 %license LICENSE

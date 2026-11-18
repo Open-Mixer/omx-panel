@@ -24,7 +24,7 @@ function specCheck(spec) {
 
 /** The body of debian/rules' override_dh_auto_test target (to the next target). */
 function rulesTest(rules) {
-  const m = rules.match(/^override_dh_auto_test:\n([\s\S]*?)(?=^\S|(?![\s\S]))/m);
+  const m = rules.match(/^override_dh_auto_test:\n([\s\S]*?)(?=^[\w.-]+:|(?![\s\S]))/m);
   return m ? m[1] : '';
 }
 

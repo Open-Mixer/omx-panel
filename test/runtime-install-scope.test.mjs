@@ -14,8 +14,9 @@ const read = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 const script = () => read('tools/runtime-install-check.sh');
 
 test('the runtime install check names no omx-plugins descriptor', () => {
-  assert.doesNotMatch(script(), /omx-plugins/, 'tools/runtime-install-check.sh names omx-plugins');
-  assert.doesNotMatch(read('.github/workflows/ci.yml'), /omx-plugins/, 'the ci runtime-install job names omx-plugins');
+  // the recommendation omx-plugins-contract (step 3) is the package's own; a descriptor of omx-plugins/ is not
+  assert.doesNotMatch(script(), /omx-plugins\//, 'tools/runtime-install-check.sh demands an omx-plugins descriptor');
+  assert.doesNotMatch(read('.github/workflows/ci.yml'), /omx-plugins\//, 'the ci runtime-install job demands an omx-plugins descriptor');
 });
 
 test('the check reads the panel\'s shipped contract files from the package file list', () => {
@@ -27,11 +28,11 @@ test('the check reads the panel\'s shipped contract files from the package file 
 
 test('a shipped contract file that is not installed fails, and a package shipping none fails', () => {
   const s = script();
-  assert.match(s, /\[ -e "\$f" \] \|\| fail/, 'no check that each shipped file is installed');
+  assert.match(s, /if \[ -e "\$f" \]; then pass .*; else fail /, 'no check that each shipped file is installed');
   assert.match(s, /ships no contract file/, 'no refusal of a package that ships nothing');
 });
 
 test('the sabotage arm: a planted omx-plugins descriptor demand is caught', () => {
-  const planted = script().replace('expect "the descriptor', 'DESCRIPTOR=omx-plugins/omx-delay; expect "the descriptor');
-  assert.match(planted, /omx-plugins/, 'the plant did not land');
+  const planted = script() + '\nexpect "the descriptor omx-plugins/omx-delay" "x"\n';
+  assert.match(planted, /omx-plugins\//, 'the plant did not land');
 });
