@@ -43,21 +43,21 @@ function dataWith(style, mutate = () => {}) {
 }
 
 /** The knob's centre and radius in device px, from its cell and the geometry (the renderer's own placement). */
-function knob(p, data) {
-  const [x, y, w] = rects(p.description, { data })[0];
-  return { cx: x + w / 2, cy: y + (GEOMETRY.knobTop + GEOMETRY.knob / 2), r: GEOMETRY.knob / 2 };
+function knob(p, data, scale = 1) {
+  const [x, y, w] = rects(p.description, { data, scale })[0];
+  return { cx: x + w / 2, cy: y + (GEOMETRY.knobTop + GEOMETRY.knob / 2) * scale, r: (GEOMETRY.knob / 2) * scale };
 }
 
 const pixel = (img, x, y) => [...img.data.slice((Math.round(y) * img.w + Math.round(x)) * 4, (Math.round(y) * img.w + Math.round(x)) * 4 + 3)];
 
-function drawn(style, mutate) {
+function drawn(style, mutate, scale = 1) {
   const p = panel();
   const data = style === undefined ? DATA : dataWith(style, mutate);
-  return { img: render(p.description, p.state, { data }), at: knob(p, data) };
+  return { img: render(p.description, p.state, { data, scale }), at: knob(p, data, scale) };
 }
 
-test('under the vintage style the cap\'s highlight, the rim and the pointer are where the scene puts them', () => {
-  const { img, at } = drawn('vintage');
+for (const scale of [1, 2, 1.5]) test(`under the vintage style, at ${scale}x, the cap's highlight, the rim and the pointer are where the scene puts them`, () => {
+  const { img, at } = drawn('vintage', undefined, scale);
   const k = (2 * at.r) / GEOMETRY.knob;
   const cap = LOOK.drawings['knob-vintage'].gradients.cap.attrs;
   // the cap is a circle of radius 16.9 about (24, 24): the gradient's centre is a fraction of its bounding box
