@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.8
+Version: 0.14.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -29,7 +29,7 @@ BuildRequires: plugin-hostd-contract >= 0.20.7
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: (plugin-hostd >= 0.20.7 with plugin-hostd < 0.21)
+Recommends: plugin-hostd >= 0.20.7
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -38,14 +38,14 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 BuildRequires: omx-contract-devel >= 3.19.1
-BuildRequires: pkgconfig(omxdsp) >= 0.32.3
+BuildRequires: pkgconfig(omxdsp) >= 0.32.4
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.19.1
 Requires: plugin-hostd-contract >= 0.20.7
 # the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: (omx-plugins-contract >= 0.19.3 with omx-plugins-contract < 0.20)
+Recommends: omx-plugins-contract >= 0.19.3
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -217,6 +217,11 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Wed Nov 18 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
+- Built against omx-contract >= 3.19.1, omx-dsp >= 0.32.4 and plugin-hostd-contract >= 0.20.7: floors only, with no
+  ceiling on our packages (omx-contract, omx-dsp, plugin-hostd, omx-plugins).
+- New: the time_response curves drawn from omx-dsp 0.32.4 (#109), the vintage MOD GUI looks (#58), and the utility
+  panel roles (#107).
 * Fri Nov 13 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
 - Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
   hostd and plugin-hostd-contract >= 0.20.7 and below 0.21 (were 0.20.3):

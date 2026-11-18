@@ -65,6 +65,11 @@
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
+- 0.14.0: built against omx-contract >= 3.19.1, omx-dsp >= 0.32.4 and plugin-hostd-contract >= 0.20.7, floors only with no
+  ceiling on our packages (omx-contract, omx-dsp, plugin-hostd, omx-plugins; the `<`/`<<` ceilings are dropped from the spec,
+  debian/control and the workflows). This release carries: the time_response curves drawn from omx-dsp 0.32.4 (#109), the
+  vintage MOD GUI looks (#58), and the utility panel roles (#107).
+
 - 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
   This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
   omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the

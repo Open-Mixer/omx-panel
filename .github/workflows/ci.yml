@@ -120,7 +120,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.4' 'omx-dsp-contract >= 0.32.4'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -156,7 +156,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.4' 'omx-dsp-contract >= 0.32.4'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -199,7 +199,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.19.1' 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.4' 'omx-dsp-contract >= 0.32.4'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -245,7 +245,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.19.1" "omx-dsp-devel >= 0.32.3"
+              "omx-contract-devel >= 3.19.1" "omx-dsp-devel >= 0.32.4"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \

@@ -176,7 +176,7 @@ sections: a frame captioned with the label, the range and its unit, a bar along 
 level from the foot, a gain reduction from 0 dB), the marker holds the peak (the deepest reduction) and falls by `elapsed`
 seconds at omx-dsp's rate (`fallDbPerSecond` of its `data/primitives/meter.json`, 18 dB/s), the same at any draw rate and on
 silence. The marker is omx-dsp's own view law, `omx_meter_view_step` of `<omxdsp/mix/omx_meter_view.h>` (header-only, omx-dsp-devel
-at or above 0.32.2, checked by the build), the meter's range standing for the scale; no number of the law is
+at or above 0.32.4, checked by the build), the meter's range standing for the scale; no number of the law is
 copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
 the frame stands, which is what the MOD GUI face draws.
 
@@ -329,7 +329,7 @@ is a desktop to prove it on), and redrawing only what changed.
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |
-| omx-dsp's meter view (>= 0.32.2) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
+| omx-dsp's meter view (>= 0.32.4) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
 | libm | | glibc | libc6 | |
 | pugl (window) | the window and its events | `pugl-devel` | `libpugl-dev` | ISC |
 | NanoVG (window) | drawing in the window | `nanovg-devel` | `libnanovg-dev` | Zlib |

@@ -1,3 +1,12 @@
+omx-panel (0.14.0) unstable; urgency=medium
+
+  * Built against omx-contract >= 3.19.1, omx-dsp >= 0.32.4 and plugin-hostd-contract >= 0.20.7: floors only, with no
+    ceiling on our packages (omx-contract, omx-dsp, plugin-hostd, omx-plugins).
+  * New: the time_response curves drawn from omx-dsp 0.32.4 (#109), the vintage MOD GUI looks (#58), and the utility
+    panel roles (#107).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 18 Nov 2026 14:30:00 +0100
+
 omx-panel (0.13.8) unstable; urgency=medium
 
   * Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
