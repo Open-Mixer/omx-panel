@@ -3,9 +3,11 @@
   "rowControls": 8,
   "geometry": {
     "pad": 16, "headH": 40, "sectionTop": 52, "sectionGap": 10, "sectionPad": 8, "sectionTitleH": 18,
-    "cellW": 72, "cellH": 76, "knob": 48, "knobTop": 4, "switchW": 40, "switchH": 20, "switchTop": 18,
+    "cellW": 72, "cellH": 106, "knob": 48, "knobTop": 4, "switchW": 40, "switchH": 20, "switchTop": 18,
     "selectorW": 64, "selectorH": 22, "selectorTop": 17, "faderW": 14, "faderCap": 10,
-    "radius": 10, "sectionRadius": 6, "curveH": 84, "curveGap": 6, "meterH": 22, "meterGap": 6, "filmFrames": 65, "thumbScale": 0.5
+    "radius": 10, "sectionRadius": 6, "curveH": 84, "curveGap": 6, "meterH": 22, "meterGap": 6, "scribbleW": 58, "scribbleH": 12, "labelGap": 3, "screw": 12, "screwInset": 3, "filmFrames": 65, "thumbScale": 0.5
   },
-  "text": { "brand": 10, "brandBase": 14, "title": 14, "titleBase": 31, "small": 10, "sectionBase": 13, "nameBase": 62, "valueBase": 72 }
+  "label": { "sizes": [10, 9, 8], "letterSpacing": 0.05 },
+  "vu": { "angleMin": -50, "angleMax": 50, "zone": 0.25, "stepMs": 30, "tauMs": { "level": 300, "gain-reduction": 300 }, "reversed": { "gain-reduction": true } },
+  "text": { "brand": 10, "brandBase": 14, "title": 14, "titleBase": 31, "small": 10, "sectionBase": 13, "nameBase": 62, "nameBaseStrip": 89, "valueBase": 104, "readingBase": 72 }
 }

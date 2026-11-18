@@ -170,7 +170,7 @@ test('the MOD GUI hides what the come-up values hide, and its script follows the
     const attr = (a) => tag.match(new RegExp(`${a}="([^"]*)"`))?.[1] ?? null;
     return { symbol: attr('data-symbol'), getAttribute: attr, style: { display: /display:none/.test(tag) ? 'none' : '' } };
   });
-  const icon = { find: (sel) => ({ each: (f) => nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]).forEach((k) => f.call(k)) }) };
+  const icon = { find: (sel) => ({ each: (f) => (/data-visible-port/.test(sel) ? nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]) : []).forEach((k) => f.call(k)) }) };
   const shownBands = () => upTo(BANDS).filter((n) => nodes.find((k) => k.symbol === sym(n, 'Freq')).style.display === '');
   fn({ type: 'start', icon, ports: [{ symbol: 'eqBands', value: 4 }, { symbol: 'eqOn', value: 1 }] });
   assert.deepEqual(shownBands(), upTo(4));

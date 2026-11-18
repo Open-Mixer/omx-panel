@@ -107,15 +107,15 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
 } geometry;
 
 typedef struct {
-  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, valueBase;
+  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, nameBaseStrip, valueBase, readingBase;
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
 } palette;
 
 struct omx_panel_view {

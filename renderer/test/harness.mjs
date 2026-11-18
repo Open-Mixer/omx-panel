@@ -60,7 +60,7 @@ export const FIXTURES = [
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
 
-const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+export const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const { renderFace, layout, loadLook, resolvePanel } = modgui;
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
@@ -74,7 +74,7 @@ export function resolved(fx) {
 /** The MOD GUI generator's face of the fixture at `scale`, as pixels. */
 export function face(fx, scale) {
   const p = resolved(fx);
-  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook(), scale));
+  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook('console'), scale));
 }
 
 /** The fixture's panel description, in a file: a repeated group's (`served`) as `omx-panel describe --layout` serves it, the

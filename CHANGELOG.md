@@ -4,6 +4,20 @@
 
 ## Unreleased
 
+- Tiers and edge bands: a control's `tier` (`panel.tiers`, easy or advanced, default advanced; the `modgui-tier` setting, `--tier`, `$OMX_MODGUI_TIER`, default advanced; Easy draws only the easy controls) and a section's `edges` (an EQ's first band is the plugin's HPF, its last the LPF; the curve carries their roll-off). Declared in `schema/panel.schema.json`.
+
+- The MOD GUI stylesheet is held to the installed look: `test/modgui-stylesheet-is-the-look.test.mjs` generates the default (vintage) stylesheet and requires every colour in it to be one `tools/look.json` holds, and the vintage values (accent, border, curve stroke, enclosure, keys) to be in it. The `console` and `3d` looks' curve line is the `--curve-stroke` role, as the renderer draws it. The matrix layout of the MOD GUI is the served group-model matrix, with a come-up-hidden column taking no room.
+
+- The MOD GUI has three looks, the `modgui-look` setting (values `vintage`, `console`, `3d`; default `vintage`;
+  `omx-panel modgui --look <name>`, else `$OMX_MODGUI_LOOK`; an unknown look is refused by name, exit 2). Declared once in
+  `schema/modgui-looks.json` and emitted into `tools/look.json`. `vintage` is the owner's reference (cream enclosure, dark label
+  plate, black knobs with a white pointer, red bypass LED, chrome footswitch, recessed screens in the console's own lit glass:
+  its four tokens are the console's tokens.css at one pinned commit, `tools/look/console-vintage.json`, checked by
+  `tools/look-pin.mjs --check`); `console` is the flat look; `3d` adds depth (gradient and bevel body, recessed sections, keycap
+  switches with a pressed state). Every control but a selector gets a scribble strip bound to its port. The vintage and 3d knob
+  film strips are one SVG each (`tools/look/knob-*.svg`), painted by `tools/svg-knob.mjs`. `tools/look-contrast.mjs` lists
+  the contrast of every text pair. The console look is no longer byte for byte what it was (the scribble strip).
+
 - The gesture reference is C. `renderer/src/gesture.c`, built into `libomx-panel-render`, is the one implementation of the
   gesture vocabulary of `docs/panel-gestures.md`; `renderer/include/omx_panel_gesture.h` (installed with the -devel
   package) exports `omx_gesture_open`, `omx_gesture_run` and `omx_gesture_close`: a control and a script of events in as JSON,

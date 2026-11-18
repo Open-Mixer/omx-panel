@@ -19,10 +19,12 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { consoleTokens, loadPin } from './look-pin.mjs';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
 export const ROLES_JSON = join(TOOLS, '..', 'schema', 'look-roles.json');
 export const LOOK_JSON = join(TOOLS, 'look.json');
+export const LOOKS_JSON = join(TOOLS, '..', 'schema', 'modgui-looks.json');
 export const ROLE_HEADER = join(TOOLS, '..', 'renderer', 'src', 'look_roles.h');
 
 /** The families a role belongs to (omx look §2(i)); finish is a host's chrome, never a role's. */
@@ -110,6 +112,48 @@ export function checkRoles(doc, values) {
   return faults;
 }
 
+/** The finish a look wears: its `--finish`, where `{console:default-finish}` is the console's own default (read from its tokens.css, pinned). */
+export const finishOf = (look, pin = loadPin()) => String(look['--finish']).replace(/\{console:default-finish\}/g, pin.defaultFinish);
+
+/** The MOD GUI's looks file, parsed. */
+export const loadLooks = (file = LOOKS_JSON) => JSON.parse(readFileSync(file, 'utf8'));
+
+/** The tokens every look sets, in the order the first look gives them: the one schema of the looks. */
+export const lookKeys = (looks = loadLooks()) => Object.keys(Object.values(looks.looks)[0]);
+/** The tokens whose backgrounds carry text: they may name colour roles, never the plugin's enclosure. */
+export const TEXT_PLATES = Object.freeze(['--head-bg', '--section-bg', '--key-bg', '--key-held-bg', '--screen-bg']);
+
+/** Every rule of the looks file `looks` broken, as sentences, or none. */
+export function checkLooks(looks, roles = loadRoles()) {
+  const faults = [];
+  const names = new Set(roles.roles.map((r) => r.name));
+  const s = looks?.setting;
+  const names3 = Object.keys(looks?.looks ?? {});
+  if (!s || s.name !== 'modgui-look' || !Array.isArray(s.values) || typeof s.default !== 'string') faults.push('the setting is not { name: modgui-look, values, default }');
+  else {
+    if (!s.values.includes(s.default)) faults.push(`the setting's default '${s.default}' is none of its values`);
+    if (JSON.stringify([...s.values].sort()) !== JSON.stringify([...names3].sort())) faults.push(`the setting's values (${s.values.join(', ')}) are not the looks declared (${names3.join(', ')})`);
+  }
+  const keys = names3.length ? lookKeys(looks) : [];
+  for (const [n, look] of Object.entries(looks?.looks ?? {})) {
+    for (const k of keys) if (typeof look[k] !== 'string' || !look[k]) faults.push(`look ${n} sets no ${k}`);
+    for (const k of Object.keys(look)) if (!keys.includes(k)) faults.push(`look ${n} sets ${k}, which another look does not: one schema`);
+    for (const [k, v] of Object.entries(look)) {
+      for (const ref of String(v).matchAll(/\{console:(--[a-z0-9-]+)\}/g)) if (!(ref[1] in consoleTokens())) faults.push(`look ${n} ${k} names console:${ref[1]}, which the pin does not carry`);
+      for (const ref of String(v).matchAll(/\{finish:(--[a-z0-9-]+)\}/g)) {
+        const fin = loadPin().finish[finishOf(look)];
+        if (!fin) faults.push(`look ${n} ${k} names finish:${ref[1]} and the look's --finish '${finishOf(look)}' is no console finish`);
+        else if (!(ref[1] in fin)) faults.push(`look ${n} ${k} names finish:${ref[1]}, which the ${finishOf(look)} finish of the pin does not carry`);
+      }
+      for (const ref of String(v).matchAll(/\{(--[a-z0-9-]+)\}/g)) {
+        if (ref[1] !== '--enclosure' && !names.has(ref[1])) faults.push(`look ${n} ${k} names ${ref[1]}, which is no colour role`);
+        if (ref[1] === '--enclosure' && TEXT_PLATES.includes(k)) faults.push(`look ${n} ${k} carries text and names the enclosure: its contrast is not the roles' to hold`);
+      }
+    }
+  }
+  return faults;
+}
+
 /** The role names, in the order the file declares them. */
 export const roleNames = (doc = loadRoles()) => doc.roles.map((r) => r.name);
 
@@ -121,16 +165,24 @@ function assertSound(doc) {
   if (faults.length) throw new Error(`look: schema/look-roles.json: ${faults.join('; ')}`);
 }
 
-/** tools/look.json's text: the look the defaults are (the vintage look), every role at its default, and the font. */
-export function emitLook(doc = loadRoles()) {
+/** tools/look.json's text: the look the defaults are, every role at its default, and the font. */
+export function emitLook(doc = loadRoles(), looks = loadLooks()) {
   assertSound(doc);
+  const lf = checkLooks(looks, doc);
+  if (lf.length) throw new Error(`look: schema/modgui-looks.json: ${lf.join('; ')}`);
   const tokens = {};
   for (const r of doc.roles) tokens[r.name] = r.default;
   for (const f of NOT_COLOURS) tokens[f] = doc.font[f];
+  const pin = loadPin();
   const look = {
     $comment: 'GENERATED — DO NOT EDIT BY HAND. The one public source of the vintage tokens: every colour role of schema/look-roles.json at its one default, and the font. The MOD GUI wears it (tools/modgui-gen.mjs), the renderer reads it, the Zynthian UI maps its colours from it and the console\'s tokens.css is held to it. Regenerate: `node tools/look.mjs`, then commit the result.',
     ...Object.fromEntries(LOOK_AXES.map((a) => [a, doc.look[a]])),
     tokens,
+    setting: looks.setting,
+    tierSetting: looks.tierSetting,
+    // the console's pinned relief, base paint and metal, for the drawings (the knob and the fader SVGs name them) beside the looks
+    console: { commit: pin.source.commit, defaultFinish: pin.defaultFinish, tokens: consoleTokens(pin), finish: pin.finish },
+    looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:default-finish\}/g, pin.defaultFinish).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => consoleTokens(pin)[t]).replace(/\{finish:(--[a-z0-9-]+)\}/g, (_m, t) => pin.finish[finishOf(l, pin)][t])]))])),
   };
   return `${JSON.stringify(look, null, 2)}\n`;
 }

@@ -51,6 +51,7 @@ public-sources:
 
 look:
 	node tools/look.mjs --check
+	node tools/look-pin.mjs --self
 
 # The panel domain's header is the render of its document by omx-contract's renderer (docs/contract-domains.md).
 contract:

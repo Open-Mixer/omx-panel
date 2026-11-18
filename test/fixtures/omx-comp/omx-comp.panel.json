@@ -1,0 +1,52 @@
+{
+  "family": "dynamics",
+  "roles": {
+    "threshold": "thresholdDb",
+    "ratio": "ratio",
+    "attack": "attackMs",
+    "release": "releaseMs",
+    "knee": "kneeDb",
+    "makeup": "makeupDb",
+    "mix": "mixPct"
+  },
+  "sections": [
+    {
+      "key": "comp",
+      "label": "Comp",
+      "graph": "dynamics-curve",
+      "controls": [
+        "thresholdDb",
+        "ratio",
+        "kneeDb",
+        "attackMs",
+        "releaseMs",
+        "holdMs",
+        "makeupDb",
+        "mixPct",
+        "kind",
+        "detectorOversampling",
+        "detectorTopology"
+      ]
+    },
+    {
+      "key": "key",
+      "label": "Key",
+      "controls": [
+        "keySource",
+        "keyHpHz",
+        "keyLpHz",
+        "keyTiltDb",
+        "detectLink",
+        "keyListen"
+      ]
+    },
+    {
+      "key": "duck",
+      "label": "Duck",
+      "controls": [
+        "duck",
+        "rangeDb"
+      ]
+    }
+  ]
+}

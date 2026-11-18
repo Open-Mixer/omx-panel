@@ -1,4 +1,4 @@
-<div class="omx-pedal{{{cns}}} omx-family-delay" style="width:408px;height:256px">
+<div class="omx-pedal{{{cns}}} omx-family-delay omx-look-vintage" data-omx-pedal data-cell-w="72" data-cell-h="106" data-title-h="18" data-section-pad="8" data-section-gap="10" data-section-top="52" data-pad="16" data-row-controls="8" data-base-w="376" style="width:408px;height:286px">
     <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
     <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
     <!-- GENERATED — DO NOT EDIT BY HAND. Produced by tools/modgui-gen.mjs from -->
@@ -12,29 +12,35 @@
         <span class="omx-brand">{{brand}}</span>
         <span class="omx-label">{{label}}</span>
         <div class="omx-bypass" mod-role="bypass"><div class="omx-bypass-light" mod-role="bypass-light"></div></div>
+        <div class="omx-lookswitch"><span class="omx-look-key" data-look="vintage" title="vintage look">V</span><span class="omx-look-key" data-look="console" title="console look">C</span><span class="omx-look-key" data-look="3d" title="3d look">3D</span></div>
     </div>
-        <div class="omx-section" data-section="delay" style="left:16px;top:52px;width:376px;height:188px">
+        <div class="omx-section" data-section="delay" data-curves="90" style="left:16px;top:52px;width:376px;height:218px">
             <h2 class="omx-section-title">Delay</h2>
             <div class="omx-curve" data-kind="time_response" data-basis="modelled" style="left:8px;top:18px;width:360px;height:84px"><svg class="omx-curve-plot" width="360" height="84" viewBox="0 0 360 84"><line class="omx-curve-axis" x1="5" y1="5" x2="355" y2="5"/><line class="omx-curve-stem" x1="5" y1="67" x2="5" y2="8.2" stroke-opacity="1"/><line class="omx-curve-stem" x1="75" y1="67" x2="75" y2="15.81" stroke-opacity="1"/><line class="omx-curve-stem" x1="145" y1="67" x2="145" y2="26.61" stroke-opacity="0.83"/><line class="omx-curve-stem" x1="215" y1="67" x2="215" y2="37.42" stroke-opacity="0.7"/><line class="omx-curve-stem" x1="285" y1="67" x2="285" y2="48.22" stroke-opacity="0.58"/><line class="omx-curve-stem" x1="355" y1="67" x2="355" y2="59.03" stroke-opacity="0.49"/></svg><span class="omx-curve-caption">modelled</span></div>
             <div class="omx-control omx-switch" style="left:8px;top:108px" title="Pingpong" data-symbol="pingpong" data-min="0" data-max="1" data-default="0">
                 <div class="omx-switch-image" mod-role="input-control-port" mod-port-symbol="pingpong" mod-widget="switch"></div>
                 <span class="omx-control-title">Pingpong</span>
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="pingpong" data-unit="" data-onoff></div>
             </div>
             <div class="omx-control omx-knob" style="left:80px;top:108px" title="Time" data-symbol="fxDelayTime" data-min="0" data-max="2000" data-default="300">
                 <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="fxDelayTime"></div>
                 <span class="omx-control-title">Time</span>
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="fxDelayTime" data-unit="ms"></div>
             </div>
             <div class="omx-control omx-knob" style="left:152px;top:108px" title="Feedback" data-symbol="fxDelayFeedback" data-min="0" data-max="0.99" data-default="0.3">
                 <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="fxDelayFeedback"></div>
                 <span class="omx-control-title">Feedback</span>
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="fxDelayFeedback" data-unit=""></div>
             </div>
             <div class="omx-control omx-knob" style="left:224px;top:108px" title="Mix" data-symbol="mix" data-min="0" data-max="1" data-default="0.3">
                 <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="mix"></div>
                 <span class="omx-control-title">Mix</span>
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="mix" data-unit=""></div>
             </div>
             <div class="omx-control omx-knob" style="left:296px;top:108px" title="Tone" data-symbol="tone" data-min="0" data-max="1" data-default="0.3">
                 <div class="omx-knob-image" mod-role="input-control-port" mod-port-symbol="tone"></div>
                 <span class="omx-control-title">Tone</span>
+                <div class="omx-scribble" mod-role="input-control-value" mod-port-symbol="tone" data-unit=""></div>
             </div>
         </div>
     <div class="mod-pedal-input">
