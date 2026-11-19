@@ -27,6 +27,15 @@ void omx_scene_free(omx_scene *s);
 /** Paint the scene onto `c`, its origin at (ox, oy), `k` device px per scene unit, the pointer at `angle` degrees from straight up. */
 void omx_scene_paint(omx_canvas *c, const omx_scene *s, double ox, double oy, double k, double angle);
 
+/** The static-layer cache: every shape before the pointer's (those that do not turn with the frame's angle) is painted once over a
+ * given backdrop and the box kept, with the backdrop it was made over; a later paint of the same place and scale over the same
+ * backdrop, byte for byte, copies the box and paints only the pointer. The bytes are those of painting without the cache. On by
+ * default; off, nothing is stored and nothing is read. */
+void omx_scene_set_cache(omx_scene *s, int on);
+/** How many paints took a stored box (hits) and how many painted the static layers (misses), since the scene was made. */
+unsigned long omx_scene_cache_hits(const omx_scene *s);
+unsigned long omx_scene_cache_misses(const omx_scene *s);
+
 /** The scene's side in units (its viewBox). */
 double omx_scene_size(const omx_scene *s);
 
