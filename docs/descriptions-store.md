@@ -162,11 +162,13 @@ CREATE TABLE description (
 CREATE TABLE description_control (     -- per control, what the skin, the matrices and the pages read (section 14, 1, 8)
   plugin_id INTEGER NOT NULL REFERENCES description ON DELETE CASCADE,
   ordinal   INTEGER NOT NULL CHECK (ordinal >= 0),          -- the control's place in the derivation's control order
-  id        TEXT NOT NULL,             -- a name: the control's id, as `effective.controls` holds it
+  symbol    TEXT NOT NULL,             -- a name: the SERVED symbol the body carries
+  key       TEXT NOT NULL,             -- a name: the layout key (`keyOf`)
+  id        TEXT NOT NULL,             -- a name: the effective control id, as `effective.controls` holds it
   group_key TEXT,                      -- a name: its group key (`c[GROUP]`), NULL when it has none
   governed  INTEGER NOT NULL CHECK (governed IN (0, 1)),   -- 1: the layout control has a visibleWhen
   PRIMARY KEY (plugin_id, ordinal),
-  UNIQUE (plugin_id, id)
+  UNIQUE (plugin_id, symbol)
 ) STRICT;
 
 CREATE TABLE port_group_verdict (      -- LV2 only in this pass: CLAP states no port groups
@@ -209,7 +211,8 @@ CREATE TABLE port_group_member (
   read the controls' ids and group keys and the layout; `withMatrices` (321-326) also re-runs `inferGroupModel` over the
   descriptor and reads which layout controls are governed by a `visibleWhen`. So the entry stores the description BEFORE
   the skin and the matrices (`body`), the repeated groups `inferGroupModel` found (`groups`, JSON that round-trips equal
-  over the omx-plugins corpus fixtures), and per control its id, group key and `governed` (`description_control`).
+  over the omx-plugins corpus fixtures), and per control the three ways those functions key it (the served `symbol`, the layout `key`, the effective
+  `id`), its group key and `governed` (`description_control`).
   omx-panel has ONE pure function, `describeFromStored(body, { skin, perPage, remote })`: skin, then `withMatrices`
   over the stored groups and `governed`, then the pages; `describe` calls the SAME functions after its derivation, so
   the two are byte-equal by construction, and a corpus test holds it. `pages` is never stored: it depends on the surface's width. No client
@@ -672,7 +675,7 @@ the run in the PR body, then the commits that turn it green.
 The owner's answers to the questions this design raised (2026-11-19). The sections above follow them.
 
 1. **Pages** are cut on read, never stored: omx-panel's ONE pure `describeFromStored(body, { skin, perPage, remote })`
-   cuts them over the stored entry, which holds per control its id and group key (`description_control`); it is
+   cuts them over the stored entry, which holds per control its served symbol, layout key, id, group key and `governed` (`description_control`); it is
    byte-equal to `describe` for the same inputs over the reference corpus, and no client needs a descriptor.
 2. **The base's inputs** (the reference sets' descriptors and LV2 TTL) live with the base package's build in omx-panel.
 3. **Pruning.** Each scan prunes, from the system and user layers it may write, the entries of plugins no longer
