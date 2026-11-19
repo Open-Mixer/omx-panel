@@ -129,7 +129,7 @@ The entry's own tables are in 3.4.
 ### 3.4 The entry: to agree with the description schema owner
 
 The tables below are drafted from the description `omx-panel describe` serves today and are kept minimal. Their columns
-are agreed with the description schema owner before step 1 (section 13) merges; until then they are a proposal.
+are agreed with the description schema owner before lane 1 (section 13) merges; until then they are a proposal.
 
 What `describe` serves today (`tools/describe.mjs:283-309`): `family`, `fingerprint`, `easy`, `params`, `sections`
 (each with `bars`, or with the served `matrix` of a repeated group, `docs/group-model.md` "The served matrix"),
@@ -153,6 +153,15 @@ CREATE TABLE description (
   body        TEXT CHECK (body IS NULL OR json_valid(body)), -- describe's `description`, canonical JSON, `pages` left out
   refused     TEXT CHECK (refused IS NULL OR WORD(refused)), -- a DESCRIBE_CODES word: describe derived no description
   CHECK ((body IS NULL) <> (refused IS NULL))               -- exactly one of the two
+) STRICT;
+
+CREATE TABLE description_control (     -- per control, what the skin, the matrices and the pages read (section 14, 1, 8)
+  plugin_id INTEGER NOT NULL REFERENCES description ON DELETE CASCADE,
+  ordinal   INTEGER NOT NULL CHECK (ordinal >= 0),          -- the control's place in the derivation's control order
+  id        TEXT NOT NULL,             -- a name: the control's id, as `effective.controls` holds it
+  group_key TEXT,                      -- a name: its group key (`c[GROUP]`), NULL when it has none
+  PRIMARY KEY (plugin_id, ordinal),
+  UNIQUE (plugin_id, id)
 ) STRICT;
 
 CREATE TABLE port_group_verdict (      -- LV2 only in this pass: CLAP states no port groups
@@ -190,8 +199,12 @@ CREATE TABLE port_group_member (
   says. A refusal that does not drop the description (`role_dropped`, `meter_refused`) is not stored: it is a finding
   for `describe`'s caller, not a fact a client draws from.
 - A verdict of `nothing-to-do` or `no-confident-grouping` holds no `port_group` row: the plugin keeps its declared groups.
-- `pages` is not stored: it depends on the surface's width (`perPage`). A reader cuts them on read, `omx-panel describe
-  --pages`, over the stored description (section 14, 1).
+- **Skins and pages are applied over the stored entry by omx-panel** (section 14, 1 and 8). `describe` applies the skin
+  BEFORE the matrices (`tools/describe.mjs` 289-300), and `withMatrices` (321-326) and `pagesOfDescription` (391-393)
+  read the controls' ids and group keys and the layout. The entry stores them (`description_control`, beside the body),
+  and omx-panel has ONE pure function, `describeFromStored(body, { skin, perPage, remote })`, over the stored entry,
+  byte-equal to `describe` for the same inputs. `pages` is never stored: it depends on the surface's width. No client
+  needs the plugin's descriptor: plugin-hostd and Zynthian have none for a third-party plugin.
 
 ### 3.5 `user_version`
 
@@ -535,7 +548,7 @@ and `PANEL_STORE_CODES`; the texts and tests of section 10.
 ### plugin-hostd-protocol
 
 The `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed`, and the codes they
-answer, in its table, grammar and header (lane 7), before plugin-hostd answers them.
+answer, in its table, grammar and header (lane 8), before plugin-hostd answers them.
 
 ### plugin-hostd
 
@@ -568,7 +581,7 @@ process to read a figure" stands). The change is that repository's PR, with plug
 
 The plugin-hostd engine reads entries through `omx_panel_store.py` by `description_get`'s key instead of running
 `omx-panel describe --descriptor` per plugin (`zyngine/zynthian_engine_plugin_hostd.py:1092-1142`, `:1157-1200`,
-branch `openmixer`); the Tk drawing is zynthian-ui#93's. The pages are cut on read by `omx-panel describe --pages` (section 14, 1).
+branch `openmixer`); the Tk drawing is zynthian-ui#93's. The pages and the skin come from `describeFromStored` over the stored entry (section 14, 1 and 8).
 
 ### The console
 
@@ -605,47 +618,52 @@ the run in the PR body, then the commits that turn it green.
    `schema-mismatch`; an entry with a family not in `PANEL_FAMILIES` is `entry-invalid`; the base file unchanged after
    reads; `json_valid` refuses a bad body; an entry with both or neither of `body` and `refused` is refused; an entry whose `source` differs from the caller's, or a derived entry below the
    reader's `rules`, is skipped and the next layer answers, and a stale edited entry is named, not deleted. Precondition: the description schema owner agrees section 3.4.
-2. **omx-panel: `describe --plugin --store`.** Proves: one plugin, inferred once, the layer by uid. Red: a fixture with two
+2. **omx-panel: `describeFromStored`** (the description schema owner). Proves: skins and pages from the stored entry
+   alone. Red: over the reference corpus, for each plugin, every skin of the fixtures and the surface widths in use,
+   `describeFromStored(stored body and controls, { skin, perPage, remote })` is byte-equal to `describe` from the
+   descriptor; it reads no descriptor and no file (a sabotage that drops a control's group key turns it red).
+3. **omx-panel: `describe --plugin --store`.** Proves: one plugin, inferred once, the layer by uid. Red: a fixture with two
    plugins writes only the named one's entry to the user layer when run unprivileged; a second run writes nothing; a key
    the base holds is printed, not derived; an LV2 fixture without `pg:group` gets the groups the complement infers and a
    description whose sections are those groups.
-3. **omx-panel: the generators read the store and `omx-panel-sync`.** Proves: no inference for a stored key, one pass,
+4. **omx-panel: the generators read the store and `omx-panel-sync`.** Proves: no inference for a stored key, one pass,
    no systemd. Red: a fixture store whose entry's groups differ from what the rules infer makes the complement write
    the store's groups (red today: it infers); the pass runs with no `systemctl` on the path; an entry of a plugin no longer installed is pruned from the layer
    the pass writes, and a lower layer's is not touched; section 10's texts.
-4. **omx-panel: the base and `omx-panel-descriptions`.** Proves: reproducible, noarch. Red: two builds give the same
+5. **omx-panel: the base and `omx-panel-descriptions`.** Proves: reproducible, noarch. Red: two builds give the same
    sorted dump and bytes; the package holds `/usr/share/omx/panel/panel.sqlite` at `layer` 0 with `built_from`.
-5. **plugin-qualify: `plugin-qualify-sync --plugin`.** Proves: one plugin, never a scan. Red: two fixture plugins on the
+6. **plugin-qualify: `plugin-qualify-sync --plugin`.** Proves: one plugin, never a scan. Red: two fixture plugins on the
    search path, `--plugin A` gives A a record, a pin and a descriptor and B none; a run as non-root writes no system path; the record is marked measured under load when
    the call is told the engine runs, and the planner fixture reads its cost as unknown.
-6. **plugin-db-qualification: the writer clause of its section 2 and 6.** A spec change, with plugin-qualify's lane 5.
-   Its red is lane 5's.
-7. **plugin-hostd-protocol: the ask's words.** Proves: the protocol states them before plugin-hostd answers them. The
+7. **plugin-db-qualification: the writer clause of its section 2 and 6.** A spec change, with plugin-qualify's lane 6.
+   Its red is lane 6's.
+8. **plugin-hostd-protocol: the ask's words.** Proves: the protocol states them before plugin-hostd answers them. The
    `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed` in the table, the grammar
    and the header, and the codes they answer (`-529` and `-530` widened to the store with their text, or new codes: the
    protocol owner decides). Red: the protocol's own grammar and table tests with the new rows before the grammar holds
    them.
-8. **plugin-hostd: groups from the store, the ask.** Proves: no inference in plugin-hostd, the ask's limits. Red: an LV2
+9. **plugin-hostd: groups from the store, the ask.** Proves: no inference in plugin-hostd, the ask's limits. Red: an LV2
    fixture with no `pg:group` and a store entry pages by the store's groups (red today: one page "Controls"); an add of
    an unknown plugin with stand-in `plugin-qualify-sync` and `omx-panel` on the path runs each once, with that target
    only, at nice 19, and never for a second plugin; with `plugin-qualify-sync` absent no child runs and the add answers
    as before; `ask_unknown 0` runs none, and `add ... ask` runs them; a known key runs none; the three generators run with
    that plugin's `--only` and no other; with no store installed, the add pages by the declared groups.
-9. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
+10. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
    bundles only. Red: for a fixture LV2 plugin with no UI, lilv lists a `ui:X11UI` on its URI from the generated bundle;
    the window opens under a headless Wayland compositor and under Xvfb and draws the stored description.
-10. **omx-plugins: `clap.gui`, `ui:X11UI` and the gate.** Proves: every plugin of the tree has both. Red: the gate over today's
+11. **omx-plugins: `clap.gui`, `ui:X11UI` and the gate.** Proves: every plugin of the tree has both. Red: the gate over today's
    tree fails on every plugin; the tree holds no generated `modgui.ttl`.
-11. **zynthian-ui: entries from the store.** Proves: Zynthian reads, does not derive. Red: with a fixture store whose
+12. **zynthian-ui: entries from the store.** Proves: Zynthian reads, does not derive. Red: with a fixture store whose
     description differs from what `describe` derives, the engine draws the store's.
-12. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
+13. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
 
 ## 14. Decided
 
 The owner's answers to the questions this design raised (2026-11-19). The sections above follow them.
 
-1. **Pages** are cut on read (`omx-panel describe --pages`, at the surface's width, `tools/describe.mjs:309`), never
-   stored.
+1. **Pages** are cut on read, never stored: omx-panel's ONE pure `describeFromStored(body, { skin, perPage, remote })`
+   cuts them over the stored entry, which holds per control its id and group key (`description_control`); it is
+   byte-equal to `describe` for the same inputs over the reference corpus, and no client needs a descriptor.
 2. **The base's inputs** (the reference sets' descriptors and LV2 TTL) live with the base package's build in omx-panel.
 3. **Pruning.** Each scan prunes, from the system and user layers it may write, the entries of plugins no longer
    installed; each release of the base prunes the base.
@@ -658,8 +676,8 @@ The owner's answers to the questions this design raised (2026-11-19). The sectio
 7. **plugin-hostd's lane does not wait for the qualification store's consumer switch**: it reads the store when the
    store exists, and declared groups until then; the single-plugin call writes the records where the scan writes them
    today until the switch.
-8. **Skins.** A user's skin is applied by each reader over the stored description; it is never stored as an edited
-   entry.
+8. **Skins.** A user's skin is applied on read by `describeFromStored` over the stored entry (as 1); it is never stored
+   as an edited entry.
 9. **A schema change** (OWNER): a MIGRATION carries a person's edits across schema versions, an owner-approved
    compatibility mechanism scoped to the user layer only; the system layer and the base are regenerated (section 3.5).
 10. **Figures under load** are recorded with a measured-under-load mark; the ask is not deferred (section 7).
