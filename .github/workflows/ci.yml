@@ -259,16 +259,22 @@ jobs:
       # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
       - name: No copy of omx-dsp in the packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
-            list=$(rpm -qlp out/omx-panel-[0-9]*.rpm)
-            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list"
-            ! grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"
-            req=$(rpm -qp --requires out/omx-panel-[0-9]*.rpm); grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req"'
-          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
-            list=$(dpkg -c out/omx-panel_*_all.deb)
-            grep -q "node_modules/@openmixer/omx-dsp -> /usr/share/omx-dsp$" <<< "$list"
-            ! grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"
-            dep=$(dpkg-deb -f out/omx-panel_*_all.deb Depends); grep -q "omx-dsp-wasm (>= 0.33.0~)" <<< "$dep"'
+          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -uo pipefail -c '
+            rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
+            list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
+            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
+            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
+            req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
+            grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
+            echo "PASS rpm: omx-dsp linked, not copied, required"'
+          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -uo pipefail -c '
+            deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
+            list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
+            grep -q "node_modules/@openmixer/omx-dsp -> /usr/share/omx-dsp$" <<< "$list" || { echo "FAIL deb: no omx-dsp link"; exit 1; }
+            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
+            dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
+            grep -q "omx-dsp-wasm (>= 0.33.0~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.33.0~) in: $dep"; exit 1; }
+            echo "PASS deb: omx-dsp linked, not copied, a dependency"'
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-packages
