@@ -24,6 +24,10 @@ BuildRequires: npm
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.20.0
 BuildRequires: plugin-hostd-contract >= 0.20.7
+# %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
+# and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
+BuildRequires: omx-contract >= 3.20.0
+BuildRequires: omx-dsp-wasm >= 0.33.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
@@ -40,7 +44,6 @@ BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
 # %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
 BuildRequires: omx-contract-devel >= 3.20.0
-BuildRequires: omx-contract >= 3.20.0
 BuildRequires: libomx-domain-devel >= 3.20.0
 BuildRequires: pkgconfig(omxdsp) >= 0.32.3
 
@@ -48,6 +51,8 @@ Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.20.0
 Requires: plugin-hostd-contract >= 0.20.7
+# the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
+Requires: omx-dsp-wasm >= 0.33.0
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -104,7 +109,7 @@ test -d node_modules || npm ci --no-audit --no-fund
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 
 %check
-make test
+OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 
 %files
 %license LICENSE
