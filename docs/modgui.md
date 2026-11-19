@@ -132,7 +132,7 @@ The value of a control is shown in a scribble strip, `mod-role="input-control-va
 value into it and the template carries no value text; the unit (from the descriptor) is its `data-unit`. A selector's own value
 element is bound the same way.
 
-The knob film strips of `vintage` and `3d` are generated from one SVG each (`tools/look/knob-vintage.svg`, `knob-3d.svg`): 65
+The knob film strips of `vintage` and `3d` are generated from one drawing each: the vintage knob's is a scene in `tools/look.json` (`drawings`, written there from `schema/modgui-looks.json`, the only copy of that drawing), the 3d knob's `tools/look/knob-3d.svg`: 65
 frames of 48 px, left to right, minimum to maximum, MOD's horizontal sprite. `tools/svg-knob.mjs` paints the SVG's small subset
 with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so the strips need no external tool. `node
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
@@ -149,7 +149,7 @@ plate, the red LED) and reads no pinned token. Those rows are the ONLY place a v
 
 | Row | Console element | MOD GUI element | Pinned tokens |
 |---|---|---|---|
-| `knob-cap` | the console's Encoder .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (tools/look/knob-vintage.svg) | `finish:--knob-cap-hi`, `finish:--knob-face` |
+| `knob-cap` | the console's Encoder .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (the knob-vintage drawing of tools/look.json) | `finish:--knob-cap-hi`, `finish:--knob-face` |
 | `knob-rim` | the console's Encoder .cap stroke: the rim | knob film strip, the rim | `finish:--knob-edge` |
 | `knob-knurl` | the console's Encoder .knurl: the knurled edge | knob film strip, the teeth ring | `finish:--knob-knurl` |
 | `knob-pointer` | the console's Encoder .needle with its groove-shade and groove-lit walls | knob film strip, the carved pointer | `console:--knob-pointer`, `finish:--knob-knurl`, `finish:--knob-cap-hi` |
@@ -180,7 +180,7 @@ FINISH blocks (`finish`: aluminium, graphite, black; the metal a knob, a fader c
 aluminium being the default (`defaultFinish`, the console's default `data-finish`). `tools/look.mjs` writes them into `tools/look.json`
 (`console`), and each look names its metal with the `--finish` token (the console's default finish, read from its `tokens.css`, for vintage; `none` for the others).
 
-**The metal knob and fader.** The vintage knob and fader film strips are generated from `tools/look/knob-vintage.svg` and
+**The metal knob and fader.** The vintage knob and fader film strips are generated from the `knob-vintage` drawing of `tools/look.json` and
 `tools/look/fader-vintage.svg` through `tools/svg-knob.mjs`; every colour in them is a pinned placeholder, so a re-pin or another
 finish re-draws them with no hand drawing and no binary in the tree. The knob is the console's Encoder's: a radial cap-hi to face cap, an edge
 rim, a knurled ring, a pointer between a shaded and a lit groove wall, the silkscreened tick ring and the drop shadow.

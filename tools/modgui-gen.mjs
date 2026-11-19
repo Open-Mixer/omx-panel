@@ -37,7 +37,7 @@ import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, plac
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { SLOPE_UNITS } from './vocabulary.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
-import { paintScene, parseSvg, readKnobSvg, renderSvgFilm, resolveSvg } from './svg-knob.mjs';
+import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
 
@@ -612,7 +612,7 @@ export function loadLook(name = DEFAULT_LOOK) {
   // the console's pinned relief and metal for the drawings: `{console:--x}` anywhere, `{finish:--x}` in the look's own finish
   const finish = look.console?.finish?.[depth['--finish']] ?? {};
   const pinned = Object.fromEntries([...Object.entries(look.console?.tokens ?? {}).map(([k, v]) => [`console:${k}`, v]), ...Object.entries(finish).map(([k, v]) => [`finish:${k}`, v])]);
-  return { name, theme: look.theme, personality: look.personality, tokens, depth, pinned, font: parseFont(readFileSync(fontFile)) };
+  return { name, theme: look.theme, personality: look.personality, tokens, depth, pinned, drawings: look.drawings ?? {}, font: parseFont(readFileSync(fontFile)) };
 }
 
 /** The plugin's enclosure colour in `look`: the palette's entry its name picks (a one-colour palette is its colour). */
@@ -638,7 +638,7 @@ function drawKnob(c, cx, cy, r, f, col, look) {
   // a look with a knob drawing wears it, scaled to this knob: the same SVG the film strip is made from
   if (look && look.depth['--knob'] !== 'flat') {
     const k = (2 * r) / GEOMETRY.knob, angle = -135 + 270 * Math.min(1, Math.max(0, f));
-    paintScene(c, parseSvg(resolveSvg(readKnobSvg(look.depth['--knob']), look.tokens, angle, look.pinned)), cx - 24 * k, cy - 24 * k, k);
+    paintScene(c, sceneAt(drawingOf(look, look.depth['--knob']), look.tokens, angle, look.pinned), cx - 24 * k, cy - 24 * k, k);
     return;
   }
   disc(c, cx, cy, r, col.rim);
@@ -817,7 +817,7 @@ export function renderFace(lay, look, scale) {
 export function renderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   // a look with a knob drawing: one SVG, a frame per step (tools/svg-knob.mjs); the console's is the flat knob
-  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--knob']), look.tokens, n, g.knob, 48, look.pinned);
+  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(drawingOf(look, look.depth['--knob']), look.tokens, n, g.knob, 48, look.pinned);
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawKnob(c, i * g.knob + g.knob / 2, g.knob / 2, g.knob / 2 - 1, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -827,7 +827,7 @@ export function renderFilm(look) {
 export function renderFaderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   // a look with a fader drawing: one SVG, the cap at its frame's place (the foot at the minimum, the top at the maximum)
-  if (look.depth['--fader'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--fader']), look.tokens, n, g.knob, 48, look.pinned, (f) => ({ capY: 33 - 30 * f }));
+  if (look.depth['--fader'] !== 'flat') return renderSvgFilm(drawingOf(look, look.depth['--fader']), look.tokens, n, g.knob, 48, look.pinned, (f) => ({ capY: 33 - 30 * f }));
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawFader(c, i * g.knob + g.knob / 2, 0, g.knob, i / (n - 1), col);
   return encodePng(c, g.knob);

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * svg-knob.mjs — a knob film strip from ONE SVG. The knob of a look is one file, tools/look/knob-<look>.svg, in a small
+ * svg-knob.mjs — a knob film strip from ONE drawing. The knob of a look is a drawing: a SCENE of tools/look.json (`drawings`, the
+ * vintage knob's, which is data and the only copy) or, for the drawings not yet moved there, one file tools/look/<name>.svg in a small
  * subset of SVG 1.1; this module reads it and paints a frame per step with tools/raster.mjs, so the strips are
  * generated, never drawn by hand and never a binary in the tree. The subset (anything else is refused by name):
  *
@@ -75,6 +76,38 @@ export function parseSvg(source) {
   }
   return { grads, shapes };
 }
+
+/** `v` with every placeholder of a scene set: the same names, and the same refusals, as resolveSvg. */
+const resolveValue = (v, tokens, angle, pinned) => (typeof v === 'string' ? resolveSvg(v, tokens, angle, pinned) : v);
+
+/**
+ * The scene of a drawing of look.json (`drawings`, a JSON scene whose colours and angle are placeholders) for one frame, in the
+ * shape parseSvg gives an SVG's: the placeholders set from the look's tokens, the console's pin and the frame's angle.
+ */
+export function resolveScene(drawing, tokens, angle, pinned) {
+  const grads = new Map();
+  for (const [id, g] of Object.entries(drawing.gradients ?? {})) {
+    grads.set(id, {
+      kind: g.kind,
+      a: g.attrs ?? {},
+      stops: g.stops.map((st) => ({ at: Number(st.offset), rgb: rgbOf(resolveValue(st.color, tokens, angle, pinned)), a: st.opacity === undefined ? 1 : Number(st.opacity) })),
+    });
+  }
+  const shapes = drawing.shapes.map((sh) => ({
+    tag: sh.tag,
+    a: Object.fromEntries(Object.entries(sh.attrs).map(([k, v]) => [k, resolveValue(v, tokens, angle, pinned)])),
+    rot: (sh.rotate ?? []).map((r) => ({ a: Number(resolveValue(r.angle, tokens, angle, pinned)), cx: r.cx, cy: r.cy })),
+  }));
+  return { grads, shapes };
+}
+
+/** The scene of `drawing` for one frame: a JSON scene of look.json, or the text of an SVG file (the drawings not moved there yet). */
+export function sceneAt(drawing, tokens, angle, pinned, extra = {}) {
+  return typeof drawing === 'string' ? parseSvg(resolveSvg(drawing, tokens, angle, pinned, extra)) : resolveScene(drawing, tokens, angle, pinned);
+}
+
+/** The drawing the look names: its scene in `look.drawings`, else the SVG file of that name. */
+export const drawingOf = (look, name) => look.drawings?.[name] ?? readKnobSvg(name);
 
 const round9 = (v) => Math.round(v * 1e9) / 1e9;
 /** The point `(x, y)` taken back through a stack of rotations, the innermost last. */
@@ -153,12 +186,12 @@ export function paintScene(c, scene, ox, oy, k) {
   }
 }
 
-/** A film strip: `frames` frames of `size` px, the knob of `svgText` from -135 to +135 degrees, as a PNG. */
-export function renderSvgFilm(svgText, tokens, frames, size, viewBox = 48, pinned, extraOf = () => ({})) {
+/** A film strip: `frames` frames of `size` px, the knob of `drawing` (a scene, or SVG text) from -135 to +135 degrees, as a PNG. */
+export function renderSvgFilm(drawing, tokens, frames, size, viewBox = 48, pinned, extraOf = () => ({})) {
   const c = canvas(size * frames, size);
   for (let i = 0; i < frames; i++) {
     const angle = round9(-135 + (270 * i) / (frames - 1));
-    paintScene(c, parseSvg(resolveSvg(svgText, tokens, angle, pinned, extraOf(i / (frames - 1)))), i * size, 0, size / viewBox);
+    paintScene(c, sceneAt(drawing, tokens, angle, pinned, extraOf(i / (frames - 1))), i * size, 0, size / viewBox);
   }
   return encodePng(c, size);
 }

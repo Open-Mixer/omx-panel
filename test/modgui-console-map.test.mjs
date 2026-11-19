@@ -15,7 +15,8 @@ import { LOOKS_JSON } from '../tools/look.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = JSON.parse(readFileSync(join(ROOT, 'tools/look/console-map.json'), 'utf8')).rows;
 const SCHEMA = JSON.parse(readFileSync(LOOKS_JSON, 'utf8')).looks;
-const EMITTED = JSON.parse(readFileSync(join(ROOT, 'tools/look.json'), 'utf8')).looks;
+const LOOK_FILE = JSON.parse(readFileSync(join(ROOT, 'tools/look.json'), 'utf8'));
+const EMITTED = LOOK_FILE.looks;
 const DOC = readFileSync(join(ROOT, 'docs/modgui.md'), 'utf8');
 const pin = loadPin();
 const valueOf = (ref) => {
@@ -37,11 +38,13 @@ test('the map has the rows of the console\'s vintage elements, each named once, 
 test('every map row\'s tokens are read from the pin: the pin has each one, and the look wears the pinned value', () => {
   for (const r of MAP) {
     if (r.ownerMock) { assert.deepEqual(r.tokens, [], r.id); continue; }
-    assert.ok(r.tokens.length > 0 && (r.via?.length || r.svg), `${r.id}: no tokens or no place they are worn`);
+    assert.ok(r.tokens.length > 0 && (r.via?.length || r.svg || r.drawing), `${r.id}: no tokens or no place they are worn`);
     for (const ref of r.tokens) {
       const value = valueOf(ref);
       const placeholder = `{${ref}}`;
       if (r.svg) assert.ok(readKnobSvg(r.svg).includes(placeholder), `${r.id}: ${r.svg} never names ${placeholder}`);
+      // a drawing of look.json (a scene, data): its colours name the placeholder
+      if (r.drawing) assert.ok(JSON.stringify(LOOK_FILE.drawings[r.drawing]).includes(placeholder), `${r.id}: the ${r.drawing} drawing of tools/look.json never names ${placeholder}`);
       // the token a row lists is carried by one of its look tokens, as a placeholder in the schema and as the pinned value in the emitted look
       if (r.via) {
         assert.ok(r.via.some((k) => String(SCHEMA.vintage[k]).includes(placeholder)), `${r.id}: none of ${r.via.join(', ')} names ${placeholder}`);
