@@ -7,7 +7,7 @@
  * a PNG read back to pixels. Reads the built tree (the parent's `npm ci && make`) and renderer/build/.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,8 +16,24 @@ import { deflateSync, inflateSync } from 'node:zlib';
 export const RENDERER = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const ROOT = resolve(RENDERER, '..');
 export const CLI = join(RENDERER, 'build', 'omx-panel-render');
-/** The tools directory the renderer reads the look, the geometry and the font from: the source tree's. */
-export const DATA = join(ROOT, 'tools');
+/** The source tree's tools directory: the look (its default style is vintage), the geometry and the font. */
+export const TOOLS = join(ROOT, 'tools');
+/** A copy of the tools directory whose look.json names the console style: the renderer draws the knob the style's `--knob` names (the
+ * vintage scene by default, omx-panel#123), and the goldens and the parity checks are held to the flat console knob, so they pin it
+ * here, explicitly. A real copy, not links: a test that rewrites a file of the directory must not write through to the tree. */
+function pinnedData(style = 'console') {
+  // the gesture declaration is schema/gestures.json, found beside the tools directory (view.c): the copy keeps that layout
+  const base = mkdtempSync(join(tmpdir(), 'omx-panel-data-'));
+  const dir = join(base, 'tools');
+  cpSync(TOOLS, dir, { recursive: true });
+  cpSync(join(ROOT, 'schema'), join(base, 'schema'), { recursive: true });
+  const look = JSON.parse(readFileSync(join(TOOLS, 'look.json'), 'utf8'));
+  writeFileSync(join(dir, 'look.json'), `${JSON.stringify({ ...look, style }, null, 2)}\n`);
+  process.on('exit', () => rmSync(base, { recursive: true, force: true }));
+  return dir;
+}
+/** The tools directory the renderer reads the look, the geometry and the font from, the console style pinned (see pinnedData). */
+export const DATA = pinnedData();
 const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 
 /** The panels drawn: ours (omx-delay, a declared panel) and a third party's LV2 plugin (ZamComp, scanned), the latter
@@ -213,8 +229,8 @@ export function encodePng({ w, h, data }) {
 }
 
 /** Each control's cell where the renderer places it in a box: `[x, y, w, h]` in device px, in the description's order. */
-export function rects(description, { scale = 1, size } = {}) {
-  const args = ['--description', description, '--data', DATA, '--scale', String(scale), '--rects'];
+export function rects(description, { scale = 1, size, data = DATA } = {}) {
+  const args = ['--description', description, '--data', data, '--scale', String(scale), '--rects'];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   return execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n').slice(1).map((l) => l.split(' ').map(Number));
 }
