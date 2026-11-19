@@ -300,3 +300,19 @@ test('a layer with a hot journal is refused as hot-journal by name, and neither 
   assert.ok(r.stderr.includes(hot), 'it names the file');
   assert.deepEqual([hot, `${hot}-journal`].map(snapshot), before, 'a read-only reader rolls nothing back');
 });
+
+test('the DDL: a description with controls cannot become a refused entry by an UPDATE', (t) => {
+  const p = places(t);
+  mkStore(p.base, { layer: 0, panel: PV(p) });
+  const db = new DatabaseSync(p.base);
+  db.prepare('INSERT INTO plugin (sha256, format, uri) VALUES (?, ?, ?)').run(hex('c'), 'lv2', 'urn:x');
+  db.prepare("INSERT INTO plugin (sha256, format, uri) VALUES (?, 'lv2', 'urn:y')").run(hex('c'));
+  const d = db.prepare("INSERT INTO description VALUES (?, 0, 'x', 1, ?, 'eq', ?, '{}', '{}', NULL)");
+  d.run(1, hex('1'), hex('f'));
+  d.run(2, hex('1'), hex('f'));
+  db.prepare("INSERT INTO description_control VALUES (1, 0, 's', 'k', 'i', NULL, 0)").run();
+  const refuse = db.prepare("UPDATE description SET body = NULL, groups = NULL, refused = 'panel.describe.no-controls' WHERE plugin_id = ?");
+  assert.throws(() => refuse.run(1), /refused/);
+  refuse.run(2); // no controls: it may become a refused entry
+  db.close();
+});

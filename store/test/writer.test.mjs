@@ -195,3 +195,11 @@ test('a reader waits out a short lock: the busy timeout is real, not zero', asyn
   const status = await new Promise((res) => c.on('exit', res));
   assert.equal(status, 0);
 });
+
+test('a put of a refused entry over one with controls leaves no control behind', (t) => {
+  const p = ready(t);
+  assert.equal(put(p, entry({ controls: [{ symbol: 'a' }, { symbol: 'b' }] })).status, 0);
+  assert.equal(count(layerOfUid(p), 'description_control'), 2);
+  assert.equal(put(p, entry({ refused: 'panel.describe.no-controls', body: null, groups: null })).status, 0);
+  assert.equal(count(layerOfUid(p), 'description_control'), 0);
+});
