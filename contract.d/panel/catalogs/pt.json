@@ -236,6 +236,228 @@
       "by": "machine",
       "model": "draft-prose",
       "source": "3a108468ff6ad2eef53811db2720e3738b3427f03ad7b8a0515b64de399a8383"
+    },
+    "PANEL_STORE_CODES.panel-store.absent": {
+      "text": "O ficheiro da base não existe.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4886d70a72641c5b033e7b3fcdc28a4882979d352cec3dc811a050152877196f"
+    },
+    "PANEL_STORE_CODES.panel-store.unreadable": {
+      "text": "Um ficheiro do armazém existe e não pode ser lido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9442fb05d12e7f5bf6c4ac4deb884fdef51513f76069abc919beb8dad59a3a5b"
+    },
+    "PANEL_STORE_CODES.panel-store.not-a-store": {
+      "text": "O ficheiro não é um armazém da camada com que foi aberto.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b548c5415a33726dd9e3b43f3c6d64c821cdf1a05a372b71f621b35965dd6874"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-mismatch": {
+      "text": "Os ficheiros do armazém têm versões de esquema diferentes.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "770133c9bd5b295a772c6c338a2097eec3a59be393a1acd3ac083670aeabd092"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-other": {
+      "text": "Um ficheiro do armazém tem outra versão de esquema que a do leitor.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98debebefb977b5d4704404f644c39dceb85c024492032d1ac7c9bf67871e3b5"
+    },
+    "PANEL_STORE_CODES.panel-store.domain-too-old": {
+      "text": "Um domínio instalado é mais antigo do que aquele com que o armazém foi verificado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b6f217f98b6f7dd80da59171421bd6af7512a9dc882f8a4edd6b735d6a3e2f76"
+    },
+    "PANEL_STORE_CODES.panel-store.word-unknown": {
+      "text": "Uma palavra guardada não está em nenhum dos itens com que a coluna é verificada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "981bbabd1afbb0fa0a1a55643cd20695b035ae186075b47af22f66f71fd2381d"
+    },
+    "PANEL_STORE_CODES.panel-store.hot-journal": {
+      "text": "Uma camada tem um diário ativo: o seu escritor parou dentro de uma transação.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98b1dac00f36f5e0a81d583a2856f5071480a91c2ae6841840f96f26a3116b56"
+    },
+    "PANEL_STORE_CODES.panel-store.busy": {
+      "text": "Uma camada ficou bloqueada além do tempo limite.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "207d5cc48aa4288d7a67d5103d373460c0fe370fd42613d909c0e69318e84339"
+    },
+    "PANEL_STORE_CODES.panel-store.entry-invalid": {
+      "text": "A entrada não é uma entrada do esquema de descrição, ou tem uma palavra que o seu item não tem.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4bf1960cce76c5a5c3932e6d9332c589dfb2c1a34ea9ed291010039ea050c47e"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.no-controls": {
+      "text": "O plugin não tem controlos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "6c3fb28b54a0770d088108ca7634225ab54a26662dedac0c72939539175b6a05"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.family-not-backed": {
+      "text": "A família não tem um painel que o esquema suporte.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84a797d358c642db98d2622b7ff1db19a94876237b970eed2bd1027aef7d1571"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.layout-invalid": {
+      "text": "O esquema que o plugin declara não é válido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8856d97753cfef5bf8c53e194faddf1b34273df076bafb354427a8926236a33b"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-unavailable": {
+      "text": "Foi dada uma camada de substituição e nada a pode aplicar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "630103e16b801026e91a54f907d8e600cfeb2d75c20b167b4d14f226f8156112"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-refused": {
+      "text": "Uma camada de substituição foi recusada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "61eab1a2953cad752cf488cad6523cf75052471687adaf78b4e749010790ed0a"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-dropped": {
+      "text": "Uma entrada de substituição foi descartada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "483028fead367bda8858d64187d8536dc179eb1fb28f1f172651624b226a9d9e"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.role-dropped": {
+      "text": "Um papel foi descartado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "26fde59e03217b916e96524e0748f1e28c9ed05f44d322bec9726f61503f708f"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.skin-dropped": {
+      "text": "Um campo da skin foi descartado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "991a5b1f092421791226463ae80dbd93fa325e113981fd1fa865aeeb2acea596"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.meter-refused": {
+      "text": "Um medidor foi recusado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "cb7f71d8761f9da6560c8cf0dfa828eb4a370fb7e5f9b54eaacaa447569726d6"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.param-unserved": {
+      "text": "Um parâmetro de outra gama não é servido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "1130edfedc850846d11ab197b0a6ab797e84c53bb046f98ba846cbe95662157e"
+    },
+    "PANEL_GROUP_OUTCOMES.nothing-to-do": {
+      "text": "O plugin fica como está.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f8fd9aa31a359c0b38d76ba56f11dc7ff159ab6f0bfee9fa0890deebc8ffd66b"
+    },
+    "PANEL_GROUP_OUTCOMES.grouped": {
+      "text": "Cada controlo foi colocado num grupo.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "126fa341f699289b9f248f0b4b97cd36016f079d3569cb32d028959936dcfa2a"
+    },
+    "PANEL_GROUP_OUTCOMES.no-confident-grouping": {
+      "text": "As regras não encontraram um agrupamento fiável.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "da71ee8c7ba68581ceaff2a638882de8bd80a066c260c06abcc8b2beaf06c2f5"
+    },
+    "PANEL_GROUP_REASONS.no-controls": {
+      "text": "O plugin não tem controlos a colocar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e34d2c0387467d79db3d8b7c7b6bbc19cc4d93756f0d9b6f379f3ba5b8f85b06"
+    },
+    "PANEL_GROUP_REASONS.own-groups-complete": {
+      "text": "Os grupos do próprio plugin já colocam todos os controlos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ed9cac998cb42d947e35209b45f710ba4fbc544628ad0a9d699f9b245205b451"
+    },
+    "PANEL_GROUP_REASONS.fits-one-screen": {
+      "text": "Os controlos cabem num ecrã.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e1e3590b2b38e8fe21c7b69d782a24f5f0735931d57d76e188e71ba22c8fcfd1"
+    },
+    "PANEL_GROUP_REASONS.unplaced-controls": {
+      "text": "Nenhuma regra colocou um controlo.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "22f49c012a775707abe3b6ac9373e87e6201733ea05c4bcc8b7f659b089c67ab"
+    },
+    "PANEL_GROUP_REASONS.too-few-groups": {
+      "text": "As regras fizeram poucos grupos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "682e56081d9171f1e75411bada1a56beeca0f594a3c298ab6df2a6d46d5fdb63"
+    },
+    "PANEL_GROUP_REASONS.too-many-groups": {
+      "text": "As regras fizeram demasiados grupos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "5036c139cfee4b339931b175a181fe868b8094935704d34e4e1844e6bdf0d797"
+    },
+    "PANEL_GROUP_REASONS.mostly-by-index": {
+      "text": "A maioria dos controlos foi colocada apenas por uma série de índices de porta.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "a69e7e129a266ed3ded35466f446bbaa756ce86e3465d345d6c71f4e50f3cc00"
+    },
+    "PANEL_GROUP_RULES.own": {
+      "text": "O grupo do próprio plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "2d7f87e4b524d41a5b6d95c77e7da0ab58b5140c0953547deb6ee96da4db0352"
+    },
+    "PANEL_GROUP_RULES.designation": {
+      "text": "Uma designação do vocabulário de parâmetros.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "29a54fa52bd74ba71c5c80105b32bf5363e417172e215a8b1c20ae9d35250e7c"
+    },
+    "PANEL_GROUP_RULES.name": {
+      "text": "Um prefixo de nome ou símbolo, ou um número, partilhado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ae53596d003ed3654d198720814e735cf37b4855075c3a0ce56df79eef1e1d9c"
+    },
+    "PANEL_GROUP_RULES.unit": {
+      "text": "Uma unidade partilhada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4ee5c86a73656aecac990237516633f0cd8895b4ce4d9435fbf821407d0eac68"
+    },
+    "PANEL_GROUP_RULES.index": {
+      "text": "Uma série de índices de porta.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "825eee304bf393c82b98b2ebbfb3f9830f587f4504507138295d25a6ca99a398"
+    },
+    "PANEL_GROUP_RULES.modgui": {
+      "text": "O esquema MOD GUI do próprio plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "c8745485e14ce421ae90e6a9c4ca1a182c5077a621f4e697e4cbf26509729b23"
+    },
+    "PANEL_GROUP_RULES.instance": {
+      "text": "Um grupo de uma instância de um grupo repetido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "646fe87a13d99ad9cb920ad6cbbac76cd71a57abcb5830bd1aab05f2e3a09d3d"
     }
   }
 }

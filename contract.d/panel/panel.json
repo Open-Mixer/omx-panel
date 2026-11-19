@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display sources and placements of a panel",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -319,6 +319,296 @@
             "description": "an instance on the master",
             "x-code": 3,
             "x-text": "An instance on the master."
+          }
+        ]
+      },
+      "PANEL_STORE_CODES": {
+        "description": "The refusals of the descriptions store's reader and writer (omx-panel docs/descriptions-store.md, section 5): each is the qualification store's code of the same name, with panel-store. for its prefix. The loader's own codes are passed through, not repeated here.",
+        "x-since": "1.1.0",
+        "x-c-codes": true,
+        "oneOf": [
+          {
+            "const": "panel-store.absent",
+            "title": "absent",
+            "description": "the base file does not exist",
+            "x-code": 0,
+            "x-text": "The base store file does not exist."
+          },
+          {
+            "const": "panel-store.unreadable",
+            "title": "unreadable",
+            "description": "a layer exists and SQLite cannot open or read it",
+            "x-code": 1,
+            "x-text": "A store file exists and cannot be read."
+          },
+          {
+            "const": "panel-store.not-a-store",
+            "title": "notAStore",
+            "description": "a file at version 0, with no store_info row, or of another layer than the place it was opened as",
+            "x-code": 2,
+            "x-text": "The file is not a store of the layer it was opened as."
+          },
+          {
+            "const": "panel-store.schema-mismatch",
+            "title": "schemaMismatch",
+            "description": "the opened files are at different schema versions",
+            "x-code": 3,
+            "x-text": "The store files are at different schema versions."
+          },
+          {
+            "const": "panel-store.schema-other",
+            "title": "schemaOther",
+            "description": "a file is at a schema version other than the reader's",
+            "x-code": 4,
+            "x-text": "A store file is at another schema version than the reader's."
+          },
+          {
+            "const": "panel-store.domain-too-old",
+            "title": "domainTooOld",
+            "description": "an installed domain is older than the version a store was checked against",
+            "x-code": 5,
+            "x-text": "An installed domain is older than the one the store was checked against."
+          },
+          {
+            "const": "panel-store.word-unknown",
+            "title": "wordUnknown",
+            "description": "a stored word is in none of the items its column is checked against",
+            "x-code": 6,
+            "x-text": "A stored word is in none of the items its column is checked against."
+          },
+          {
+            "const": "panel-store.hot-journal",
+            "title": "hotJournal",
+            "description": "a layer has a hot journal: its writer stopped inside a transaction",
+            "x-code": 7,
+            "x-text": "A layer has a hot journal: its writer stopped inside a transaction."
+          },
+          {
+            "const": "panel-store.busy",
+            "title": "busy",
+            "description": "a layer stayed locked past the busy timeout",
+            "x-code": 8,
+            "x-text": "A layer stayed locked past the timeout."
+          },
+          {
+            "const": "panel-store.entry-invalid",
+            "title": "entryInvalid",
+            "description": "a put whose JSON is not an entry of the description schema, or whose words are not in their items",
+            "x-code": 9,
+            "x-text": "The entry is not an entry of the description schema, or holds a word its item lacks."
+          }
+        ]
+      },
+      "PANEL_DESCRIBE_CODES": {
+        "description": "The refusals describe states for a plugin (omx-panel tools/describe.mjs DESCRIBE_CODES): a stored entry with no description names the one that refused it.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "panel.describe.no-controls",
+            "title": "noControls",
+            "description": "the plugin has no controls",
+            "x-code": 0,
+            "x-text": "The plugin has no controls."
+          },
+          {
+            "const": "panel.describe.family-not-backed",
+            "title": "familyNotBacked",
+            "description": "the family has no panel backing",
+            "x-code": 1,
+            "x-text": "The family has no panel the layout backs."
+          },
+          {
+            "const": "panel.describe.layout-invalid",
+            "title": "layoutInvalid",
+            "description": "the layout the plugin states is invalid",
+            "x-code": 2,
+            "x-text": "The layout the plugin states is invalid."
+          },
+          {
+            "const": "panel.describe.override-unavailable",
+            "title": "overrideUnavailable",
+            "description": "an override layer was given and no applier",
+            "x-code": 3,
+            "x-text": "An override layer was given and nothing can apply it."
+          },
+          {
+            "const": "panel.describe.override-refused",
+            "title": "overrideRefused",
+            "description": "an override layer was refused",
+            "x-code": 4,
+            "x-text": "An override layer was refused."
+          },
+          {
+            "const": "panel.describe.override-dropped",
+            "title": "overrideDropped",
+            "description": "an override entry was dropped",
+            "x-code": 5,
+            "x-text": "An override entry was dropped."
+          },
+          {
+            "const": "panel.describe.role-dropped",
+            "title": "roleDropped",
+            "description": "a role was dropped",
+            "x-code": 6,
+            "x-text": "A role was dropped."
+          },
+          {
+            "const": "panel.describe.skin-dropped",
+            "title": "skinDropped",
+            "description": "a skin field was dropped",
+            "x-code": 7,
+            "x-text": "A skin field was dropped."
+          },
+          {
+            "const": "panel.describe.meter-refused",
+            "title": "meterRefused",
+            "description": "a meter was refused",
+            "x-code": 8,
+            "x-text": "A meter was refused."
+          },
+          {
+            "const": "panel.describe.param-unserved",
+            "title": "paramUnserved",
+            "description": "a path or text parameter of another range is not served",
+            "x-code": 9,
+            "x-text": "A parameter of another range is not served."
+          }
+        ]
+      },
+      "PANEL_GROUP_OUTCOMES": {
+        "description": "The verdict of the port-group inference (omx-panel docs/group-inference.md): what the rules decided for a plugin.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "nothing-to-do",
+            "title": "nothingToDo",
+            "description": "the plugin is left exactly as it is",
+            "x-code": 0,
+            "x-text": "The plugin is left as it is."
+          },
+          {
+            "const": "grouped",
+            "title": "grouped",
+            "description": "every control was placed in a group",
+            "x-code": 1,
+            "x-text": "Every control was placed in a group."
+          },
+          {
+            "const": "no-confident-grouping",
+            "title": "noConfidentGrouping",
+            "description": "the rules found no grouping they trust",
+            "x-code": 2,
+            "x-text": "The rules found no grouping they trust."
+          }
+        ]
+      },
+      "PANEL_GROUP_REASONS": {
+        "description": "Why the port-group inference left a plugin as it is (omx-panel docs/group-inference.md).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "no-controls",
+            "title": "noControls",
+            "description": "the plugin has no placeable controls",
+            "x-code": 0,
+            "x-text": "The plugin has no controls to place."
+          },
+          {
+            "const": "own-groups-complete",
+            "title": "ownGroupsComplete",
+            "description": "the plugin's own groups already place every control",
+            "x-code": 1,
+            "x-text": "The plugin's own groups already place every control."
+          },
+          {
+            "const": "fits-one-screen",
+            "title": "fitsOneScreen",
+            "description": "the controls fit one screen",
+            "x-code": 2,
+            "x-text": "The controls fit one screen."
+          },
+          {
+            "const": "unplaced-controls",
+            "title": "unplacedControls",
+            "description": "a control was placed by no rule",
+            "x-code": 3,
+            "x-text": "A control was placed by no rule."
+          },
+          {
+            "const": "too-few-groups",
+            "title": "tooFewGroups",
+            "description": "the rules made fewer groups than the minimum",
+            "x-code": 4,
+            "x-text": "The rules made too few groups."
+          },
+          {
+            "const": "too-many-groups",
+            "title": "tooManyGroups",
+            "description": "the rules made more groups than the maximum",
+            "x-code": 5,
+            "x-text": "The rules made too many groups."
+          },
+          {
+            "const": "mostly-by-index",
+            "title": "mostlyByIndex",
+            "description": "most controls were placed only by a run of port indexes",
+            "x-code": 6,
+            "x-text": "Most controls were placed only by a run of port indexes."
+          }
+        ]
+      },
+      "PANEL_GROUP_RULES": {
+        "description": "The rule that made a port group (omx-panel docs/group-inference.md, in the order the rules run; instance for a group of a repeated instance).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "own",
+            "title": "own",
+            "description": "the plugin's own pg:group assignment",
+            "x-code": 0,
+            "x-text": "The plugin's own group."
+          },
+          {
+            "const": "designation",
+            "title": "designation",
+            "description": "an lv2:designation of the parameters vocabulary",
+            "x-code": 1,
+            "x-text": "A designation of the parameters vocabulary."
+          },
+          {
+            "const": "name",
+            "title": "name",
+            "description": "a shared name or symbol prefix, or a shared trailing number",
+            "x-code": 2,
+            "x-text": "A shared name or symbol prefix, or number."
+          },
+          {
+            "const": "unit",
+            "title": "unit",
+            "description": "a shared units:unit",
+            "x-code": 3,
+            "x-text": "A shared unit."
+          },
+          {
+            "const": "index",
+            "title": "index",
+            "description": "a contiguous run of lv2:index",
+            "x-code": 4,
+            "x-text": "A run of port indexes."
+          },
+          {
+            "const": "modgui",
+            "title": "modgui",
+            "description": "the plugin's own MOD GUI layout",
+            "x-code": 5,
+            "x-text": "The plugin's own MOD GUI layout."
+          },
+          {
+            "const": "instance",
+            "title": "instance",
+            "description": "a group of one instance of a repeated group",
+            "x-code": 6,
+            "x-text": "A group of one instance of a repeated group."
           }
         ]
       }

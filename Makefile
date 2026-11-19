@@ -20,7 +20,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads
+.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check
 
 all: build
 
@@ -76,6 +76,16 @@ renderer-check: build
 # the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)
 test-host-reads: build renderer
 	python3 test/host_reads.py
+
+# The descriptions store's reader and writer, C (docs/descriptions-store.md): its own Makefile (needs sqlite-devel 3.38 or above,
+# cjson-devel and omx-contract's libomx-domain-devel). store-check builds it, runs its tests and the Python door's over the
+# built tree: the tests build their fixtures with node 22's SQLite, and the golden of the rules version reads the built dist/.
+store:
+	$(MAKE) -C store
+
+store-check: build store
+	$(MAKE) -C store check
+	python3 store/test/door.py
 
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)

@@ -125,6 +125,27 @@ jobs:
       - name: A host that is not JavaScript reads the word names and the compare values
         run: make test-host-reads
 
+  # The descriptions store's reader and writer (docs/descriptions-store.md): the C library and its command built with warnings as
+  # errors, then the store's tests (node's SQLite builds the fixtures), the sabotage arms and the Python door's.
+  store:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:44
+    steps:
+      - name: Install the compiler, SQLite, cJSON, node and python
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config sqlite-devel cjson-devel nodejs npm python3 binutils dnf5-plugins
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7'
+      - uses: actions/checkout@v4
+      - name: The tree the golden of the rules version reads
+        run: npm ci && make
+      - name: The store, its tests, its sabotage arms and the Python door
+        run: make store-check
+
   # One recorded meter stream drawn by the renderer, by the MOD GUI's template in Chromium (playwright-core, the twin of omx-dsp's
   # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and
   # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5).

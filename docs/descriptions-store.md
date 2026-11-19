@@ -229,7 +229,9 @@ and the writer. Any change of the DDL is +1, and the rule is the qualification s
 exactly its version; `schema-other` for a file at another version; `schema-mismatch` when the opened files differ from
 each other (checked first, naming every file and version); `not-a-store` for 0, a missing `store_info` row, or a file
 whose `store_info.layer` is not the place it was opened as. The base is built new at each version and never upgraded; a
-system layer is not upgraded: it is derived again.
+system layer is not upgraded: it is derived again. Version 1 has no older version to carry: a layer at another version
+is refused as `schema-other` by the reader and by the writer alike, and the user-layer migration below is written with
+the first schema change that needs it.
 
 **A schema change** (section 14, 9; an owner-approved compatibility mechanism, scoped as follows and no wider). An
 omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION` installs a base at the new version. Then:
@@ -257,7 +259,9 @@ derives otherwise, would keep serving the old entry from every layer. So each en
   plugin of omx-plugins the description it carries, for any other the descriptor plugin-hostd's scan wrote for its binary
   (`<probe> describe`, section 7), its described parameter list. One function
   computes it, `omx_panel_store_source(format, path, hex_out)`, in the reader library, so every caller hashes the same
-  bytes the same way.
+  bytes the same way. The canonical JSON of a CLAP descriptor is the function the code uses: object keys in byte order,
+  no white space, numbers as cJSON prints them. A change of that form only stales entries, which are then derived again;
+  it is never a refusal.
 - `rules`: `OMX_PANEL_RULES_VERSION`, an integer NEW in omx-panel (lane 1 adds it with the schema and its golden),
   raised by every change that moves `describe`'s or the
   inference's output for the same input (a golden of the derivation tests changes with it, so the raise is not forgotten).
@@ -325,14 +329,17 @@ void omx_panel_store_close(omx_panel_store *s);
 typedef struct { const char *sha256, *format, *uri; } omx_panel_store_key;
 typedef struct { const char *symbol, *name, *rule; long display_priority; int declared;
                  const char *const *ports; size_t nports; } omx_panel_store_group;
+typedef struct { const char *symbol, *key, *id, *group_key; int governed; } omx_panel_store_control;   /* group_key NULL: none */
 typedef struct {
     const char *layer;                                   /* "user", "system" or "base" */
     const char *stale_edit_layer;                        /* a layer whose edited entry was skipped as stale, or NULL */
     int edited; const char *made_by, *family, *fingerprint;
     const char *body;                                    /* the description as JSON, or NULL when refused */
+    const char *repeated_groups;                         /* the `groups` column: the repeated groups as JSON, or NULL when refused */
     const char *refused;                                 /* the DESCRIBE_CODES word, or NULL */
     const char *group_outcome, *group_reason;            /* NULL: no verdict (a CLAP plugin) */
-    const omx_panel_store_group *groups; size_t ngroups;
+    const omx_panel_store_group *groups; size_t ngroups; /* the port groups, by display priority then symbol */
+    const omx_panel_store_control *controls; size_t ncontrols;   /* description_control, in `ordinal` order */
 } omx_panel_store_entry;
 
 /* 0 and *e filled, valid until the next call on s; OMX_PANEL_STORE_NO_ENTRY for a key no layer holds */
@@ -349,8 +356,14 @@ int  omx_panel_store_remove(omx_panel_store *w, const omx_panel_store_key *k, om
 - **Refusals, by name** (NEW `PANEL_STORE_CODES`, `x-c-codes`, in the `panel` domain, as `docs/behaviour-core.md`
   section 4 adds its codes): `panel-store.absent`, `.unreadable`, `.not-a-store`, `.schema-mismatch`, `.schema-other`,
   `.domain-too-old`, `.word-unknown`, `.hot-journal`, `.busy`, `.entry-invalid` (a put whose JSON is not an entry of the
-  description schema or whose words are not in their items), and the loader's codes passed through. Each is the
-  qualification store's code of the same name (its section 6), with `panel-store.` for the prefix.
+  description schema or whose words are not in their items), and the loader's codes passed through, except that a domain
+  below the version a store was checked against (the loader's `contract.package.too-old`) is `panel-store.domain-too-old`.
+  Each is the qualification store's code of the same name (its section 6), with `panel-store.` for the prefix.
+  `PANEL_STORE_CODES` is the one item of the `panel` domain marked `x-c-codes`.
+- **Test and command only, exported.** `omx_panel_store_set_rules` (the reader's `OMX_PANEL_RULES_VERSION`, for a test of
+  the rules rule), `omx_panel_store_writer_open_at` (the writer of a file given, as the system or a user layer) and
+  `omx_panel_store_message` (the reason of the last refusal of a call on a handle, naming the file) stay in the ABI file
+  and the export map, and their header says so. No production binary calls the first two.
 - **Word check at open** and at put, through omx-contract's loader (`omx_domain_open`, `omx_domain_word`), once.
 - **Concurrency**, as the qualification store's: the base opened `mode=ro&immutable=1`; a layer opened `mode=ro` with
   `busy_timeout` 250 ms by a reader; the rollback journal (`journal_mode` `DELETE`), not WAL; one entry per transaction.
@@ -373,7 +386,8 @@ store has:
 **The command** `omx-panel-store`: `get --sha256 .. --format .. --uri .. --json` (the entry and its layer), `put
 --sha256 .. --format .. --uri ..` (the entry as JSON on stdin, into the layer of the effective uid), `remove`, `check`
 (opens every layer, prints `ok` or the code), `build --in <dir> --out <file> --built-from <commit>` (the base, section
-6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage.
+6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of a key no layer holds prints
+`null` and exits 0.
 
 ## 6. Producers
 
