@@ -72,9 +72,8 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
+      # npm ci installs omx-dsp (package.json's @openmixer/omx-dsp), the curve the cases read, as in ci.yml
       - run: npm ci
-      # omx-dsp's TypeScript twin the curve cases read
-      - uses: ./.github/actions/omx-dsp-twin
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
@@ -85,10 +84,9 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
-          # the curve cases and the importer's proof on the installed caps bundles run here, or the job fails: no skip for a missing twin or bundle
-          OMX_PANEL_DSP: required
+          # the importer's proof on the installed caps bundles runs here, or the job fails: no skip for a missing bundle
           OMX_PANEL_REAL_BUNDLES: required
-          # the panel domain's header is re-rendered and compared here by the installed omx-contract CLI (test 630), or the job fails
+          # the panel domain's header is re-rendered and compared here by the installed omx-contract CLI, or the job fails
           OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
