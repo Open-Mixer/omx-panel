@@ -104,11 +104,9 @@ test('an edge band keeps its place in the easy tier: only its easy controls are 
   assert.deepEqual(symbols(html(panel, 'easy')), ['tone', 'pingpong', 'mix']);
 });
 
-// ----------------------------------------------------------------- the curve carries the filters' roll-off (needs the twin)
+// ----------------------------------------------------------------- the curve carries the filters' roll-off
 
-const twin = await import('@openmixer/omx-dsp').then((m) => m, () => null);
-const needsTwin = twin ? {} : { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' };
-test('the EQ curve includes the HPF\'s roll-off when its roles are declared', needsTwin, () => {
+test('the EQ curve includes the HPF\'s roll-off when its roles are declared', () => {
   const d = read('../eq-marks/eq.descriptor.json');
   const panel = read('../eq-marks/eq.panel.json');
   const filt = (on) => ({
