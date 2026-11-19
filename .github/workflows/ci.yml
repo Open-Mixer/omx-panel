@@ -137,9 +137,9 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config sqlite-devel cjson-devel nodejs npm python3 binutils dnf5-plugins
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - name: Install omx-contract's C domain loader
+      - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.0' 'omx-contract-data >= 3.20.0'
+          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7'
       - uses: actions/checkout@v4
       - name: The tree the golden of the rules version reads
         run: npm ci && make
