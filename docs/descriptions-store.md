@@ -4,7 +4,7 @@
 
 Status: draft. Design spec, not built. It designs within the owner's decisions of 2026-11-19 and re-opens none of them.
 A fact checked against a file names the file (sibling repositories at `origin/main`, zynthian-ui at its `openmixer`
-branch). Anything else is marked as an assumption. The open questions are in section 14.
+branch). Anything else is marked as an assumption. The owner's answers to the questions this design raised are in section 14.
 
 A plugin's panel description and its inferred port groups are made today on each run of each consumer: the console's
 server cuts a description from a descriptor, Zynthian runs `omx-panel describe` per plugin, `omx-complement-sync` infers
@@ -180,7 +180,8 @@ CREATE TABLE port_group_member (
   the descriptor that states no group takes its stored group as its group path before `describe` runs. The sections a
   surface draws and the groups jalv and plugin-hostd see are then one grouping.
 - A verdict of `nothing-to-do` or `no-confident-grouping` holds no `port_group` row: the plugin keeps its declared groups.
-- `pages` is not stored: it depends on the surface's width (`perPage`). Open question 1.
+- `pages` is not stored: it depends on the surface's width (`perPage`). A reader cuts them on read, `omx-panel describe
+  --pages`, over the stored description (section 14, 1).
 
 ### 3.5 `user_version`
 
@@ -189,15 +190,21 @@ and the writer. Any change of the DDL is +1, and the rule is the qualification s
 exactly its version; `schema-other` for a file at another version; `schema-mismatch` when the opened files differ from
 each other (checked first, naming every file and version); `not-a-store` for 0, a missing `store_info` row, or a file
 whose `store_info.layer` is not the place it was opened as. The base is built new at each version and never upgraded; a
-layer is not upgraded in place in this pass.
+system layer is not upgraded: it is derived again.
 
-What that means at an upgrade, stated as it is: an omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION`
-installs a base at the new version beside a system layer and user layers at the old one. Every reader then refuses the
-WHOLE store with `schema-mismatch`, for every plugin, until the old layers are gone: plugin-hostd falls back to declared
-groups, the generators and the clients get no entry. Nothing deletes a layer by itself. Deleting one loses its derived
-entries (the next pass or ask derives them again) and its edited entries (`edited` 1), which nothing derives again.
-Carrying the layers across a schema change is a migration, a compatibility mechanism, and needs the owner: open
-question 9. Until the owner rules, a schema change is made only together with the owner's answer.
+**A schema change** (section 14, 9; an owner-approved compatibility mechanism, scoped as follows and no wider). An
+omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION` installs a base at the new version. Then:
+
+- **The base** is the new package's: built at the new version, never migrated.
+- **The system layer** is regenerated: its writer, finding the layer at another version, replaces it with an empty layer
+  at the new version, and the next pass and plugin-hostd's asks derive its entries again.
+- **A user layer** is MIGRATED, and only its edited entries (`edited` 1): the writer, opening a user layer at an older
+  version, writes a new layer at the new version holding the person's edits carried across (each one checked as an entry
+  of the new schema; one that cannot be carried is kept aside in a file beside the layer and named, never dropped
+  silently), renames it into place in one step, and leaves the derived entries to be derived again. The migration
+  reads the one previous version only; it is written with the schema change that needs it and removed with the next.
+- **A reader** that opens files at different versions answers `schema-mismatch` as above until the writers have run.
+  It never reads an old layer itself.
 
 ### 3.6 Stale entries: the input and the rules
 
@@ -224,7 +231,8 @@ the layers top down:
 
 A key whose every entry is stale is ABSENT to a producer: a generator, `describe --store` or plugin-hostd's ask derives
 it again and the writer replaces its own layer's stale entry. A stale entry in a layer the producer may not write stays
-until that layer's writer runs (the base: the next base build). Removing stale entries of other layers is open question 3.
+until that layer's writer runs (the base: the next base build). Entries of plugins no longer installed are pruned: each scan prunes the system and user layers it may write, each
+release of the base prunes the base (section 14, 3).
 
 ### 3.7 Joining the qualification store
 
@@ -368,12 +376,13 @@ plugin its bundle's TTL), running the same derivation per input. It follows the 
 `DELETE`, `page_size` 4096, `VACUUM`, `user_version` last, written to a temporary file and renamed only when complete;
 row-identical everywhere and byte-identical with the same SQLite; `built_from` from git or a substituted `BUILT_FROM`
 file, refused as `built-from-unknown` when neither. The package `omx-panel-descriptions` is noarch: a key carries its
-binary's hash, so one file serves every architecture. Where its inputs live is open question 2.
+binary's hash, so one file serves every architecture. Its inputs (the reference sets' descriptors and TTL) live with the base package's build in omx-panel (section 14, 2).
 
 ### No unit is needed
 
 Nothing in this design depends on systemd. Every producer is a command a person, a script, a package trigger or
-plugin-hostd runs directly. The units (section 10) stay an optional batch convenience.
+plugin-hostd runs directly. The units (section 10) are a batch convenience: enabled by default where systemd exists,
+and nothing depends on them (section 14, 5).
 
 ## 7. plugin-hostd
 
@@ -417,12 +426,14 @@ plugin-hostd runs directly. The units (section 10) stay an optional batch conven
   is not stored, so a restart of plugin-hostd asks once more at the key's next add. Each child writes the layer it may
   (section 2).
 - **Figures measured under load.** The ask runs while the engine plays, at the lowest priority: the cost and latency
-  figures `plugin-qualify-sync --plugin` measures then are not a quiet machine's. The proposal: the single-plugin call
-  marks its record as measured with the engine running (a NEW word of the qualification domain, the record's run
-  condition, owner plugin-qualify), the planner reads the cost of such a record as `PLANNER_COST_UNKNOWN`, as it does
-  with no record today (`src/qualcost.h:20-22`), and uses its verdicts; the next scan with the engine idle replaces the
-  record whole. Whether figures are marked so, or the ask measures no figure at all and leaves them to the next idle
-  scan, is open question 10. Either way no figure measured under load is read as a quiet one.
+  figures `plugin-qualify-sync --plugin` measures then are not a quiet machine's. Decided (section 14, 10): the ask is not
+  deferred, and the single-plugin call records its figures with a measured-under-load mark (a NEW word of the
+  qualification domain, the record's run condition, owner plugin-qualify). The planner reads the cost of such a record as
+  `PLANNER_COST_UNKNOWN`, as it does with no record today (`src/qualcost.h:20-22`), and uses its verdicts; the next scan
+  with the engine idle replaces the record whole. No figure measured under load is read as a quiet one.
+- **The ask's toolkit files** (section 14, 6): after the two calls, the ask runs the three generators for THAT plugin
+  only (`omx-complement-sync --only <bundle>`, `docs/lv2-complement.md:9-11`, and the same `--only` for the MOD GUI and
+  the LV2 UI generators), under the same priority and confinement. Never another plugin.
 - **Meanwhile the plugin loads as today**: declared groups, the first-use pin, unknown cost. When the ask ends,
   plugin-hostd reads the entry again; the next `remote_pages` and `panel_get` answer from it, and a NEW event
   `description_changed <uri>` tells the clients, as `pin_changed_event` does for a pin (`src/supervisor.c:2182`).
@@ -442,8 +453,9 @@ plugin-hostd runs directly. The units (section 10) stay an optional batch conven
   window (`renderer/include/omx_panel_window.h`). `clap.gui` comes first as a Wayland floating window
   (`CLAP_WINDOW_API_WAYLAND`), then X11 embedded and floating; omx-clap-core's host already opens both
   (omx-clap-core `src/window.c:350`, `src/clap_host.h:963`). The window is X11 only today (its header: "X11"): Wayland
-  is a NEW backend of the window. The window reads its plugin's entry from the store; what it draws with no entry is
-  open question 4.
+  is a NEW backend of the window. The window reads its plugin's entry from the store; with no store or no entry it
+  draws the description the plugin carries (`org.openmixer.panel-description/1`, omx-plugins
+  `include/omx_panel_description.h`) and never refuses to open (section 14, 4).
 - **A CI gate in omx-plugins** refuses a plugin of the tree whose CLAP face answers no `clap.gui` from `get_extension` or whose
   LV2 bundle declares no `ui:X11UI` for the plugin. It runs over every plugin of the tree, sabotage-checked.
 - **Third-party LV2 plugins get a desktop UI from the host.** `omx-lv2ui-sync` writes, for each installed LV2 plugin with
@@ -475,16 +487,16 @@ happens say instead that the work runs on a direct call and that the unit is a b
 
 | Repository | Place | Today | Change |
 |---|---|---|---|
-| omx-panel | `systemd/omx-modgui-sync.service:5-6`, `:10-13`, `:25` | runs after each scan, opt-in | runs `omx-panel-sync` (one pass, section 6); still opt-in |
+| omx-panel | `systemd/omx-modgui-sync.service:5-6`, `:10-13`, `:25` | runs after each scan, opt-in | runs `omx-panel-sync` (one pass, section 6); enabled by default where systemd exists (section 14, 5) |
 | omx-panel | `systemd/omx-complement-sync.service:5-6` | the same | folded into the one pass's unit |
-| omx-panel | `systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf:10`, `omx-complement-sync.conf:7` | `ExecStartPost` queues each opt-in unit | one drop-in for the one pass, opt-in as today |
-| omx-panel | `Makefile:19`, `:110-114`; `packaging/omx-panel.spec:3-4`, `:40`, `:123-128`; `debian/rules:26`, `:39-43`; `debian/omx-panel.postinst:6-9` | install the units and drop-ins, never enabled | the same files for the one pass; never enabled |
+| omx-panel | `systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf:10`, `omx-complement-sync.conf:7` | `ExecStartPost` queues each opt-in unit | one drop-in for the one pass, enabled by default where systemd exists (section 14, 5) |
+| omx-panel | `Makefile:19`, `:110-114`; `packaging/omx-panel.spec:3-4`, `:40`, `:123-128`; `debian/rules:26`, `:39-43`; `debian/omx-panel.postinst:6-9` | install the units and drop-ins, never enabled | the same files for the one pass, ENABLED by default where systemd exists (section 14, 5); nothing depends on them |
 | omx-panel | `etc/omx/modgui-sync.conf:3`; `bin/omx-modgui-sync:29` | the unit's `EnvironmentFile` | unchanged: the scripts read the same file run by hand |
 | omx-panel | `bin/omx-modgui-sync:87-88`, `bin/omx-complement-sync:80-81` | `--check` reads other units' `LV2_PATH` when `systemctl` exists | unchanged: a check, skipped without systemd |
 | omx-panel | `README.md:35`, `docs/overview.md:14-15`, `docs/lv2-complement.md:140-165`, `man/omx-modgui-sync.1:64-65`, `man/omx-complement-sync.1:52-53` | the unit after each scan is how GUIs and groups follow an install | the store, the direct call and plugin-hostd's ask first; the unit as a batch option |
 | omx-panel | `test/modgui-sync.test.mjs:225-235`, `test/sync-drop-ins.test.mjs:3`, `:17`, `:44`, `test/packaging.test.mjs:23`, `:31`, `tools/deb-lint-check.sh:20-21` | hold the units and drop-ins | held for the one pass's unit; a NEW test runs the pass with no `systemctl` on the path |
 | plugin-qualify | `packaging/systemd/plugin-qualify-sync.service:1-43`, `.path`, `.timer`, `plugin-qualify-sync-generator`, `plugin-qualify.tmpfiles.conf` | the batch scan | unchanged; the single-plugin call (section 11) runs without them |
-| plugin-qualify | `packaging/systemd/80-plugin-qualify.preset:3-4`; `packaging/check-installed.sh:86-90` | the timer and the path unit enabled by the package, and checked so | open question 5 |
+| plugin-qualify | `packaging/systemd/80-plugin-qualify.preset:3-4`; `packaging/check-installed.sh:86-90` | the timer and the path unit enabled by the package, and checked so | unchanged: enabled by default where systemd exists (section 14, 5); nothing depends on them |
 | plugin-qualify | `packaging/trigger-scan.sh:21-31`, `debian/triggers:1-6`, `debian/plugin-qualify.postinst:8-9`, `debian/rules:19-22`, `:33-43`, `packaging/plugin-qualify.spec:30`, `:57`, `:84-89`, `:101-109`, `:124-127`, `:140-143` | a package transaction starts the unit, else leaves a marker | unchanged |
 | plugin-qualify | `packaging/plugin-qualify-sync.1` (FILES), `docs/overview.md:743-752` | the units as the way plugins are followed | name the single-plugin call and plugin-hostd's ask |
 | plugin-hostd | `docs/own-host.md:95-96` | the realtime grant as a drop-in on `plugin-qualify-sync.service` | add: the ask's child inherits plugin-hostd's own grant; the drop-in stays for the batch |
@@ -538,7 +550,7 @@ process to read a figure" stands). The change is that repository's PR, with plug
 
 The plugin-hostd engine reads entries through `omx_panel_store.py` by `description_get`'s key instead of running
 `omx-panel describe --descriptor` per plugin (`zyngine/zynthian_engine_plugin_hostd.py:1092-1142`, `:1157-1200`,
-branch `openmixer`); the Tk drawing is zynthian-ui#93's. The pages: open question 1.
+branch `openmixer`); the Tk drawing is zynthian-ui#93's. The pages are cut on read by `omx-panel describe --pages` (section 14, 1).
 
 ### The console
 
@@ -580,11 +592,13 @@ the run in the PR body, then the commits that turn it green.
    description whose sections are those groups.
 3. **omx-panel: the generators read the store and `omx-panel-sync`.** Proves: no inference for a stored key, one pass,
    no systemd. Red: a fixture store whose entry's groups differ from what the rules infer makes the complement write
-   the store's groups (red today: it infers); the pass runs with no `systemctl` on the path; section 10's texts.
+   the store's groups (red today: it infers); the pass runs with no `systemctl` on the path; an entry of a plugin no longer installed is pruned from the layer
+   the pass writes, and a lower layer's is not touched; section 10's texts.
 4. **omx-panel: the base and `omx-panel-descriptions`.** Proves: reproducible, noarch. Red: two builds give the same
    sorted dump and bytes; the package holds `/usr/share/omx/panel/panel.sqlite` at `layer` 0 with `built_from`.
 5. **plugin-qualify: `plugin-qualify-sync --plugin`.** Proves: one plugin, never a scan. Red: two fixture plugins on the
-   search path, `--plugin A` gives A a record, a pin and a descriptor and B none; a run as non-root writes no system path.
+   search path, `--plugin A` gives A a record, a pin and a descriptor and B none; a run as non-root writes no system path; the record is marked measured under load when
+   the call is told the engine runs, and the planner fixture reads its cost as unknown.
 6. **plugin-db-qualification: the writer clause of its section 2 and 6.** A spec change, with plugin-qualify's lane 5.
    Its red is lane 5's.
 7. **plugin-hostd-protocol: the ask's words.** Proves: the protocol states them before plugin-hostd answers them. The
@@ -596,7 +610,8 @@ the run in the PR body, then the commits that turn it green.
    fixture with no `pg:group` and a store entry pages by the store's groups (red today: one page "Controls"); an add of
    an unknown plugin with stand-in `plugin-qualify-sync` and `omx-panel` on the path runs each once, with that target
    only, at nice 19, and never for a second plugin; with `plugin-qualify-sync` absent no child runs and the add answers
-   as before; `ask_unknown 0` runs none, and `add ... ask` runs them; a known key runs none.
+   as before; `ask_unknown 0` runs none, and `add ... ask` runs them; a known key runs none; the three generators run with
+   that plugin's `--only` and no other; with no store installed, the add pages by the declared groups.
 9. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
    bundles only. Red: for a fixture LV2 plugin with no UI, lilv lists a `ui:X11UI` on its URI from the generated bundle;
    the window opens under a headless Wayland compositor and under Xvfb and draws the stored description.
@@ -606,36 +621,25 @@ the run in the PR body, then the commits that turn it green.
     description differs from what `describe` derives, the engine draws the store's.
 12. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
 
-## 14. Open questions
+## 14. Decided
 
-1. **Pages.** `describe` cuts `pages` at the surface's width (`tools/describe.mjs:309`), from the layout and the
-   descriptor, not from the description alone. Stored at a fixed set of widths, or left out and cut by `omx-panel
-   describe --pages` from the descriptor as today (Zynthian and the remote pages need them)?
-2. **The base's inputs.** No repository holds the descriptors and TTL of the reference plugin sets today
-   (plugin-db-qualification's `records/` hold records and probe outputs only). Where do they live, and which job
-   writes them: the measurement runs, beside the records, or a new input tree in omx-panel?
-3. **Stale entries.** A generator writes an inferred entry to the user layer; a later base or system entry for the key is
-   then hidden for good. Should a writer remove its own inferred entries (`edited` 0) when a lower layer gains the key,
-   and the system-layer entries of binaries no longer installed, as plugin-qualify-sync removes a gone plugin's
-   record? (A pruning step, not a change to the merge.)
-4. **A window with no entry.** The window of a plugin of omx-plugins, with no store installed or no entry for its binary: draw the
-   description the plugin carries (`org.openmixer.panel-description/1`, omx-plugins `include/omx_panel_description.h`),
-   or refuse to open?
-5. **"Optional" units.** plugin-qualify's preset enables its timer and path unit at install
-   (`packaging/systemd/80-plugin-qualify.preset:3-4`), and its install check holds that. Does "optional batch
-   convenience" mean they stay enabled by default, or installed and not enabled, as omx-panel's units are?
-6. **The ask and the toolkit files.** plugin-hostd's ask fills the stores for one plugin. Should it also run the three
-   generators for that plugin (`omx-complement-sync --only <bundle>` exists, `docs/lv2-complement.md:9-11`), or are the
-   toolkit files left to the next pass?
-7. **Before the qualification store's consumer switch.** Until then no program writes a qualification layer; the single
-   call writes `qualification_dir` as the scan does. Does lane 8 wait for the switch, or land with the records as today?
-8. **Skins.** A skin applies last in `describe` (`tools/describe.mjs:299-302`). Is a user's skin stored as a whole edited
-   entry in the user layer, or kept apart and applied by each reader over the stored description?
-9. **A schema change and the layers.** Section 3.5 states what happens today: a new `user_version` makes every reader
-   refuse the whole store until the old layers are removed, and removing a user layer loses a person's edits. Carry the
-   layers across (a migration by the writer at the upgrade: a compatibility mechanism, the owner's to allow), keep the
-   edits apart from the derived entries so only derived ones are dropped, or refuse as written?
-10. **Figures measured under load.** plugin-hostd's ask runs `plugin-qualify-sync --plugin` while the engine plays.
-    Mark such a record (a new run-condition word; the planner reads its cost as unknown until an idle scan replaces
-    it, section 7), or let the ask measure no figure and write verdicts only, or defer the whole qualification of that
-    plugin to the next idle scan and run only the description?
+The owner's answers to the questions this design raised (2026-11-19). The sections above follow them.
+
+1. **Pages** are cut on read (`omx-panel describe --pages`, at the surface's width, `tools/describe.mjs:309`), never
+   stored.
+2. **The base's inputs** (the reference sets' descriptors and LV2 TTL) live with the base package's build in omx-panel.
+3. **Pruning.** Each scan prunes, from the system and user layers it may write, the entries of plugins no longer
+   installed; each release of the base prunes the base.
+4. **A window with no entry** draws the description its plugin carries (`org.openmixer.panel-description/1`); it
+   never refuses to open.
+5. **Units** (OWNER): ENABLED by default where systemd exists; nothing depends on them, and every path works without
+   them.
+6. **The ask** runs qualify, describe and the three generators for THAT plugin only.
+7. **plugin-hostd's lane does not wait for the qualification store's consumer switch**: it reads the store when the
+   store exists, and declared groups until then; the single-plugin call writes the records where the scan writes them
+   today until the switch.
+8. **Skins.** A user's skin is applied by each reader over the stored description; it is never stored as an edited
+   entry.
+9. **A schema change** (OWNER): a MIGRATION carries a person's edits across schema versions, an owner-approved
+   compatibility mechanism scoped to the user layer only; the system layer and the base are regenerated (section 3.5).
+10. **Figures under load** are recorded with a measured-under-load mark; the ask is not deferred (section 7).
