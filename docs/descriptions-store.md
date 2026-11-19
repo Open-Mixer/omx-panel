@@ -147,8 +147,12 @@ CREATE TABLE description (
                                        -- SHA-256 of the derivation's input as installed (3.6), not of the binary
   family      TEXT NOT NULL CHECK (WORD(family)),           -- a PANEL_FAMILIES word
   fingerprint TEXT NOT NULL CHECK (length(fingerprint) = 64 AND fingerprint NOT GLOB '*[^0-9a-f]*'),
-                                       -- describe's fingerprint of its OUTPUT, as served today
-  body        TEXT NOT NULL CHECK (json_valid(body))        -- describe's `description`, canonical JSON, `pages` left out
+                                       -- panelFingerprint(layout): of the LAYOUT the description was derived from,
+                                       -- before the skin, the matrices and the pages; what a client compares to know
+                                       -- the layout changed, not a check of body
+  body        TEXT CHECK (body IS NULL OR json_valid(body)), -- describe's `description`, canonical JSON, `pages` left out
+  refused     TEXT CHECK (refused IS NULL OR WORD(refused)), -- a DESCRIBE_CODES word: describe derived no description
+  CHECK ((body IS NULL) <> (refused IS NULL))               -- exactly one of the two
 ) STRICT;
 
 CREATE TABLE port_group_verdict (      -- LV2 only in this pass: CLAP states no port groups
@@ -179,6 +183,12 @@ CREATE TABLE port_group_member (
 - The description is derived with the stored groups applied: for an LV2 plugin whose verdict is `grouped`, a control of
   the descriptor that states no group takes its stored group as its group path before `describe` runs. The sections a
   surface draws and the groups jalv and plugin-hostd see are then one grouping.
+- **A refused derivation is an entry.** `describe` returns `{ description: null, refusals }` for a plugin with no
+  controls, a family it does not back, or bars it refuses (`tools/describe.mjs` about 258-266). Such a plugin is stored
+  with `body` NULL and `refused` the refusing word, so a load does not derive it again; `source` and `rules` stale it like
+  any entry (3.6). The reader answers it as "no description, refused for <word>", and a window draws as section 8
+  says. A refusal that does not drop the description (`role_dropped`, `meter_refused`) is not stored: it is a finding
+  for `describe`'s caller, not a fact a client draws from.
 - A verdict of `nothing-to-do` or `no-confident-grouping` holds no `port_group` row: the plugin keeps its declared groups.
 - `pages` is not stored: it depends on the surface's width (`perPage`). A reader cuts them on read, `omx-panel describe
   --pages`, over the stored description (section 14, 1).
@@ -214,10 +224,13 @@ bundle's TTL, and from omx-panel's rules. An LV2 bundle whose TTL changes over t
 derives otherwise, would keep serving the old entry from every layer. So each entry stores what it was derived from:
 
 - `source`: the SHA-256 of the derivation's input as installed. For an LV2 plugin, the bundle's `.ttl` files, sorted by
-  name, each as its name, a NUL and its bytes; for a CLAP plugin, the descriptor document `describe` read. One function
+  name, each as its name, a NUL and its bytes; for a CLAP plugin, the descriptor `describe` read as canonical JSON: for a
+  plugin of omx-plugins the description it carries, for any other the descriptor plugin-hostd's scan wrote for its binary
+  (`<probe> describe`, section 7), its described parameter list. One function
   computes it, `omx_panel_store_source(format, path, hex_out)`, in the reader library, so every caller hashes the same
   bytes the same way.
-- `rules`: `OMX_PANEL_RULES_VERSION`, an integer in omx-panel raised by every change that moves `describe`'s or the
+- `rules`: `OMX_PANEL_RULES_VERSION`, an integer NEW in omx-panel (lane 1 adds it with the schema and its golden),
+  raised by every change that moves `describe`'s or the
   inference's output for the same input (a golden of the derivation tests changes with it, so the raise is not forgotten).
 
 The reader is given the caller's current `source` with the key (`omx_panel_store_get` takes it, section 5) and walks
@@ -286,7 +299,9 @@ typedef struct { const char *symbol, *name, *rule; long display_priority; int de
 typedef struct {
     const char *layer;                                   /* "user", "system" or "base" */
     const char *stale_edit_layer;                        /* a layer whose edited entry was skipped as stale, or NULL */
-    int edited; const char *made_by, *family, *fingerprint, *body;   /* body: the description as JSON */
+    int edited; const char *made_by, *family, *fingerprint;
+    const char *body;                                    /* the description as JSON, or NULL when refused */
+    const char *refused;                                 /* the DESCRIBE_CODES word, or NULL */
     const char *group_outcome, *group_reason;            /* NULL: no verdict (a CLAP plugin) */
     const omx_panel_store_group *groups; size_t ngroups;
 } omx_panel_store_entry;
@@ -455,8 +470,10 @@ and nothing depends on them (section 14, 5).
   (`CLAP_WINDOW_API_WAYLAND`), then X11 embedded and floating; omx-clap-core's host already opens both
   (omx-clap-core `src/window.c:350`, `src/clap_host.h:963`). The window is X11 only today (its header: "X11"): Wayland
   is a NEW backend of the window. The window reads its plugin's entry from the store; with no store or no entry it
-  draws the description the plugin carries (`org.openmixer.panel-description/1`, omx-plugins
-  `include/omx_panel_description.h`) and never refuses to open (section 14, 4).
+  derives the description in process from the plugin's own (`org.openmixer.panel-description/1`, omx-plugins
+  `include/omx_panel_description.h`), draws it and writes nothing: the store is a cache of that derivation, not its
+  source of truth, so a window never refuses to open for want of an entry (section 14, 4). A refused entry draws the
+  same way.
 - **A CI gate in omx-plugins** refuses a plugin of the tree whose CLAP face answers no `clap.gui` from `get_extension` or whose
   LV2 bundle declares no `ui:X11UI` for the plugin. It runs over every plugin of the tree, sabotage-checked.
 - **Third-party LV2 plugins get a desktop UI from the host.** `omx-lv2ui-sync` writes, for each installed LV2 plugin with
@@ -566,6 +583,7 @@ store holds; it reacts to `description_changed`.
 | `plugin`: `sha256`, `format`, `uri` | the bytes; the format words are plugin-db's (checked against plugin-db's own item, the qualification store's precondition 2) | the writer, from the caller's key or the binary, by plugin-qualify's rule | nobody | every reader; the qualification store by the triple |
 | `description` columns and `body` | the description schema (omx-panel), to agree with its owner | `tools/describe.mjs` through `describe --store`; a person for an edit (`edited` 1) | omx-panel | plugin-hostd, the console, Zynthian, the windows, the generators |
 | `family` | `panel` (`PANEL_FAMILIES`) | the derivation | omx-panel | as above |
+| `refused` | `panel` (`DESCRIBE_CODES`) | the derivation (`describe`'s refusal) | omx-panel | as above |
 | `port_group_verdict.outcome`, `.reason` | `panel`, NEW `PANEL_GROUP_OUTCOMES`, `PANEL_GROUP_REASONS` | `tools/group-infer.mjs` | omx-panel | plugin-hostd, the complement |
 | `port_group.rule` | `panel`, NEW `PANEL_GROUP_RULES` | `tools/group-infer.mjs`, `tools/group-model.mjs` | omx-panel | the complement; a reader of a diagnosis |
 | `port_group` symbol, name, priority, `declared`; `port_group_member` | names | the inference, or the plugin for a declared node | omx-panel (the rules) | plugin-hostd, the complement, Zynthian |
@@ -585,7 +603,7 @@ the run in the PR body, then the commits that turn it green.
    system's and the base's description and groups (sabotage: take the base's groups under a user description); the
    system scope never opens the home; a fixture `XDG_DATA_HOME` is not read; files at two versions are
    `schema-mismatch`; an entry with a family not in `PANEL_FAMILIES` is `entry-invalid`; the base file unchanged after
-   reads; `json_valid` refuses a bad body; an entry whose `source` differs from the caller's, or a derived entry below the
+   reads; `json_valid` refuses a bad body; an entry with both or neither of `body` and `refused` is refused; an entry whose `source` differs from the caller's, or a derived entry below the
    reader's `rules`, is skipped and the next layer answers, and a stale edited entry is named, not deleted. Precondition: the description schema owner agrees section 3.4.
 2. **omx-panel: `describe --plugin --store`.** Proves: one plugin, inferred once, the layer by uid. Red: a fixture with two
    plugins writes only the named one's entry to the user layer when run unprivileged; a second run writes nothing; a key
@@ -631,8 +649,9 @@ The owner's answers to the questions this design raised (2026-11-19). The sectio
 2. **The base's inputs** (the reference sets' descriptors and LV2 TTL) live with the base package's build in omx-panel.
 3. **Pruning.** Each scan prunes, from the system and user layers it may write, the entries of plugins no longer
    installed; each release of the base prunes the base.
-4. **A window with no entry** draws the description its plugin carries (`org.openmixer.panel-description/1`); it
-   never refuses to open.
+4. **A window with no entry** derives the description from its plugin's own (`org.openmixer.panel-description/1`) and
+   draws it, writing nothing; the store is a cache of that derivation, and no window refuses to open for want of an
+   entry.
 5. **Units** (OWNER): ENABLED by default where systemd exists; nothing depends on them, and every path works without
    them.
 6. **The ask** runs qualify, describe and the three generators for THAT plugin only.
