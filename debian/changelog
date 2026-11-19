@@ -1,3 +1,12 @@
+omx-panel (0.15.0) unstable; urgency=medium
+
+  * New: the vintage knob drawn by the renderer from the look's scene (the C
+    raster paints the bytes the JS painter does), kept in a static-layer
+    cache; the panel domain's x-since is the version of the domain that added
+    each item.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 16:00:00 +0100
+
 omx-panel (0.14.0) unstable; urgency=medium
 
   * Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >=

@@ -65,6 +65,11 @@
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
+- 0.15.0: the vintage knob drawn by the renderer from the look's `knob-vintage` scene: the scene reader and the C raster
+  (`omx_scene_*`, `omx_paint`) paint the bytes of the JS painter (#124, #125), with a static-layer cache that paints the
+  layers under the pointer once (#132, 5 ms to 0.33 ms for a 64 px knob on a Pi 5); the panel domain's x-since is the domain
+  version that added each item (#134, omx-contract#123).
+
 - 0.14.0: built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0 and plugin-hostd-contract >= 0.20.7,
   floors only with no ceiling on our packages (#113). This release carries: the panel domain shipped alone in
   `omx-panel-contract` (#102, #119); the MOD GUI generator reading curves through omx-dsp-wasm's async `loadCurve`, linked,

@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.14.0
+Version: 0.15.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -235,6 +235,11 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.0-1
+- New: the vintage knob drawn by the renderer from the look's scene (the C raster
+  paints the bytes the JS painter does), kept in a static-layer cache; the panel
+  domain's x-since is the version of the domain that added each item.
+
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
 - Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0
   and plugin-hostd-contract >= 0.20.7: floors only, no ceiling on our packages.
