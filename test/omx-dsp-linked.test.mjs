@@ -29,7 +29,7 @@ function walk(dir, base = dir) {
 export function installedUnderDsp(root) {
   const dest = mkdtempSync(join(tmpdir(), 'omx-dsp-linked-'));
   try {
-    const r = spawnSync('make', ['-C', root, 'install', `DESTDIR=${dest}`, ...MAKE_FLAGS], { encoding: 'utf8' });
+    const r = spawnSync('make', ['-C', root, '-o', 'build', 'install', `DESTDIR=${dest}`, ...MAKE_FLAGS], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
     const parent = join(dest, dirname(LINK));
     const entries = walk(parent).filter((p) => p === 'omx-dsp' || p.startsWith('omx-dsp/'));
