@@ -41,7 +41,7 @@ One C library, `libomx-panel-behaviour`, in this repository. It holds four areas
 | the gesture unit | C | `renderer/src/gesture.c` (1354 lines), `gesture.h`, `renderer/include/omx_panel_gesture.h` | gestures; linear, log and integer travels (`ge_norm_of`, `ge_value_of_norm`, `step_norm`) |
 | the JavaScript reference | JS | `tools/gestures.mjs`, the package export `./gestures` (`package.json`) | the same, held equal to the C unit (`renderer/test/gesture-c.test.mjs`) |
 | the Zynthian copy | Python | zynthian-ui `zyngine/zynthian_panel_gestures.py` (716 lines, branch `openmixer`) | gestures and steps on Tk events |
-| the scale law | JS, Python | omx-contract `lib/scale.mjs` (source `src/lib/scale.mts`), `share/omx-contract/omx_contract_scale.py`; read by zynthian-ui `zyngine/zynthian_position_law.py` and by the console | value to position for `linear`, `log`, `stepped`, `map` |
+| the scale law | JS, Python | omx-contract `lib/scale.mjs` (source `src/lib/scale.mts`), `share/omx-contract/omx_contract_scale.py`; read by zynthian-ui `zyngine/zynthian_position_law.py` and by the console | value to position for `linear`, `log`, `stepped`, `map`; where its code goes is open question 1 |
 | value text | JS, C, Python | `tools/modgui-gen.mjs` `valueText`; `renderer/src/view.c` (`%g`); Zynthian `get_value2label`; the console's own | four rules, none shared |
 
 The console also keeps its own gesture table, the law `docs/panel-gestures.md` conforms to. It is a client like any other
@@ -59,7 +59,6 @@ typedef struct omx_behaviour omx_behaviour_t;              /* opaque, immutable 
 
 typedef struct {
   const char *panel_json;      /* the text of <contractdir>/panel/panel.json */
-  const char *contract_json;   /* the omx-contract items the core reads (PARAM_SCALES, the unit list), as text */
   const char *lang;            /* the catalog language of the value text; NULL is English (x-text) */
   const char *catalog_json;    /* <contractdir>/panel/catalogs/<lang>.json, or NULL */
 } omx_behaviour_docs_t;
@@ -69,7 +68,7 @@ int  omx_behaviour_open(const omx_behaviour_docs_t *docs, const char *settings_j
 void omx_behaviour_close(omx_behaviour_t *b);
 ```
 
-The context is opened once from the domain documents as text and checks each against the floor the core was built for
+The context is opened once from the `panel` domain document as text and checks it against the floor the core was built for
 (`info.version`), refusing by name as `omx_domain_open` does. It holds every timing, threshold, table cell and text rule
 after `open`; no other call reads a file, an environment variable or a clock. The settings are a surface's own timings
 and paint switches, checked as `omx_gesture_open` checks them today (`renderer/include/omx_panel_gesture.h`). Taking the
@@ -77,15 +76,20 @@ documents as text is what lets one source serve C, ctypes and wasm alike; a brow
 handed the documents by the page (omx-contract `docs/consumer-move.md`, step 4). Open question 2 is whether a native
 client opens the domain through `libomx-domain` first.
 
+The core reads no omx-contract document. `PARAM_SCALES` is classic data (`data/primitives.json`) and the unit list is a
+schema enum (`$defs.unit` of `schema/omx-contract.schema.json`): neither is an installed domain document. The laws switch
+on the build-time constants `OMX_PARAM_SCALES_*` of omx-contract's C header, and a unit is a plain string the core writes
+as given until open question 3 is ruled.
+
 ### Mappings
 
 ```c
 typedef struct {
-  int law;                       /* OMX_PARAM_SCALES_* of omx-contract's C header; a map travel has points */
+  int law;                       /* OMX_PARAM_SCALES_* of omx-contract's C header (build time); ignored for a map travel */
   double min, max, step, def;
   int has_def, integer;
   const double *points; size_t npoints;   /* a `map` travel: [plain, quantity] pairs; else NULL, 0 */
-  const char *unit;              /* a word of the unit list; "" none */
+  const char *unit;              /* the unit as the description gives it, a plain string; "" none */
 } omx_behaviour_travel_t;
 
 double omx_behaviour_position(const omx_behaviour_travel_t *t, double value);  /* 0..1 */
@@ -98,6 +102,10 @@ int    omx_behaviour_travel_check(const omx_behaviour_travel_t *t, omx_behaviour
 - `position` and `value` are the laws of omx-contract `docs/scale-position.md`, all four, each within one ulp of
   `data/scale-vectors.json`. Today's C unit has `linear`, `log` and integer only (`renderer/src/gesture.c`, `ge_norm_of`);
   `stepped` by its declared step and `map` are new to C.
+- Whether the core holds the laws' code or links omx-contract's own C is open question 1; these calls are the same
+  either way.
+- A `map` travel is told by its points: `points` not NULL and `npoints` at least 2. It has no `PARAM_SCALES` word (`map`
+  is the override module's table, not a word, `docs/scale-position.md`), and `law` is not read.
 - `step` is n declared steps away, coarse n times `coarseSteps`, else `stepFraction` of the travel
   (`schema/gestures.json` `thresholds`); a fraction of n counts, as today.
 - A log travel whose floor is not positive is served linear, as the scale page says. A travel with no ends, a min not below
@@ -198,30 +206,37 @@ How each client loads it:
 
 ## 4. Data ownership
 
-Every word and table the core reads. NEW marks an item this spec proposes.
+Every word and table the core reads, and what it writes. NEW marks an item this spec proposes. The producer writes the
+value, the changer is the repository whose PR changes it, and the readers read it.
 
-| What | Owner domain | Item | Notes |
-|---|---|---|---|
-| the scale words | omx-contract (`omx-contract`, classic data) | `PARAM_SCALES` (`data/primitives.json`) | C switches on it: `OMX_PARAM_SCALES_*` exists (`docs/readouts.md`, "How it renders") |
-| the scale laws | omx-contract | `docs/scale-position.md`, `data/scale-vectors.json` | the law's text and its golden vectors; the core implements it (open question 1) |
-| the unit list | omx-contract | `$defs.unit` of `schema/omx-contract.schema.json`; the descriptor units of `docs/descriptors.md` | a schema enum, not an item: NEW `PARAM_UNITS` words item if the core is to read it (open question 3) |
-| readout ranges | omx-contract, kernel owners | readouts (`docs/readouts.md`) | reached through the description's `meters` |
-| control kinds | panel | NEW `PANEL_CONTROL_KINDS`: `knob`, `fader`, `switch`, `selector`, `xy`, `meter`, `display`, `curve`, `bar`, `handle` | the gesture table's rows; the first eight are `PANEL_STANDARD_WIDGETS` |
-| gesture words | panel | NEW `PANEL_GESTURE_WORDS` (`x-c-codes`) | from `schema/gestures.json` `words`; replaces the generated `renderer/src/gesture_words.h` |
-| gesture inputs | panel | NEW `PANEL_GESTURE_INPUTS` (`x-c-codes`) | from `inputs`: `tap` ... `sweep` |
-| the table | panel | NEW `PANEL_GESTURE_TABLE_<KIND>`, one words item per kind: each input, `x-group` its word, `x-groups: PANEL_GESTURE_WORDS` | from `table`; open question 4 |
-| timings | panel | NEW `PANEL_GESTURE_TIMINGS`, a range item: `longPressMs`, `doubleTapMs`, `palmGuardMs`, `safetyHoldMs`, `claimMs` | `default` the declared default, `minimum` the floor (`safetyHoldMs` 800) |
-| thresholds | panel | NEW `PANEL_GESTURE_THRESHOLDS`, a range item: `dragStartPx`, `fineRatio`, `stepFraction`, `coarseSteps`, `defaultTravelPx` | from `thresholds` |
-| paint | panel | NEW `PANEL_GESTURE_PAINT`: `touch` `required`, `mouse` `optional` | from `paint` |
-| gesture codes | panel | NEW `PANEL_GESTURE_CODES` (`x-c-codes`) | from `codes`; their sentences as `x-text` and in the catalogs (closes the shape gap of issue #106) |
-| value text rule | panel | NEW `PANEL_VALUE_TEXT`, a range item: `maxPlaces` (3), `significantFigures` (3) | today typed in `tools/modgui-gen.mjs` |
-| switch words | panel | NEW `PANEL_SWITCH_STATES`: `off`, `on` | translated in `contract.d/panel/catalogs/` |
-| text codes | panel | NEW `PANEL_TEXT_CODES` (`x-c-codes`): `TEXT_NOT_A_NUMBER`, `TEXT_NO_CHOICE`, `TEXT_OUT_OF_TRAVEL`, `TEXT_UNKNOWN_UNIT` | |
-| a control surface's inputs | the adapter's domain, e.g. NEW `surface/xtouch` | `SURFACE_XTOUCH_INPUTS`: each word `x-from` `{ "$ref": "https://openmixer.org/contract/panel#/components/schemas/PANEL_GESTURE_INPUTS", "x-term": "detent" }` | owned by the adapter's repository |
-| an OSC binding | the adapter's domain, e.g. NEW `osc/panel` | `OSC_PANEL_ADDRESSES`: each address `x-from` a `PANEL_GESTURE_WORDS` term (`step`, `reset`) or the mapping it carries (a position or a plain value) | owned by the adapter's repository |
+| What | Owner domain | Item | Producer | Changer | Readers |
+|---|---|---|---|---|---|
+| the scale words | omx-contract (classic data, not a domain) | `PARAM_SCALES` (`data/primitives.json`) | omx-contract's authors | omx-contract | the core at build time (`OMX_PARAM_SCALES_*`); descriptor readers; the console |
+| the scale laws | omx-contract | `docs/scale-position.md`, `data/scale-vectors.json` | omx-contract's authors; the vectors in 60-digit decimal arithmetic | omx-contract | whatever implements the law (open question 1); the core's conformance runners |
+| the unit list | omx-contract (a schema enum, not an item) | `$defs.unit` of `schema/omx-contract.schema.json`; descriptor units, `docs/descriptors.md` | omx-contract's authors | omx-contract | descriptor validation; the core takes the unit as a plain string from the description (open question 3) |
+| readout ranges | omx-contract; each kernel's owner | readouts, `docs/readouts.md` | the kernel owners (omx-dsp's kernel files) | omx-dsp or omx-contract | omx-panel's `describe` into the description's `meters`; the core through the description |
+| control kinds | panel | NEW `PANEL_CONTROL_KINDS`: `knob`, `fader`, `switch`, `selector`, `xy`, `meter`, `display`, `curve`, `bar`, `handle` | omx-panel's authors | omx-panel | the core at `open` |
+| gesture words | panel | NEW `PANEL_GESTURE_WORDS` (`x-c-codes`) | omx-panel's authors | omx-panel | the core (its codes header replaces the generated `renderer/src/gesture_words.h`); adapters through the core's answers |
+| gesture inputs | panel | NEW `PANEL_GESTURE_INPUTS` (`x-c-codes`): the 16 of `inputs` | omx-panel's authors | omx-panel | the core; adapter bindings by `x-from` |
+| the table | panel | NEW `PANEL_GESTURE_TABLE_<KIND>`, one words item per kind: each input, `x-group` its word, `x-groups: PANEL_GESTURE_WORDS` | omx-panel's authors | omx-panel | the core at `open` (open question 4) |
+| timings | panel | NEW `PANEL_GESTURE_TIMINGS`, a range item: `longPressMs`, `doubleTapMs`, `palmGuardMs`, `safetyHoldMs`, `claimMs` | omx-panel's authors (`default` the declared default, `minimum` the floor: `safetyHoldMs` 800) | omx-panel | the core; a surface's settings are checked against it |
+| thresholds | panel | NEW `PANEL_GESTURE_THRESHOLDS`, a range item: `dragStartPx`, `fineRatio`, `stepFraction`, `coarseSteps`, `defaultTravelPx` | omx-panel's authors | omx-panel | the core |
+| paint | panel | NEW `PANEL_GESTURE_PAINT`: `touch` `required`, `mouse` `optional` | omx-panel's authors | omx-panel | the core |
+| gesture codes | panel | NEW `PANEL_GESTURE_CODES` (`x-c-codes`), the 10 codes with their sentences as `x-text` and in the catalogs | the words: omx-panel's authors; a refusal at run time: the core | omx-panel | adapters (what they show), the vectors |
+| section exceptions | none | dropped | | | |
+| value text rule | panel | NEW `PANEL_VALUE_TEXT`, a range item: `maxPlaces` (3), `significantFigures` (3) | omx-panel's authors (today typed in `tools/modgui-gen.mjs`) | omx-panel | the core |
+| switch words | panel | NEW `PANEL_SWITCH_STATES`: `off`, `on`, translated in `contract.d/panel/catalogs/` | omx-panel's authors; the translators of the catalogs | omx-panel | the core's value text |
+| text codes | panel | NEW `PANEL_TEXT_CODES` (`x-c-codes`): `TEXT_NOT_A_NUMBER`, `TEXT_NO_CHOICE`, `TEXT_OUT_OF_TRAVEL` | the words: omx-panel's authors; a refusal at run time: the core | omx-panel | adapters, the vectors |
+| value text | none: an answer, not data | `omx_behaviour_text` | the core | omx-panel (the rule) | adapters, the MOD GUI generator |
+| a control surface's inputs | the adapter's domain, e.g. NEW `surface/xtouch` | `SURFACE_XTOUCH_INPUTS`: each word `x-from` `{ "$ref": "https://openmixer.org/contract/panel#/components/schemas/PANEL_GESTURE_INPUTS", "x-term": "detent" }` | the adapter's authors | the adapter's repository | that adapter at start-up; `omx-contract validate` (rule `word-from`) |
+| an OSC binding | the adapter's domain, e.g. NEW `osc/panel` | `OSC_PANEL_ADDRESSES`: each address `x-from` a `PANEL_GESTURE_WORDS` term (`step`, `reset`) or the mapping it carries (a position or a plain value) | the adapter's authors | the adapter's repository | that adapter; `omx-contract validate` |
+| the vectors | none: a test file | `vectors/behaviour.json` (section 6) | omx-panel's authors, worked by hand | omx-panel | the C, wasm and Python runners; each adapter's harness |
 
-`schema/gestures.json` becomes the items above and is deleted in the same PR: no second copy, no alias
-(`docs/contract-domains.md` already lists the `gestures` words as a follow-up; the owner's split puts them in `panel`).
+`schema/gestures.json` becomes the items above and is then deleted: no second copy, no alias (`docs/contract-domains.md`
+already lists the `gestures` words as a follow-up; the owner's split puts them in `panel`). Its `exceptions` (empty
+today; `docs/panel-gestures.md`: "a section-word exception may be layered on it there, and none is used") is dropped with
+it, and so is the target's `section` field in the C unit (`renderer/src/gesture.h`); a section exception would be a NEW
+item the day one is needed. The deletion waits until no other repository reads the file (section 7, step 7).
 Assumption: a words item's `const` can serve as an `x-term` key; contract-dir names `x-term` "the term's key" of a terms
 item (omx-contract `docs/contract-dir.md`, "Domains").
 
@@ -274,7 +289,7 @@ One file: `vectors/behaviour.json` in this repository, owned by omx-panel, insta
 ```
 
 - Areas: `position`, `value`, `step`, `text`, `parse`, `meter`, `gesture`. The gesture cases are today's 20 scripts
-  (`test/fixtures/gestures/scripts.json`) moved in, with the 117 rules of `renderer/test/gesture-c.test.mjs`.
+  (`test/fixtures/gestures/scripts.json`) moved in, with the 117 entries of `RULES` (`renderer/test/gesture-c.mjs`).
 - Expected values are worked from the declaration and the law, never taken from the core, as `data/scale-vectors.json` is
   computed apart from its library. The scale law's own vectors stay omx-contract's; the core's suite also runs
   `share/omx-contract/scale-vectors.json` as it is.
@@ -291,39 +306,62 @@ One file: `vectors/behaviour.json` in this repository, owned by omx-panel, insta
 ## 7. Migration
 
 One PR per owner repository per step. Each step is red first: one commit of tests that fails, then the commits that turn
-it green, the failing line and the run in the PR body. Nothing old is kept once its replacement lands.
+it green, the failing line and the run in the PR body. Nothing old is kept once its replacement lands. The core reads
+`schema/gestures.json` as today's unit does until step 7, so no client is broken before it has moved.
 
 1. **omx-panel: the core and its vectors (first step).** Red: `vectors/behaviour.json` with the `position`, `value`,
    `step` and `gesture` areas, and the three runners against `libomx-panel-behaviour`, which does not exist. Green:
    `core/` built from `gesture.c` and `gesture.h` moved (`git mv`, history kept), the four laws, the surface made
-   allocation-free, the renderer linked to it, `omx_gesture_*` renamed to `omx_behaviour_*` with no alias. Proof: the
-   20 scripts and the 117 rules pass in C, and the renderer's own tests (`renderer/test/input.test.mjs`) stay green.
-2. **omx-panel: the domain items.** Red: a test that opens `panel` and finds the NEW gesture items; a fixture domain with
-   one timing changed moves the core. Green: `schema/gestures.json` becomes the items of section 4 and is deleted;
-   `gesture_words.h` and `tools/gesture-words.mjs` are replaced by the codes header (omx-contract `docs/consumer-move.md`).
-3. **omx-panel: wasm and the loader.** Red: the wasm runner and a check that `./gestures` and `tools/gestures.mjs` are gone.
+   allocation-free, the renderer linked to it, `omx_gesture_*` renamed to `omx_behaviour_*` with no alias. Proof: the 20
+   shipped scripts and the 117 entries of `RULES` (`renderer/test/gesture-c.mjs`: 66 written out, 8 rounding cases, 43
+   unreadable inputs, run by the 15 tests of `renderer/test/gesture-c.test.mjs`) pass in C, and
+   `renderer/test/input.test.mjs` stays green.
+2. **omx-panel: value text and meters.** Red: the `text`, `parse` and `meter` areas. Green: the text rule, the NEW text
+   items, `modgui-gen.mjs` writing its face values through the C call, `view.c` through it too.
+3. **omx-panel: the Python door and the starter.** Red: the Python runner; the starter's output run against the suite.
+   Green: `python3-omx-panel-behaviour` (it finds the installed declaration itself, so no client names the file),
+   `omx-panel starter`.
+4. **zynthian-ui: the adapter.** Red: the `gesture` and `text` cases replayed through Tk events. Green:
+   `zynthian_panel_gestures.py` and `zynthian_position_law.py` become an adapter over the ctypes door; the Python rules,
+   `ZYNTHIAN_OMX_GESTURES`, the CI step that clones omx-panel for `schema/gestures.json` and the symlink of it in
+   `zynthian_omx_panel_view.py` go. After this step no zynthian-ui file names the file.
+5. **omx-panel: wasm and the loader.** Red: the wasm runner and a check that `./gestures` and `tools/gestures.mjs` are gone.
    Green: `./behaviour`, `loadBehaviour`, the module in the npm tree and the rpm and deb, the JS reference deleted.
-4. **omx-panel: value text and meters.** Red: the `text`, `parse` and `meter` areas. Green: the text rule, the NEW text
-   items, `modgui-gen.mjs` writing its face values through the loader, `view.c` through the C call.
-5. **omx-panel: the Python door and the starter.** Red: the Python runner; the starter's output run against the suite.
-   Green: `python3-omx-panel-behaviour`, `omx-panel starter`.
-6. **zynthian-ui: the adapter.** Red: the `gesture` and `text` cases replayed through Tk events. Green:
-   `zynthian_panel_gestures.py` and `zynthian_position_law.py` become an adapter over the ctypes door; the Python rules
-   deleted.
-7. **The console: the web UI and its surface adapters.** Red: the cases through its own pointer and surface paths. Green:
-   its gesture table, its scale calls and its value text replaced by the loader.
-8. **omx-contract: the scale functions.** Only after steps 6 and 7 and on the owner's ruling (open question 1): `./scale`
-   and `omx_contract_scale.py` deleted; the law page and its vectors stay.
-
-Steps 3 and 7 leave a window in which the console still imports `./gestures` from a release that has it; open question 6.
+6. **The console: the web UI and its surface adapters.** Lockstep with step 5 (open question 6). Red: the cases through
+   its own pointer and surface paths. Green: its gesture table, its scale calls in the UI and its value text replaced by
+   the loader.
+7. **omx-panel: the domain items.** Red: a test that opens `panel` and finds the NEW gesture items; a fixture domain with
+   one timing changed moves the core; a check that no file of this tree names `schema/gestures.json`. Green: the file
+   becomes the items of section 4 and is deleted; `gesture_words.h` and `tools/gesture-words.mjs` give way to the codes
+   header (omx-contract `docs/consumer-move.md`). The readers this step must find gone (grep of 2026-11-19):
+   - omx-panel: `tools/gestures.mjs`, `tools/gesture-words.mjs`, `tools/copy-data.mjs`, `renderer/src/view.c` and
+     `view.h` (the file beside the data directory), the renderer's tests (`gesture-c.mjs`, `gesture_driver.c`,
+     `input.test.mjs`, `look-roles.test.mjs`, `harness.mjs`), `test/gestures.test.mjs`, `test/host_reads.py`,
+     `test/packaging.test.mjs`, the CI step "gesture word names" (`.github/workflows/ci.yml`), and the docs and headers
+     that name it;
+   - zynthian-ui (branch `openmixer`): `zyngine/zynthian_panel_gestures.py`, `zyngine/zynthian_omx_panel_view.py`,
+     `zyngui/zynthian_widget_omx_panel.py`, `tests/test_panel_gestures.py`, `tests/test_bar_xy_gestures.py`,
+     `tests/test_omx_panel_view.py`, `tests/test_ui_look_widgets.py`, `tools/pi/panel_gestures_on_the_pi.py`,
+     `.github/workflows/tests.yml` lines 91 to 99, `docs/ui-look-drawn-widgets.md`; gone in step 4;
+   - the published technical note on the libraries that read our plugins (openmixer-www) lists the installed path; it is
+     updated in the same window.
+8. **omx-contract: the scale functions.** Only on the owner's ruling of open question 1, and after every user it names has
+   moved.
 
 ## 8. Open questions for the owner
 
-1. **omx-contract's scale functions.** The core implements the four laws; omx-contract's `./scale` (TypeScript) and
-   `omx_contract_scale.py` are then copies. Recommendation: omx-contract keeps the law's page and `scale-vectors.json`
-   (the data and its proof) and deletes its functions in step 8; omx-contract cannot depend on omx-panel, so it keeps no
-   function of the law at all.
-2. **How a native client opens the domains.** The core takes the documents as text so one source serves C, ctypes and
+1. **Where the scale law's code lives.** omx-contract's `./scale` (TypeScript, `src/lib/scale.mts`) and
+   `omx_contract_scale.py` are used outside any UI: the console's core param model and its server's library-range
+   conformance test, as well as Zynthian
+   and the console's UI. If the law lives in the behaviour core, that param model loads a panel UI library for a contract
+   law. The two choices:
+   - (a) the law stays omx-contract's, in C, with its own wasm and ctypes doors; the behaviour core links it and the
+     param model loads only omx-contract. omx-contract's TypeScript and Python functions are replaced by those doors.
+   - (b) the law lives in the behaviour core; omx-contract keeps the page and `scale-vectors.json` and deletes its
+     functions in step 8; the param model and the server test load `@openmixer/omx-panel/behaviour`.
+   Recommendation: (a). The law is the contract's and has readers that draw nothing; there is still one C implementation,
+   and the core keeps steps, gestures and text.
+2. **How a native client opens the domains.** The core takes the document as text so one source serves C, ctypes and
    wasm. Recommendation: a native adapter opens `panel` through `omx_domain_open` first (the floor, the refusal, exit 78)
    and then hands the core the same file's text; the core repeats only the floor check.
 3. **The unit list as an item.** It is a schema enum today, not an item the loader reads. Recommendation: omx-contract
@@ -331,9 +369,9 @@ Steps 3 and 7 leave a window in which the console still imports `./gestures` fro
    it; until then the core reads the unit as a plain string and refuses none.
 4. **The gesture table's shape.** The loader's word answer has no group (`omx_domain_word_info`: word, title, description,
    code; omx-contract `include/omxcontract/omx_domain.h`). Recommendation: one words item per control kind, each input
-   `x-group` its word, and the loader's word answer gains `group` (an additive omx-contract change, before step 2).
+   `x-group` its word, and the loader's word answer gains `group` (an additive omx-contract change, before step 7).
 5. **The MOD GUI's knob drag.** mod-ui moves its knobs itself. Recommendation: leave it to mod-ui; the generated script
    uses the core for meters and value text only.
-6. **The `./gestures` window.** Between step 3 and step 7 the console needs the old export or a lockstep release.
-   Recommendation: lockstep, no overlap: step 3's omx-panel release and step 7's console change land together, the
-   console pinning the release that has `./behaviour`; no alias is shipped.
+6. **The `./gestures` window.** Between step 5 and step 6 the console needs the old export or a lockstep release.
+   Recommendation: lockstep, no overlap: step 5's omx-panel release and step 6's console change land together, the
+   console requiring that release by a floor (`>=`) and no ceiling; no alias is shipped.
