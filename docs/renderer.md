@@ -11,8 +11,8 @@ One C library draws a plugin's panel from its panel description, the document `o
   embeds a plugin's view hands the plugin to draw into.
 
 Each of these draws the same description with the same layout and widget code. The renderer is omx-panel's own
-toolkit, for a plugin's own GUI; the web console draws its panels with its own (Nuxt UI) and shows none of its pixels,
-as Zynthian draws with its own toolkit. The source is in `renderer/`.
+toolkit, for a plugin's own GUI; the web console draws its panels with its own (Nuxt UI) and shows none of its pixels.
+The source is in `renderer/`.
 
 ## What it draws
 
