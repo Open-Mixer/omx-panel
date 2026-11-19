@@ -5,7 +5,7 @@
  * it, whatever is behind the knob: the cache stores the knob's box as it stood before the static layers (the backdrop) and after
  * them, and uses the patch only while the backdrop is byte for byte the one it was made over. test/scene_cache_driver.c paints
  * 7 pointer angles twice each over a backdrop that is not flat, with the cache off and on, then changes one backdrop pixel inside
- * the knob and paints them all again.
+ * the knob and paints them all again, then changes the scale by a hair (the same box) and paints them again.
  */
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -32,9 +32,10 @@ for (const [finish, k, ox, oy] of [['aluminium', 1, 10, 10], ['graphite', 1.5, 7
   });
   test(`the cache is used: the second paint of a backdrop is a hit, a changed backdrop a miss: ${finish} at ${k}x`, () => {
     const r = run(finish, k, ox, oy);
-    // 2 phases x 7 angles x 2 repeats = 28 cached paints; each phase misses once (the first paint) and hits the other 13
-    assert.equal(r.misses, 2, `misses: ${r.misses}`);
-    assert.equal(r.hits, 26, `hits: ${r.hits}`);
+    // 3 phases (a backdrop, a changed backdrop, a changed scale) x 7 angles x 2 repeats = 42 cached paints; each phase misses once
+    // (its first paint) and hits the other 13
+    assert.equal(r.misses, 3, `misses: ${r.misses}`);
+    assert.equal(r.hits, 39, `hits: ${r.hits}`);
   });
 }
 

@@ -5,7 +5,7 @@
  *   scene_cache_driver <look.json> <drawing> <finish> <k> <ox> <oy> <w> <h>
  * Over a backdrop that is not flat, for 7 pointer angles: the scene is painted into a copy of the backdrop with the cache off, and
  * into another with it on, twice (the second is a hit); then one backdrop pixel inside the knob changes and the painting is
- * compared again (it must be a miss, and equal). Prints `key value` lines: equal (1 when every pair of canvases is byte for byte
+ * compared again (it must be a miss, and equal), then the scale changes by a hair, the box staying the same (a miss, and equal). Prints `key value` lines: equal (1 when every pair of canvases is byte for byte
  * the same), hits, misses, stale (1 when a changed backdrop was painted from a stale patch), then the bytes' checksum.
  */
 #include <cjson/cJSON.h>
@@ -55,7 +55,9 @@ int main(int argc, char **argv) {
   backdrop(base, w, h);
   int equal = 1, stale = 0;
   const double angles[] = {-135, -90, -45, 0, 45, 90, 135};
-  for (int phase = 0; phase < 2; phase++) {
+  double k0 = k;
+  for (int phase = 0; phase < 3; phase++) {
+    if (phase == 2) k = k0 * 0.9999; /* the same box, a different scale: the stored patch is not this one */
     if (phase == 1) { /* one backdrop pixel inside the knob changes */
       uint8_t *p = base + (((size_t)(oy + 24 * k) * w) + (size_t)(ox + 24 * k)) * 4;
       p[0] ^= 0x55; p[2] ^= 0x33;
@@ -68,7 +70,7 @@ int main(int argc, char **argv) {
         omx_scene_paint(&ca, s, ox, oy, k, angles[i]);
         omx_scene_set_cache(s, 1);
         omx_scene_paint(&cb, s, ox, oy, k, angles[i]);
-        if (memcmp(a, b, n) != 0) { equal = 0; if (phase == 1) stale = 1; }
+        if (memcmp(a, b, n) != 0) { equal = 0; if (phase >= 1) stale = 1; }
       }
     }
   }
