@@ -43,12 +43,13 @@ test('the document is in the one formatting (omx-contract fmt --check)', () => {
   assert.equal(r.status, 0, `omx-contract fmt --check:\n${r.stdout}${r.stderr}`);
 });
 
-test('no vocabulary render of the domain exists or is named, and no codes header: no item is marked x-c-codes', () => {
+test('no vocabulary render of the domain exists or is named; the one item C reads by code is marked x-c-codes, and no other', () => {
   assert.equal(existsSync(join(ROOT, 'include/omxdomain')), false, 'include/omxdomain/ still holds a render');
   const named = run(['git', 'grep', '-l', '-e', 'panel_vocabulary', '-e', 'omxdomain/', '--', '.', ':!CHANGELOG.md', ':!debian/changelog', ':!test/panel-domain-contract.test.mjs']);
   assert.equal(named.stdout, '', `files still name the vocabulary render:\n${named.stdout}`);
+  // the store's refusals are codes (docs/descriptions-store.md, section 5); no C code switches on another panel word
   for (const [item, s] of Object.entries(doc.components.schemas)) {
-    assert.equal(s['x-c-codes'], undefined, `${item} is marked x-c-codes, but no C code switches on its words`);
+    assert.equal(s['x-c-codes'], item === 'PANEL_STORE_CODES' ? true : undefined, `${item}: x-c-codes`);
   }
 });
 
