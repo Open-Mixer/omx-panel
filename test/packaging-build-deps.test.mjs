@@ -36,7 +36,7 @@ function buildDepends(control) {
 
 test('the spec builds against the omx-contract CLI package and the packaged omx-dsp-wasm at its floor', () => {
   const spec = read('packaging/omx-panel.spec');
-  assert.match(spec, /^BuildRequires: omx-contract >= 3\.19\.1$/m, 'the spec lacks BuildRequires: omx-contract >= 3.19.1 (the CLI renders a domain from that floor)');
+  assert.match(spec, /^BuildRequires: omx-contract >= 3\.20\.0$/m, 'the spec lacks BuildRequires: omx-contract >= 3.20.0 (the CLI formats and validates the panel domain from that floor)');
   assert.match(spec, new RegExp(`^BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR.replace(/\./g, '\\.')}$`, 'm'),
     `the spec lacks BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR}`);
 });
@@ -48,7 +48,7 @@ test('the spec %check exports OMX_CONTRACT_CLI to the installed CLI', () => {
 
 test('the DEB build-depends on omx-contract and omx-dsp-wasm at its floor', () => {
   const deps = buildDepends(read('debian/control'));
-  assert.ok(deps.includes('omx-contract (>= 3.19.1~)'), `Build-Depends has no omx-contract (>= 3.19.1~): ${deps.join(' | ')}`);
+  assert.ok(deps.includes('omx-contract (>= 3.20.0~)'), `Build-Depends has no omx-contract (>= 3.20.0~): ${deps.join(' | ')}`);
   assert.ok(deps.includes(`omx-dsp-wasm (>= ${WASM_FLOOR}~)`), `Build-Depends has no omx-dsp-wasm (>= ${WASM_FLOOR}~): ${deps.join(' | ')}`);
 });
 

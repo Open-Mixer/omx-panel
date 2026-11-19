@@ -57,9 +57,10 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7'
-          # the omx-contract CLI the header test renders with (OMX_CONTRACT_CLI below), at the floor the data package names
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.19.1'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7'
+          # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
+          # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.0' 'omx-contract-devel >= 3.20.0' 'libomx-domain-devel >= 3.20.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -72,9 +73,8 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
+      # npm ci installs omx-dsp (package.json's @openmixer/omx-dsp), the curve the cases read, as in ci.yml
       - run: npm ci
-      # omx-dsp's TypeScript twin the curve cases read
-      - uses: ./.github/actions/omx-dsp-twin
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
@@ -85,10 +85,9 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
-          # the curve cases and the importer's proof on the installed caps bundles run here, or the job fails: no skip for a missing twin or bundle
-          OMX_PANEL_DSP: required
+          # the importer's proof on the installed caps bundles runs here, or the job fails: no skip for a missing bundle
           OMX_PANEL_REAL_BUNDLES: required
-          # the panel domain's header is re-rendered and compared here by the installed omx-contract CLI (test 630), or the job fails
+          # the panel domain is formatted and validated here by the installed omx-contract CLI, or the job fails
           OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
