@@ -37,9 +37,9 @@ A bar group ([panel-layout.md](panel-layout.md) "Bars"; a declared section's `ba
 faders: each control of a run is the fader widget, an ordinary `input-control-port` MOD moves live with its own fader film, its title
 the bar's label (`16'`, `1`..`16`). A declared `bars: true` that fails the rule's checks is refused by its code. A section whose
 display is a curve (`eq_response`, `transfer_curve`) has a row above its controls: a frame with the basis word (`exact` or
-`modelled`) in its caption; the curve is omx-dsp's twin (`@openmixer/omx-dsp`, `curvePoints`) at the come-up values, a static SVG polyline in the template and the same
-stroke in the screenshot, with the axis and the basis word; with no twin installed the frame stays alone (`curve: { code: 'no-twin' }`, and
-`OMX_PANEL_DSP=required` makes that an error). A band a planter owns (a declared panel's `origins`, an authored descriptor's, from
+`modelled`) in its caption; the curve is omx-dsp's (`@openmixer/omx-dsp` >= 0.33.0, a plain dependency: its WebAssembly module, loaded once by `loadCurve`, then `curvePoints`) at the come-up values, a static SVG polyline in the template and the same
+stroke in the screenshot, with the axis and the basis word; a tree without omx-dsp does not load the generator, and says so by the package name
+(a MOD GUI drawn without its curves would be a false green). A band a planter owns (a declared panel's `origins`, an authored descriptor's, from
 fbs-fixed, fbs-live, hrp, room-mode) is a mark on the curve: a disc at the band's own depth and its planter's letter; no origin declared, no mark.
 
 A readout (a `readonly` control: a gain reduction, a level) has no travel to turn and no default. It is drawn as a

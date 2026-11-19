@@ -98,10 +98,13 @@ install: build
 	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/
 	# the runtime modules only (ajv and what it needs), never the build's
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
-	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
+	  rel=$${m#$(CURDIR)/}; [ "$$rel" = node_modules/@openmixer/omx-dsp ] && continue; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
 	done
 	# their pages are theirs, not the package's: the package's one page is its README
 	if [ -d $(DESTDIR)$(PKGDIR)/node_modules ]; then find $(DESTDIR)$(PKGDIR)/node_modules -type f -iname '*.md' -delete; fi
+	# omx-dsp is the omx-dsp-wasm package's: its dist/ and wasm/ are linked, never copied
+	install -d $(DESTDIR)$(PKGDIR)/node_modules/@openmixer
+	ln -sfn $(DATADIR)/omx-dsp $(DESTDIR)$(PKGDIR)/node_modules/@openmixer/omx-dsp
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
