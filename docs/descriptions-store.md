@@ -428,20 +428,29 @@ plugin sets only, and a shipped file is only STAGED: a host uses it when its key
 `modgui.ttl` and its resources), `complement/` (the complement bundle, `omx-zynthian-gui` only) and `lv2ui/` (the
 desktop UI bundle), and `/usr/share/omx/gui/<package>/keys.json`, the key record.
 
-**The key record** `keys.json` holds, per plugin: `sha256` (the binary's SHA-256, the store's plugin key), `format`,
-`uri`, the SHA-256 of each staged file, and, for a staged complement, the SHA-256 of the installed bundle's TTL it
-was inferred from (the `source` rule of section 3.6, over the TTL alone).
+**The key record** `keys.json`, one per package, holds per plugin: `sha256` (the binary's SHA-256, the store's plugin
+key), `format`, `uri`, `source` (the entry's `source` of section 3.6: every `.ttl` of an LV2 bundle, or the CLAP
+descriptor, as installed when the file was staged), `rules` (the `OMX_PANEL_RULES_VERSION` the file was built with), and
+the SHA-256 of each staged file. A binary alone is too narrow a key: a GUI is generated from the description, whose
+inputs are the source and the rules, so a TTL-only update over the same binary, or a host with another rules version,
+would activate a stale GUI. The key is therefore the triple (`sha256`, `source`, `rules`) for EVERY staged file, MOD GUI
+and desktop UI included. The entry's `fingerprint` is not used: it covers the layout only, not the source (section 3.4).
+For a complement, `source` is the installed TTL's hash and is the same field.
 
 **Activation** is a step of `omx-modgui-sync` and `omx-complement-sync` (and of `omx-lv2ui-sync`), before they
-generate. For an installed plugin the sync finds the staged directory by the binary's SHA-256 and compares:
+generate. For an installed plugin the sync finds the staged directory by the binary's SHA-256 and compares, for every kind, the record's triple with the
+store entry the host holds (read as in step 1 above, through the reader's `source` and `rules`):
 
-- the binary's SHA-256 with the record's `sha256` (all three kinds);
-- for a complement, the installed TTL's hash with the record's.
+- the binary's SHA-256 with the record's `sha256`;
+- the host's `source` (computed from the installed files by `omx_panel_store_source`) with the record's `source`;
+- the reader's `OMX_PANEL_RULES_VERSION` with the record's `rules`.
 
-On a match the sync LINKS (a copy where a link cannot be made) the staged file into the place it writes today
-(`MODGUI_DIR`, the bundle names of `docs/lv2-complement.md`), marked as the sync's own so the removal rules apply.
-Otherwise the sync generates locally from the entry, as before. The cases that generate locally: a key mismatch (a
-different binary or a changed TTL), a NON-DEFAULT look (a skin or a per-page choice other than the default; the staged
+On a match the sync LINKS the staged file with a symbolic link (it works across file systems; there is no copy) into
+the place it writes today (`MODGUI_DIR`, the bundle names of `docs/lv2-complement.md`), marked as the sync's own so the
+removal rules apply. Where a link cannot be made the sync generates locally and logs it: that is the non-match path
+below, not a second mechanism. A link whose target is gone (the package was removed or upgraded) is the sync's own
+file: the next pass removes it, or regenerates the file. Otherwise the sync generates locally from the entry, as before. The cases that generate locally: a key mismatch (a
+different binary, a changed source, another rules version), a NON-DEFAULT look (a skin or a per-page choice other than the default; the staged
 files are the default look's), and an unknown plugin (not in the record). Key-gating is the owner's ruling, not a
 compatibility mechanism, and there is no other fallback. A staged file never shadows a user's own edits (an edited
 entry, `edited` 1, is generated locally from the entry) nor a locally generated file for a non-default look: an
@@ -451,7 +460,8 @@ replaced by a link.
 **The builder** `omx-panel gui-stage --set <file> --descriptions <panel.sqlite> --out <dir>`: for each plugin of the
 set it writes MOD GUI, LV2 complement and LV2 desktop UI under `<dir>`, from the descriptions file's entries. The
 complement is written only where the installed TTL lacks groups, and never for our own plugins. It writes `keys.json`
-as above. Its bytes are deterministic (fixed order, no timestamps), so two runs over the same input give the same bytes.
+as above. It refuses a `sha256` that another package's `keys.json` already stages (the Zynthian set excludes
+omx-plugins' plugins), so no precedence between packages exists. Its bytes are deterministic (fixed order, no timestamps), so two runs over the same input give the same bytes.
 `--set` is the list of installed bundles (each by its path), `--descriptions` the base file, `--out` required. Flags
 only: no environment variable is read.
 
@@ -732,8 +742,8 @@ the run in the PR body, then the commits that turn it green.
     description differs from what `describe` derives, the engine draws the store's.
 13. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
 14. **omx-panel: `omx-panel gui-stage`.** Proves: one deterministic builder. Red: two runs over the same set and base
-    give the same bytes; `keys.json` holds the binary's SHA-256, format, uri, file hashes and, for a complement, the
-    installed TTL's hash; the complement is omitted when the installed TTL has groups and for our own plugins
+    give the same bytes; `keys.json` holds the binary's SHA-256, format, uri, `source`, `rules` and file hashes;
+    a `sha256` staged by both packages is refused; the complement is omitted when the installed TTL has groups and for our own plugins
     (sabotage: writing it anyway turns that red); an input path that does not exist is refused by name.
 15. **omx-plugins: `omx-plugins-gui`.** Proves: the package stages generated MOD GUI and LV2 desktop UI, and no
     complement, and git holds none. Red: the package build runs `gui-stage` over its built bundles and the package lists
@@ -741,9 +751,11 @@ the run in the PR body, then the commits that turn it green.
 16. **zynthian-sys: `omx-zynthian-gui`.** Proves: the default set is staged from the base. Red: the image or CI build
     runs `gui-stage` over the installed default set and the package holds MOD GUI, complement and desktop UI for it.
 17. **omx-panel: staged activation in the syncs.** Proves: a key match activates, anything else generates. Red: a
-    staged file whose key matches is activated (linked into the place the sync writes today); a key mismatch (binary or
-    TTL hash), a non-default look and an unknown plugin are each generated locally; a user's edit and a locally
-    generated non-default file are never shadowed. Sabotage: activation without the key check turns it red.
+    staged file whose key (binary, source, rules) matches is activated (symlinked into the place the sync writes today);
+    a key mismatch is generated locally, for each of: another binary; a changed TTL over the same binary; another
+    `OMX_PANEL_RULES_VERSION`; a non-default look; an unknown plugin; a link that cannot be made (generated locally and
+    logged); a link whose target is gone is removed or regenerated on the next pass; a user's edit and a locally
+    generated non-default file are never shadowed. Sabotage: activation without the key check, or with the binary alone as the key, turns it red.
 
 ## 14. Decided
 
@@ -777,4 +789,6 @@ The owner's answers to the questions this design raised (2026-11-19). The sectio
     installed TTL's hash. A mismatch, a non-default look or an unknown plugin is generated locally, as before. Nothing
     generated is committed to git, and omx-plugins' committed MOD GUIs still go away. `omx-modgui-sync` and
     `omx-complement-sync` gain the staged-activation step. One builder, `omx-panel gui-stage`, run by omx-plugins' build
-    and by zynthian-sys's image or CI build (section 6).
+    and by zynthian-sys's image or CI build (section 6). The key of a staged file is the triple (binary SHA-256, the
+    entry's `source`, the rules version), because a GUI is generated from the description and a binary alone would
+    activate a stale one after a TTL-only update; activation is a symbolic link only (section 6).
