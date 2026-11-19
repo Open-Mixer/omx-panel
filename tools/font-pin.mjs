@@ -9,8 +9,9 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const FONT_PIN_JSON = join(ROOT, 'tools', 'look', 'font-gelasio.json');
@@ -27,7 +28,7 @@ export function fontPinFaults(pin = loadFontPin(), root = ROOT) {
   return faults;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const faults = fontPinFaults();
   for (const f of faults) console.error(`font-pin: ${f}`);
   if (!faults.length) console.log(`font-pin: ${loadFontPin().family} ${loadFontPin().source.version} matches its pin`);

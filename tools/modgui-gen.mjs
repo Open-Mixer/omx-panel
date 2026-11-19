@@ -40,6 +40,7 @@ import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, 
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
 const TOOLS = dirname(fileURLToPath(import.meta.url));
@@ -1391,4 +1392,4 @@ export function main(argv) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));
