@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: omx-panel-store
+Description: Reads and writes the descriptions store: the base, the system layer and the user layer of panel.sqlite
+Version: @VERSION@
+Requires.private: sqlite3 libcjson libomx-domain
+Cflags: -I${includedir}
+Libs: -L${libdir} -lomx-panel-store

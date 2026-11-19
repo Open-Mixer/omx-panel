@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * The shared library exports the C API of include/omx-panel/omx_panel_store.h and nothing else: each function by name
+ * (test/shared.test.mjs holds the list to the header and to abi/omx_panel_store.abi). */
+OMX_PANEL_STORE_0 {
+  global:
+    omx_panel_store_close;
+    omx_panel_store_code;
+    omx_panel_store_get;
+    omx_panel_store_message;
+    omx_panel_store_open;
+    omx_panel_store_open_at;
+    omx_panel_store_put;
+    omx_panel_store_remove;
+    omx_panel_store_schema_version;
+    omx_panel_store_set_rules;
+    omx_panel_store_source;
+    omx_panel_store_writer_open;
+    omx_panel_store_writer_open_at;
+  local:
+    *;
+};
