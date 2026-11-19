@@ -1,3 +1,16 @@
+omx-panel (0.14.0) unstable; urgency=medium
+
+  * Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >=
+    0.33.0 and plugin-hostd-contract >= 0.20.7: floors only, with no ceiling on
+    our packages.
+  * New: the panel domain ships alone in omx-panel-contract (contract.d/panel,
+    its catalogs); the MOD GUI generator reads curves from omx-dsp-wasm through
+    a link, with no copy; three MOD GUI looks; the utility panel family; the
+    group model on every surface; the gesture C reference in
+    libomx-panel-render.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 13:30:00 +0100
+
 omx-panel (0.13.8) unstable; urgency=medium
 
   * Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-

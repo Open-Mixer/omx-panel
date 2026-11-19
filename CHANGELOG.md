@@ -65,6 +65,14 @@
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
+- 0.14.0: built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0 and plugin-hostd-contract >= 0.20.7,
+  floors only with no ceiling on our packages (#113). This release carries: the panel domain shipped alone in
+  `omx-panel-contract` (#102, #119); the MOD GUI generator reading curves through omx-dsp-wasm's async `loadCurve`, linked,
+  not copied (#128, #109); three MOD GUI looks (#58) and the vintage look roles (#98); the utility panel family (#107); the
+  group model on every surface and its renderer matrix (#63, #64, #92, #96); the gesture C reference in
+  libomx-panel-render and the exported gesture scripts (#104, #100, #88); schema addresses under openmixer.org (#110); a
+  contract directory's links followed (#95); the packaging dependency checks and the release proof (#115, #117, #129).
+
 - 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
   This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against
   omx-dsp >= 0.32.3 and below 0.33); the `time_response` display kind and describe reading a plugin's served panel as the
