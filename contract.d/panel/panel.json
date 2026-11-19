@@ -11,7 +11,7 @@
     "schemas": {
       "PANEL_FAMILIES": {
         "description": "The panel families of a plugin (omx-panel docs/panel-layout.md): the kind of processor its panel is laid out for. The words and their order are the contract; omx-panel's tools/panel-description.mjs FAMILIES and the skin package schema read them, and keep their code.",
-        "x-since": "3.7.0",
+        "x-since": "1.0.0",
         "x-why": "Panel families and widgets are declarations, so they live here (vocabulary-owner rule, FreeMixer/omx-contract#157).",
         "oneOf": [
           {
@@ -109,7 +109,7 @@
       },
       "PANEL_STANDARD_WIDGETS": {
         "description": "The standard widgets a panel picks from a descriptor and a representation (a skin) draws, in the order omx-panel's tools/panel-description.mjs STANDARD_WIDGETS lists them.",
-        "x-since": "3.7.0",
+        "x-since": "1.0.0",
         "oneOf": [
           {
             "const": "knob",
@@ -171,7 +171,7 @@
       },
       "PANEL_WIDGETS": {
         "description": "The widgets a declared panel may name for a control, and the extension serves (org.openmixer.panel-description/1): auto leaves the choice to the panel layout. The four others are the shared widgets of omx-panel's schema/panel.schema.json.",
-        "x-since": "3.7.0",
+        "x-since": "1.0.0",
         "oneOf": [
           {
             "const": "auto",
@@ -212,7 +212,7 @@
       },
       "PANEL_DISPLAY_KINDS": {
         "description": "The displays a declared panel may carry, and the extension serves (org.openmixer.panel-description/1), in the order of their codes: a panel description names a display by its place here. omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "3.20.0",
+        "x-since": "1.0.0",
         "x-why": "omx-clap-core restated these words by hand beside the families and widgets; a display kind is a declaration, so it lives here (vocabulary-owner rule).",
         "oneOf": [
           {
@@ -254,7 +254,7 @@
       },
       "PANEL_DISPLAY_SOURCES": {
         "description": "Where a panel description's display takes its data from, in the order of their codes (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "3.20.0",
+        "x-since": "1.0.0",
         "x-why": "omx-clap-core and omx-plugins restated these words by hand beside the families, widgets and display kinds; a display source is a declaration, so it lives here (vocabulary-owner rule).",
         "oneOf": [
           {
@@ -289,7 +289,7 @@
       },
       "PANEL_PLACEMENTS": {
         "description": "Where an instance sits, in the order of their codes: the clap.track-info/1 flags read as one value (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "3.20.0",
+        "x-since": "1.0.0",
         "x-why": "omx-clap-core and omx-plugins restated these words by hand; a placement is a declaration, so it lives here (vocabulary-owner rule).",
         "oneOf": [
           {
