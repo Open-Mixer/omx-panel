@@ -58,13 +58,23 @@ jobs:
       - name: Install the vocabulary the suite reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.19.1' 'plugin-hostd-contract >= 0.20.7'
+          # the omx-contract CLI the header test renders with (OMX_CONTRACT_CLI below), at the floor the data package names
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.19.1'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install the real MOD bundles the importer proof reads
+        # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
+        # bundle reads them where they are installed, and no MOD file is copied into this tree.
+        run: |
+          dnf copr enable -y ycollet/audinux
+          dnf install -y --setopt=install_weak_deps=False caps-lv2
       - run: npm ci
+      # omx-dsp's TypeScript twin the curve cases read
+      - uses: ./.github/actions/omx-dsp-twin
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
@@ -75,6 +85,11 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
+          # the curve cases and the importer's proof on the installed caps bundles run here, or the job fails: no skip for a missing twin or bundle
+          OMX_PANEL_DSP: required
+          OMX_PANEL_REAL_BUNDLES: required
+          # the panel domain's header is re-rendered and compared here by the installed omx-contract CLI (test 630), or the job fails
+          OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |

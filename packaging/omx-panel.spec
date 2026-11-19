@@ -29,7 +29,7 @@ BuildRequires: plugin-hostd-contract >= 0.20.7
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: (plugin-hostd >= 0.20.7 with plugin-hostd < 0.21)
+Recommends: plugin-hostd >= 0.20.7
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -44,8 +44,6 @@ Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.19.1
 Requires: plugin-hostd-contract >= 0.20.7
-# the descriptors of omx-plugins' plugins, for modgui --installed
-Recommends: (omx-plugins-contract >= 0.19.3 with omx-plugins-contract < 0.20)
 Provides: bundled(nodejs-ajv)
 
 %description
