@@ -150,9 +150,13 @@ CREATE TABLE description (
                                        -- panelFingerprint(layout): of the LAYOUT the description was derived from,
                                        -- before the skin, the matrices and the pages; what a client compares to know
                                        -- the layout changed, not a check of body
-  body        TEXT CHECK (body IS NULL OR json_valid(body)), -- describe's `description`, canonical JSON, `pages` left out
+  body        TEXT CHECK (body IS NULL OR json_valid(body)), -- the description BEFORE the skin and the matrices,
+                                       -- canonical JSON, `pages` left out
+  groups      TEXT CHECK (groups IS NULL OR json_valid(groups)), -- the repeated groups inferGroupModel found, as
+                                       -- JSON; NULL exactly when body is NULL
   refused     TEXT CHECK (refused IS NULL OR WORD(refused)), -- a DESCRIBE_CODES word: describe derived no description
-  CHECK ((body IS NULL) <> (refused IS NULL))               -- exactly one of the two
+  CHECK ((body IS NULL) <> (refused IS NULL)),              -- exactly one of the two
+  CHECK ((body IS NULL) = (groups IS NULL))
 ) STRICT;
 
 CREATE TABLE description_control (     -- per control, what the skin, the matrices and the pages read (section 14, 1, 8)
@@ -160,6 +164,7 @@ CREATE TABLE description_control (     -- per control, what the skin, the matric
   ordinal   INTEGER NOT NULL CHECK (ordinal >= 0),          -- the control's place in the derivation's control order
   id        TEXT NOT NULL,             -- a name: the control's id, as `effective.controls` holds it
   group_key TEXT,                      -- a name: its group key (`c[GROUP]`), NULL when it has none
+  governed  INTEGER NOT NULL CHECK (governed IN (0, 1)),   -- 1: the layout control has a visibleWhen
   PRIMARY KEY (plugin_id, ordinal),
   UNIQUE (plugin_id, id)
 ) STRICT;
@@ -201,9 +206,13 @@ CREATE TABLE port_group_member (
 - A verdict of `nothing-to-do` or `no-confident-grouping` holds no `port_group` row: the plugin keeps its declared groups.
 - **Skins and pages are applied over the stored entry by omx-panel** (section 14, 1 and 8). `describe` applies the skin
   BEFORE the matrices (`tools/describe.mjs` 289-300), and `withMatrices` (321-326) and `pagesOfDescription` (391-393)
-  read the controls' ids and group keys and the layout. The entry stores them (`description_control`, beside the body),
-  and omx-panel has ONE pure function, `describeFromStored(body, { skin, perPage, remote })`, over the stored entry,
-  byte-equal to `describe` for the same inputs. `pages` is never stored: it depends on the surface's width. No client
+  read the controls' ids and group keys and the layout; `withMatrices` (321-326) also re-runs `inferGroupModel` over the
+  descriptor and reads which layout controls are governed by a `visibleWhen`. So the entry stores the description BEFORE
+  the skin and the matrices (`body`), the repeated groups `inferGroupModel` found (`groups`, JSON that round-trips equal
+  over the omx-plugins corpus fixtures), and per control its id, group key and `governed` (`description_control`).
+  omx-panel has ONE pure function, `describeFromStored(body, { skin, perPage, remote })`: skin, then `withMatrices`
+  over the stored groups and `governed`, then the pages; `describe` calls the SAME functions after its derivation, so
+  the two are byte-equal by construction, and a corpus test holds it. `pages` is never stored: it depends on the surface's width. No client
   needs the plugin's descriptor: plugin-hostd and Zynthian have none for a third-party plugin.
 
 ### 3.5 `user_version`
@@ -621,7 +630,8 @@ the run in the PR body, then the commits that turn it green.
 2. **omx-panel: `describeFromStored`** (the description schema owner). Proves: skins and pages from the stored entry
    alone. Red: over the reference corpus, for each plugin, every skin of the fixtures and the surface widths in use,
    `describeFromStored(stored body and controls, { skin, perPage, remote })` is byte-equal to `describe` from the
-   descriptor; it reads no descriptor and no file (a sabotage that drops a control's group key turns it red).
+   descriptor; it reads no descriptor and no file. Sabotage: dropping a control's group key, a control's `governed`, or
+   the stored `groups` each turns it red.
 3. **omx-panel: `describe --plugin --store`.** Proves: one plugin, inferred once, the layer by uid. Red: a fixture with two
    plugins writes only the named one's entry to the user layer when run unprivileged; a second run writes nothing; a key
    the base holds is printed, not derived; an LV2 fixture without `pg:group` gets the groups the complement infers and a
