@@ -18,6 +18,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SPEC_DEP = /^(Build)?(Requires|Recommends)\s*:/;
 const DEP_FIELD = /^(Build-Depends|Depends|Pre-Depends|Recommends|Suggests)\s*:/;
 const CEILING = /<=?\s*\d/;
+// omx-contract's floor, as package.json declares it (contract-floor-agreement holds every other file to it)
+const CONTRACT_FLOOR = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).devDependencies['@openmixer/omx-contract'].match(/>=\s*(\d+\.\d+\.\d+)/)[1];
 
 /** Every floors-only violation under `root`: a ceiling on a dependency, or a Recommends on omx-plugins-contract. */
 export function floorErrors(root) {
@@ -44,10 +46,10 @@ test('omx-panel states floors only and never recommends omx-plugins-contract', (
 
 // each arm: the file, the text to find (must occur once), and the text that plants the violation
 const PLANTS = {
-  'spec ceiling with on contract-data': ['packaging/omx-panel.spec', 'BuildRequires: omx-contract-data >= 3.20.0', 'BuildRequires: (omx-contract-data >= 3.20.0 with omx-contract-data < 4)'],
+  'spec ceiling with on contract-data': ['packaging/omx-panel.spec', `BuildRequires: omx-contract-data >= ${CONTRACT_FLOOR}`, `BuildRequires: (omx-contract-data >= ${CONTRACT_FLOOR} with omx-contract-data < 4)`],
   'spec ceiling on the plugin-hostd Recommends': ['packaging/omx-panel.spec', 'Recommends: plugin-hostd >= 0.20.7', 'Recommends: (plugin-hostd >= 0.20.7 with plugin-hostd < 0.21)'],
   'spec upward Recommends on omx-plugins-contract': ['packaging/omx-panel.spec', 'Provides: bundled(nodejs-ajv)', 'Recommends: omx-plugins-contract >= 0.19.3\nProvides: bundled(nodejs-ajv)'],
-  'control << ceiling': ['debian/control', 'omx-contract-data (>= 3.20.0~) <!nocheck>,', 'omx-contract-data (>= 3.20.0~), omx-contract-data (<< 4~) <!nocheck>,'],
+  'control << ceiling': ['debian/control', `omx-contract-data (>= ${CONTRACT_FLOOR}~) <!nocheck>,`, `omx-contract-data (>= ${CONTRACT_FLOOR}~), omx-contract-data (<< 4~) <!nocheck>,`],
   'control <= ceiling': ['debian/control', 'plugin-hostd-contract (>= 0.20.7~), omx-dsp-wasm', 'plugin-hostd-contract (>= 0.20.7~), plugin-hostd-contract (<= 0.21~), omx-dsp-wasm'],
   'control < ceiling': ['debian/control', 'Recommends: plugin-hostd (>= 0.20.7~)', 'Recommends: plugin-hostd (>= 0.20.7~), plugin-hostd (< 0.21~)'],
   'control upward Recommends on omx-plugins-contract': ['debian/control', 'Recommends: plugin-hostd (>= 0.20.7~)', 'Recommends: plugin-hostd (>= 0.20.7~), omx-plugins-contract (>= 0.19.3~)'],
