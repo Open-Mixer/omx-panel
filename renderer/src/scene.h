@@ -24,7 +24,9 @@ typedef struct omx_scene omx_scene;
 omx_scene *omx_scene_from_look(const cJSON *root, const char *drawing, const char *finish, char *err, size_t err_size);
 void omx_scene_free(omx_scene *s);
 
-/** Paint the scene onto `c`, its origin at (ox, oy), `k` device px per scene unit, the pointer at `angle` degrees from straight up. */
+/** Paint the scene onto `c`, its origin at (ox, oy), `k` device px per scene unit, the pointer at `angle` degrees from straight up.
+ * It writes the scene (the static-layer cache), so one scene is not safe to paint from two threads at once; the renderer has no
+ * second thread today, and a caller that paints from several gives each its own scene. */
 void omx_scene_paint(omx_canvas *c, omx_scene *s, double ox, double oy, double k, double angle);
 
 /** The static-layer cache: every shape before the pointer's (those that do not turn with the frame's angle) is painted once over a
