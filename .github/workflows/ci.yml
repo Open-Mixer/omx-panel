@@ -232,7 +232,7 @@ jobs:
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
+              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm out/'
       - name: The DEB (the release set's oldest suite)
         run: |
           docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
@@ -244,7 +244,7 @@ jobs:
               libcjson-dev libomx-contract-dev libomxdsp-dev
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /w/out/'
+            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb /w/out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
@@ -350,8 +350,9 @@ jobs:
 
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
-          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
-          bash tools/runtime-install-check.sh "$PWD/$pkg"
+          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); cpkg=$(ls out/omx-panel-contract-[0-9]*.rpm)
+          else pkg=$(ls out/omx-panel_*_all.deb); cpkg=$(ls out/omx-panel-contract_*_all.deb); fi
+          bash tools/runtime-install-check.sh "$PWD/$pkg" "$PWD/$cpkg"
 
   # the checks every OpenMixer repository runs on what it publishes: commit messages, private references, and no
   # local copy of either (Open-Mixer/.github's public-sources-check)
