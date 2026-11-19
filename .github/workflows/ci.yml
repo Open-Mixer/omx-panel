@@ -2,10 +2,10 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 name: ci
 
+# Delivery pipeline §12: no heavy Action on a push or a pull request. This workflow runs by workflow_dispatch only;
+# a pull request is checked by the cluster's verify row (cluster/verify: npm ci, make test, make spdx,
+# make public-sources) and by lint.yml, the one lint.
 on:
-  push:
-    branches: [main, dedupe/all]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -354,9 +354,6 @@ jobs:
           else pkg=$(ls out/omx-panel_*_all.deb); cpkg=$(ls out/omx-panel-contract_*_all.deb); fi
           bash tools/runtime-install-check.sh "$PWD/$pkg" "$PWD/$cpkg"
 
-  # the checks every OpenMixer repository runs on what it publishes: commit messages, private references, and no
-  # local copy of either (Open-Mixer/.github's public-sources-check)
-
   # one pack per listed language from the spec and debian/control, and the catalogs through omx-contract's release
   # gate (translate --check, tools/catalogs-gate.sh): a listed language with no catalog, a missing key or a stale entry
   # is red
@@ -385,6 +382,3 @@ jobs:
           owner: omx-panel
           spec: packaging/omx-panel.spec
           gate: tools/catalogs-gate.sh
-
-  public-sources:
-    uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
