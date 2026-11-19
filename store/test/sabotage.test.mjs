@@ -36,6 +36,7 @@ const ARMS = [
   ['a stale edited entry is not named', 'if (edited && !e->stale_edit_layer) e->stale_edit_layer = LAYER_NAME[f->layer];', ';'],
   ['the system scope has a home', 'if (scope == OMX_PANEL_STORE_SCOPE_USER) {', 'if (1) {'],
   ['files at two versions are not compared first', 'if (differ) {', 'if (0) {'],
+  ['a hot journal is not named', 'case SQLITE_READONLY: return OMX_PANEL_STORE_HOT_JOURNAL;', 'case SQLITE_READONLY: return OMX_PANEL_STORE_UNREADABLE;'],
   ['no busy timeout', '#define READER_BUSY_MS 250', '#define READER_BUSY_MS 0'],
 ];
 for (const [what, from, to] of ARMS) {

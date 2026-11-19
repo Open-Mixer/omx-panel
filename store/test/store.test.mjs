@@ -6,7 +6,7 @@
  * (the reader and the writer in C, behind it) over fixture stores in a scratch directory.
  */
 import assert from 'node:assert/strict';
-import { existsSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { DatabaseSync, entry, flags, get, grouped, hex, mkStore, panelVersion, places, run, snapshot } from './helpers.mjs';
 
@@ -277,4 +277,26 @@ test('the DDL: no description_control row under a refused entry', (t) => {
   assert.throws(() => c.run(1), /refused/);
   c.run(2);
   db.close();
+});
+
+test('a layer with a hot journal is refused as hot-journal by name, and neither the layer nor its journal is touched', (t) => {
+  const p = places(t);
+  mkStore(p.base, { layer: 0, entries: [entry()], panel: PV(p) });
+  mkStore(p.user, { layer: 2, entries: [entry({ uri: 'urn:test:u' })], panel: PV(p) });
+  // a writer inside a transaction: the db file and its journal copied while it is open are what a killed writer leaves
+  const w = new DatabaseSync(p.user);
+  w.exec('PRAGMA journal_mode = DELETE; PRAGMA synchronous = OFF; BEGIN IMMEDIATE');
+  w.exec("DELETE FROM description; DELETE FROM plugin");
+  assert.equal(existsSync(`${p.user}-journal`), true, 'the open transaction has a journal');
+  const hot = `${p.dir}/hot/panel.sqlite`;
+  mkdirSync(`${p.dir}/hot`);
+  copyFileSync(p.user, hot);
+  copyFileSync(`${p.user}-journal`, `${hot}-journal`);
+  w.exec('ROLLBACK');
+  w.close();
+  const before = [hot, `${hot}-journal`].map(snapshot);
+  const r = get({ ...p, user: hot }, entry());
+  assert.equal(r.code, 'panel-store.hot-journal', r.stderr);
+  assert.ok(r.stderr.includes(hot), 'it names the file');
+  assert.deepEqual([hot, `${hot}-journal`].map(snapshot), before, 'a read-only reader rolls nothing back');
 });
