@@ -142,8 +142,12 @@ CREATE TABLE description (
   plugin_id   INTEGER PRIMARY KEY REFERENCES plugin ON DELETE CASCADE,
   edited      INTEGER NOT NULL CHECK (edited IN (0, 1)),   -- 1: written by a person; 0: derived by omx-panel
   made_by     TEXT NOT NULL,           -- a name: the omx-panel version that derived it, or that checked an edit
+  rules       INTEGER NOT NULL CHECK (rules >= 1),          -- OMX_PANEL_RULES_VERSION of the derivation (3.6)
+  source      TEXT NOT NULL CHECK (length(source) = 64 AND source NOT GLOB '*[^0-9a-f]*'),
+                                       -- SHA-256 of the derivation's input as installed (3.6), not of the binary
   family      TEXT NOT NULL CHECK (WORD(family)),           -- a PANEL_FAMILIES word
   fingerprint TEXT NOT NULL CHECK (length(fingerprint) = 64 AND fingerprint NOT GLOB '*[^0-9a-f]*'),
+                                       -- describe's fingerprint of its OUTPUT, as served today
   body        TEXT NOT NULL CHECK (json_valid(body))        -- describe's `description`, canonical JSON, `pages` left out
 ) STRICT;
 
@@ -187,7 +191,42 @@ each other (checked first, naming every file and version); `not-a-store` for 0, 
 whose `store_info.layer` is not the place it was opened as. The base is built new at each version and never upgraded; a
 layer is not upgraded in place in this pass.
 
-### 3.6 Joining the qualification store
+What that means at an upgrade, stated as it is: an omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION`
+installs a base at the new version beside a system layer and user layers at the old one. Every reader then refuses the
+WHOLE store with `schema-mismatch`, for every plugin, until the old layers are gone: plugin-hostd falls back to declared
+groups, the generators and the clients get no entry. Nothing deletes a layer by itself. Deleting one loses its derived
+entries (the next pass or ask derives them again) and its edited entries (`edited` 1), which nothing derives again.
+Carrying the layers across a schema change is a migration, a compatibility mechanism, and needs the owner: open
+question 9. Until the owner rules, a schema change is made only together with the owner's answer.
+
+### 3.6 Stale entries: the input and the rules
+
+The key names the binary only, but an entry is derived from more than the binary: from the descriptor or the LV2
+bundle's TTL, and from omx-panel's rules. An LV2 bundle whose TTL changes over the same `.so`, or a newer omx-panel that
+derives otherwise, would keep serving the old entry from every layer. So each entry stores what it was derived from:
+
+- `source`: the SHA-256 of the derivation's input as installed. For an LV2 plugin, the bundle's `.ttl` files, sorted by
+  name, each as its name, a NUL and its bytes; for a CLAP plugin, the descriptor document `describe` read. One function
+  computes it, `omx_panel_store_source(format, path, hex_out)`, in the reader library, so every caller hashes the same
+  bytes the same way.
+- `rules`: `OMX_PANEL_RULES_VERSION`, an integer in omx-panel raised by every change that moves `describe`'s or the
+  inference's output for the same input (a golden of the derivation tests changes with it, so the raise is not forgotten).
+
+The reader is given the caller's current `source` with the key (`omx_panel_store_get` takes it, section 5) and walks
+the layers top down:
+
+- an entry whose `source` differs from the caller's is STALE: it is skipped as if absent, and the next layer is read;
+- a derived entry (`edited` 0) whose `rules` is below the reader's is STALE the same way;
+- an edited entry (`edited` 1) is never staled by `rules` (the person's choice stands across omx-panel releases), but is
+  staled by `source` (its ports may be gone). It is skipped, never deleted, and the answer names it (`stale_edit`, the
+  layer) so a client can tell the person;
+- `made_by` is a name for a person reading the row; no rule reads it.
+
+A key whose every entry is stale is ABSENT to a producer: a generator, `describe --store` or plugin-hostd's ask derives
+it again and the writer replaces its own layer's stale entry. A stale entry in a layer the producer may not write stays
+until that layer's writer runs (the base: the next base build). Removing stale entries of other layers is open question 3.
+
+### 3.7 Joining the qualification store
 
 The `plugin` tables are the same DDL. A host joins the two on the triple, never on `plugin_id`:
 
@@ -237,13 +276,16 @@ typedef struct { const char *symbol, *name, *rule; long display_priority; int de
                  const char *const *ports; size_t nports; } omx_panel_store_group;
 typedef struct {
     const char *layer;                                   /* "user", "system" or "base" */
+    const char *stale_edit_layer;                        /* a layer whose edited entry was skipped as stale, or NULL */
     int edited; const char *made_by, *family, *fingerprint, *body;   /* body: the description as JSON */
     const char *group_outcome, *group_reason;            /* NULL: no verdict (a CLAP plugin) */
     const omx_panel_store_group *groups; size_t ngroups;
 } omx_panel_store_entry;
 
 /* 0 and *e filled, valid until the next call on s; OMX_PANEL_STORE_NO_ENTRY for a key no layer holds */
-int  omx_panel_store_get(omx_panel_store *s, const omx_panel_store_key *k, omx_panel_store_entry *e);
+/* source: the caller's omx_panel_store_source() of the plugin as installed (section 3.6); a stale entry is skipped */
+int  omx_panel_store_get(omx_panel_store *s, const omx_panel_store_key *k, const char *source, omx_panel_store_entry *e);
+int  omx_panel_store_source(const char *format, const char *path, char hex_out[65]);
 
 /* The writer: the layer of the effective uid (section 2), created from schema/panel.sql when absent. */
 int  omx_panel_store_writer_open(omx_panel_store **out, omx_panel_store_error *err);
@@ -355,7 +397,8 @@ plugin-hostd runs directly. The units (section 10) stay an optional batch conven
 ### What changes
 
 - **Groups from the store, else declared.** At an add, after `identify` (`src/descriptors.c:173-201`) gives the format,
-  the id and the hash, plugin-hostd reads the store entry of that key (`omx_panel_store_get`, its scope by its uid). A
+  the id and the hash, plugin-hostd reads the store entry of that key with the plugin's `source` as installed (`omx_panel_store_get`, its
+  scope by its uid; a stale entry is absent, section 3.6). A
   `grouped` verdict's groups replace the declared ones for the pages and the port-group transform; any other verdict, or
   no entry, keeps the declared `pg:group`. plugin-hostd never infers. This is plugin-hostd#179's proof through the
   store: a plugin whose groups only the store holds pages the same as jalv reads through the complement, and is red
@@ -369,8 +412,17 @@ plugin-hostd runs directly. The units (section 10) stay an optional batch conven
      and `plugin-qualify <uri>` measures one but writes only `--out` documents, no record and no layer
      (`packaging/plugin-qualify.1`).
   2. `omx-panel describe --plugin <target> --descriptor <the descriptor its scan wrote> --sha256 <hash> --store`.
-  One ask per key at a time (as `scan_of` keeps one scan per binary, `src/descriptors.c:234`); a key whose ask failed is
-  not asked again until the next add of a changed binary. Each child writes the layer it may (section 2).
+  One ask per key at a time (as `scan_of` keeps one scan per binary, `src/descriptors.c:234`). A key whose ask failed is
+  not asked again while plugin-hostd runs, until the next add of a changed binary; that memory is in the daemon only and
+  is not stored, so a restart of plugin-hostd asks once more at the key's next add. Each child writes the layer it may
+  (section 2).
+- **Figures measured under load.** The ask runs while the engine plays, at the lowest priority: the cost and latency
+  figures `plugin-qualify-sync --plugin` measures then are not a quiet machine's. The proposal: the single-plugin call
+  marks its record as measured with the engine running (a NEW word of the qualification domain, the record's run
+  condition, owner plugin-qualify), the planner reads the cost of such a record as `PLANNER_COST_UNKNOWN`, as it does
+  with no record today (`src/qualcost.h:20-22`), and uses its verdicts; the next scan with the engine idle replaces the
+  record whole. Whether figures are marked so, or the ask measures no figure at all and leaves them to the next idle
+  scan, is open question 10. Either way no figure measured under load is read as a quiet one.
 - **Meanwhile the plugin loads as today**: declared groups, the first-use pin, unknown cost. When the ask ends,
   plugin-hostd reads the entry again; the next `remote_pages` and `panel_get` answer from it, and a NEW event
   `description_changed <uri>` tells the clients, as `pin_changed_event` does for a pin (`src/supervisor.c:2182`).
@@ -450,6 +502,11 @@ Wayland backend; the base builder and `omx-panel-descriptions`; the NEW `panel` 
 `PANEL_GROUP_REASONS`, `PANEL_GROUP_RULES` (the words `tools/group-infer.mjs` and `tools/group-model.mjs` write today)
 and `PANEL_STORE_CODES`; the texts and tests of section 10.
 
+### plugin-hostd-protocol
+
+The `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed`, and the codes they
+answer, in its table, grammar and header (lane 7), before plugin-hostd answers them.
+
 ### plugin-hostd
 
 The store reader linked; groups from the store, else declared; the ask, `ask_unknown`, the `add` word, the
@@ -500,7 +557,8 @@ store holds; it reacts to `description_changed`.
 | `port_group.rule` | `panel`, NEW `PANEL_GROUP_RULES` | `tools/group-infer.mjs`, `tools/group-model.mjs` | omx-panel | the complement; a reader of a diagnosis |
 | `port_group` symbol, name, priority, `declared`; `port_group_member` | names | the inference, or the plugin for a declared node | omx-panel (the rules) | plugin-hostd, the complement, Zynthian |
 | store refusal codes | `panel`, NEW `PANEL_STORE_CODES` | the reader and the writer | omx-panel | every door |
-| `ask_unknown`, the `add` word, `description_get`, `description_changed` | plugin-hostd | plugin-hostd | plugin-hostd | the console, Zynthian |
+| `ask_unknown` (a plugin-hostd setting) | plugin-hostd | plugin-hostd | plugin-hostd | the person configuring it |
+| the `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed`, and the codes they answer (today's `-529` `DESCRIPTOR_ABSENT` and `-530` `DESCRIPTOR_PENDING`, `doc/protocol.md:843-844`, widened to the store, or new codes) | plugin-hostd-protocol (its table, grammar and header) | plugin-hostd | plugin-hostd-protocol | the console, Zynthian |
 | `plugin-qualify-sync --plugin` | plugin-qualify | plugin-qualify | plugin-qualify | plugin-hostd |
 | the qualification store's writers | plugin-db-qualification | plugin-qualify | plugin-db-qualification (spec), plugin-qualify (code) | |
 
@@ -514,7 +572,8 @@ the run in the PR body, then the commits that turn it green.
    system's and the base's description and groups (sabotage: take the base's groups under a user description); the
    system scope never opens the home; a fixture `XDG_DATA_HOME` is not read; files at two versions are
    `schema-mismatch`; an entry with a family not in `PANEL_FAMILIES` is `entry-invalid`; the base file unchanged after
-   reads; `json_valid` refuses a bad body. Precondition: the description schema owner agrees section 3.4.
+   reads; `json_valid` refuses a bad body; an entry whose `source` differs from the caller's, or a derived entry below the
+   reader's `rules`, is skipped and the next layer answers, and a stale edited entry is named, not deleted. Precondition: the description schema owner agrees section 3.4.
 2. **omx-panel: `describe --plugin --store`.** Proves: one plugin, inferred once, the layer by uid. Red: a fixture with two
    plugins writes only the named one's entry to the user layer when run unprivileged; a second run writes nothing; a key
    the base holds is printed, not derived; an LV2 fixture without `pg:group` gets the groups the complement infers and a
@@ -528,19 +587,24 @@ the run in the PR body, then the commits that turn it green.
    search path, `--plugin A` gives A a record, a pin and a descriptor and B none; a run as non-root writes no system path.
 6. **plugin-db-qualification: the writer clause of its section 2 and 6.** A spec change, with plugin-qualify's lane 5.
    Its red is lane 5's.
-7. **plugin-hostd: groups from the store, the ask.** Proves: no inference in plugin-hostd, the ask's limits. Red: an LV2
+7. **plugin-hostd-protocol: the ask's words.** Proves: the protocol states them before plugin-hostd answers them. The
+   `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed` in the table, the grammar
+   and the header, and the codes they answer (`-529` and `-530` widened to the store with their text, or new codes: the
+   protocol owner decides). Red: the protocol's own grammar and table tests with the new rows before the grammar holds
+   them.
+8. **plugin-hostd: groups from the store, the ask.** Proves: no inference in plugin-hostd, the ask's limits. Red: an LV2
    fixture with no `pg:group` and a store entry pages by the store's groups (red today: one page "Controls"); an add of
    an unknown plugin with stand-in `plugin-qualify-sync` and `omx-panel` on the path runs each once, with that target
    only, at nice 19, and never for a second plugin; with `plugin-qualify-sync` absent no child runs and the add answers
    as before; `ask_unknown 0` runs none, and `add ... ask` runs them; a known key runs none.
-8. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
+9. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
    bundles only. Red: for a fixture LV2 plugin with no UI, lilv lists a `ui:X11UI` on its URI from the generated bundle;
    the window opens under a headless Wayland compositor and under Xvfb and draws the stored description.
-9. **omx-plugins: `clap.gui`, `ui:X11UI` and the gate.** Proves: every plugin of the tree has both. Red: the gate over today's
+10. **omx-plugins: `clap.gui`, `ui:X11UI` and the gate.** Proves: every plugin of the tree has both. Red: the gate over today's
    tree fails on every plugin; the tree holds no generated `modgui.ttl`.
-10. **zynthian-ui: entries from the store.** Proves: Zynthian reads, does not derive. Red: with a fixture store whose
+11. **zynthian-ui: entries from the store.** Proves: Zynthian reads, does not derive. Red: with a fixture store whose
     description differs from what `describe` derives, the engine draws the store's.
-11. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
+12. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
 
 ## 14. Open questions
 
@@ -564,6 +628,14 @@ the run in the PR body, then the commits that turn it green.
    generators for that plugin (`omx-complement-sync --only <bundle>` exists, `docs/lv2-complement.md:9-11`), or are the
    toolkit files left to the next pass?
 7. **Before the qualification store's consumer switch.** Until then no program writes a qualification layer; the single
-   call writes `qualification_dir` as the scan does. Does lane 7 wait for the switch, or land with the records as today?
+   call writes `qualification_dir` as the scan does. Does lane 8 wait for the switch, or land with the records as today?
 8. **Skins.** A skin applies last in `describe` (`tools/describe.mjs:299-302`). Is a user's skin stored as a whole edited
    entry in the user layer, or kept apart and applied by each reader over the stored description?
+9. **A schema change and the layers.** Section 3.5 states what happens today: a new `user_version` makes every reader
+   refuse the whole store until the old layers are removed, and removing a user layer loses a person's edits. Carry the
+   layers across (a migration by the writer at the upgrade: a compatibility mechanism, the owner's to allow), keep the
+   edits apart from the derived entries so only derived ones are dropped, or refuse as written?
+10. **Figures measured under load.** plugin-hostd's ask runs `plugin-qualify-sync --plugin` while the engine plays.
+    Mark such a record (a new run-condition word; the planner reads its cost as unknown until an idle scan replaces
+    it, section 7), or let the ask measure no figure and write verdicts only, or defer the whole qualification of that
+    plugin to the next idle scan and run only the description?
