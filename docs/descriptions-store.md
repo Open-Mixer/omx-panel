@@ -9,7 +9,7 @@ branch). Anything else is marked as an assumption. The owner's answers to the qu
 A plugin's panel description and its inferred port groups are made today on each run of each consumer: the console's
 server cuts a description from a descriptor, Zynthian runs `omx-panel describe` per plugin, `omx-complement-sync` infers
 the groups of every LV2 bundle again, and plugin-hostd reads declared `pg:group` only. This spec keeps them as DATA, in
-three SQLite files keyed like the qualification store, so every consumer reads one answer per plugin binary, inference
+three SQLite files with the qualification store's key (the layers differ, section 2), so every consumer reads one answer per plugin binary, inference
 runs once per plugin and layer, and each host generates its toolkit files from the stored data.
 
 ## 1. Scope
@@ -54,8 +54,12 @@ runs once per plugin and layer, and each host generates its toolkit files from t
 precedence. `OMX_PANEL_STORE_SCOPE_SYSTEM` reads the system layer and the base and never the home. A process takes
 `SYSTEM` when its effective uid is 0 and `USER` otherwise, the rule plugin-hostd applies to its directories today
 (plugin-hostd `docs/guide.md:180-181`). The writer writes the layer of the same rule: the system layer as root, the user
-layer otherwise, never both and never the base. This differs from the qualification store, whose user scope reads the
-base and the home's layer only (its section 2): the owner decided this store merges three layers (section 4).
+layer otherwise, never both and never the base. Only the key is shared with the qualification store; its layers
+differ by design. A qualification record is a measurement, taken by the sync of one scope for the processes of that
+scope, so its reader takes the base and its own scope's layer only (its section 2) and never another scope's figures.
+A description is no measurement: it is a layout and the edits made to it, so an administrator's entry in the system
+layer reaches every user and a user's own entry sits above it. The owner decided this store merges three layers
+(section 4).
 
 **Pointing elsewhere** follows omx-contract `docs/runtime-data.md` and the qualification store's section 2:
 
