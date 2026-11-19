@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# tools/runtime-install-check.sh <omx-panel.rpm | omx-panel.deb>: the package as a runtime install takes it, in a
+# tools/runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>: the package as a runtime install
+# takes it, in a
 # clean Fedora or Debian container with the OpenMixer channel configured:
 #
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
@@ -13,8 +14,10 @@
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
 #   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link.
 #
-# The check judges only what omx-panel itself ships: every file of the package under /usr/share/omx-contract/contract.d
-# (its panel domain) is listed by the package's own file list and must be installed. A package that lists none fails.
+# The check judges only what omx-panel itself ships. The panel domain is the omx-panel-contract package's: that package,
+# the second argument, is installed after omx-panel, and every file of it under /usr/share/omx-contract/contract.d is
+# listed by its own file list and must be installed; a contract package that lists none fails, and a panel domain file in
+# omx-panel itself is a second copy and fails.
 # No descriptor of another package is demanded here: a package that ships its own descriptors checks them itself.
 #
 # A contract package the channel does not publish yet is named in $NOT_YET_PUBLISHED (a space list). The package is then
@@ -24,7 +27,8 @@
 # the stand-in ends with the publication. Any other dependency the channel cannot satisfy fails.
 set -euo pipefail
 
-PKG=${1:?usage: runtime-install-check.sh <omx-panel.rpm | omx-panel.deb>}
+PKG=${1:?usage: runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>}
+CPKG=${2:?usage: runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>}
 NOT_YET_PUBLISHED=${NOT_YET_PUBLISHED:-}
 CONTRACTDIR=/usr/share/omx-contract/contract.d
 fails=0
@@ -45,7 +49,8 @@ case "$PKG" in
     dnf -q makecache >/dev/null 2>&1
     reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' -e '^config(' | sed 's/ *$//')
     weak=$(rpm -qp --recommends "$PKG")
-    shipped() { rpm -qpl "$PKG" | grep -E '^/usr/share/omx-contract/contract\.d/' || true; }
+    shipped() { rpm -qpl "$CPKG" | grep -E '^/usr/share/omx-contract/contract\.d/' || true; }
+    in_panel() { rpm -qpl "$PKG" | grep -E '^/usr/share/omx-contract/contract\.d/panel/' || true; }
     ;;
   *.deb)
     FORMAT=deb
@@ -65,7 +70,8 @@ case "$PKG" in
     unpack() { (cd "$2" && apt-get download -q "$1" >/dev/null 2>&1 && dpkg-deb --fsys-tarfile ./*.deb | tar -x -C / "./usr/share/omx-contract/contract.d/3/$3"); }
     reqs=$(dpkg-deb -f "$PKG" Depends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$')
     weak=$(dpkg-deb -f "$PKG" Recommends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' || true)
-    shipped() { dpkg-deb -c "$PKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/' | grep -v '/$' || true; }
+    shipped() { dpkg-deb -c "$CPKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/' | grep -v '/$' || true; }
+    in_panel() { dpkg-deb -c "$PKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/panel/' | grep -v '/$' || true; }
     ;;
   *) echo "runtime-install-check: $PKG is neither an RPM nor a DEB" >&2; exit 2 ;;
 esac
@@ -114,8 +120,15 @@ echo "added: $(echo $added)"
 bad=$(echo "$added" | grep -E -- "$DEVEL" || true)
 [ -z "$bad" ] && pass "$FORMAT: the install adds no development package" || fail "$FORMAT: the install adds $(echo $bad)"
 
-# 2b. the contract files the panel ships are installed: the list is the package's own, so it cannot drift from what it installs
-[ -n "$shipped_files" ] || fail "$FORMAT: $PKG ships no contract file under $CONTRACTDIR"
+# 2b. the panel domain is omx-panel-contract's, installed after omx-panel: the list is that package's own, so it cannot
+# drift from what it installs; omx-panel itself ships no panel domain file (a second copy)
+copy=$(in_panel)
+[ -z "$copy" ] && pass "$FORMAT: omx-panel ships no panel domain file of its own" \
+  || fail "$FORMAT: omx-panel ships a second copy of the panel domain: $(echo $copy)"
+if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$CPKG" >/dev/null 2>&1
+else apt-get install -y -q --no-install-recommends "$CPKG" >/dev/null; fi
+pass "$FORMAT: $(basename "$CPKG") installed"
+[ -n "$shipped_files" ] || fail "$FORMAT: $CPKG ships no contract file under $CONTRACTDIR"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   if [ -e "$f" ]; then pass "$FORMAT: $f is installed"; else fail "$FORMAT: $f is in the package and not installed"; fi

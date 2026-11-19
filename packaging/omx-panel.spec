@@ -22,11 +22,11 @@ BuildRequires: nodejs >= 18
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: omx-contract-data >= 3.19.1
+BuildRequires: omx-contract-data >= 3.20.0
 BuildRequires: plugin-hostd-contract >= 0.20.7
-# %%check re-renders the panel domain's header with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
+# %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.19.1
+BuildRequires: omx-contract >= 3.20.0
 BuildRequires: omx-dsp-wasm >= 0.33.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
@@ -41,12 +41,15 @@ BuildRequires: systemd-rpm-macros
 # the renderer library (renderer/Makefile): cJSON, omx-contract's C headers and omx-dsp's meter view
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
-BuildRequires: omx-contract-devel >= 3.19.1
+# the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
+# %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
+BuildRequires: omx-contract-devel >= 3.20.0
+BuildRequires: libomx-domain-devel >= 3.20.0
 BuildRequires: pkgconfig(omxdsp) >= 0.32.3
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: omx-contract-data >= 3.19.1
+Requires: omx-contract-data >= 3.20.0
 Requires: plugin-hostd-contract >= 0.20.7
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
 Requires: omx-dsp-wasm >= 0.33.0
@@ -61,6 +64,16 @@ and carries the skin package schema, its validator and the directory skin
 packages are installed into. The omx-panel command runs each; the tools are
 under /usr/share/omx-panel for a build that calls them.
 Its documentation is on openmixer.org.
+
+%package contract
+Summary: The panel domain: the words a panel description speaks
+BuildArch: noarch
+
+%description contract
+The panel domain (contract.d/panel): the families, widgets, display kinds,
+display sources and placements a panel description speaks, with their
+translations, installed into the contract directory where omx-contract's
+loader reads it. A program that reads the panel words requires this package.
 
 %package -n omx-panel-render
 Summary: The omx-panel renderer, a library that draws a panel description into a pixel buffer
@@ -116,13 +129,14 @@ OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 %dir %{_sysconfdir}/omx/
 %config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/
-# the panel domain (docs/contract-domains.md): its document in the contract directory and its rendered header
-%{_datadir}/omx-contract/contract.d/panel/
-%{_includedir}/omxdomain/
 # the catalogs are the language packs' (one per listed language, each /usr/share/omx-panel/catalogs/<lang>.json)
 %exclude %{_datadir}/omx-panel/catalogs/*.json
 %dir %{_datadir}/omx/
 %dir %{_datadir}/omx/skins/
+
+%files contract
+%license LICENSE
+%{omx_contract_domain_dir}/panel/
 
 %files -n omx-panel-render
 %license LICENSE
