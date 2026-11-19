@@ -93,4 +93,9 @@ CREATE TRIGGER description_control_not_refused BEFORE INSERT ON description_cont
 WHEN (SELECT body IS NULL FROM description WHERE plugin_id = NEW.plugin_id)
 BEGIN SELECT RAISE(ABORT, 'description_control: no control under a refused entry'); END;
 
+-- the same rule from the other side: a description that has controls cannot become a refused entry
+CREATE TRIGGER description_control_not_refused_update BEFORE UPDATE OF body ON description
+WHEN NEW.body IS NULL AND EXISTS (SELECT 1 FROM description_control WHERE plugin_id = NEW.plugin_id)
+BEGIN SELECT RAISE(ABORT, 'description_control: no control under a refused entry'); END;
+
 PRAGMA user_version = 1;

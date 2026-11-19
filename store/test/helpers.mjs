@@ -15,7 +15,8 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const STORE = join(ROOT, 'store');
 export const CMD = process.env.OMX_PANEL_STORE_TEST_CMD || join(STORE, 'build', 'omx-panel-store');
 export const LIB = join(STORE, 'build', 'libomx-panel-store.so.0');
-const SCHEMA = readFileSync(join(ROOT, 'schema', 'panel.sql'), 'utf8');
+// a sabotage arm names a schema with one rule dropped
+const SCHEMA = readFileSync(process.env.OMX_PANEL_STORE_TEST_SCHEMA || join(ROOT, 'schema', 'panel.sql'), 'utf8');
 
 const { DatabaseSync } = await import('node:sqlite');
 export { DatabaseSync };
