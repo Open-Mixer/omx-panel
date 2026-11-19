@@ -5,3 +5,4 @@ dist/
 *.tgz
 .git-push-failures.log
 store/build/
+__pycache__/
