@@ -238,3 +238,44 @@ test('the unit runs after plugin-qualify-sync once enabled, under limits, and th
   assert.equal(existsSync(join(ROOT, 'etc/apt')), false, 'the Debian-only apt hook is gone: the sync follows the standard triggers');
   assert.doesNotMatch(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /apt/);
 });
+
+// -- the look: /etc/omx/modgui-look (MODGUI_LOOK_FILE) names the look of the bundles the sync writes (docs/modgui.md)
+const gainRig = () => {
+  const r = rig();
+  bundle(r.lv2, 'testgain', 'urn:test:gain', 'Test Gain');
+  descriptor(r.desc, 'testgain.json', 'urn:test:gain', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = d.controls.filter((c) => c.id === 'makeup');
+    d.plugin.name = 'Test Gain';
+  });
+  return r;
+};
+const styleOf = (r) => {
+  const [name] = r.bundles();
+  const dir = join(r.out, name, 'modgui');
+  return readFileSync(join(dir, readdirSync(dir).find((f) => f.startsWith('stylesheet-'))), 'utf8');
+};
+
+test('the look file names the look of the bundle: a changed look rewrites a fresh bundle, the unset look is the default', { skip }, () => {
+  const r = gainRig();
+  const file = join(r.dir, 'modgui-look');
+  const first = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file }); // no such file: the default look
+  assert.equal(first.status, 0, first.stdout + first.stderr);
+  const vintage = styleOf(r);
+  writeFileSync(file, 'console\n');
+  const second = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.equal(second.status, 0, second.stdout + second.stderr);
+  assert.match(second.stdout, /1 written, 0 up to date/, 'a bundle made under another look is not fresh');
+  assert.notEqual(styleOf(r), vintage, 'the console look is not the vintage one');
+  const third = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.match(third.stdout, /0 written, 1 up to date/, 'the same look is fresh');
+});
+
+test('a look the file names that omx-panel does not know is named in the summary and fails nothing', { skip }, () => {
+  const r = gainRig();
+  const file = join(r.dir, 'modgui-look');
+  writeFileSync(file, 'chrome\n');
+  const run = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /no look 'chrome'/);
+  assert.match(run.stdout, /1 could not be drawn/);
+});
