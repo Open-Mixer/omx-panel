@@ -88,4 +88,9 @@ CREATE TABLE port_group_member (
   FOREIGN KEY (plugin_id, group_symbol) REFERENCES port_group (plugin_id, symbol) ON DELETE CASCADE
 ) STRICT;
 
+-- A refused derivation has no description to draw, so no control rows (the one rule here the spec's DDL block lacks).
+CREATE TRIGGER description_control_not_refused BEFORE INSERT ON description_control
+WHEN (SELECT body IS NULL FROM description WHERE plugin_id = NEW.plugin_id)
+BEGIN SELECT RAISE(ABORT, 'description_control: no control under a refused entry'); END;
+
 PRAGMA user_version = 1;

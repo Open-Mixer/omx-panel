@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const STORE = join(ROOT, 'store');
-export const CMD = join(STORE, 'build', 'omx-panel-store');
+export const CMD = process.env.OMX_PANEL_STORE_TEST_CMD || join(STORE, 'build', 'omx-panel-store');
 export const LIB = join(STORE, 'build', 'libomx-panel-store.so.0');
 const SCHEMA = readFileSync(join(ROOT, 'schema', 'panel.sql'), 'utf8');
 
@@ -105,7 +105,7 @@ export const flags = (p, scope = 'user') => ['--scope', scope, '--base', p.base,
 
 /** The command, run with no inherited OMX_PANEL_STORE_* variable. */
 export function run(args, { input, env = {} } = {}) {
-  const clean = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('OMX_PANEL_STORE_') && k !== 'OMX_CONTRACT_PATH'));
+  const clean = Object.fromEntries(Object.entries(process.env).filter(([k]) => !(k.startsWith('OMX_PANEL_STORE_') && k !== 'OMX_PANEL_STORE_TEST_CMD') && k !== 'OMX_CONTRACT_PATH'));
   const r = spawnSync(CMD, args, { encoding: 'utf8', input, env: { ...clean, ...env }, timeout: 20000 });
   if (r.error) throw new Error(`${CMD} could not run: ${r.error.code}: build it with make store`);
   return r;

@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { DatabaseSync, entry, flags, get, grouped, hex, keyFlags, mkStore, panelVersion, places, run, snapshot } from './helpers.mjs';
+import { CMD, DatabaseSync, entry, flags, get, grouped, hex, keyFlags, mkStore, panelVersion, places, run, snapshot } from './helpers.mjs';
 
 /** The entry as `put` takes it on stdin: the key is in the flags. */
 const doc = (e) => { const { sha, format, uri, ...rest } = e; return { ...rest, controls: rest.controls.map((c) => ({ key: c.symbol, id: c.symbol, ...c })) }; };
@@ -181,4 +181,17 @@ test('check opens every layer and prints ok; a usage error exits 2', (t) => {
   assert.equal(run(['get', ...flags(p)]).status, 2, 'get with no key');
   assert.equal(run(['frobnicate']).status, 2);
   assert.equal(run(['get', ...flags(p), ...keyFlags(entry()).slice(0, 6)]).status, 2, 'no --source');
+});
+
+test('a reader waits out a short lock: the busy timeout is real, not zero', async (t) => {
+  const p = ready(t);
+  mkStore(layerOfUid(p), { layer: process.geteuid() === 0 ? 1 : 2, panel: panelVersion(p.contract) });
+  const db = new DatabaseSync(layerOfUid(p));
+  db.exec('BEGIN EXCLUSIVE');
+  t.after(() => { try { db.exec('ROLLBACK'); } catch { /* released */ } db.close(); });
+  setTimeout(() => db.exec('ROLLBACK'), 100);
+  const e = entry();
+  const c = spawn(CMD, ['get', ...flags(p), ...keyFlags(e), '--json'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const status = await new Promise((res) => c.on('exit', res));
+  assert.equal(status, 0);
 });
