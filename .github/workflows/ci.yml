@@ -270,7 +270,7 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -uo pipefail -c '
             deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
             list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
-            grep -q "node_modules/@openmixer/omx-dsp -> /usr/share/omx-dsp$" <<< "$list" || { echo "FAIL deb: no omx-dsp link"; exit 1; }
+            grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
             if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
             dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
             grep -q "omx-dsp-wasm (>= 0.33.0~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.33.0~) in: $dep"; exit 1; }
