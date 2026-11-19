@@ -204,7 +204,8 @@ omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION` installs a base a
   silently), renames it into place in one step, and leaves the derived entries to be derived again. The migration
   reads the one previous version only; it is written with the schema change that needs it and removed with the next.
 - **A reader** that opens files at different versions answers `schema-mismatch` as above until the writers have run.
-  It never reads an old layer itself.
+  It never reads an old layer itself. For plugin-hostd a store refused so is the same as no store: it pages by the declared
+  groups until the writers have run.
 
 ### 3.6 Stale entries: the input and the rules
 
