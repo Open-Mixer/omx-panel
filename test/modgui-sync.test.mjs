@@ -249,10 +249,10 @@ const gainRig = () => {
   });
   return r;
 };
-const styleOf = (r) => {
+const faceOf = (r) => {
   const [name] = r.bundles();
   const dir = join(r.out, name, 'modgui');
-  return readFileSync(join(dir, readdirSync(dir).find((f) => f.startsWith('stylesheet-'))), 'utf8');
+  return readdirSync(dir).filter((f) => /\.(css|html)$/.test(f)).sort().map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
 };
 
 test('the look file names the look of the bundle: a changed look rewrites a fresh bundle, the unset look is the default', { skip }, () => {
@@ -260,12 +260,12 @@ test('the look file names the look of the bundle: a changed look rewrites a fres
   const file = join(r.dir, 'modgui-look');
   const first = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file }); // no such file: the default look
   assert.equal(first.status, 0, first.stdout + first.stderr);
-  const vintage = styleOf(r);
+  const vintage = faceOf(r);
   writeFileSync(file, 'console\n');
   const second = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
   assert.equal(second.status, 0, second.stdout + second.stderr);
   assert.match(second.stdout, /1 written, 0 up to date/, 'a bundle made under another look is not fresh');
-  assert.notEqual(styleOf(r), vintage, 'the console look is not the vintage one');
+  assert.notEqual(faceOf(r), vintage, 'the console look is not the vintage one');
   const third = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
   assert.match(third.stdout, /0 written, 1 up to date/, 'the same look is fresh');
 });
