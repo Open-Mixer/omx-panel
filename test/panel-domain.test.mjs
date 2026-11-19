@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // The panel domain (docs/contract-domains.md): contract.d/panel/panel.json is the words a panel description speaks, and
-// include/omxdomain/panel_vocabulary.h is its render. The tools read the same words; the header is what the renderer of
-// omx-contract writes from the document (OMX_CONTRACT_CLI names its omx-contract.mjs; the test skips without it).
+// the tools read the same words.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -55,12 +53,4 @@ test('every word has its sentence in every language, nothing dropped: 6 catalogs
     assert.equal(c.lang, lang);
     assert.deepEqual(Object.keys(c.messages).sort(), keys, lang);
   }
-});
-
-// In CI the render must run: a missing omx-contract renderer is red there, never a skip.
-const CLI = process.env.OMX_CONTRACT_CLI;
-test('the committed header is the render of the document', { skip: CLI || process.env.CI ? false : 'OMX_CONTRACT_CLI (omx-contract.mjs) is not set' }, () => {
-  assert.ok(CLI, 'CI sets OMX_CONTRACT_CLI to the omx-contract renderer');
-  const r = spawnSync('node', [process.env.OMX_CONTRACT_CLI, 'render', '--target', 'c', '--package', 'panel', '--contract-dir', join(ROOT, 'contract.d'), '--out', join(ROOT, 'include/omxdomain'), '--check'], { encoding: 'utf8' });
-  assert.equal(r.status, 0, r.stdout + r.stderr);
 });

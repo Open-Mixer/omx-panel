@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // The runtime install check judges only what omx-panel itself ships. It names no plugin descriptor of another package
-// (omx-plugins/omx-delay was a check pointing up a layer), and it reads the panel's own contract files from the package's
-// file list, so a file the panel ships and the install lacks is red, and a list that ships nothing is red too.
+// (omx-plugins/omx-delay was a check pointing up a layer). The panel's own contract files are the omx-panel-contract
+// package's (the panel domain): the check takes that package beside omx-panel, installs it, and reads its files from that
+// package's file list, so a file it ships and the install lacks is red, a list that ships nothing is red, and a panel
+// domain file in omx-panel itself (a second copy) is red too.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -19,11 +21,24 @@ test('the runtime install check names no omx-plugins descriptor', () => {
   assert.doesNotMatch(read('.github/workflows/ci.yml'), /omx-plugins\//, 'the ci runtime-install job demands an omx-plugins descriptor');
 });
 
-test('the check reads the panel\'s shipped contract files from the package file list', () => {
+test('the check takes the contract package and reads the panel\'s contract files from its file list', () => {
   const s = script();
-  assert.match(s, /rpm -qpl "\$PKG"/, 'the RPM file list is not read from the package');
-  assert.match(s, /dpkg-deb -c "\$PKG"/, 'the DEB file list is not read from the package');
+  assert.match(s, /^CPKG=\$\{2:\?/m, 'the contract package is not the second, required argument');
+  assert.match(s, /rpm -qpl "\$CPKG"/, 'the RPM file list is not read from the contract package');
+  assert.match(s, /dpkg-deb -c "\$CPKG"/, 'the DEB file list is not read from the contract package');
   assert.match(s, /\/usr\/share\/omx-contract\/contract\.d\//, 'the shipped list is not limited to the contract directory');
+  assert.match(s, /install -y -q[^\n]*"\$CPKG"/, 'the contract package is not installed');
+});
+
+test('a panel domain file in omx-panel itself is a second copy and fails', () => {
+  assert.match(script(), /second copy/, 'no refusal of a panel domain file shipped by omx-panel itself');
+});
+
+test('ci copies the contract packages and hands both packages to the check', () => {
+  const ci = read('.github/workflows/ci.yml');
+  assert.match(ci, /omx-panel-contract-\[0-9\]\*\.rpm/, 'the RPM build does not keep omx-panel-contract');
+  assert.match(ci, /omx-panel-contract_\*_all\.deb/, 'the DEB build does not keep omx-panel-contract');
+  assert.match(ci, /runtime-install-check\.sh "\$PWD\/\$pkg" "\$PWD\/\$cpkg"/, 'the runtime install is not handed the contract package');
 });
 
 test('a shipped contract file that is not installed fails, and a package shipping none fails', () => {
