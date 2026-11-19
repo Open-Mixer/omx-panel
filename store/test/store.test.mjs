@@ -263,3 +263,18 @@ test('the verdict and its groups come back whole, ports in order of the group', 
   assert.equal(r.group_outcome, 'grouped');
   assert.deepEqual(r.groups.map((g) => [g.symbol, g.name, g.display_priority, g.rule, g.declared, g.ports]), [['b', 'B', 1, 'own', 1, ['p3']], ['a', 'A', 2, 'name', 0, ['p1', 'p2']]], 'by display priority, then symbol');
 });
+
+test('the DDL: no description_control row under a refused entry', (t) => {
+  const p = places(t);
+  mkStore(p.base, { layer: 0, panel: PV(p) });
+  const db = new DatabaseSync(p.base);
+  db.prepare('INSERT INTO plugin (sha256, format, uri) VALUES (?, ?, ?)').run(hex('c'), 'lv2', 'urn:x');
+  db.prepare("INSERT INTO plugin (sha256, format, uri) VALUES (?, 'lv2', 'urn:y')").run(hex('c'));
+  const d = db.prepare("INSERT INTO description VALUES (?, 0, 'x', 1, ?, 'eq', ?, ?, ?, ?)");
+  d.run(1, hex('1'), hex('f'), null, null, 'panel.describe.no-controls');
+  d.run(2, hex('1'), hex('f'), '{}', '{}', null);
+  const c = db.prepare("INSERT INTO description_control VALUES (?, 0, 's', 'k', 'i', NULL, 0)");
+  assert.throws(() => c.run(1), /refused/);
+  c.run(2);
+  db.close();
+});

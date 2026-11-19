@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import { DatabaseSync, entry, flags, get, grouped, hex, keyFlags, mkStore, panelVersion, places, run, snapshot } from './helpers.mjs';
 
 /** The entry as `put` takes it on stdin: the key is in the flags. */
-const doc = (e) => { const { sha, format, uri, ...rest } = e; return rest; };
+const doc = (e) => { const { sha, format, uri, ...rest } = e; return { ...rest, controls: rest.controls.map((c) => ({ key: c.symbol, id: c.symbol, ...c })) }; };
 const put = (p, e, over = {}) => run(['put', ...flags(p), '--sha256', e.sha, '--format', e.format, '--uri', e.uri], { input: JSON.stringify({ ...doc(e), ...over }) });
 const remove = (p, e) => run(['remove', ...flags(p), '--sha256', e.sha, '--format', e.format, '--uri', e.uri]);
 const layerOfUid = (p) => (process.geteuid() === 0 ? p.system : p.user);
@@ -102,6 +102,7 @@ test('an entry that is not an entry of the description schema is entry-invalid, 
     'rules below 1': { rules: 0 },
     'edited not 0 or 1': { edited: 2 },
     'a group port named twice': { verdict: grouped('name', { ports: ['x', 'x'] }) },
+    'a control under a refused entry': { refused: 'panel.describe.no-controls', body: null, groups: null, controls: [{ symbol: 'a', key: 'a', id: 'a' }] },
     'a control symbol twice': { controls: [{ symbol: 'a' }, { symbol: 'a' }] },
     'a verdict that is nothing-to-do but holds groups': { verdict: { ...grouped(), outcome: 'nothing-to-do', reason: 'fits-one-screen' } },
   };
