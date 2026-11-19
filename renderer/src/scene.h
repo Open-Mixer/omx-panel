@@ -25,7 +25,7 @@ omx_scene *omx_scene_from_look(const cJSON *root, const char *drawing, const cha
 void omx_scene_free(omx_scene *s);
 
 /** Paint the scene onto `c`, its origin at (ox, oy), `k` device px per scene unit, the pointer at `angle` degrees from straight up. */
-void omx_scene_paint(omx_canvas *c, const omx_scene *s, double ox, double oy, double k, double angle);
+void omx_scene_paint(omx_canvas *c, omx_scene *s, double ox, double oy, double k, double angle);
 
 /** The static-layer cache: every shape before the pointer's (those that do not turn with the frame's angle) is painted once over a
  * given backdrop and the box kept, with the backdrop it was made over; a later paint of the same place and scale over the same
