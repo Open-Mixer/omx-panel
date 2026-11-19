@@ -842,7 +842,7 @@ void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_
 /* The widgets, each one drawing over the backend's primitives: the same calls reach the CPU raster (a buffer) and
  * NanoVG (a window), so both draw one layout with one widget code. */
 
-static void draw_knob(const omx_draw *d, double cx, double cy, double r, double f, const palette *col, const omx_scene *scene, double knob_px) {
+static void draw_knob(const omx_draw *d, double cx, double cy, double r, double f, const palette *col, omx_scene *scene, double knob_px) {
   /* a look with a knob drawing wears it, scaled to this knob: the scene the MOD GUI's film strip is made from (tools/modgui-gen.mjs drawKnob) */
   if (scene && d->scene) {
     double k = (2 * r) / knob_px, half = omx_scene_size(scene) / 2;
@@ -1208,7 +1208,7 @@ static void cpu_fill_under(void *c, const double *xs, const double *ys, size_t n
                            const omx_rgb *stops, size_t nstops, double alpha) {
   omx_fill_under(c, xs, ys, n, base_y, y0, y1, t, stops, nstops, alpha);
 }
-static void cpu_scene(void *c, const omx_scene *sc, double ox, double oy, double k, double angle) { omx_scene_paint(c, sc, ox, oy, k, angle); }
+static void cpu_scene(void *c, omx_scene *sc, double ox, double oy, double k, double angle) { omx_scene_paint(c, sc, ox, oy, k, angle); }
 static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }

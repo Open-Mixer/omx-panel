@@ -39,11 +39,27 @@ typedef struct {
   rot_t rot[MAX_ROT];
 } shape_t;
 
+/* the static-layer cache: the knob's box as it stood before the static layers (back) and after them (patch), for one place and scale */
+#define CACHE_ENTRIES 16
+#define CACHE_BYTES (1u << 20) /* one entry (back and patch) above this is not cached: at most 16 MiB held */
+typedef struct {
+  int valid;
+  double ox, oy, k;
+  int x0, y0, bw, bh;
+  uint8_t *back, *patch;
+} cache_entry;
+
 struct omx_scene {
   double view_box;
   int ngrad, nshape;
   grad_t grad[MAX_GRAD];
   shape_t *shapes;
+  int first_dyn; /* the first shape that turns with the frame's angle; every one after it does too, or the cache is off (-1) */
+  int cache_on;
+  unsigned long hits, misses;
+  size_t cache_bytes;
+  int next;
+  cache_entry cache[CACHE_ENTRIES];
 };
 
 static void refuse(char *err, size_t n, const char *fmt, const char *a, const char *b, const char *c) {
@@ -215,6 +231,17 @@ omx_scene *omx_scene_from_look(const cJSON *root, const char *drawing, const cha
     }
     s->nshape++;
   }
+  /* the static layers are the shapes before the first one that turns with the frame's angle; they can be kept apart only when no
+   * static shape is painted after a turning one (a later layer would then lie over the pointer) */
+  s->first_dyn = s->nshape;
+  for (int i = 0; i < s->nshape; i++) {
+    int dyn = 0;
+    for (int r = 0; r < s->shapes[i].nrot; r++) dyn |= s->shapes[i].rot[r].frame;
+    if (dyn && s->first_dyn == s->nshape) s->first_dyn = i;
+    if (!dyn && s->shapes[i].fill != FILL_NONE && i > s->first_dyn) s->first_dyn = -1;
+    if (s->first_dyn < 0) break;
+  }
+  s->cache_on = 1;
   return s;
 bad:
   omx_scene_free(s);
@@ -223,6 +250,7 @@ bad:
 
 void omx_scene_free(omx_scene *s) {
   if (!s) return;
+  for (int i = 0; i < CACHE_ENTRIES; i++) { free(s->cache[i].back); free(s->cache[i].patch); }
   free(s->shapes);
   free(s);
 }
@@ -327,8 +355,8 @@ static void colour_at(const void *ctx, double sx, double sy, double out[4]) {
   out[3] = (g->alpha[0] + (g->alpha[1] - g->alpha[0]) * w) * s->opacity;
 }
 
-void omx_scene_paint(omx_canvas *c, const omx_scene *s, double ox, double oy, double k, double angle) {
-  for (int i = 0; i < s->nshape; i++) {
+static void paint_shapes(omx_canvas *c, const omx_scene *s, int from, int to, double ox, double oy, double k, double angle) {
+  for (int i = from; i < to; i++) {
     const shape_t *sh = &s->shapes[i];
     if (sh->fill == FILL_NONE) continue;
     pctx p = {s, sh, ox, oy, k, {0}, {0}};
@@ -355,4 +383,66 @@ void omx_scene_paint(omx_canvas *c, const omx_scene *s, double ox, double oy, do
     }
     omx_paint(c, fmax(lx - 1, ox), fmax(ly - 1, oy), fmin(hx + 1, ox + s->view_box * k), fmin(hy + 1, oy + s->view_box * k), inside, colour_at, &p);
   }
+}
+
+void omx_scene_set_cache(omx_scene *s, int on) { s->cache_on = on != 0; }
+unsigned long omx_scene_cache_hits(const omx_scene *s) { return s->hits; }
+unsigned long omx_scene_cache_misses(const omx_scene *s) { return s->misses; }
+
+/* copy the rows of the box between the canvas and a packed buffer */
+static void box_out(const omx_canvas *c, const cache_entry *e, uint8_t *dst) {
+  for (int y = 0; y < e->bh; y++) memcpy(dst + (size_t)y * e->bw * 4, c->px + (size_t)(e->y0 + y) * c->stride + (size_t)e->x0 * 4, (size_t)e->bw * 4);
+}
+static void box_in(omx_canvas *c, const cache_entry *e, const uint8_t *src) {
+  for (int y = 0; y < e->bh; y++) memcpy(c->px + (size_t)(e->y0 + y) * c->stride + (size_t)e->x0 * 4, src + (size_t)y * e->bw * 4, (size_t)e->bw * 4);
+}
+static int box_same(const omx_canvas *c, const cache_entry *e) {
+  for (int y = 0; y < e->bh; y++)
+    if (memcmp(e->back + (size_t)y * e->bw * 4, c->px + (size_t)(e->y0 + y) * c->stride + (size_t)e->x0 * 4, (size_t)e->bw * 4) != 0) return 0;
+  return 1;
+}
+
+void omx_scene_paint(omx_canvas *c, omx_scene *s, double ox, double oy, double k, double angle) {
+  int x0 = (int)floor(ox), y0 = (int)floor(oy);
+  int x1 = (int)ceil(ox + s->view_box * k), y1 = (int)ceil(oy + s->view_box * k);
+  int inside = x0 >= 0 && y0 >= 0 && x1 <= c->w && y1 <= c->h && x1 > x0 && y1 > y0;
+  size_t bytes = inside ? (size_t)(x1 - x0) * (y1 - y0) * 4 : 0;
+  if (!s->cache_on || s->first_dyn < 0 || s->first_dyn == 0 || !inside || bytes * 2 > CACHE_BYTES) {
+    paint_shapes(c, s, 0, s->nshape, ox, oy, k, angle);
+    return;
+  }
+  cache_entry *e = NULL, *same_place = NULL;
+  for (int i = 0; i < CACHE_ENTRIES; i++) {
+    cache_entry *q = &s->cache[i];
+    if (q->valid && q->ox == ox && q->oy == oy && q->k == k && q->x0 == x0 && q->y0 == y0 && q->bw == x1 - x0 && q->bh == y1 - y0) { same_place = q; break; }
+  }
+  if (same_place && box_same(c, same_place)) {
+    s->hits++;
+    box_in(c, same_place, same_place->patch);
+    paint_shapes(c, s, s->first_dyn, s->nshape, ox, oy, k, angle);
+    return;
+  }
+  /* a miss: take the entry of this place (its backdrop changed), or the next one in turn, sized for this box */
+  e = same_place;
+  if (!e) {
+    e = &s->cache[s->next];
+    s->next = (s->next + 1) % CACHE_ENTRIES;
+    if (e->valid) s->cache_bytes -= (size_t)e->bw * e->bh * 8;
+    free(e->back); free(e->patch);
+    e->back = malloc(bytes); e->patch = malloc(bytes);
+    e->valid = 0;
+    if (!e->back || !e->patch) {
+      free(e->back); free(e->patch); e->back = e->patch = NULL;
+      paint_shapes(c, s, 0, s->nshape, ox, oy, k, angle);
+      return;
+    }
+    e->ox = ox; e->oy = oy; e->k = k; e->x0 = x0; e->y0 = y0; e->bw = x1 - x0; e->bh = y1 - y0;
+    s->cache_bytes += bytes * 2;
+  }
+  s->misses++;
+  box_out(c, e, e->back);
+  paint_shapes(c, s, 0, s->first_dyn, ox, oy, k, angle);
+  box_out(c, e, e->patch);
+  e->valid = 1;
+  paint_shapes(c, s, s->first_dyn, s->nshape, ox, oy, k, angle);
 }

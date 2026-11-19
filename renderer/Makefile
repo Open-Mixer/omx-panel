@@ -91,7 +91,11 @@ $(B)/gesture_driver: test/gesture_driver.c $(B)/libomx-panel-render.a include/om
 $(B)/scene_driver: test/scene_driver.c $(B)/libomx-panel-render.a src/scene.h | $(B)
 	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
 
-check: all $(B)/gesture_driver $(B)/scene_driver
+# the cache's test driver (test/scene_cache_driver.c): the scene's static-layer cache against painting without it
+$(B)/scene_cache_driver: test/scene_cache_driver.c $(B)/libomx-panel-render.a src/scene.h | $(B)
+	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
+
+check: all $(B)/gesture_driver $(B)/scene_driver $(B)/scene_cache_driver
 	node --test test/*.test.mjs
 
 install: all
