@@ -44,6 +44,8 @@ Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.19.1
 Requires: plugin-hostd-contract >= 0.20.7
+# the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
+Requires: omx-dsp-wasm >= 0.33.0
 Provides: bundled(nodejs-ajv)
 
 %description
