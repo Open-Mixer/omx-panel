@@ -12,14 +12,14 @@ touchscreen. Neither touches an installed bundle.
 
 ## Install
 
-Fedora 44, x86_64 or aarch64:
+Fedora 45, x86_64:
 
 ```
 sudo dnf install https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
 sudo dnf install omx-panel
 ```
 
-Debian bookworm and trixie, amd64 or arm64 (also Raspberry Pi OS and Zynthian):
+Debian trixie, arm64 (also Raspberry Pi OS and Zynthian):
 
 ```
 cd /tmp && curl -fsSLO https://www.openmixer.org/deb/openmixer-release.deb && sudo apt install ./openmixer-release.deb
