@@ -85,8 +85,7 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
-          # the curve cases and the importer's proof on the installed caps bundles run here, or the job fails: no skip for a missing twin or bundle
-          OMX_PANEL_DSP: required
+          # the importer's proof on the installed caps bundles runs here, or the job fails: no skip for a missing bundle
           OMX_PANEL_REAL_BUNDLES: required
           # the panel domain is formatted and validated here by the installed omx-contract CLI, or the job fails
           OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs

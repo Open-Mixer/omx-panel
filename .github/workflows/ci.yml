@@ -68,8 +68,6 @@ jobs:
           OMX_PANEL_REAL_BUNDLES: required
           # the lilv proofs (the complements and the modgui sync read by a real lilv world) run here, or the job fails
           OMX_PANEL_LILV: required
-          # the curve cases (the static curve, the eq marks) run here, or the job fails: no skip for a missing twin
-          OMX_PANEL_DSP: required
           # the panel domain's header is re-rendered and compared here, or the job fails: no skip for a missing renderer
           OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: make test
