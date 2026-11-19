@@ -23,8 +23,8 @@ One C library, `libomx-panel-behaviour`, in this repository. It holds four areas
 
 ### What it is not
 
-- Drawing. Each toolkit draws: the web UI in Nuxt UI, Zynthian in Tk and PIL, this repository's renderer for the MOD GUI
-  face and a plugin window. The core draws nothing and returns no pixel, no colour and no geometry beyond what a gesture
+- Drawing. Each toolkit draws: the web UI in Nuxt UI, Zynthian in Tk and PIL (its plugin panels still come through this repository's renderer, until it draws them itself),
+  this repository's renderer for the MOD GUI face and a plugin window. The core draws nothing and returns no pixel, no colour and no geometry beyond what a gesture
   needs (a target's box and its travel in px, given by the caller).
 - Look tokens. `schema/look-roles.json` and `tools/look.json` stay with the drawing. The core reads none.
 - The protocol client. Sending a change to the host and reading it back stays where it is (the console's TypeScript
