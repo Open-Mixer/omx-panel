@@ -461,7 +461,9 @@ replaced by a link.
 set it writes MOD GUI, LV2 complement and LV2 desktop UI under `<dir>`, from the descriptions file's entries. The
 complement is written only where the installed TTL lacks groups, and never for our own plugins. It writes `keys.json`
 as above. It refuses a `sha256` that another package's `keys.json` already stages (the Zynthian set excludes
-omx-plugins' plugins), so no precedence between packages exists. Its bytes are deterministic (fixed order, no timestamps), so two runs over the same input give the same bytes.
+omx-plugins' plugins), so no precedence between packages exists. Run in the zynthian-sys build, `gui-stage` reads the
+INSTALLED `omx-plugins-gui` `keys.json` (`/usr/share/omx/gui/omx-plugins-gui/keys.json`) for that check; the omx-plugins
+build has no other package's record to read. Its bytes are deterministic (fixed order, no timestamps), so two runs over the same input give the same bytes.
 `--set` is the list of installed bundles (each by its path), `--descriptions` the base file, `--out` required. Flags
 only: no environment variable is read.
 
@@ -743,7 +745,7 @@ the run in the PR body, then the commits that turn it green.
 13. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
 14. **omx-panel: `omx-panel gui-stage`.** Proves: one deterministic builder. Red: two runs over the same set and base
     give the same bytes; `keys.json` holds the binary's SHA-256, format, uri, `source`, `rules` and file hashes;
-    a `sha256` staged by both packages is refused; the complement is omitted when the installed TTL has groups and for our own plugins
+    a `sha256` already in the installed `omx-plugins-gui` `keys.json` is refused when staging `omx-zynthian-gui`; the complement is omitted when the installed TTL has groups and for our own plugins
     (sabotage: writing it anyway turns that red); an input path that does not exist is refused by name.
 15. **omx-plugins: `omx-plugins-gui`.** Proves: the package stages generated MOD GUI and LV2 desktop UI, and no
     complement, and git holds none. Red: the package build runs `gui-stage` over its built bundles and the package lists
