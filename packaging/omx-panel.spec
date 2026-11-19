@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.13.8
+Version: 0.14.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -235,6 +235,14 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
+- Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0
+  and plugin-hostd-contract >= 0.20.7: floors only, no ceiling on our packages.
+- New: the panel domain ships alone in omx-panel-contract (contract.d/panel,
+  its catalogs); the MOD GUI generator reads curves from omx-dsp-wasm through a
+  link, with no copy; three MOD GUI looks; the utility panel family; the group
+  model on every surface; the gesture C reference in libomx-panel-render.
+
 * Fri Nov 13 2026 Pau Aliagas <linuxnow@gmail.com> - 0.13.8-1
 - Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
   hostd and plugin-hostd-contract >= 0.20.7 and below 0.21 (were 0.20.3):
