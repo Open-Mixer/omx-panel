@@ -28,7 +28,9 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { openDomainAt } from '@openmixer/omx-contract/domain-reader';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
 
@@ -57,6 +59,19 @@ export function contractDirs() {
 export function packageDir(pkg) {
   return contractDirs().map((d) => join(d, '3', pkg)).find((d) => existsSync(d));
 }
+
+/** This tree's contract directory (the source tree's and dist/'s `contract.d`, when there is one). */
+const TREE_CONTRACT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'contract.d');
+
+/** The directories the panel domain is opened from: `$OMX_CONTRACT_PATH`, this tree's `contract.d`, then omx-contract's
+ * `contractdir` (where omx-panel-contract installs it); the first that holds `panel/panel.json` wins. */
+export function panelDomainDirs() {
+  const env = (process.env.OMX_CONTRACT_PATH ?? '').split(':').filter(Boolean);
+  return [...env, TREE_CONTRACT_DIR, pkgVariable('omx-contract', 'contractdir') ?? DEFAULT_CONTRACTDIR];
+}
+
+/** The words of a panel domain item (`PANEL_FAMILIES` ...), in code order, opened with omx-contract's domain loader. */
+export const panelWords = (item) => openDomainAt(panelDomainDirs(), 'panel').words(item).map((w) => w.word);
 
 /** omx-contract's own data directory: its pkg-config `datadir`, else the default. */
 export function contractDataDir() {
@@ -255,4 +270,16 @@ export function installedDescriptorFiles() {
     }
   }
   return [...seen.values()].sort();
+}
+
+/** A panel domain item's words by title (`PANEL_GROUP_REASONS` -> `{ noControls: 'no-controls', ... }`): the codes and
+ * words the tools emit, read from the panel domain; a title the item lacks is refused by name, never undefined. */
+export function panelCodes(item) {
+  const words = Object.fromEntries(openDomainAt(panelDomainDirs(), 'panel').words(item).map((w) => [w.title, w.word]));
+  return new Proxy(Object.freeze(words), {
+    get(t, k) {
+      if (typeof k === 'string' && !(k in t)) throw new Error(`vocabulary: the panel domain's ${item} has no word titled ${k}`);
+      return t[k];
+    },
+  });
 }

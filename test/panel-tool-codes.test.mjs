@@ -45,13 +45,20 @@ test('(c) a contract directory whose words differ is what the tools emit', (t) =
   const doc = JSON.parse(readFileSync(f, 'utf8'));
   const s = doc.components.schemas;
   s.PANEL_GROUP_REASONS.oneOf.find((w) => w.const === 'no-controls').const = 'no-controls-sabotaged';
-  s.PANEL_DESCRIBE_CODES.oneOf.find((w) => w.const === `${D}easy-refused`).const = `${D}easy-sabotaged`;
+  s.PANEL_DESCRIBE_CODES.oneOf.find((w) => w.const === `${D}no-controls`).const = `${D}no-controls-sabotaged`;
   writeFileSync(f, JSON.stringify(doc, null, 2));
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', `
     const { inferGroups } = await import(${JSON.stringify(join(ROOT, 'dist/tools/group-infer.mjs'))});
-    const { EasyRefused } = await import(${JSON.stringify(join(ROOT, 'dist/tools/easy.mjs'))});
-    console.log(JSON.stringify([inferGroups({ ports: [] }).reason, new EasyRefused('x').code]));`],
+    const { NoControls } = await import(${JSON.stringify(join(ROOT, 'dist/tools/panel-description.mjs'))});
+    console.log(JSON.stringify([inferGroups({ ports: [] }).reason, new NoControls('x').code]));`],
   { encoding: 'utf8', env: { ...process.env, OMX_CONTRACT_PATH: dir } });
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(JSON.parse(r.stdout), ['no-controls-sabotaged', `${D}easy-sabotaged`], 'the tools still emit their own typed words');
+  assert.deepEqual(JSON.parse(r.stdout), ['no-controls-sabotaged', `${D}no-controls-sabotaged`], 'the tools still emit their own typed words');
+});
+
+test('(a) the modules a browser loads (easy.mjs, bars.mjs) read their codes from the rendered sheet, the domain\'s render', () => {
+  const sheet = JSON.parse(readFileSync(join(ROOT, 'schema/codes.json'), 'utf8')).codes;
+  assert.equal(new EasyRefused('x').code, sheet.panelEasyRefused.code);
+  assert.equal(BARS_CODES.few, sheet.panelBarsTooFew.code);
+  for (const f of ['tools/easy.mjs', 'tools/bars.mjs']) assert.doesNotMatch(readFileSync(join(ROOT, f), 'utf8'), /'panel\.describe\./, `${f} types a code`);
 });

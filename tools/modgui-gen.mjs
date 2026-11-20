@@ -34,7 +34,7 @@ import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
-import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
+import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { SLOPE_UNITS } from './vocabulary.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
@@ -353,7 +353,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   try {
     panel = panelOf(descriptor, shaped?.panel, wantEasyFirst);
   } catch (err) {
-    throw err.code === 'panel.describe.no-controls' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+    throw err instanceof NoControls ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
   const controls = descriptor.controls ?? [];
   // a control a declared rule governs carries it: the governing port's symbol and the mask of the values that show it,

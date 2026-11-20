@@ -24,7 +24,7 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data (>= 3.20.2~), plugin-hostd-contract (>= 0.20.7~), omx-dsp-wasm (>= 0.33.0~), omx-contract (>= 3.20.2~), ${misc:Depends}
+Depends: nodejs (>= 18), omx-contract-data (>= 3.20.2~), plugin-hostd-contract (>= 0.20.7~), omx-dsp-wasm (>= 0.33.0~), omx-contract (>= 3.20.2~), omx-panel-contract (>= ${source:Version}), ${misc:Depends}
 Recommends: plugin-hostd (>= 0.20.7~)
 # omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
 Suggests: python3-lilv

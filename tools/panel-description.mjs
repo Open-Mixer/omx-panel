@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
+import { meaningOfRole, panelCodes, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -175,12 +175,12 @@ const keyOfText = (s) => {
 /** A descriptor with no control to lay out (none stated, or every one hidden): there is no panel to make, and the
  * layout says so by code instead of answering an empty one. */
 export class NoControls extends Error {
-  code = 'panel.describe.no-controls';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelNoControls;
 }
 
 /** A declared family none of whose meanings the controls carry: a transient designer is no compressor (#138). */
 export class FamilyNotBacked extends Error {
-  code = 'panel.describe.family-not-backed';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelFamilyNotBacked;
 }
 
 /** A section's declared `bars: true` that fails a check of the bar rule, by the check's code (tools/bars.mjs). */

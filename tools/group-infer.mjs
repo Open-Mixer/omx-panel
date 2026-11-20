@@ -25,6 +25,12 @@
  *                                                rules found, for a diagnosis only.
  */
 
+import { panelCodes } from './vocabulary.mjs';
+
+/** The verdict's outcomes and reasons: the panel domain's PANEL_GROUP_OUTCOMES and PANEL_GROUP_REASONS, by title. */
+export const OUTCOME = panelCodes('PANEL_GROUP_OUTCOMES');
+export const REASON = panelCodes('PANEL_GROUP_REASONS');
+
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
 const LV2 = 'http://lv2plug.in/ns/lv2core#';
@@ -194,12 +200,12 @@ export function placeableControls(ports) {
 export function inferGroups(plugin, modgui = null, options = {}) {
   const controls = placeableControls(plugin.ports);
   const ownGroups = plugin.groups ?? {};
-  if (controls.length === 0) return { outcome: 'nothing-to-do', reason: 'no-controls' };
+  if (controls.length === 0) return { outcome: OUTCOME.nothingToDo, reason: REASON.noControls };
   if (controls.every((p) => p.group !== undefined && typeof ownGroups[p.group]?.symbol === 'string')) {
-    return { outcome: 'nothing-to-do', reason: 'own-groups-complete' };
+    return { outcome: OUTCOME.nothingToDo, reason: REASON.ownGroupsComplete };
   }
   if (controls.length <= SCREEN_SIZE && controls.every((p) => p.group === undefined)) {
-    return { outcome: 'nothing-to-do', reason: 'fits-one-screen' };
+    return { outcome: OUTCOME.nothingToDo, reason: REASON.fitsOneScreen };
   }
 
   const state = {
@@ -218,16 +224,16 @@ export function inferGroups(plugin, modgui = null, options = {}) {
   const unplaced = controls.filter((p) => !state.placedBy.has(p.symbol)).map((p) => p.symbol);
   const placedBy = Object.fromEntries([...state.placedBy].sort((a, b) => indexOf(state, a[0]) - indexOf(state, b[0])));
   const attempt = { groups, unplaced, placedBy };
-  const refuse = (reason, detail) => ({ outcome: 'no-confident-grouping', reason, detail, attempt });
+  const refuse = (reason, detail) => ({ outcome: OUTCOME.noConfidentGrouping, reason, detail, attempt });
 
-  if (unplaced.length > MAX_UNPLACED) return refuse('unplaced-controls', `${unplaced.length} control(s) in no group: ${unplaced.join(', ')}`);
-  if (groups.length < MIN_GROUPS) return refuse('too-few-groups', `${groups.length} group(s)`);
-  if (groups.length > MAX_GROUPS) return refuse('too-many-groups', `${groups.length} groups, at most ${MAX_GROUPS}`);
+  if (unplaced.length > MAX_UNPLACED) return refuse(REASON.unplacedControls, `${unplaced.length} control(s) in no group: ${unplaced.join(', ')}`);
+  if (groups.length < MIN_GROUPS) return refuse(REASON.tooFewGroups, `${groups.length} group(s)`);
+  if (groups.length > MAX_GROUPS) return refuse(REASON.tooManyGroups, `${groups.length} groups, at most ${MAX_GROUPS}`);
   const byIndex = controls.filter((p) => state.placedBy.get(p.symbol) === 5).length;
   if (byIndex > MAX_INDEX_RUN_SHARE * controls.length) {
-    return refuse('mostly-by-index', `${byIndex} of ${controls.length} controls placed only by a contiguous lv2:index run`);
+    return refuse(REASON.mostlyByIndex, `${byIndex} of ${controls.length} controls placed only by a contiguous lv2:index run`);
   }
-  return { outcome: 'grouped', groups, placedBy };
+  return { outcome: OUTCOME.grouped, groups, placedBy };
 }
 
 const indexOf = (state, symbol) => state.controls.find((p) => p.symbol === symbol)?.index ?? Infinity;
