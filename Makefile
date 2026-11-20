@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
+.PHONY: all build check test spdx public-sources look copies gestures install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
 
 all: build
 
@@ -33,7 +33,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
-check: build spdx public-sources look copies
+check: build spdx public-sources look copies gestures
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -55,6 +55,10 @@ public-sources:
 look:
 	node tools/look.mjs --check
 	node tools/look-pin.mjs --self
+
+# schema/gestures.json is what the gestures domain gives (docs/contract-domains.md), byte for byte.
+gestures:
+	node tools/gestures-render.mjs --check
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
@@ -100,10 +104,11 @@ install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
 
-# The panel domain (docs/contract-domains.md), as it is, by omx-contract's one domain installer: the loader reads
-# $(CONTRACTDIR)/panel/panel.json and its catalogs/.
+# The panel and gestures domains (docs/contract-domains.md), as they are, by omx-contract's one domain installer: the loader
+# reads $(CONTRACTDIR)/panel/panel.json and its catalogs/, and $(CONTRACTDIR)/gestures/gestures.json.
 install-contract:
 	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/gestures "$(DESTDIR)$(CONTRACTDIR)"
 
 install: build install-contract
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins

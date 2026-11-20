@@ -26,7 +26,7 @@ BuildRequires: omx-contract-data >= 3.20.2
 BuildRequires: plugin-hostd-contract >= 0.20.7
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.20.2
+BuildRequires: omx-contract >= 3.21.0
 BuildRequires: omx-dsp-wasm >= 0.33.0
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
@@ -46,8 +46,8 @@ BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
 # %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
-BuildRequires: omx-contract-devel >= 3.20.2
-BuildRequires: libomx-domain-devel >= 3.20.0
+BuildRequires: omx-contract-devel >= 3.21.0
+BuildRequires: libomx-domain-devel >= 3.21.0
 BuildRequires: pkgconfig(omxdsp) >= 0.32.3
 # the descriptions store (store/Makefile): SQLite at its floor (STRICT, json_valid), cJSON and libomx-domain above
 BuildRequires: sqlite-devel >= 3.38.0
@@ -77,8 +77,10 @@ BuildArch: noarch
 %description contract
 The panel domain (contract.d/panel): the families, widgets, display kinds,
 display sources and placements a panel description speaks, with their
-translations, installed into the contract directory where omx-contract's
-loader reads it. A program that reads the panel words requires this package.
+translations, and the gestures domain (contract.d/gestures): the gesture
+words, timings, thresholds, table and codes every surface moves a panel's
+controls with, installed into the contract directory where omx-contract's
+loader reads them. A program that reads these words requires this package.
 
 %package -n omx-panel-render
 Summary: The omx-panel renderer, a library that draws a panel description into a pixel buffer
@@ -168,6 +170,7 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 
 %files contract
 %license LICENSE
+%{omx_contract_domain_dir}/gestures/
 %{omx_contract_domain_dir}/panel/
 
 %files -n omx-panel-render
