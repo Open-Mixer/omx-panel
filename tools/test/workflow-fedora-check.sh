@@ -60,11 +60,13 @@ if [ "${1:-}" = "--self-test" ]; then
   - 44
   - 45'
 	plant not144 0 'fedora: [45, 144]'
+	plant rpm44 1 "rpm-releases: '[\"44\", \"45\"]'"
+	plant rpm45 0 "rpm-releases: '[\"45\"]'"
 	mkdir -p "$t/nodir"
 	rc=0; "$self" "$t/nodir" >/dev/null 2>&1 || rc=$?
 	if [ "$rc" != 2 ]; then echo "self-test FAIL missing dir: rc $rc, want 2" >&2; fails=$((fails + 1)); fi
 	if [ "$fails" != 0 ]; then echo "workflow-fedora-check: self-test $fails red" >&2; exit 1; fi
-	echo "workflow-fedora-check: self-test green (10 planted trees)"
+	echo "workflow-fedora-check: self-test green (12 planted trees)"
 	exit 0
 fi
 
