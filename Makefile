@@ -20,7 +20,7 @@ UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check
+.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
 
 all: build
 
@@ -86,6 +86,12 @@ store:
 store-check: build store
 	$(MAKE) -C store check
 	python3 store/test/door.py
+
+# The packages ship the store (omx-panel-store and -devel; libomx-panel-store0, libomx-panel-store-dev and the command's
+# omx-panel-store): store/'s install, all of it: the library, its .so link, header and pkg-config file, the command and
+# its page, and the DDL as $(DATADIR)/omx-panel-store/panel.sql. Never the static library: it is not installed.
+install-store:
+	$(MAKE) -C store install PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR) MANDIR=$(MANDIR)
 
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)

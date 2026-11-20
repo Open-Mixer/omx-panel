@@ -11,6 +11,7 @@ Build-Depends: debhelper-compat (= 13),
                omx-contract-data (>= 3.20.2~) <!nocheck>,
                plugin-hostd-contract (>= 0.20.7~) <!nocheck>,
                libcjson-dev,
+               libsqlite3-dev (>= 3.38.0~),
                libomx-contract-dev (>= 3.20.2~),
                omx-contract (>= 3.20.2~),
                libomx-domain-dev (>= 3.20.0~),
@@ -58,6 +59,36 @@ Description: omx-panel renderer, development files
  The headers omx_panel_render.h and omx_panel_gesture.h, the
  libomx-panel-render.so link and the omx-panel-render pkg-config file, to
  build against the omx-panel renderer and its gesture reference.
+
+Package: libomx-panel-store0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
+Description: descriptions store of panel descriptions, the library
+ libomx-panel-store.so.0 reads and writes the descriptions store: the base,
+ the system layer and the user layer of panel.sqlite, merged in that order of
+ precedence, its words checked against the panel domain.
+
+Package: libomx-panel-store-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libomx-panel-store0 (= ${binary:Version}), libsqlite3-dev (>= 3.38.0~), libcjson-dev, libomx-domain-dev (>= 3.20.0~), ${misc:Depends}
+Description: descriptions store of panel descriptions, development files
+ The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
+ omx-panel-store pkg-config file and the store's DDL (panel.sql), to build
+ against the descriptions store.
+
+Package: omx-panel-store
+Architecture: any
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
+Description: descriptions store of panel descriptions, the command
+ The command omx-panel-store gets, puts and removes an entry of the
+ descriptions store (the base, the system layer and the user layer of
+ panel.sqlite) and checks the layers; omx-panel's tools and the console's
+ server call it.
 
 Package: omx-panel-contract
 Architecture: all

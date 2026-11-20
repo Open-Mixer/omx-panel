@@ -270,11 +270,12 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.20.2" "omx-dsp-devel >= 0.32.3"
+              "sqlite-devel >= 3.38.0" "omx-contract-devel >= 3.20.2" "libomx-domain-devel >= 3.20.0" "omx-dsp-devel >= 0.32.3"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm out/'
+              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
+              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
       - name: The renderer's library in its RPMs
         run: |
@@ -292,6 +293,13 @@ jobs:
             req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
             grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
             echo "PASS rpm: omx-dsp linked, not copied, required"'
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its RPMs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/store-package-check.sh --self-test out/omx-panel-store-[0-9]*.rpm out/omx-panel-store-devel-[0-9]*.rpm'
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-rpm
@@ -327,10 +335,11 @@ jobs:
             curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
             apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
             apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
-              libcjson-dev libomx-contract-dev libomxdsp-dev
+              libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb /w/out/'
+            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
+              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /w/out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
@@ -338,6 +347,13 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
             tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its DEBs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
+            tools/store-package-check.sh --self-test out/libomx-panel-store0_*.deb out/libomx-panel-store-dev_*.deb out/omx-panel-store_*.deb'
       # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
       - name: No copy of omx-dsp in the packages
         run: |
@@ -411,8 +427,8 @@ jobs:
           apt-get install -y -qq --no-install-recommends ca-certificates git dpkg-dev debhelper build-essential lintian nodejs npm make
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - name: The renderer's build dependencies
-        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libomx-contract-dev libomxdsp-dev
+      - name: The renderer's and the store's build dependencies
+        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
       - uses: actions/checkout@v4
       - name: Build the DEB and lint it
         run: tools/deb-lint-check.sh "$PWD/out-deb"
