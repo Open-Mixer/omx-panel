@@ -101,7 +101,7 @@ build against the omx-panel renderer and its gesture reference.
 %package -n omx-panel-store
 Summary: The descriptions store of panel descriptions: its library and its command
 # the store checks its words against the panel domain at open and at put
-Requires: omx-panel-contract = %{version}-%{release}
+Requires: omx-panel-contract >= %{version}-%{release}
 
 %description -n omx-panel-store
 libomx-panel-store.so.0 reads and writes the descriptions store: the base, the

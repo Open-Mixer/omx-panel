@@ -64,7 +64,7 @@ Package: libomx-panel-store0
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
 Description: descriptions store of panel descriptions, the library
  libomx-panel-store.so.0 reads and writes the descriptions store: the base,
  the system layer and the user layer of panel.sqlite, merged in that order of
@@ -83,7 +83,7 @@ Description: descriptions store of panel descriptions, development files
 Package: omx-panel-store
 Architecture: any
 Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
 Description: descriptions store of panel descriptions, the command
  The command omx-panel-store gets, puts and removes an entry of the
  descriptions store (the base, the system layer and the user layer of
