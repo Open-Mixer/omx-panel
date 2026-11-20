@@ -21,16 +21,22 @@ const TOOL = join(ROOT, 'tools/codes-render.mjs');
 const LANGS = ['ca', 'de', 'es', 'fr', 'it', 'pt'];
 const hash = (v) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
 
-/** sha256 of JSON.stringify(JSON.parse(file)) at origin/main 3cace58, before the move. */
+/** At origin/main 3cace58, before the move: the sheet, sha256 of JSON.stringify(JSON.parse(file)); each catalog, sha256 of
+ * its kind, lang, owner and messages with the keys sorted (the five hand catalogs other than ca carried a dangling
+ * "$schema", ../schema/omx-contract.schema.json, and their messages in alphabetical order: the render writes the sheet's
+ * order and no $schema; every key and entry is the same). */
 const GOLDEN = {
   'schema/codes.json': 'ce59aa0eefe7b8ef2b4ac5902b2489a3199a9d2910efac9f45d6ef52211b5654',
-  'catalogs/ca.json': '5f5ee5a725934cae53ee65d47fab6b15f393af30c7b7549f5ad1b5c9836cae93',
-  'catalogs/de.json': '3ec914fd0a118d0584786fef6df92b88cba5e0b96c30716fb9ee84f2528f3163',
-  'catalogs/es.json': '0b849732886043160da62e728f8b25b2a591092dd51183e962ba5d2cb5d094f6',
-  'catalogs/fr.json': '83053998eecb52d7278295c67d4be2ed33b53028c49320c63c4066e2f03aac53',
-  'catalogs/it.json': 'a4be404fa5401e2d7466ce2fba35dfe4f089d09e0c1edd0d5b5ce59ebcd23c5b',
-  'catalogs/pt.json': '36ad804a404297def9dffa41ea086514f4a0f7b674609fa994992c4673c9aefa',
+  'catalogs/ca.json': 'a2417bf755047187e892571d83443c29726929080598e84ab316cdffb94a7241',
+  'catalogs/de.json': 'acf6b6dac3b87d82cf29419e0c023caab7b746f1b8affc16956d1f5c623f0ef1',
+  'catalogs/es.json': '1f86f3ba2d3d62b346a7ab6c2f909f071bcfd0b23eefc3c30bcd72b007b43ce4',
+  'catalogs/fr.json': '816d590088a7e66d6e2fcf1f1bfaefe7598679a383276ee7a9978d6a8750732a',
+  'catalogs/it.json': 'd878a12812e110373249a0212cc7042101e9ce90909f59ffe5cd4fbc8ad75d6e',
+  'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
+const canonical = (f, j) => (f.startsWith('catalogs/')
+  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
+  : j);
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 
@@ -41,9 +47,9 @@ test('(a) the domain holds the 32 codes: 5 skin, 11 MOD GUI (the skin\'s MOD GUI
   assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 16);
 });
 
-test('(a) the render from the domain is, as JSON, the sheet and the six catalogs before the move', async () => {
+test('(a) the render from the domain is the sheet and the six catalogs\' messages before the move', async () => {
   const files = await render();
-  for (const [f, h] of Object.entries(GOLDEN)) assert.equal(hash(JSON.parse(files[f])), h, f);
+  for (const [f, h] of Object.entries(GOLDEN)) assert.equal(hash(canonical(f, JSON.parse(files[f]))), h, f);
 });
 
 test('(a) the files the readers open are the render, byte for byte (codes-render --check)', () => {

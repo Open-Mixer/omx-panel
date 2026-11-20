@@ -33,6 +33,13 @@ Its words and codes are those omx-contract main held in `data/panel.json` at b2e
 switches on a panel word, so the domain has no codes header and no rendered vocabulary: a consumer opens it through the
 loader, `omx_domain_open("panel", "1.0.0", ...)`.
 
+The refusal codes omx-panel emits are the domain's too (sorting pass row V3, domain 1.2.0): `PANEL_SKIN_CODES` (5),
+`PANEL_MODGUI_CODES` (the importer's 10 and `panel.skin.modgui-licence`) and `PANEL_DESCRIBE_CODES` (16), each word's
+`title` its key, `x-text` its English sentence and `x-args` its placeholders (omx-contract >= 3.21.0 reads `x-args`), their
+translations in the domain's catalogs. `schema/codes.json` and `catalogs/<lang>.json`, which the surfaces, the console
+(`@openmixer/omx-panel/codes.json`, `./catalogs/*.json`) and `tools/catalogs-gate.sh` read, are rendered from them by
+`tools/codes-render.mjs` (`make codes` checks them byte for byte); neither is written by hand.
+
 The translations of the words are `contract.d/panel/catalogs/<lang>.json` (six languages, one entry per word, moved from omx-contract's catalogs with nothing dropped). The family word is validated by `schema/skin-package.schema.json` `$defs.family` (a plain string in omx-contract's override schema), held equal to the domain's `PANEL_FAMILIES` by `test/panel-domain.test.mjs`. `make install` (its `install-contract` step)
 installs the domain as it is with omx-contract's domain installer (`install-contract-dir.sh --domain`) at
 `$(CONTRACTDIR)/panel/`, and the `omx-panel-contract` package ships it alone (noarch; a program that reads the panel
