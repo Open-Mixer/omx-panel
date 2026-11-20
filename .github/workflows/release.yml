@@ -7,7 +7,7 @@ name: release
 # GitHub release. The npm package is published by publish.yml (npmjs.com trusts that file by name, with no
 # environment), on the same tag.
 
-# A manual run with staged on (never a tag) builds fc44 x86_64 and trixie amd64 only, against the staging channel, and
+# A manual run with staged on (never a tag) builds fc45 x86_64 and trixie amd64 only, against the staging channel, and
 # publishes them, signed, to the staging channel (staging/rpm and staging/deb of the channel repository), where the
 # next layer of the release chain finds them by adding the staging channel beside the real one. Nothing reaches the
 # real channel, and the real release still publishes once from the v<version> tag (Open-Mixer/.github build-rpm.yml
@@ -27,7 +27,7 @@ on:
         type: boolean
         default: false
       staged:
-        description: 'Build fc44 x86_64 and trixie amd64 only and publish them to the staging channel for the next layer; publishes nothing to the real channel'
+        description: 'Build fc45 x86_64 and trixie amd64 only and publish them to the staging channel for the next layer; publishes nothing to the real channel'
         type: boolean
         default: false
 
@@ -45,7 +45,7 @@ jobs:
     permissions:
       contents: read
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -106,9 +106,9 @@ jobs:
     with:
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      # omx-panel, the renderer's shared library with its development files, and the panel domain (each installed by the
-      # install checks)
-      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-contract
+      # omx-panel, the renderer's shared library with its development files, the descriptions store (its library and
+      # command, and its development files) and the panel domain (each installed by the install checks)
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
@@ -124,7 +124,7 @@ jobs:
     with:
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev omx-panel-contract
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

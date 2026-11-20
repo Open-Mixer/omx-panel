@@ -24,7 +24,7 @@ jobs:
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -98,7 +98,7 @@ jobs:
   renderer:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON and node
         run: |
@@ -130,7 +130,7 @@ jobs:
   store:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, SQLite, cJSON, node and python
         run: |
@@ -152,7 +152,7 @@ jobs:
   meter-surfaces:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
         run: |
@@ -194,7 +194,7 @@ jobs:
   renderer-window:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, OpenGL and Xvfb
         run: |
@@ -224,17 +224,38 @@ jobs:
           OMX_PANEL_WINDOW_REQUIRED: '1'
         run: xvfb-run -a -s '-screen 0 1280x1024x24' make renderer-check WINDOW=1
 
+  # The cells the DEB jobs and the runtime install run: check-matrix's answer (ruling D25), each cell with the runner of
+  # its own architecture. A Debian container of one architecture cannot install the packages of another: apt picked
+  # libomxdsp-dev arm64 on an amd64 runner and dpkg refused it (ci 44563540081). While OMX_RELEASE_MATRIX is quick that
+  # is trixie arm64 and fc45 x86_64; full adds trixie amd64 and bookworm.
+  checks:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    outputs:
+      deb: ${{ steps.m.outputs.deb }}
+      deb-count: ${{ steps.m.outputs.deb-count }}
+      cells: ${{ steps.m.outputs.cells }}
+      count: ${{ steps.m.outputs.count }}
+    steps:
+      - id: m
+        uses: Open-Mixer/.github/.github/actions/check-matrix@openmixer-v1
+        with:
+          wave: ${{ vars.OMX_RELEASE_MATRIX }}
+          rpm-releases: '["45"]'
+          rpm-arches: '["x86_64"]'
+          deb-releases: ${{ vars.OMX_RELEASE_MATRIX == 'full' && '["bookworm", "trixie"]' || '["trixie"]' }}
+          deb-arches: '["amd64", "arm64"]'
+          x86-runner: ${{ vars.OMX_RUNNER || 'ubuntu-latest' }}
+
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.
   packages:
-    name: build the RPM and the DEB
+    name: build the RPM
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # ruling D25: the DEB builds on the oldest suite of the release set, bookworm only when OMX_RELEASE_MATRIX is full
-    env:
-      DEB_SUITE: ${{ vars.OMX_RELEASE_MATRIX == 'full' && 'bookworm' || 'trixie' }}
     steps:
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
@@ -244,42 +265,27 @@ jobs:
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
       # reads are the test job's
-      - name: The RPM (fedora:44)
+      - name: The RPM (fedora:45)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.20.2" "omx-dsp-devel >= 0.32.3"
+              "sqlite-devel >= 3.38.0" "omx-contract-devel >= 3.20.2" "libomx-domain-devel >= 3.20.0" "omx-dsp-devel >= 0.32.3"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm out/'
-      - name: The DEB (the release set's oldest suite)
+              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
+              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm out/'
+      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
+      - name: The renderer's library in its RPMs
         run: |
-          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
-            curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
-            apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
-            apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
-              libcjson-dev libomx-contract-dev libomxdsp-dev
-            mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
-            DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb /w/out/'
-      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
-      # on omx-panel, which does not (tools/render-package-check.sh)
-      - name: The renderer's library in its packages
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q cpio binutils
             tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
-          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
-            tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
-      # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
-      - name: No copy of omx-dsp in the packages
+      # omx-dsp is omx-dsp-wasm's: the RPM carries the one link node_modules/@openmixer/omx-dsp and no file under it
+      - name: No copy of omx-dsp in the RPM
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -uo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -uo pipefail -c '
             rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
             list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
             grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
@@ -287,7 +293,71 @@ jobs:
             req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
             grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
             echo "PASS rpm: omx-dsp linked, not copied, required"'
-          docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -uo pipefail -c '
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its RPMs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/store-package-check.sh --self-test out/omx-panel-store-[0-9]*.rpm out/omx-panel-store-devel-[0-9]*.rpm'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omx-panel-rpm
+          path: out/
+          if-no-files-found: error
+          retention-days: 7
+
+  # The DEB of each check-matrix cell, built in that cell's Debian image on the runner of its architecture.
+  packages-deb:
+    name: build the DEB (${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    env:
+      IMAGE: ${{ matrix.cell.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The source tarball the spec names
+        run: |
+          v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
+          mkdir -p src out
+          git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
+      - name: The DEB (the cell's suite)
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
+            curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
+            apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
+            apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
+              libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
+            mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
+            DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
+            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
+              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /w/out/'
+      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
+      # on omx-panel, which does not (tools/render-package-check.sh)
+      - name: The renderer's library in its packages
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
+            tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its DEBs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
+            tools/store-package-check.sh --self-test out/libomx-panel-store0_*.deb out/libomx-panel-store-dev_*.deb out/omx-panel-store_*.deb'
+      # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
+      - name: No copy of omx-dsp in the packages
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -uo pipefail -c '
             deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
             list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
             grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
@@ -297,42 +367,59 @@ jobs:
             echo "PASS deb: omx-dsp linked, not copied, a dependency"'
       - uses: actions/upload-artifact@v4
         with:
-          name: omx-panel-packages
+          name: omx-panel-deb-${{ matrix.cell.suite }}-${{ matrix.cell.arch }}
           path: out/
           if-no-files-found: error
           retention-days: 7
 
   # A distribution build has no registry: the vendored tarball builds with --network=none, and the plain archive does not.
   offline:
-    name: build with no network (${{ matrix.kind }})
+    name: build with no network (rpm)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        kind: [rpm, deb]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: tools/offline-build-check.sh ${{ matrix.kind }}
+      - run: tools/offline-build-check.sh rpm
 
-  # The DEB as the release builds it: built from the checkout in a Debian container of each release and linted with
-  # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
-  deb-lint:
-    name: build and lint the DEB (${{ matrix.suite }})
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+  # the same for the DEB, in each check-matrix cell's Debian image on the runner of its architecture
+  offline-deb:
+    name: build with no network (deb ${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        # ruling D25: the release set's suites, bookworm only when OMX_RELEASE_MATRIX is full
-        suite: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["bookworm", "trixie"]' || '["trixie"]') }}
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: tools/offline-build-check.sh deb
+        env:
+          IMAGE: ${{ matrix.cell.image }}
+
+  # The DEB as the release builds it: built from the checkout in a Debian container of each check-matrix cell and linted
+  # with lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without
+  # packages (#85).
+  deb-lint:
+    name: build and lint the DEB (${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
     container:
-      image: debian:${{ matrix.suite }}
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install the build tools
         run: |
@@ -340,29 +427,30 @@ jobs:
           apt-get install -y -qq --no-install-recommends ca-certificates git dpkg-dev debhelper build-essential lintian nodejs npm make
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - name: The renderer's build dependencies
-        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libomx-contract-dev libomxdsp-dev
+      - name: The renderer's and the store's build dependencies
+        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
       - uses: actions/checkout@v4
       - name: Build the DEB and lint it
         run: tools/deb-lint-check.sh "$PWD/out-deb"
 
+  # each check-matrix cell (the rpm and the deb ones) installs the package built for it, on the runner of its architecture
   runtime-install:
-    name: runtime install (${{ matrix.image }})
-    needs: packages
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    name: runtime install (${{ matrix.cell.image }} ${{ matrix.cell.arch }})
+    needs: [checks, packages, packages-deb]
+    if: needs.checks.outputs.count != '0'
+    runs-on: ${{ matrix.cell.runner }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        # ruling D25: the release set's cells; bookworm (a full cell) only when OMX_RELEASE_MATRIX is full
-        image: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["fedora:44", "debian:bookworm", "debian:trixie"]' || '["fedora:44", "debian:trixie"]') }}
+        cell: ${{ fromJSON(needs.checks.outputs.cells) }}
     container:
-      image: ${{ matrix.image }}
+      image: ${{ matrix.cell.image }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: omx-panel-packages
+          name: ${{ matrix.cell.suite && format('omx-panel-deb-{0}-{1}', matrix.cell.suite, matrix.cell.arch) || 'omx-panel-rpm' }}
           path: out
       - name: The OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
@@ -386,7 +474,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
@@ -409,3 +497,13 @@ jobs:
 
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
+    with:
+      # the one shared Fedora workflow guard (.github#175): no workflow names a Fedora release outside 45
+      fedora-workflows: true
+
+  pr-fixes-issue:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: Open-Mixer/.github/.github/workflows/pr-fixes-issue.yml@openmixer-v1
