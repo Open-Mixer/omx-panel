@@ -18,6 +18,9 @@ OMX_CONTRACT_INSTALLER ?= $(shell pkg-config --variable=datadir omx-contract 2>/
 SYSCONFDIR ?= /etc
 UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
+# the omx-contract package's importable tree (package.json, lib/entry.mjs): the installed tools import
+# @openmixer/omx-contract/entry through a link to it
+OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
 .PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
@@ -115,6 +118,8 @@ install: build install-contract
 	# omx-dsp is the omx-dsp-wasm package's: its dist/ and wasm/ are linked, never copied
 	install -d $(DESTDIR)$(PKGDIR)/node_modules/@openmixer
 	ln -sfn $(DATADIR)/omx-dsp $(DESTDIR)$(PKGDIR)/node_modules/@openmixer/omx-dsp
+	# omx-contract is the omx-contract package's: the tools' isMain (@openmixer/omx-contract/entry) is linked, never copied
+	ln -sfn $(OMX_CONTRACT_LIB) $(DESTDIR)$(PKGDIR)/node_modules/@openmixer/omx-contract
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
