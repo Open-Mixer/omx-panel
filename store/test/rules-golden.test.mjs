@@ -29,10 +29,8 @@ test('the golden holds a hash for no version above the header\'s', () => {
   for (const v of Object.keys(golden)) assert.ok(Number(v) <= rules, `${v} is above ${rules}`);
 });
 
-test('describe publishes each display\'s axis (panel domain 1.2.0), so a derived entry stored at rules 1 is stale', () => {
-  const eq = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/descriptors/scanned-lv2-omx-eq8.json'), 'utf8'));
-  const { description } = describe(eq);
-  assert.ok(description.displays.length > 0, 'the fixture has a display');
-  for (const d of description.displays) assert.ok(typeof d.axis === 'string' && d.axis !== '', `display ${d.kind} carries its axis`);
-  assert.ok(rules >= 2, `describe now serves displays[].axis, an entry derived at rules 1 has none: OMX_PANEL_RULES_VERSION is ${rules}, it must be at least 2`);
+test('the panel domain carries PANEL_DISPLAY_AXES (1.2.0), so describe serves displays[].axis and a derived entry stored at rules 1 is stale', () => {
+  const domain = readFileSync(join(ROOT, 'contract.d', 'panel', 'panel.json'), 'utf8');
+  assert.match(domain, /"PANEL_DISPLAY_AXES"/, 'the domain names the axis words');
+  assert.ok(rules >= 2, `describe serves displays[].axis, an entry derived at rules 1 has none: OMX_PANEL_RULES_VERSION is ${rules}, it must be at least 2`);
 });

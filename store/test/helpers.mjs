@@ -11,6 +11,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** The derivation's rules version the reader holds (the header's), so a fixture entry is current unless a test says otherwise. */
+export const RULES = Number(/#define OMX_PANEL_RULES_VERSION (\d+)/.exec(readFileSync(new URL('../include/omx-panel/omx_panel_store.h', import.meta.url), 'utf8'))[1]);
+
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const STORE = join(ROOT, 'store');
 export const CMD = process.env.OMX_PANEL_STORE_TEST_CMD || join(STORE, 'build', 'omx-panel-store');
@@ -55,7 +58,7 @@ export const WORD_CHECKS = [
 /** One entry as a test states it; what a field leaves out is a plausible default. */
 export function entry(o = {}) {
   const e = {
-    sha: hex('a'), format: 'lv2', uri: 'urn:test:plugin', edited: 0, made_by: 'omx-panel test', rules: 1, source: hex('1'),
+    sha: hex('a'), format: 'lv2', uri: 'urn:test:plugin', edited: 0, made_by: 'omx-panel test', rules: RULES, source: hex('1'),
     family: 'eq', fingerprint: hex('f'), body: { family: 'eq', sections: [] }, groups: { repeated: [] }, refused: null,
     controls: [], verdict: null, ...o,
   };
