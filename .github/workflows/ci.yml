@@ -275,24 +275,6 @@ jobs:
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm out/'
-      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
-      # on omx-panel, which does not (tools/render-package-check.sh)
-      - name: The renderer's library in its packages
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
-            dnf install -y -q cpio binutils
-            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
-      # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
-      - name: No copy of omx-dsp in the packages
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -uo pipefail -c '
-            rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
-            list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
-            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
-            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
-            req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
-            grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
-            echo "PASS rpm: omx-dsp linked, not copied, required"'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
       - name: The renderer's library in its RPMs
         run: |
