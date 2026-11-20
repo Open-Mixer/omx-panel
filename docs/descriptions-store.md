@@ -139,7 +139,7 @@ are agreed with the description schema owner before lane 1 (section 13) merges; 
 
 What `describe` serves today (`tools/describe.mjs:283-309`): `family`, `fingerprint`, `easy`, `params`, `sections`
 (each with `bars`, or with the served `matrix` of a repeated group, `docs/group-model.md` "The served matrix"),
-`controls`, `meters`, `roles`, `displays` and `pages`. What the complement writes (`tools/lv2-complement.mjs:227-228`):
+`controls`, `meters`, `roles`, `displays` and `pages`. Each display carries its `axis`, a `PANEL_DISPLAY_AXES` word, in the body; `describeFromStored` refuses a body whose display has none or another word. What the complement writes (`tools/lv2-complement.mjs:227-228`):
 the verdict of `inferGroups` (`tools/group-infer.mjs:194`) with the group model's instance groups, each group a
 `symbol`, a `name`, a `displayPriority`, its `ports` by port symbol and the `rule` that made it.
 
