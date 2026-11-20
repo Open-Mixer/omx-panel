@@ -23,18 +23,18 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
+import { meaningOfRole, panelWords, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
-/** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility'];
+/** The extension's families, by enum value: the panel domain's PANEL_FAMILIES (contract.d/panel). */
+export const FAMILIES = Object.freeze(panelWords('PANEL_FAMILIES'));
 
-/** The widgets a face serves, by enum value. */
-export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
+/** The widgets a face serves, by enum value: PANEL_WIDGETS. */
+export const WIDGETS = Object.freeze(panelWords('PANEL_WIDGETS'));
 
-/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each. */
-export const STANDARD_WIDGETS = ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'];
+/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each: PANEL_STANDARD_WIDGETS. */
+export const STANDARD_WIDGETS = Object.freeze(panelWords('PANEL_STANDARD_WIDGETS'));
 /** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
  * `ppm` are not words. */
 export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
@@ -77,12 +77,12 @@ export function widgetOf(c, declared) {
 /** The widget a face serves for a standard widget. */
 export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 
-/** The display kinds and sources, by enum value. */
-export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
-export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The display kinds and sources, by enum value: PANEL_DISPLAY_KINDS, PANEL_DISPLAY_SOURCES. */
+export const DISPLAY_KINDS = Object.freeze(panelWords('PANEL_DISPLAY_KINDS'));
+export const DISPLAY_SOURCES = Object.freeze(panelWords('PANEL_DISPLAY_SOURCES'));
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
-export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
+export const PLACEMENTS = Object.freeze(panelWords('PANEL_PLACEMENTS'));
 
 /** A section `graph` -> the display the extension names for it; a graph word with none here is
  * refused by name when the panel is described (a declaration error, never a silent drop). */

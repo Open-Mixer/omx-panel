@@ -2,8 +2,8 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
 # The panel renderer (docs/renderer.md): libomx-panel-render.a (static, PIC), its header, its pkg-config file and the
-# omx-panel-render command. Needs a C11 compiler, cJSON (libcjson), omx-contract's C headers (omx-contract-devel,
-# pkg-config omx-contract) and omx-dsp's meter view (omx-dsp-devel, pkg-config omxdsp). `make check` draws the fixtures and holds them to the golden images and to the MOD GUI
+# omx-panel-render command. Needs a C11 compiler, cJSON (libcjson), the panel domain's codes header (../include/omxdomain/panel_codes.h,
+# rendered from contract.d/panel by omx-contract render) and omx-dsp's meter view (omx-dsp-devel, pkg-config omxdsp). `make check` draws the fixtures and holds them to the golden images and to the MOD GUI
 # face (node, the parent tree's `npm ci` and the installed vocabulary its layout reads).
 #
 #   make [-C renderer] [WINDOW=1] build/ : the library (static and shared), the command (and the window: pugl-devel,
@@ -21,14 +21,14 @@ DATADIR ?= $(PREFIX)/share
 PKG_CONFIG ?= pkg-config
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 
-DEPS := libcjson omx-contract
+DEPS := libcjson
 # The meter's view law is omx-dsp's (contract 7.9): the marker's hold and fall by elapsed time are omx_meter_view_step() of
 # <omxdsp/mix/omx_meter_view.h> and its rate OMX_METER_VIEW_FALL_DB_PER_SECOND, header-only, from omx-dsp-devel at or above
 # 0.32.2 (pkg-config omxdsp); no number of the law is copied here.
 OMXDSP_FLOOR := 0.32.2
 # -ffp-contract=off: a fused multiply-add rounds differently, and the drawing is held to the bit
 CFLAGS ?= -O2 -g
-CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude $(shell $(PKG_CONFIG) --cflags $(DEPS) omxdsp)
+CFLAGS += -std=c11 -D_DEFAULT_SOURCE -fPIC -ffp-contract=off -Wall -Wextra -Werror -Iinclude -I../include $(shell $(PKG_CONFIG) --cflags $(DEPS) omxdsp)
 LDLIBS += $(shell $(PKG_CONFIG) --libs libcjson) -lm
 
 B := build

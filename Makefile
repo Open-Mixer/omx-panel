@@ -109,10 +109,14 @@ install-renderer:
 install-contract:
 	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
 	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/gestures "$(DESTDIR)$(CONTRACTDIR)"
+	# the panel domain's one codes header (omx-contract render), for C that tables the panel words by code (row V1)
+	install -Dm 0644 include/omxdomain/panel_codes.h "$(DESTDIR)$(INCLUDEDIR)/omxdomain/panel_codes.h"
 
 install: build install-contract
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/
+	# the panel domain is omx-panel-contract's, read from the contract directory: dist/'s copy is the tree's, never installed
+	rm -rf $(DESTDIR)$(PKGDIR)/contract.d
 	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/
 	# the runtime modules only (ajv and what it needs), never the build's
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \

@@ -6,23 +6,27 @@
 #ifndef OMX_PANEL_VIEW_H
 #define OMX_PANEL_VIEW_H
 
-#include <omxcontract/omx_vocabulary.h>
+#include <omxdomain/panel_codes.h>
 #include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
 
-typedef enum { W_KNOB, W_FADER, W_SWITCH, W_SELECTOR, W_METER, W_CURVE, W_XY, W_DISPLAY } widget;
+/* The standard widgets, omx-panel's panel domain (PANEL_STANDARD_WIDGETS, rendered into omxdomain/panel_codes.h): a
+ * widget it adds is drawn here before the count below lets this file build. A widget's code is its domain code. */
+typedef enum {
+#define W_OF(code, WORD) W_##WORD = code,
+  OMX_PANEL_STANDARD_WIDGETS(W_OF)
+#undef W_OF
+} widget;
 
-/* The standard widgets by omx-contract's names (PANEL_STANDARD_WIDGETS): a widget it adds is drawn
- * here before the count below lets this file build. */
+/* a widget's word is its X-macro name, compared without case (view.c): the standard widget words are one lowercase word */
 static const struct { const char *name; widget w; } WIDGET_NAMES[] = {
-    {OMX_PANEL_STANDARD_WIDGETS_KNOB, W_KNOB},       {OMX_PANEL_STANDARD_WIDGETS_FADER, W_FADER},
-    {OMX_PANEL_STANDARD_WIDGETS_SWITCH, W_SWITCH},   {OMX_PANEL_STANDARD_WIDGETS_SELECTOR, W_SELECTOR},
-    {OMX_PANEL_STANDARD_WIDGETS_METER, W_METER},     {OMX_PANEL_STANDARD_WIDGETS_CURVE, W_CURVE},
-    {OMX_PANEL_STANDARD_WIDGETS_XY, W_XY},           {OMX_PANEL_STANDARD_WIDGETS_DISPLAY, W_DISPLAY},
+#define W_NAME(code, WORD) {#WORD, W_##WORD},
+    OMX_PANEL_STANDARD_WIDGETS(W_NAME)
+#undef W_NAME
 };
 _Static_assert(sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES == OMX_PANEL_STANDARD_WIDGETS_COUNT,
-               "every standard widget of omx-contract is drawn");
+               "every standard widget of the panel domain is drawn");
 
 typedef struct {
   char *symbol, *label;
