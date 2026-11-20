@@ -34,7 +34,7 @@ test('an upgrade does not stop the sync units: they are never started by the pac
 // The spec and debian/control build against the same library versions: every floor the spec's BuildRequires states is
 // debian/control's Build-Depends floor for that library, and so is the ceiling where both state one (dependency audit
 // 2026-11-16: libomx-contract-dev floored at 3.13.0 against the spec's omx-contract-devel 3.16.0).
-const DEB_NAME = { 'omx-contract-devel': 'libomx-contract-dev', 'libomx-domain-devel': 'libomx-domain-dev', 'pkgconfig(omxdsp)': 'libomxdsp-dev' };
+const DEB_NAME = { 'omx-contract-devel': 'libomx-contract-dev', 'sqlite-devel': 'libsqlite3-dev', 'libomx-domain-devel': 'libomx-domain-dev', 'pkgconfig(omxdsp)': 'libomxdsp-dev' };
 
 export function buildFloorsApart(spec, control) {
   const field = /^Build-Depends(?:-Arch|-Indep)?:(.*(?:\n[ \t].*)*)/m.exec(control)?.[1] ?? '';
