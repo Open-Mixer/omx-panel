@@ -8,7 +8,7 @@
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the
   instances (`Bands: Type`, `Bands: Type 2`), never a continuation of one instance. At 4 slots omx-eq8 is 14 screens (was
-  20 since 4f588e4, #96) and the Calf multiband compressor 6 (was 9, one empty). `OMX_PANEL_RULES_VERSION` is 2.
+  20 since 4f588e4, #96) and the Calf multiband compressor 6 (was 9, one empty). `OMX_PANEL_RULES_VERSION` is 3 (2 is #149's display axis).
 
 - The `utility` panel family's content (omx-contract's `PANEL_FAMILIES`, 3.19), the family of a trim, a width control, a
   balancer or a clipper: the role table gives it `gain`, `width`, `pseudo`, `pseudo_time`, `bass_mono`, `bass_mono_freq`,
