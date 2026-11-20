@@ -30,7 +30,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { keyOf, NoControls, panelLayout, servedWidget, unitToken, widgetOf } from '../tools/panel-description.mjs';
-import { standardUnits } from '../tools/vocabulary.mjs';
+import { servedUnit, standardUnits } from '../tools/vocabulary.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** omx-contract's example descriptor `name`, where the installed package holds it. */
@@ -77,7 +77,7 @@ lost.controls[0].travel.unit = 'unknown';
 const lostX = panelLayout(lost, { panel: levels });
 check('arm: an unknown unit takes no role, named', [rolesOf(lostX), lostX.unpublished], [[['ceiling', 0, 'p1', 'dBu']], [{ role: 'threshold', symbol: 'p0', why: 'the threshold role takes dB, dBFS, dBu, LUFS, not unknown' }]]);
 check('an unknown unit is a plain number: a knob with no token', [lostX.controls[0].standard, lostX.controls[0].unit, unitToken('unknown')], [{ widget: 'knob' }, 'unknown', undefined]);
-check('every standard unit (omx-contract\'s param domain) has the id a role reads', [...standardUnits()].map(([symbol]) => symbol).filter((u) => typeof unitToken(u) !== 'string'), []);
+check('every unit the param-contract table serves has the standard id a role reads', [...standardUnits()].filter(([, u]) => servedUnit(u.id)).map(([symbol]) => symbol).filter((u) => typeof unitToken(u) !== 'string'), []);
 
 // 3. roles from meanings, with no declared panel
 const comp = descriptor([travel('dB', { meaning: 'threshold' }), { kind: 'travel', meaning: 'ratio', travel: { min: 1, max: 20, unit: 'x', default: 4, scale: 'log' } }, travel('dB', { meaning: 'makeup' })]);

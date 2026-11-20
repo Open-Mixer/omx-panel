@@ -38,7 +38,7 @@ import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
-import { installedDescriptorFile } from './vocabulary.mjs';
+import { installedDescriptorFile, unitIdOf } from './vocabulary.mjs';
 import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
@@ -205,7 +205,7 @@ function curveTerms(descriptor, x) {
   return x.roles.filter((r) => roles.has(r.role)).map((r) => {
     const value = valueOf(control(r.symbol));
     return {
-      role: r.role, index: r.index, value, unit: curveUnitOf(r.token ?? unitTokenOf(r.unit) ?? 'none'),
+      role: r.role, index: r.index, value, unit: curveUnitOf(r.token ?? (/^(hpf|lpf)_slope$/.test(r.role) ? unitIdOf(r.unit) : undefined) ?? unitTokenOf(r.unit) ?? 'none'),
       ...(r.shape ? { shape: r.shape } : {}),
       ...(r.role === 'band_type' && r.shapes ? { shape: r.shapes[value] } : {}),
       ...(r.origin ? { origin: r.origin } : {}),

@@ -246,6 +246,7 @@ async function vocabulary(refs) {
   line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
   line('role-meanings', () => `${v.roleMeanings().size} roles from ${process.env.OMX_ROLE_MEANINGS || 'the contract directories'}`);
   line('param-units', () => `${v.standardUnits().size} units from ${v.paramDomainFile()}`);
+  line('param-contract', () => `${v.paramUnits().size} units from ${v.paramUnitsFile()}`);
   for (const ref of refs) {
     line(`descriptor ${ref}`, () => {
       const file = v.installedDescriptorFile(ref);

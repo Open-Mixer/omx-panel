@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, panelCodes, panelWords, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
+import { meaningOfRole, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -100,9 +100,13 @@ export const basisOf = (descriptor, section) => (section.basis === 'exact' && de
 /** The displays a host computes from a family's roles in closed form. */
 const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
-/** A descriptor unit -> the standard id a role checks it against (omx-contract's PARAM_UNITS, P1, P2). A unit the list
- * has no id for (`unknown` among them) is a plain number and takes no role. */
-export const unitToken = (unit) => unitIdOf(unit);
+/** A descriptor unit -> the standard id a role checks it against (omx-contract's PARAM_UNITS, P1), when the
+ * param-contract extension serves it (as on main). A unit it does not serve, or one the list has no id for (`unknown`
+ * among them), is a plain number and takes no role. */
+export const unitToken = (unit) => {
+  const id = unitIdOf(unit);
+  return id !== undefined && servedUnit(id) ? id : undefined;
+};
 
 /** Each family's roles and the units each accepts, and the roles that repeat by index: tools/role-table.mjs's, the
  * one table, data a browser loads as it is. */
@@ -299,7 +303,8 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = rest.token ?? unitToken(unit);
+    // a filter slope names its unit's id though the extension serves no per-octave unit (dB/oct is dB-oct), as main read it as the dB of a slope
+    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });

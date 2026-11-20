@@ -93,7 +93,8 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
 });
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
-  const dir = paramDomain(contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } }), [['none', '', 'none'], ['dB', 'dB', 'gain'], ['dBu', 'dBu', 'level']]);
+  const UNITS = { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, dbu: 0x101 } } };
+  const dir = paramDomain(contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR }, 'omx-contract': { 'param-contract.json': UNITS } }), [['none', '', 'none'], ['dB', 'dB', 'gain'], ['dBu', 'dBu', 'level']]);
   const schema = join(dir, 'omx-contract.schema.json');
   writeFileSync(schema, JSON.stringify({ $defs: { meaning: { enum: ['gain', 'delay', 'unknown'] } } }));
   const set = { OMX_CONTRACT_PATH: dir, OMX_CONTRACT_SCHEMA: schema, PKG_CONFIG: NO_PKG_CONFIG };
@@ -102,6 +103,7 @@ test('omx-panel vocabulary reads each source where the lookup puts it, and fails
   assert.match(r.stdout, new RegExp(`^ok   contractdir ${dir}$`, 'm'));
   assert.match(r.stdout, /^ok   meanings 2 from /m);
   assert.match(r.stdout, new RegExp(`^ok   param-units 3 units from ${join(dir, 'param/param.json')}$`, 'm'));
+  assert.match(r.stdout, /^ok   param-contract 3 units from /m);
   assert.match(r.stdout, new RegExp(`^ok   descriptor omx-plugins/omx-delay 3 controls from ${join(dir, '3/omx-plugins/plugins/omx-delay.json')}$`, 'm'));
   const missing = command(['omx-plugins/omx-nothing'], set);
   assert.equal(missing.status, 1);
@@ -120,16 +122,34 @@ test('the standard units are omx-contract\'s param domain: ids, symbols and dime
   assert.match(r.stdout, /^FAIL param-units .*install omx-contract-data \(>= 3\.21\.0\)/m);
 });
 
+test('the unit codes are the sheet any package of the merged contract directory declares', () => {
+  const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
+  const dir = contractDir({
+    'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13, midiNote: 24, dbu: 0x101 }) },
+    'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR },
+  });
+  const set = { OMX_CONTRACT_PATH: dir, PKG_CONFIG: NO_PKG_CONFIG };
+  assert.equal(lookup('v.paramUnitsFile()', set), join(dir, '3/omx-contract/param-contract.json'));
+  assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13], ['MIDINOTE', 24], ['DBU', 0x101]]);
+  // a directory that declares no sheet has no units: the read refuses and names the fix
+  const none = contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
+  const r = command([], { OMX_CONTRACT_PATH: none, PKG_CONFIG: NO_PKG_CONFIG });
+  assert.match(r.stdout, /^FAIL param-contract .*install omx-contract-data \(>= 3\.6\.0\)/m);
+});
+
 test('a package reached through a symlink is read like one installed in place', () => {
   // a composed contract directory links the installed packages beside a tree's own (omx-plugins' round trip and its
   // gen --check arms, Open-Mixer/omx-plugins#98): its items are the installed ones, found through the link
   const roles = { OMX_PLUGINS_ROLE_MEANINGS: { kind: 'roleMeanings', roles: { threshold: { role: 'threshold', meaning: 'threshold' } } } };
-  const installed = contractDir({ 'omx-contract': { 'units.json': { none: 0 } }, 'omx-plugins': { 'role-meanings.json': roles, 'plugins/omx-delay.json': DESCRIPTOR } });
+  const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
+  const installed = contractDir({ 'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13 }) }, 'omx-plugins': { 'role-meanings.json': roles, 'plugins/omx-delay.json': DESCRIPTOR } });
   const composed = scratch(join(tmpdir(), 'omx-panel-composed-'));
   mkdirSync(join(composed, '3'));
   for (const pkg of ['omx-contract', 'omx-plugins']) symlinkSync(join(installed, '3', pkg), join(composed, '3', pkg));
   // the role meanings read through the composed directory, not from a file $OMX_ROLE_MEANINGS names (CI sets it)
   const set = { OMX_CONTRACT_PATH: composed, PKG_CONFIG: NO_PKG_CONFIG, OMX_ROLE_MEANINGS: '' };
+  assert.equal(lookup('v.paramUnitsFile()', set), join(composed, '3/omx-contract/param-contract.json'));
+  assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13]]);
   assert.deepEqual(lookup('[...v.roleMeanings().keys()]', set), ['threshold']);
   assert.deepEqual(lookup('v.installedDescriptorFiles()', set), [join(composed, '3/omx-plugins/plugins/omx-delay.json')]);
 });
