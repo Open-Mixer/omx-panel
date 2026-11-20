@@ -17,10 +17,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
 
 /**
- * A release dry run stamps debian/changelog with a snapshot version, `<base>~git<digits>.<hex>`; the suffix is accepted
+ * A release dry run stamps debian/changelog with a snapshot version, `<base>~git<digits>.<hex> or <base>+git<digits>.<hex> (the shared build-deb action)`; the suffix is accepted
  * on the SAME base version only (the base is compared with package.json's), a different base stays red.
  */
-const SNAPSHOT = /~git\d+\.[0-9a-f]+$/;
+const SNAPSHOT = /[~+]git\d+\.[0-9a-f]+$/;
 
 /** Each file's stated version, by where it states it. */
 export function statedVersions(files) {
