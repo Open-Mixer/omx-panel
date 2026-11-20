@@ -390,6 +390,10 @@ jobs:
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
+      - name: No Fedora 44 reference in the workflows
+        run: |
+          tools/test/workflow-fedora-check.sh --self-test
+          tools/test/workflow-fedora-check.sh .
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-data >= 3.20.2'
