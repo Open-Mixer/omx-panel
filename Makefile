@@ -104,6 +104,7 @@ install-renderer:
 # $(CONTRACTDIR)/panel/panel.json and its catalogs/.
 install-contract:
 	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/readout "$(DESTDIR)$(CONTRACTDIR)"
 
 install: build install-contract
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins

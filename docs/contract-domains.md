@@ -16,6 +16,7 @@ renderers, no panel word, so it is never released for one and no chain of consum
 | Domain | Document | Package | State |
 |---|---|---|---|
 | `panel` | `contract.d/panel/panel.json`: families, widgets, display kinds, display sources, placements | `omx-panel-contract` | shipped here |
+| `readout` | `contract.d/readout/readout.json`: `READOUT_RATE_HZ`, the display redraw rate (50 Hz), a scalar (sorting pass row V22: it left omx-contract; the domain is named after the item's prefix, R-P; omx-contract >= 3.21.0 reads a scalar) | `omx-panel-contract` | shipped here |
 | `gestures` | gesture words, rules, the scripted fixtures (today `schema/gestures.json`, `test/fixtures/gestures/`) | | follow-up |
 | `look` | look roles and tokens (today `schema/look-roles.json`, `tools/look.json`) | | follow-up |
 

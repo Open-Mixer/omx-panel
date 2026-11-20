@@ -169,6 +169,7 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 %files contract
 %license LICENSE
 %{omx_contract_domain_dir}/panel/
+%{omx_contract_domain_dir}/readout/
 
 %files -n omx-panel-render
 %license LICENSE

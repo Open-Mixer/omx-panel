@@ -84,5 +84,5 @@ test('the domain ships alone in omx-panel-contract: noarch in the rpm, Architect
   const control = read('debian/control');
   assert.match(control, /^Package: omx-panel-contract\nArchitecture: all$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));
-  assert.deepEqual(lines, ['usr/share/omx-contract/contract.d/panel/']);
+  assert.deepEqual(lines, ['usr/share/omx-contract/contract.d/panel/', 'usr/share/omx-contract/contract.d/readout/']);
 });

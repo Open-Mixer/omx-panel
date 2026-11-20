@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/contract/readout",
+  "info": {
+    "title": "The readout rate a panel redraws its moving values at",
+    "version": "1.0.0",
+    "x-owner": "omx-panel",
+    "x-stability": "experimental"
+  },
+  "components": {
+    "schemas": {
+      "READOUT_RATE_HZ": {
+        "description": "How often a panel redraws a moving value, a readout: 50 Hz, one value every 20 ms, the rate a host sends a moving meter at. A display reads it as its redraw rate; omx-dsp's ballistics keep their own item.",
+        "x-since": "1.0.0",
+        "x-why": "The display redraw rate is a panel's word, not a standard one: it left omx-contract (sorting pass row V22, owner ruling 2026-11-20), and its domain is named after its prefix (R-P).",
+        "x-kind": "scalar",
+        "x-unit": "Hz",
+        "x-value": 50
+      }
+    }
+  }
+}
