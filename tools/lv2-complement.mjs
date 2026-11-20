@@ -39,6 +39,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inferGroups, readModguiLayout, readPluginPorts } from './group-infer.mjs';
 import { controlsOfLv2, inferGroupModel, instanceGroups } from './group-model.mjs';
 import { parseTurtle } from './turtle-read.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
@@ -788,4 +789,4 @@ function main(argv) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

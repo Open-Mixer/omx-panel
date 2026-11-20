@@ -30,6 +30,7 @@
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([skin-package.md](skin-package.md)).
 - The importer: `omx-panel import` turns a MOD GUI bundle into a skin package.
+- The behaviour core (a design spec, not built): one C library, also built as WebAssembly, for gestures, scale laws, steps and value text on every client ([behaviour-core.md](behaviour-core.md)).
 - The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector, meter, display, curve, xy; their gestures are in [panel-gestures.md](panel-gestures.md).
 - The renderer: a C library that draws a panel description in the omx look into a plain pixel buffer, the MOD GUI's
   face to the bit, at any size and scale, for a plugin window, a host's inline view or the console

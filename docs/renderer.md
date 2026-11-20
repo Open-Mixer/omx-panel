@@ -8,10 +8,11 @@ One C library draws a plugin's panel from its panel description, the document `o
 - a plugin window in a DAW (CLAP `clap.gui`) or in omx-clap-host;
 - a host-embedded inline view, at whatever size the host gives;
 - a plain CPU pixel buffer (RGBA or BGRA, a width, a height, a stride and a scale): what a host that
-  embeds a plugin's view hands the plugin to draw into, and what an out-of-process worker sends to the
-  web console so it can show the same view.
+  embeds a plugin's view hands the plugin to draw into.
 
-Each of these draws the same description with the same layout and widget code. The source is in `renderer/`.
+Each of these draws the same description with the same layout and widget code. The renderer is omx-panel's own
+toolkit, for a plugin's own GUI; the web console draws its panels with its own (Nuxt UI) and shows none of its pixels.
+The source is in `renderer/`.
 
 ## What it draws
 
