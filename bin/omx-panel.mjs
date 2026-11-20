@@ -18,6 +18,7 @@
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
+ *   gui-stage --set <file> --descriptors <dir> --package <name> --out <dir>   tools/gui-stage.mjs: a known set's GUI files, key-gated
  *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
  *                                                        tools/lv2-complement.mjs: a replacing LV2 bundle with the inferred
  *                                                        port groups, for each installed bundle that needs one
@@ -274,6 +275,7 @@ else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
+else if (command === 'gui-stage') tool('gui-stage.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');
 else if (command === 'look') tool('look.mjs');
 else if (command === 'copies') tool('copies-check.mjs');
