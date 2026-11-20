@@ -37,7 +37,7 @@ test('(a) the port-group verdict speaks the golden outcome and reason', () => {
   assert.deepEqual(inferGroups({ ports: [] }), { outcome: 'nothing-to-do', reason: 'no-controls' });
 });
 
-test('(c) a contract directory whose words differ is what the tools emit', (t) => {
+test('(c) a contract directory whose words differ is what the tools emit', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-v2-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   cpSync(join(ROOT, 'contract.d/panel'), join(dir, 'panel'), { recursive: true });
@@ -47,8 +47,13 @@ test('(c) a contract directory whose words differ is what the tools emit', (t) =
   s.PANEL_GROUP_REASONS.oneOf.find((w) => w.const === 'no-controls').const = 'no-controls-sabotaged';
   s.PANEL_DESCRIBE_CODES.oneOf.find((w) => w.const === `${D}no-controls`).const = `${D}no-controls-sabotaged`;
   writeFileSync(f, JSON.stringify(doc, null, 2));
+  // group-infer, which a browser loads, reads tools/group-words.mjs: rendered from this directory into a copy of the tools
+  const { groupWordsText } = await import(join(ROOT, 'dist/tools/group-words-render.mjs'));
+  const tools = join(dir, 'tools');
+  cpSync(join(ROOT, 'dist/tools'), tools, { recursive: true });
+  writeFileSync(join(tools, 'group-words.mjs'), groupWordsText([dir]));
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', `
-    const { inferGroups } = await import(${JSON.stringify(join(ROOT, 'dist/tools/group-infer.mjs'))});
+    const { inferGroups } = await import(${JSON.stringify(join(tools, 'group-infer.mjs'))});
     const { NoControls } = await import(${JSON.stringify(join(ROOT, 'dist/tools/panel-description.mjs'))});
     console.log(JSON.stringify([inferGroups({ ports: [] }).reason, new NoControls('x').code]));`],
   { encoding: 'utf8', env: { ...process.env, OMX_CONTRACT_PATH: dir } });

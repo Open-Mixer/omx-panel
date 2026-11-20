@@ -25,11 +25,12 @@
  *                                                rules found, for a diagnosis only.
  */
 
-import { lv2DesignationMeanings, panelCodes } from './vocabulary.mjs';
+import { DESIGNATION_MEANINGS, GROUP_OUTCOMES, GROUP_REASONS } from './group-words.mjs';
 
-/** The verdict's outcomes and reasons: the panel domain's PANEL_GROUP_OUTCOMES and PANEL_GROUP_REASONS, by title. */
-export const OUTCOME = panelCodes('PANEL_GROUP_OUTCOMES');
-export const REASON = panelCodes('PANEL_GROUP_REASONS');
+/** The verdict's outcomes and reasons: the panel domain's PANEL_GROUP_OUTCOMES and PANEL_GROUP_REASONS, by title, as
+ * tools/group-words.mjs renders them (a browser loads this module as it is: no Node import, %4). */
+export const OUTCOME = GROUP_OUTCOMES;
+export const REASON = GROUP_REASONS;
 
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
@@ -130,7 +131,7 @@ const PANEL_OWN_DESIGNATION_GROUP = {
  * or lv2:enabled of the core), else undefined. */
 function meaningOf(designation) {
   const term = designation.startsWith(PARAM) ? designation.slice(PARAM.length) : designation === `${LV2}enabled` ? 'enabled' : undefined;
-  return term === undefined ? undefined : lv2DesignationMeanings().get(term);
+  return term === undefined ? undefined : DESIGNATION_MEANINGS[term];
 }
 /** The group a designation says a control belongs to. */
 const designationGroup = (designation) => PANEL_OWN_DESIGNATION_GROUP[designation] ?? MEANING_GROUP[meaningOf(designation)];

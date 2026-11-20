@@ -90,6 +90,8 @@ jobs:
         run: make gestures && node tools/gesture-words.mjs --check
       - name: schema/codes.json and catalogs/<lang>.json are what the panel domain gives (sorting pass row V3)
         run: make codes
+      - name: tools/group-words.mjs is what the panel domain and plugin-db's lv2 domain give (group-infer stays a browser module)
+        run: make group-words
       - id: handback-example
         name: The example skin package validates
         run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
