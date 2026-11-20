@@ -74,8 +74,10 @@ BuildArch: noarch
 %description contract
 The panel domain (contract.d/panel): the families, widgets, display kinds,
 display sources and placements a panel description speaks, with their
-translations, installed into the contract directory where omx-contract's
-loader reads it. A program that reads the panel words requires this package.
+translations, and the gestures domain (contract.d/gestures): the gesture
+words, timings, thresholds, table and codes every surface moves a panel's
+controls with, installed into the contract directory where omx-contract's
+loader reads them. A program that reads these words requires this package.
 
 %package -n omx-panel-render
 Summary: The omx-panel renderer, a library that draws a panel description into a pixel buffer
@@ -163,6 +165,7 @@ OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 
 %files contract
 %license LICENSE
+%{omx_contract_domain_dir}/gestures/
 %{omx_contract_domain_dir}/panel/
 
 %files -n omx-panel-render
