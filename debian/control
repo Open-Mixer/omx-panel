@@ -15,7 +15,7 @@ Build-Depends: debhelper-compat (= 13),
                libomx-contract-dev (>= 3.20.2~),
                omx-contract (>= 3.20.2~),
                libomx-domain-dev (>= 3.20.0~),
-               libomxdsp-dev (>= 0.32.3~),
+               libomxdsp-dev (>= 0.34.0~),
                omx-dsp-wasm (>= 0.33.0~)
 Standards-Version: 4.6.2
 Homepage: https://github.com/Open-Mixer/omx-panel
