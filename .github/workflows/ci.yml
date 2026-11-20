@@ -24,7 +24,7 @@ jobs:
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -98,7 +98,7 @@ jobs:
   renderer:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON and node
         run: |
@@ -130,7 +130,7 @@ jobs:
   store:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, SQLite, cJSON, node and python
         run: |
@@ -152,7 +152,7 @@ jobs:
   meter-surfaces:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
         run: |
@@ -194,7 +194,7 @@ jobs:
   renderer-window:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, OpenGL and Xvfb
         run: |
@@ -244,9 +244,9 @@ jobs:
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
       # reads are the test job's
-      - name: The RPM (fedora:44)
+      - name: The RPM (fedora:45)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
               "omx-contract-devel >= 3.20.2" "omx-dsp-devel >= 0.32.3"
@@ -270,7 +270,7 @@ jobs:
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q cpio binutils
             tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
           docker run --rm -v "$PWD:/w" -w /w "debian:$DEB_SUITE" bash -euo pipefail -c '
@@ -279,7 +279,7 @@ jobs:
       # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
       - name: No copy of omx-dsp in the packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -uo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -uo pipefail -c '
             rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
             list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
             grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
@@ -355,7 +355,7 @@ jobs:
       fail-fast: false
       matrix:
         # ruling D25: the release set's cells; bookworm (a full cell) only when OMX_RELEASE_MATRIX is full
-        image: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["fedora:44", "debian:bookworm", "debian:trixie"]' || '["fedora:44", "debian:trixie"]') }}
+        image: ${{ fromJSON(vars.OMX_RELEASE_MATRIX == 'full' && '["fedora:45", "debian:bookworm", "debian:trixie"]' || '["fedora:45", "debian:trixie"]') }}
     container:
       image: ${{ matrix.image }}
     steps:
@@ -386,7 +386,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
@@ -409,3 +409,6 @@ jobs:
 
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
+    with:
+      # the one shared Fedora workflow guard (.github#175): no workflow names a Fedora release outside 45
+      fedora-workflows: true
