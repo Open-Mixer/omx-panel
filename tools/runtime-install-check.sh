@@ -12,7 +12,8 @@
 #   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
 #   4. `omx-panel vocabulary` reads the meanings, plugin-hostd's LV2 table and the param-contract units from
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
-#   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link.
+#   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
+#   6. the installed tools load and run (tools/installed-tools-check.sh): @openmixer/omx-contract resolves.
 #
 # The check judges only what omx-panel itself ships. The panel domain is the omx-panel-contract package's: that package,
 # the second argument, is installed after omx-panel, and every file of it under /usr/share/omx-contract/contract.d is
@@ -186,6 +187,12 @@ else
   link="the package's node_modules/@openmixer/omx-dsp link"
   grep -q '^PASS omx-dsp curve' <<< "$out" && pass "omx-dsp's loadCurve answers a curve through $link" || fail "omx-dsp's loadCurve answers no curve through $link"
 fi
+
+# 6. the installed tools load and run: their @openmixer/omx-contract resolves through the package's own node_modules
+# (0.15.0 linked none, and `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with ERR_MODULE_NOT_FOUND)
+out=$(bash "$(dirname "$0")/installed-tools-check.sh" /usr/share/omx-panel 2>&1) && rc=0 || rc=$?
+echo "$out"
+[ "$rc" -eq 0 ] && pass "the installed tools load and run (tools/installed-tools-check.sh)" || fail "the installed tools do not load or run (tools/installed-tools-check.sh)"
 
 for u in "${unverified[@]}"; do echo "::warning::not verified: $u"; done
 [ "$fails" -eq 0 ] || { echo "runtime-install-check: $fails check(s) failed" >&2; exit 1; }

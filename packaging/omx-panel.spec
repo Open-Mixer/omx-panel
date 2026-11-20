@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.15.0
+Version: 0.15.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -28,6 +28,9 @@ BuildRequires: plugin-hostd-contract >= 0.20.7
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
 BuildRequires: omx-contract >= 3.20.2
 BuildRequires: omx-dsp-wasm >= 0.33.0
+# the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
+# /usr/lib/omx-contract
+Requires: omx-contract >= 3.20.2
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
@@ -137,6 +140,8 @@ make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCL
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
+# the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules
+tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 
 %files
 %license LICENSE
@@ -276,6 +281,14 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 20 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.1-1
+- Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import and
+  the rest that decide run-not-imported with omx-contract's isMain) resolve
+  @openmixer/omx-contract: node_modules/@openmixer/omx-contract links the
+  omx-contract package's /usr/lib/omx-contract, and omx-panel requires
+  omx-contract >= 3.20.2. In 0.15.0 `node /usr/share/omx-panel/tools/modgui-gen.mjs`
+  died with ERR_MODULE_NOT_FOUND. %check runs the installed tools.
+
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.0-1
 - Fedora 45 only (Fedora 44 is dropped); the same release is the first with
   Debian trixie arm64 packages.
