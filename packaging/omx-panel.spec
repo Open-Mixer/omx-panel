@@ -236,9 +236,15 @@ English source sentence.
 
 %changelog
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.0-1
+- Fedora 45 only (Fedora 44 is dropped); the same release is the first with
+  Debian trixie arm64 packages.
 - New: the vintage knob drawn by the renderer from the look's scene (the C raster
   paints the bytes the JS painter does), kept in a static-layer cache; the panel
-  domain's x-since is the version of the domain that added each item.
+  domain at 1.1.0, whose x-since is the version of the domain that added each
+  item; the tools decide run-not-imported with omx-contract's isMain, so a bin
+  run through a symlink runs.
+- The descriptions store core (libomx-panel-store and its command) is built in
+  the tree and tested, not packaged in this release.
 
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
 - Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0

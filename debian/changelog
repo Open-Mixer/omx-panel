@@ -1,9 +1,14 @@
 omx-panel (0.15.0) unstable; urgency=medium
 
+  * First release with Debian trixie arm64 packages (0.14.0 was rpm-only);
+    Fedora 45 only (Fedora 44 is dropped).
   * New: the vintage knob drawn by the renderer from the look's scene (the C
     raster paints the bytes the JS painter does), kept in a static-layer
-    cache; the panel domain's x-since is the version of the domain that added
-    each item.
+    cache; the panel domain at 1.1.0, whose x-since is the version of the
+    domain that added each item; the tools decide run-not-imported with
+    omx-contract's isMain, so a bin run through a symlink runs.
+  * The descriptions store core (libomx-panel-store and its command) is built
+    in the tree and tested, not packaged in this release.
 
  -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 16:00:00 +0100
 
