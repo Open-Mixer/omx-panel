@@ -43,6 +43,8 @@ jobs:
           # loader's omx-domain command (libomx-domain-devel), from the release that has all three
           dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.21.0' 'omx-contract-devel >= 3.21.0' 'libomx-domain-devel >= 3.21.0'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
+          # plugin-db's lv2 domain: the F1 mapping rule 2 of the port-group inference reads (sorting pass P3)
+          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.7' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
@@ -89,6 +91,8 @@ jobs:
         run: make look
       - name: schema/gestures.json is what the gestures domain gives, and the renderer's gesture word names and omx_panel_word_t are its GESTURES_WORDS (#23)
         run: make gestures && node tools/gesture-words.mjs --check
+      - name: schema/codes.json and catalogs/<lang>.json are what the panel domain gives (sorting pass row V3)
+        run: make codes
       - id: handback-example
         name: The example skin package validates
         run: node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate

@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display sources and placements of a panel",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -417,73 +417,184 @@
         "oneOf": [
           {
             "const": "panel.describe.no-controls",
-            "title": "noControls",
+            "title": "panelNoControls",
             "description": "the plugin has no controls",
             "x-code": 0,
-            "x-text": "The plugin has no controls."
+            "x-text": "{plugin} has no control a panel can show, so it gets no panel ({message}).",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
           },
           {
             "const": "panel.describe.family-not-backed",
-            "title": "familyNotBacked",
+            "title": "panelFamilyNotBacked",
             "description": "the family has no panel backing",
             "x-code": 1,
-            "x-text": "The family has no panel the layout backs."
+            "x-text": "{plugin}'s controls do not carry what that panel family needs ({message}); choose another family or none.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
           },
           {
             "const": "panel.describe.layout-invalid",
-            "title": "layoutInvalid",
+            "title": "panelLayoutInvalid",
             "description": "the layout the plugin states is invalid",
             "x-code": 2,
-            "x-text": "The layout the plugin states is invalid."
+            "x-text": "The panel declared for {plugin} cannot be laid out ({message}); fix its panel declaration.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
           },
           {
             "const": "panel.describe.override-unavailable",
-            "title": "overrideUnavailable",
+            "title": "panelOverrideUnavailable",
             "description": "an override layer was given and no applier",
             "x-code": 3,
-            "x-text": "An override layer was given and nothing can apply it."
+            "x-text": "The {layers} override layers for {plugin} were not applied: this host cannot read overrides.",
+            "x-args": [
+              "plugin",
+              "layers"
+            ]
           },
           {
             "const": "panel.describe.override-refused",
-            "title": "overrideRefused",
+            "title": "panelOverrideRefused",
             "description": "an override layer was refused",
             "x-code": 4,
-            "x-text": "An override layer was refused."
+            "x-text": "The override layer {layer} ({name}) for {plugin} was refused: {message}. The layers below it still apply.",
+            "x-args": [
+              "plugin",
+              "layer",
+              "name",
+              "message"
+            ]
           },
           {
             "const": "panel.describe.override-dropped",
-            "title": "overrideDropped",
+            "title": "panelOverrideDropped",
             "description": "an override entry was dropped",
             "x-code": 5,
-            "x-text": "An override entry was dropped."
+            "x-text": "In override layer {layer} ({name}) for {plugin}, the entry for {control} was dropped: {message}.",
+            "x-args": [
+              "plugin",
+              "layer",
+              "control",
+              "name",
+              "message"
+            ]
           },
           {
             "const": "panel.describe.role-dropped",
-            "title": "roleDropped",
+            "title": "panelRoleDropped",
             "description": "a role was dropped",
             "x-code": 6,
-            "x-text": "A role was dropped."
+            "x-text": "The role {entry} on {symbol} of {plugin} is not shown ({reason}); the control stays on its page.",
+            "x-args": [
+              "plugin",
+              "entry",
+              "symbol",
+              "reason"
+            ]
           },
           {
             "const": "panel.describe.skin-dropped",
-            "title": "skinDropped",
+            "title": "panelSkinDropped",
             "description": "a skin field was dropped",
             "x-code": 7,
-            "x-text": "A skin field was dropped."
+            "x-text": "The skin's {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the skin still applies.",
+            "x-args": [
+              "plugin",
+              "field",
+              "entry",
+              "reason"
+            ]
           },
           {
             "const": "panel.describe.meter-refused",
-            "title": "meterRefused",
+            "title": "panelMeterRefused",
             "description": "a meter was refused",
             "x-code": 8,
-            "x-text": "A meter was refused."
+            "x-text": "The meter {symbol} of {plugin} was left out: {reason}.",
+            "x-args": [
+              "plugin",
+              "symbol",
+              "reason"
+            ]
           },
           {
             "const": "panel.describe.param-unserved",
-            "title": "paramUnserved",
+            "title": "panelParamUnserved",
             "description": "a path or text parameter of another range is not served",
             "x-code": 9,
-            "x-text": "A parameter of another range is not served."
+            "x-text": "The parameter {symbol} of {plugin} is not served: its range {range} is neither a path nor a text.",
+            "x-args": [
+              "plugin",
+              "symbol",
+              "range"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-too-few",
+            "title": "panelBarsTooFew",
+            "x-code": 10,
+            "x-text": "A bar group of {plugin} has too few controls to draw as bars ({message}); they are drawn as knobs.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-not-travel",
+            "title": "panelBarsNotTravel",
+            "x-code": 11,
+            "x-text": "A bar group of {plugin} holds a control that cannot be a bar ({message}); fix the group in the panel declaration.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-facts-differ",
+            "title": "panelBarsFactsDiffer",
+            "x-code": 12,
+            "x-text": "The controls of a bar group of {plugin} differ in range, step, unit or scale ({message}); bars must share them.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-labels-not-series",
+            "title": "panelBarsLabelsNotSeries",
+            "x-code": 13,
+            "x-text": "The labels of a bar group of {plugin} do not form one series ({message}); rename them or split the group.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-unknown-control",
+            "title": "panelBarsUnknownControl",
+            "x-code": 14,
+            "x-text": "A bar group of {plugin} names a control the plugin does not have ({message}); fix the symbol.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.easy-refused",
+            "title": "panelEasyRefused",
+            "x-code": 15,
+            "x-text": "The Easy list of {plugin} was refused ({message}); the Easy page takes the rule instead.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
           }
         ]
       },
@@ -621,6 +732,181 @@
             "description": "a group of one instance of a repeated group",
             "x-code": 6,
             "x-text": "A group of one instance of a repeated group."
+          }
+        ]
+      },
+      "PANEL_SKIN_CODES": {
+        "description": "The refusals of a skin package (omx-panel docs/skin-package.md): what the skin host and omx-panel's validator say when a skin's override, API or view is refused, each with its English sentence and the placeholders it fills; the surfaces read schema/codes.json and catalogs/<lang>.json, rendered from here (tools/codes-render.mjs).",
+        "x-since": "1.2.0",
+        "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
+        "oneOf": [
+          {
+            "const": "panel.skin.override-invalid",
+            "title": "skinOverrideInvalid",
+            "x-code": 0,
+            "x-text": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin.",
+            "x-args": [
+              "plugin",
+              "field"
+            ]
+          },
+          {
+            "const": "panel.skin.override-entry-dropped",
+            "title": "skinOverrideEntryDropped",
+            "x-code": 1,
+            "x-text": "The {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the override still applies.",
+            "x-args": [
+              "plugin",
+              "field",
+              "entry",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.skin.api-mismatch",
+            "title": "skinApiMismatch",
+            "x-code": 2,
+            "x-text": "This skin declares API {declared}, which this console does not support (it serves {supported}); the skin is not loaded.",
+            "x-args": [
+              "declared",
+              "supported"
+            ]
+          },
+          {
+            "const": "panel.skin.view-error",
+            "title": "skinViewError",
+            "x-code": 3,
+            "x-text": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing.",
+            "x-args": [
+              "message"
+            ]
+          },
+          {
+            "const": "panel.skin.view-lint",
+            "title": "skinViewLint",
+            "x-code": 4,
+            "x-text": "The view {file} uses the disallowed word {word}; remove it and reload the skin.",
+            "x-args": [
+              "word",
+              "file"
+            ]
+          }
+        ]
+      },
+      "PANEL_MODGUI_CODES": {
+        "description": "The refusals of the MOD GUI importer (omx-panel docs/modgui-import.md) and of a skin's MOD GUI script licence (panel.skin.modgui-licence), each with its English sentence and the placeholders it fills; rendered into schema/codes.json and catalogs/<lang>.json (tools/codes-render.mjs).",
+        "x-since": "1.2.0",
+        "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
+        "oneOf": [
+          {
+            "const": "panel.modgui.not-found",
+            "title": "modguiNotFound",
+            "x-code": 0,
+            "x-text": "No MOD GUI to import was found in {file} ({detail}); nothing was written.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.ttl-invalid",
+            "title": "modguiTtlInvalid",
+            "x-code": 1,
+            "x-text": "The bundle's {file} does not read as valid TTL ({detail}); fix it and import again.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.no-licence",
+            "title": "modguiNoLicence",
+            "x-code": 2,
+            "x-text": "{file} states no licence ({detail}); add one to its bundle before its MOD GUI can be imported.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.licence-unmapped",
+            "title": "modguiLicenceUnmapped",
+            "x-code": 3,
+            "x-text": "The licence in {file} is not one this importer maps to an SPDX id ({detail}); add the mapping or change the licence.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.licence-refused",
+            "title": "modguiLicenceRefused",
+            "x-code": 4,
+            "x-text": "The licence in {file} is outside the allowed list ({detail}); the MOD GUI is not imported.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.unknown-property",
+            "title": "modguiUnknownProperty",
+            "x-code": 5,
+            "x-text": "{file} carries an unknown property ({detail}); remove it or correct it before importing.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.port-unknown",
+            "title": "modguiPortUnknown",
+            "x-code": 6,
+            "x-text": "{file} names a port that is not one of the plugin's own ports ({detail}); fix the symbol and import again.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.image-not-found",
+            "title": "modguiImageNotFound",
+            "x-code": 7,
+            "x-text": "{file} names an image that is not in the bundle's resources ({detail}); add the file or fix the reference.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.path-escape",
+            "title": "modguiPathEscape",
+            "x-code": 8,
+            "x-text": "{file} names a path that resolves outside the bundle ({detail}); nothing is imported from outside the bundle.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.target-exists",
+            "title": "modguiTargetExists",
+            "x-code": 9,
+            "x-text": "{file} already exists ({detail}); remove it first to import over it.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.skin.modgui-licence",
+            "title": "skinModguiLicence",
+            "x-code": 10,
+            "x-text": "The MOD GUI script for {plugin} is dropped: its licence {licence} is missing or not allowed.",
+            "x-args": [
+              "plugin",
+              "licence"
+            ]
           }
         ]
       }

@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies gestures install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
+.PHONY: all build check test spdx public-sources look copies gestures codes install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
 
 all: build
 
@@ -33,7 +33,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
-check: build spdx public-sources look copies gestures
+check: build spdx public-sources look copies gestures codes
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -59,6 +59,10 @@ look:
 # schema/gestures.json is what the gestures domain gives (docs/contract-domains.md), byte for byte.
 gestures:
 	node tools/gestures-render.mjs --check
+
+# schema/codes.json and catalogs/<lang>.json are what the panel domain gives (tools/codes-render.mjs), byte for byte.
+codes:
+	node tools/codes-render.mjs --check
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:

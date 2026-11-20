@@ -271,3 +271,19 @@ export function installedDescriptorFiles() {
   }
   return [...seen.values()].sort();
 }
+
+/** A panel domain item's words by title (`PANEL_GROUP_REASONS` -> `{ noControls: 'no-controls', ... }`): the codes and
+ * words the tools emit, read from the panel domain; a title the item lacks is refused by name, never undefined. */
+export function panelCodes(item) {
+  const words = Object.fromEntries(openDomainAt(panelDomainDirs(), 'panel').words(item).map((w) => [w.title, w.word]));
+  return new Proxy(Object.freeze(words), {
+    get(t, k) {
+      if (typeof k === 'string' && !(k in t)) throw new Error(`vocabulary: the panel domain's ${item} has no word titled ${k}`);
+      return t[k];
+    },
+  });
+}
+
+/** plugin-db's F1 mapping of the LV2 designations to the standard meanings (its lv2 domain, LV2_DESIGNATION_MEANINGS,
+ * opened from the contract directories plugin-db-contract installs into): `Map<term, meaning>`. */
+export const lv2DesignationMeanings = once(() => new Map(openDomainAt(contractDirs(), 'lv2').words('LV2_DESIGNATION_MEANINGS').map((w) => [w.title, w.word])));

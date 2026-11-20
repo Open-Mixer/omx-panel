@@ -17,7 +17,7 @@ test('the domain names itself, its owner and its own version', () => {
   assert.equal(doc.$id, 'https://openmixer.org/contract/panel');
   assert.equal(doc.info['x-owner'], 'omx-panel');
   assert.match(doc.info.version, /^\d+\.\d+\.\d+$/);
-  assert.deepEqual(Object.keys(doc.components.schemas), ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS', 'PANEL_STORE_CODES', 'PANEL_DESCRIBE_CODES', 'PANEL_GROUP_OUTCOMES', 'PANEL_GROUP_REASONS', 'PANEL_GROUP_RULES']);
+  assert.deepEqual(Object.keys(doc.components.schemas), ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS', 'PANEL_STORE_CODES', 'PANEL_DESCRIBE_CODES', 'PANEL_GROUP_OUTCOMES', 'PANEL_GROUP_REASONS', 'PANEL_GROUP_RULES', 'PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES']);
 });
 
 test('a code is the place of its word, and no word is twice', () => {

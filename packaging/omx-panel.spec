@@ -24,6 +24,8 @@ BuildRequires: npm
 # unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
 BuildRequires: omx-contract-data >= 3.20.2
 BuildRequires: plugin-hostd-contract >= 0.20.7
+# %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
+BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
 BuildRequires: omx-contract >= 3.21.0
@@ -58,6 +60,8 @@ Requires: omx-contract-data >= 3.20.2
 Requires: plugin-hostd-contract >= 0.20.7
 # the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
 Requires: omx-panel-contract >= %{version}-%{release}
+# the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
+Requires: plugin-db-contract >= 0.5.0
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
 Requires: omx-dsp-wasm >= 0.33.0
 Provides: bundled(nodejs-ajv)
