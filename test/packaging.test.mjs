@@ -123,3 +123,30 @@ test('the package carries look.json, the vintage tokens with the knob pointer an
   for (const n of ['--knob-pointer', '--curve-stroke']) assert.ok(roles.includes(n), `${n} is no role of the shipped role file`);
   for (const n of [...roles, '--knob-pointer', '--curve-stroke']) assert.match(look.tokens[n] ?? '', /^#[0-9a-f]{6}$/, `the shipped look.json sets no ${n}`);
 });
+
+// The installed tools import @openmixer/omx-contract/entry (isMain): the installed package links
+// node_modules/@openmixer/omx-contract to the omx-contract package's /usr/lib/omx-contract, requires that package at the
+// floor package.json builds against (floor only), and %check, debian/rules and debian/tests run an installed tool
+// (tools/installed-tools-check.sh). 0.15.0 shipped none of it: `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with
+// ERR_MODULE_NOT_FOUND on a host.
+test('the installed tools resolve @openmixer/omx-contract: linked, required by a floor, run by the package checks', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  const floor = /^>=(\d+\.\d+\.\d+)$/.exec(pkg.devDependencies['@openmixer/omx-contract'])?.[1];
+  assert.ok(floor, 'package.json floors @openmixer/omx-contract');
+  const makefile = readFileSync(join(ROOT, 'Makefile'), 'utf8');
+  assert.match(makefile, /^OMX_CONTRACT_LIB \?= \$\(PREFIX\)\/lib\/omx-contract$/m);
+  assert.match(makefile, /^\tln -sfn \$\(OMX_CONTRACT_LIB\) \$\(DESTDIR\)\$\(PKGDIR\)\/node_modules\/@openmixer\/omx-contract$/m);
+  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
+  const main = spec.slice(0, spec.indexOf('%description'));
+  assert.match(main, new RegExp(`^Requires: omx-contract >= ${floor.replace(/\./g, '\\.')}$`, 'm'));
+  const control = readFileSync(join(ROOT, 'debian/control'), 'utf8');
+  const depends = /^Package: omx-panel\n(?:.*\n)*?Depends: (.*)$/m.exec(control)?.[1] ?? '';
+  assert.ok(depends.split(/,\s*/).includes(`omx-contract (>= ${floor}~)`), `omx-panel Depends: ${depends}`);
+  for (const dep of [main.match(/^Requires: omx-contract\b.*$/gm) ?? [], depends.split(/,\s*/).filter((d) => d.startsWith('omx-contract ('))].flat()) {
+    assert.doesNotMatch(dep, /<|(?<!>)=\s*\d|Breaks|Conflicts/, `a floor only: ${dep}`);
+  }
+  assert.match(spec, /^%check\n(?:.*\n)*?tools\/installed-tools-check\.sh %\{buildroot\}%\{_datadir\}\/omx-panel$/m);
+  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /^\ttools\/installed-tools-check\.sh \$\(CURDIR\)\/debian\/omx-panel\/usr\/share\/omx-panel$/m);
+  assert.match(readFileSync(join(ROOT, 'debian/tests/control'), 'utf8'), /^Test-Command: tools\/installed-tools-check\.sh \/usr\/share\/omx-panel$/m);
+  assert.equal(spawnSync('bash', ['-n', join(ROOT, 'tools/installed-tools-check.sh')]).status, 0);
+});
