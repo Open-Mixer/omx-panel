@@ -48,6 +48,15 @@ test('every version file states the version package.json states, and CHANGELOG.m
   assert.ok(files['CHANGELOG.md'].split('\n').some((l) => l.startsWith(`- ${version}: `)), `CHANGELOG.md has no "- ${version}: " line`);
 });
 
+test('a snapshot suffix of either spelling, ~git or +git (the shared build-deb action stamps +git), is accepted on the same base only', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  const stamped = (v) => ({ ...files, 'debian/changelog': files['debian/changelog'].replace(/^omx-panel \([^)]*\)/, `omx-panel (${v})`) });
+  assert.equal(statedVersions(stamped(`${version}~git1795139113.7d4fc3a`))['debian/changelog'], version);
+  assert.equal(statedVersions(stamped(`${version}+git1795139113.7d4fc3a`))['debian/changelog'], version, 'the +git stamp of the dry run');
+  assert.notEqual(statedVersions(stamped(`9.9.9+git1795139113.7d4fc3a`))['debian/changelog'], version, 'a different base stays red');
+});
+
 test('a lone bump of any one file is refused (the check reads each file, it does not copy one)', () => {
   const files = tree();
   const version = statedVersions(files)['package.json'];
