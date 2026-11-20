@@ -7,8 +7,10 @@ omx-panel (0.15.0) unstable; urgency=medium
     cache; the panel domain at 1.1.0, whose x-since is the version of the
     domain that added each item; the tools decide run-not-imported with
     omx-contract's isMain, so a bin run through a symlink runs.
-  * The descriptions store core (libomx-panel-store and its command) is built
-    in the tree and tested, not packaged in this release.
+  * New: the descriptions store core, packaged: libomx-panel-store0 carries
+    libomx-panel-store.so.0, libomx-panel-store-dev its .so link, header,
+    pkg-config file and the DDL (panel.sql), omx-panel-store the command.
+    Built against SQLite >= 3.38.0.
 
  -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 16:00:00 +0100
 

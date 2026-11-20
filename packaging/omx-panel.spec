@@ -284,8 +284,10 @@ English source sentence.
   domain at 1.1.0, whose x-since is the version of the domain that added each
   item; the tools decide run-not-imported with omx-contract's isMain, so a bin
   run through a symlink runs.
-- The descriptions store core (libomx-panel-store and its command) is built in
-  the tree and tested, not packaged in this release.
+- New: the descriptions store core, packaged: omx-panel-store carries
+  libomx-panel-store.so.0 and the command omx-panel-store; omx-panel-store-devel
+  its .so link, header, pkg-config file and the DDL (panel.sql). Built against
+  SQLite >= 3.38.0.
 
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.14.0-1
 - Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0
