@@ -33,6 +33,8 @@
 #                                          lists by convention); a directory that also holds plugins is fine
 #   STATE_DIR        scans and work files  /var/lib/omx/modgui-sync  (user: $XDG_DATA_HOME/omx/modgui-sync)
 #   DESCRIPTOR_DIRS  scanned descriptors   /var/lib/omx/descriptors  (user: $XDG_DATA_HOME/omx/descriptors)
+#   MODGUI_LOOK_FILE the look of the bundles /etc/omx/modgui-look (first line: vintage, console or 3d; absent or empty: the default);
+#                                          a bundle made under another look is written again
 # CLAP plugins have no MOD GUI and get no bundle; `--check` also lists the CLAP search list (CLAP_PATH, ~/.clap,
 # /usr/lib/clap: the CLAP specification's).
 #******************************************************************************
@@ -51,6 +53,13 @@ STATE_DIR=${STATE_DIR:-$base/modgui-sync}
 SCAN_DIR="$STATE_DIR/descriptors"
 VIEW_DIR="$STATE_DIR/view"
 MARKER=.omx-modgui-sync
+# The look of the bundles it writes: the first line of /etc/omx/modgui-look (docs/modgui.md), else omx-panel's default
+LOOK_FILE=${MODGUI_LOOK_FILE:-/etc/omx/modgui-look}
+look_args=()
+if [ -r "$LOOK_FILE" ]; then
+	look=$(head -n 1 "$LOOK_FILE" | tr -d '[:space:]')
+	[ -n "$look" ] && look_args=(--look "$look")
+fi
 SCAN_TIMEOUT=30
 PREFIX=omx-modgui-
 
@@ -238,8 +247,9 @@ generate() {
 		no_controls=$((no_controls + 1))
 		return
 	fi
+	local made="${args[*]}${look_args[*]:+ ${look_args[*]}}"
 	if [ -f "$out/$MARKER" ] && [ "$out/modgui.ttl" -nt "$desc_file" ] && [ "$out/manifest.ttl" -nt "$desc_file" ] &&
-		[ "$(head -n 1 "$out/$MARKER")" = "$uri" ]; then
+		[ "$(head -n 1 "$out/$MARKER")" = "$uri" ] && [ "$(sed -n 2p "$out/$MARKER")" = "$made" ]; then
 		fresh=$((fresh + 1))
 		return
 	fi
@@ -250,7 +260,7 @@ generate() {
 	fi
 	tmp=$(mktemp -d "$STATE_DIR/tmp.XXXXXX")
 	local status=0 reason
-	(cd "$tmp" && omx-panel modgui "${args[@]}" --easy-first --out "$tmp/$name.lv2" --source "$desc_file" >/dev/null 2>"$tmp/stderr") || status=$?
+	(cd "$tmp" && omx-panel modgui "${args[@]}" "${look_args[@]}" --easy-first --out "$tmp/$name.lv2" --source "$desc_file" >/dev/null 2>"$tmp/stderr") || status=$?
 	if [ "$status" != 0 ]; then
 		if [ "$status" = 3 ]; then
 			# omx-panel's exit 3: the descriptor has no visible control, there is no face to make
@@ -272,7 +282,7 @@ generate() {
 		echo "# The plugin itself lives in its own bundle; this one adds its GUI."
 		grep -v '^#' "$tmp/$name.lv2/modgui.ttl"
 	} >"$tmp/$name.lv2/manifest.ttl"
-	printf '%s\n%s\n' "$uri" "${args[*]}" >"$tmp/$name.lv2/$MARKER"
+	printf '%s\n%s\n' "$uri" "$made" >"$tmp/$name.lv2/$MARKER"
 	rm -rf "$out"
 	mv "$tmp/$name.lv2" "$out"
 	rm -rf "$tmp"
