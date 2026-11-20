@@ -71,6 +71,15 @@ function bandsOnPages(pages, descriptor) {
 
 const upTo = (n) => Array.from({ length: n }, (_, k) => k + 1);
 
+/** The cut at `values` as the slots of the cut that shows every band, the controls `values` hide blank, a page left with no
+ * shown slot not cut (no screen has zero visible items). */
+function blankedAt(x, values) {
+  const hidden = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
+  return pagesOf(x, { values: { eqBands: 32 } })
+    .map((p) => ({ ...p, ids: p.ids.map((id) => (hidden.has(id) ? null : id)) }))
+    .filter((p) => p.ids.some((id) => id !== null));
+}
+
 /** The check every cut is held to: the pages hold bands 1..`count`, whole, and no other. */
 function pagesShowBands(pages, descriptor, count) {
   assert.deepEqual(bandsOnPages(pages, descriptor), upTo(count));
@@ -120,17 +129,15 @@ test('eqBands 4 (its come-up value): bands 1..4 shown, and no page of eight hold
     assert.equal(pages.flatMap((p) => p.ids).filter((id) => id !== null).length, 22);
   }
   // hidden bands keep their slots, blank: the slots do not move with the values; a page left with no shown slot is not cut
-  const hidden = new Set(x.controls.filter((c) => !isVisible(c)).map((c) => c.param));
-  const blanked = pagesOf(x, { values: { eqBands: 32 } }).map((p) => ({ ...p, ids: p.ids.map((id) => (hidden.has(id) ? null : id)) }));
-  assert.deepEqual(pagesOf(x), blanked.filter((p) => p.ids.some((id) => id !== null)));
-  assert.ok(blanked.some((p) => p.ids.every((id) => id === null)), 'the come-up value leaves pages with no shown slot, which the cut leaves out');
+  assert.deepEqual(pagesOf(x), blankedAt(x, {}));
+  assert.ok(pagesOf(x).length < pagesOf(x, { values: { eqBands: 32 } }).length, 'the come-up value leaves pages with no shown slot, which the cut leaves out');
 });
 
 test('eqBands 9: bands 1..9 shown; the cut follows the value, not the come-up one', () => {
   const d = strip(4);
   const x = panelLayout(d, { panel: declared() });
   for (const perPage of [undefined, 8]) pagesShowBands(pagesOf(x, { perPage, values: { eqBands: 9 } }), d, 9);
-  assert.equal(pagesOf(x, { values: { eqBands: 9 } }).length, pagesOf(x).length);
+  assert.deepEqual(pagesOf(x, { values: { eqBands: 9 } }), blankedAt(x, { eqBands: 9 }), 'the slots stay where every band shows them');
   pagesShowBands(pagesOf(x, { values: { eqBands: 32 } }), d, 32);
   // the same at come-up: a strip that comes up with nine bands
   const d9 = strip(9);

@@ -33,7 +33,7 @@
 import { applySkinOverride } from '../src/skin-package.js';
 import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
-import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
 
@@ -409,7 +409,8 @@ function pagesOfDescription(description, effective, layout, servedOf, { perPage,
  * The controls with each repeated group's instances marked and ordered for the page cut (docs/group-model.md, P1): in a
  * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order, HPF first
  * and LPF last, and holds its `slots`: a place the head has no control at is a blank slot (`param: null`), so slot `k` of
- * every instance's screen is the same parameter. The section's own controls (the count, an EQ's master on) come before the
+ * every instance's screen is the same parameter; each slot carries its place (`PLACE`) and the matrix row it is (`ROW`), so
+ * the cut can put the places past a page on the matrix's row screens. The section's own controls (the count, an EQ's master on) come before the
  * instances. Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
  */
 function byInstance(sections, controls) {
@@ -418,13 +419,17 @@ function byInstance(sections, controls) {
   const instances = new Map();
   sections.forEach((s, at) => {
     if (!s.matrix) return;
+    // the row each place is: the on/off's (the head row) where any head has one, then the matrix's rows from the top
+    const headRow = s.matrix.rows.find((r) => r.head);
+    const rowOf = [...(s.matrix.heads.some((h) => h.on) ? [headRow?.label || 'On'] : []), ...s.matrix.rows.filter((r) => !r.head).map((r) => r.label)];
     instances.set(at, matrixInstances(s.matrix).flatMap(({ head, slots }, j) => {
       const mark = { section: at, [GROUP]: `${s.key}#${j}`, [INSTANCE]: head.label };
-      return slots.map((symbol) => {
+      return slots.map((symbol, k) => {
+        const place = { [PLACE]: k, [ROW]: rowOf[k] };
         const c = symbol !== null && !placed.has(symbol) ? bySymbol.get(symbol) : undefined;
-        if (!c) return { symbol: null, label: '', param: null, visible: null, mask: 0n, ...mark };
+        if (!c) return { symbol: null, label: '', param: null, visible: null, mask: 0n, ...mark, ...place };
         placed.add(symbol);
-        return { ...c, ...mark };
+        return { ...c, ...mark, ...place };
       });
     }));
   });
