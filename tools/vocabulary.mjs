@@ -283,3 +283,7 @@ export function panelCodes(item) {
     },
   });
 }
+
+/** plugin-db's F1 mapping of the LV2 designations to the standard meanings (its lv2 domain, LV2_DESIGNATION_MEANINGS,
+ * opened from the contract directories plugin-db-contract installs into): `Map<term, meaning>`. */
+export const lv2DesignationMeanings = once(() => new Map(openDomainAt(contractDirs(), 'lv2').words('LV2_DESIGNATION_MEANINGS').map((w) => [w.title, w.word])));

@@ -25,7 +25,7 @@
  *                                                rules found, for a diagnosis only.
  */
 
-import { panelCodes } from './vocabulary.mjs';
+import { lv2DesignationMeanings, panelCodes } from './vocabulary.mjs';
 
 /** The verdict's outcomes and reasons: the panel domain's PANEL_GROUP_OUTCOMES and PANEL_GROUP_REASONS, by title. */
 export const OUTCOME = panelCodes('PANEL_GROUP_OUTCOMES');
@@ -107,30 +107,36 @@ export const HOST_DESIGNATIONS = new Set([
   `${TIME}framesPerSecond`,
 ]);
 
-/** Rule 2: what each designation (the LV2 parameters vocabulary) says a control belongs to. */
-const DESIGNATION_GROUP = {
-  [`${PARAM}attack`]: 'envelope',
-  [`${PARAM}decay`]: 'envelope',
+/** Rule 2: the group a standard meaning belongs to (omx-contract's descriptor meanings), the meaning of an LV2
+ * designation read from plugin-db's F1 mapping (LV2_DESIGNATION_MEANINGS, sorting pass row P3). */
+const MEANING_GROUP = {
+  attack: 'envelope', decay: 'envelope', release: 'envelope', hold: 'envelope', delay: 'envelope',
+  threshold: 'dynamics', ratio: 'dynamics',
+  cutoffFrequency: 'filter', resonance: 'filter',
+  frequency: 'oscillator',
+  gain: 'output', wetDryRatio: 'output',
+};
+/** The LV2 designations that have no standard meaning and no F1 word: omx-panel's own words (C2 2026-11-20), with the
+ * group each names. */
+const PANEL_OWN_DESIGNATION_GROUP = {
   [`${PARAM}sustain`]: 'envelope',
-  [`${PARAM}release`]: 'envelope',
-  [`${PARAM}hold`]: 'envelope',
-  [`${PARAM}delay`]: 'envelope',
-  [`${PARAM}threshold`]: 'dynamics',
-  [`${PARAM}ratio`]: 'dynamics',
-  [`${PARAM}cutoffFrequency`]: 'filter',
-  [`${PARAM}resonance`]: 'filter',
   [`${PARAM}waveform`]: 'oscillator',
   [`${PARAM}pulseWidth`]: 'oscillator',
-  [`${PARAM}frequency`]: 'oscillator',
   [`${PARAM}amplitude`]: 'oscillator',
-  [`${PARAM}gain`]: 'output',
   [`${PARAM}wetLevel`]: 'output',
   [`${PARAM}dryLevel`]: 'output',
-  [`${PARAM}wetDryRatio`]: 'output',
 };
+/** An LV2 designation's standard meaning: the F1 word whose title is the designation's term (the parameters vocabulary,
+ * or lv2:enabled of the core), else undefined. */
+function meaningOf(designation) {
+  const term = designation.startsWith(PARAM) ? designation.slice(PARAM.length) : designation === `${LV2}enabled` ? 'enabled' : undefined;
+  return term === undefined ? undefined : lv2DesignationMeanings().get(term);
+}
+/** The group a designation says a control belongs to. */
+const designationGroup = (designation) => PANEL_OWN_DESIGNATION_GROUP[designation] ?? MEANING_GROUP[meaningOf(designation)];
 const DESIGNATION_NAMES = { envelope: 'Envelope', dynamics: 'Dynamics', filter: 'Filter', oscillator: 'Oscillator', output: 'Output' };
 /** In a plugin with a threshold or a ratio, attack, release and hold are the detector's, not an envelope's. */
-const DYNAMICS_ALSO = new Set([`${PARAM}attack`, `${PARAM}release`, `${PARAM}hold`]);
+const DYNAMICS_ALSO = new Set(['attack', 'release', 'hold']);
 
 /** Rule 4: a unit's group name; any other unit is named by its rdfs:label, else its IRI's last segment. */
 const UNIT_NAMES = {
@@ -315,12 +321,12 @@ function ruleOwnGroups(state, rule) {
 /** 2: lv2:designation, through the parameters vocabulary. */
 function ruleDesignation(state, rule) {
   const all = state.controls;
-  const dynamics = all.some((p) => p.designation === `${PARAM}threshold` || p.designation === `${PARAM}ratio`);
+  const dynamics = all.some((p) => p.designation && ['threshold', 'ratio'].includes(meaningOf(p.designation)));
   const classes = new Map();
   for (const p of unplacedOf(state)) {
-    let kind = p.designation ? DESIGNATION_GROUP[p.designation] : undefined;
+    let kind = p.designation ? designationGroup(p.designation) : undefined;
     if (kind === undefined) continue;
-    if (dynamics && DYNAMICS_ALSO.has(p.designation)) kind = 'dynamics';
+    if (dynamics && DYNAMICS_ALSO.has(meaningOf(p.designation))) kind = 'dynamics';
     if (!classes.has(kind)) classes.set(kind, []);
     classes.get(kind).push(p);
   }

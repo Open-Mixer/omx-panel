@@ -6,7 +6,7 @@
 // pulseWidth, amplitude, wetLevel and dryLevel have no standard meaning and no F1 word: they stay omx-panel's own
 // (C2 2026-11-20). Call level: inferGroups' verdict.
 // (a) golden verdicts frozen from origin/main 3cace582's rule 2; (c) a temporary contract directory whose F1 word for
-// cutoffFrequency means gain moves the cutoff controls from Filter to Output.
+// cutoffFrequency means tone (a meaning rule 2 has no group for) takes the cutoff controls out of rule 2's Filter.
 // The lv2 domain is plugin-db's (plugin-db-contract): $OMX_CONTRACT_PATH or the installed contract directory.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -31,7 +31,7 @@ test('(a) rule 2 groups by designation as before: the golden verdicts', () => {
   assert.deepEqual(run(), GOLDEN);
 });
 
-test('(c) the F1 mapping decides: a cutoffFrequency that F1 says is gain goes to Output, not Filter', (t) => {
+test('(c) the F1 mapping decides: a cutoffFrequency that F1 says is tone is no longer rule 2\'s Filter', (t) => {
   const from = contractDirs().find((d) => { try { readFileSync(join(d, 'lv2/lv2.json')); return true; } catch { return false; } });
   assert.ok(from, `no lv2 domain (plugin-db-contract) in ${contractDirs().join(':')}`);
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-p3-'));
@@ -39,8 +39,9 @@ test('(c) the F1 mapping decides: a cutoffFrequency that F1 says is gain goes to
   cpSync(join(from, 'lv2'), join(dir, 'lv2'), { recursive: true });
   const f = join(dir, 'lv2/lv2.json');
   const doc = JSON.parse(readFileSync(f, 'utf8'));
-  doc.components.schemas.LV2_DESIGNATION_MEANINGS.oneOf.find((w) => w.title === 'cutoffFrequency').const = 'gain';
+  doc.components.schemas.LV2_DESIGNATION_MEANINGS.oneOf.find((w) => w.title === 'cutoffFrequency').const = 'tone';
   writeFileSync(f, JSON.stringify(doc, null, 2));
   const got = run({ OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') });
-  assert.ok(got.A.groups.some((g) => g.startsWith('Output:') && g.includes('cutoffFrequency0')), `cutoff did not follow F1: ${JSON.stringify(got.A.groups)}`);
+  assert.notEqual(got.A.placedBy?.cutoffFrequency0, 2, `rule 2 still placed cutoff: ${JSON.stringify(got.A.groups)}`);
+  assert.ok(!got.A.groups.some((g) => g.startsWith('Filter:') && g.includes('cutoffFrequency0')), `cutoff did not follow F1: ${JSON.stringify(got.A.groups)}`);
 });
