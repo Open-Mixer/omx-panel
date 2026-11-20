@@ -16,6 +16,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => readFileSync(join(ROOT, f), 'utf8');
 
+/**
+ * A release dry run stamps debian/changelog with a snapshot version, `<base>~git<digits>.<hex> or <base>+git<digits>.<hex> (the shared build-deb action)`; the suffix is accepted
+ * on the SAME base version only (the base is compared with package.json's), a different base stays red.
+ */
+const SNAPSHOT = /[~+]git\d+\.[0-9a-f]+$/;
+
 /** Each file's stated version, by where it states it. */
 export function statedVersions(files) {
   const lock = JSON.parse(files['package-lock.json']);
@@ -26,7 +32,7 @@ export function statedVersions(files) {
     'package-lock.json packages[""]': lock.packages?.['']?.version,
     'spec Version': /^Version:\s*(\S+)/m.exec(spec)?.[1],
     'spec %changelog': /^%changelog\s*\n\*[^\n]* - ([^\s-]+)-\d+/m.exec(spec)?.[1],
-    'debian/changelog': /^omx-panel \(([^)-]+)(?:-[^)]*)?\)/.exec(files['debian/changelog'])?.[1],
+    'debian/changelog': /^omx-panel \(([^)-]+)(?:-[^)]*)?\)/.exec(files['debian/changelog'])?.[1]?.replace(SNAPSHOT, ''),
   };
 }
 
@@ -40,6 +46,15 @@ test('every version file states the version package.json states, and CHANGELOG.m
   assert.match(version, /^\d+\.\d+\.\d+$/);
   for (const [where, v] of Object.entries(stated)) assert.equal(v, version, `${where} states ${v}, package.json ${version}`);
   assert.ok(files['CHANGELOG.md'].split('\n').some((l) => l.startsWith(`- ${version}: `)), `CHANGELOG.md has no "- ${version}: " line`);
+});
+
+test('a snapshot suffix of either spelling, ~git or +git (the shared build-deb action stamps +git), is accepted on the same base only', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  const stamped = (v) => ({ ...files, 'debian/changelog': files['debian/changelog'].replace(/^omx-panel \([^)]*\)/, `omx-panel (${v})`) });
+  assert.equal(statedVersions(stamped(`${version}~git1795139113.7d4fc3a`))['debian/changelog'], version);
+  assert.equal(statedVersions(stamped(`${version}+git1795139113.7d4fc3a`))['debian/changelog'], version, 'the +git stamp of the dry run');
+  assert.notEqual(statedVersions(stamped(`9.9.9+git1795139113.7d4fc3a`))['debian/changelog'], version, 'a different base stays red');
 });
 
 test('a lone bump of any one file is refused (the check reads each file, it does not copy one)', () => {
@@ -57,4 +72,25 @@ test('a lone bump of any one file is refused (the check reads each file, it does
     const stated = Object.values(statedVersions(lone));
     assert.ok(new Set(stated).size > 1, `a lone bump of ${f} leaves every file agreeing`);
   }
+});
+
+const snapshotted = (files, version) => ({
+  ...files,
+  'debian/changelog': files['debian/changelog'].replace(/^omx-panel \([^)]*\)/m, `omx-panel (${version})`),
+});
+const agrees = (files) => new Set(Object.values(statedVersions(files))).size === 1;
+
+test('a dry-run snapshot changelog version on the same base agrees', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  assert.ok(agrees(snapshotted(files, `${version}~git1794847849.97013d6`)));
+});
+
+test('a snapshot suffix on a different base stays red, and so does a bare different base', () => {
+  const files = tree();
+  const version = statedVersions(files)['package.json'];
+  const next = version.replace(/\d+$/, (n) => String(Number(n) + 1));
+  assert.ok(!agrees(snapshotted(files, `${next}~git1794847849.97013d6`)));
+  assert.ok(!agrees(snapshotted(files, next)));
+  assert.ok(!agrees(snapshotted(files, `${version}~gitnotdigits.zz`)));
 });

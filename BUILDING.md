@@ -5,7 +5,7 @@
 Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract's
 schema and contract directory (`omx-contract-data`), plugin-hostd's format tables (`plugin-hostd-contract`), the
 param-contract unit table (`omx-contract-data`, from 3.6.0: the OMX_PARAM_CONTRACT_UNITS sheet in `3/omx-contract/param-contract.json`). Nothing of
-omx-plugins is needed to build or test: its descriptors (`omx-plugins-contract`) are a recommendation, for `modgui --installed`. The contract directory is `$OMX_CONTRACT_PATH` (a `:`
+omx-plugins is needed to build or test: its descriptors (`omx-plugins-contract`) are not a dependency of this package; `modgui --installed` reads them when they are installed. The contract directory is `$OMX_CONTRACT_PATH` (a `:`
 list, the first that holds a package wins), else omx-contract's pkg-config variable `contractdir` where
 `omx-contract-devel` installs `omx-contract.pc`, else `/usr/share/omx-contract/contract.d`; no pkg-config is needed.
 `$PLUGIN_HOSTD_TABLES` (a directory holding `lv2.json`) and `$OMX_CONTRACT_SCHEMA` (an `omx-contract.schema.json`)
@@ -22,7 +22,7 @@ make install PREFIX=/usr DESTDIR=…   # the built tree under share/omx-panel, t
 
 The panel renderer (`renderer/`, [docs/renderer.md](docs/renderer.md)) is C and builds on its own: a C11 compiler, cJSON
 (`cjson-devel`; `libcjson-dev` on Debian), omx-contract's C headers (`omx-contract-devel`; `libomx-contract-dev`) and omx-dsp's
-meter view (`omx-dsp-devel` >= 0.32.2 and < 0.33; `libomxdsp-dev`).
+meter view (`omx-dsp-devel` >= 0.32.3; `libomxdsp-dev`).
 `make renderer` builds the library, its header, its pkg-config file and the `omx-panel-render` command into
 `renderer/build/`; `make renderer-check` draws the fixtures against the golden images and the MOD GUI face.
 `WINDOW=1` adds the window, which needs pugl and NanoVG (`pugl-devel`, `nanovg-devel`; `libpugl-dev`, `libnanovg-dev`,

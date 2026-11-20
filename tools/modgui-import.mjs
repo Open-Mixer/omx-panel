@@ -30,6 +30,7 @@ import { basename, dirname, join, posix, relative, resolve, sep } from 'node:pat
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as skinPackage from '../src/skin-package.js';
 import { parseTurtle } from './turtle-read.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 const LV2_PROJECT = 'http://lv2plug.in/ns/lv2core#project';
@@ -306,4 +307,4 @@ function main() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (isMain(import.meta.url)) main();

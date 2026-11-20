@@ -23,12 +23,12 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken } from './vocabulary.mjs';
+import { meaningOfRole, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
 /** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch'];
+export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility'];
 
 /** The widgets a face serves, by enum value. */
 export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
@@ -48,8 +48,8 @@ const ANALOGUE_WORD = /phantom|(^|[^a-z])pad([^a-z]|$)|head[-_ ]?amp|headamp/;
 /** Whether `text` (a meaning in camelCase, a symbol, a name) names such a state, whole words only. */
 export const namesAnalogueState = (text) => ANALOGUE_WORD.test(text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase());
 export const METER_REFUSED = 'PANEL_METER_REFUSED';
-/** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
-const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
+/** A declared panel's widget names -> the standard widget. */
+const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
  * which the faces do not set), and so is any widget the extension has no value for. */
 const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };
@@ -298,7 +298,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = rest.token ?? unitToken(unit);
+    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? SLOPE_UNITS[unit] : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
@@ -525,6 +525,9 @@ const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 /** The key a control carries its declared group under, for the page cut: a symbol, so no serialisation sees it. */
 export const GROUP = Symbol('group');
 
+/** The label of the repeated-group instance a control belongs to (`Band 3`), for the page cut: a symbol, so no serialisation sees it. */
+export const INSTANCE = Symbol('instance');
+
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
@@ -575,7 +578,12 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     return [...easyPages, ...declared];
   }
   return [...easyPages, ...x.sections.flatMap((s, section) => {
-    const cs = x.controls.filter((c) => c.section === section && !easy.includes(c.symbol));
+    // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
+    // after it stay where every other instance has them, and the blanks an instance would end on are left off
+    const taken = (c) => c.param === null || easy.includes(c.symbol);
+    const cs = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
+      .map((c) => (taken(c) ? { ...c, param: null } : c))
+      .filter((c, i, all) => c.param !== null || all.slice(i + 1).some((d) => d[GROUP] === c[GROUP] && d.param !== null));
     const pages = [];
     let page = [];
     const flush = () => {
@@ -588,16 +596,26 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       const run = cs.slice(i, j);
       i = j;
       // a group that fits ends the page early rather than split; a longer one starts and ends on a page of its own
-      if (run.length > size || page.length + run.length > size) flush();
+      // an instance of a repeated group is never beside another control: a page of its own, ended after it
+      const alone = run[0][INSTANCE] !== undefined;
+      if (run.length > size || page.length + run.length > size || alone) flush();
       for (const c of run) {
         if (page.length === size) flush();
         page.push(c);
       }
-      if (run.length > size) flush();
+      if (run.length > size || alone) flush();
     }
     flush();
+    // a page of one repeated-group instance is named by it (`Band 3`, a continuation `Band 3 2`)
+    const seen = new Map();
     return pages.map((p, k) => {
       const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
+      const instance = p[0][INSTANCE];
+      if (instance !== undefined && p.every((c) => c[INSTANCE] === instance)) {
+        const n = (seen.get(instance) ?? 0) + 1;
+        seen.set(instance, n);
+        return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
+      }
       return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
     });
   })];

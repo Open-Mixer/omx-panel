@@ -1,0 +1,617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/contract/panel",
+  "info": {
+    "title": "The panel vocabulary: families, widgets, display kinds, display sources and placements of a panel",
+    "version": "1.1.0",
+    "x-owner": "omx-panel",
+    "x-stability": "experimental"
+  },
+  "components": {
+    "schemas": {
+      "PANEL_FAMILIES": {
+        "description": "The panel families of a plugin (omx-panel docs/panel-layout.md): the kind of processor its panel is laid out for. The words and their order are the contract; omx-panel's tools/panel-description.mjs FAMILIES and the skin package schema read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "Panel families and widgets are declarations, so they live here (vocabulary-owner rule, FreeMixer/omx-contract#157).",
+        "oneOf": [
+          {
+            "const": "none",
+            "title": "none",
+            "description": "a plugin with no family: its panel is laid out from its groups and roles",
+            "x-code": 0,
+            "x-text": "A plugin with no family: its panel is laid out from its groups and its roles."
+          },
+          {
+            "const": "gate",
+            "title": "gate",
+            "description": "a gate or expander",
+            "x-code": 1,
+            "x-text": "A gate's or an expander's panel family."
+          },
+          {
+            "const": "dynamics",
+            "title": "dynamics",
+            "description": "a compressor",
+            "x-code": 2,
+            "x-text": "A compressor's panel family."
+          },
+          {
+            "const": "limiter",
+            "title": "limiter",
+            "description": "a limiter",
+            "x-code": 3,
+            "x-text": "A limiter's panel family."
+          },
+          {
+            "const": "deesser",
+            "title": "deesser",
+            "description": "a de-esser",
+            "x-code": 4,
+            "x-text": "A de-esser's panel family."
+          },
+          {
+            "const": "eq",
+            "title": "eq",
+            "description": "an equaliser, parametric or graphic",
+            "x-code": 5,
+            "x-text": "An equaliser's panel family, parametric or graphic."
+          },
+          {
+            "const": "filter",
+            "title": "filter",
+            "description": "a filter",
+            "x-code": 6,
+            "x-text": "A filter's panel family."
+          },
+          {
+            "const": "drive",
+            "title": "drive",
+            "description": "a saturator or distortion",
+            "x-code": 7,
+            "x-text": "A saturator's or a distortion's panel family."
+          },
+          {
+            "const": "modulation",
+            "title": "modulation",
+            "description": "a chorus, flanger, phaser or tremolo",
+            "x-code": 8,
+            "x-text": "A chorus's, a flanger's, a phaser's or a tremolo's panel family."
+          },
+          {
+            "const": "delay",
+            "title": "delay",
+            "description": "a delay",
+            "x-code": 9,
+            "x-text": "A delay's panel family."
+          },
+          {
+            "const": "reverb",
+            "title": "reverb",
+            "description": "a reverb",
+            "x-code": 10,
+            "x-text": "A reverb's panel family."
+          },
+          {
+            "const": "pitch",
+            "title": "pitch",
+            "description": "a pitch shifter",
+            "x-code": 11,
+            "x-text": "A pitch shifter's panel family."
+          },
+          {
+            "const": "utility",
+            "title": "utility",
+            "description": "a gain trim, a stereo width control or another utility that shapes a signal without a processor's character",
+            "x-code": 12,
+            "x-text": "A utility's panel family: a trim, a width control, a balancer or a clipper."
+          }
+        ]
+      },
+      "PANEL_STANDARD_WIDGETS": {
+        "description": "The standard widgets a panel picks from a descriptor and a representation (a skin) draws, in the order omx-panel's tools/panel-description.mjs STANDARD_WIDGETS lists them.",
+        "x-since": "1.0.0",
+        "oneOf": [
+          {
+            "const": "knob",
+            "title": "knob",
+            "description": "a travel",
+            "x-code": 0,
+            "x-text": "A travel, drawn as a knob."
+          },
+          {
+            "const": "fader",
+            "title": "fader",
+            "description": "a travel drawn long",
+            "x-code": 1,
+            "x-text": "A travel drawn long, as a fader."
+          },
+          {
+            "const": "switch",
+            "title": "switch",
+            "description": "a toggle",
+            "x-code": 2,
+            "x-text": "A toggle, drawn as a switch."
+          },
+          {
+            "const": "selector",
+            "title": "selector",
+            "description": "an integer travel or labelled values",
+            "x-code": 3,
+            "x-text": "An integer travel or labelled values, drawn as a selector."
+          },
+          {
+            "const": "meter",
+            "title": "meter",
+            "description": "a readout",
+            "x-code": 4,
+            "x-text": "A readout, drawn as a meter."
+          },
+          {
+            "const": "curve",
+            "title": "curve",
+            "description": "a response or transfer curve",
+            "x-code": 5,
+            "x-text": "A response or transfer curve, drawn as a graph."
+          },
+          {
+            "const": "xy",
+            "title": "xy",
+            "description": "two controls drawn as one point",
+            "x-code": 6,
+            "x-text": "Two controls drawn together as one point on a plane."
+          },
+          {
+            "const": "display",
+            "title": "display",
+            "description": "a value shown as text",
+            "x-code": 7,
+            "x-text": "A value shown as text."
+          }
+        ]
+      },
+      "PANEL_WIDGETS": {
+        "description": "The widgets a declared panel may name for a control, and the extension serves (org.openmixer.panel-description/1): auto leaves the choice to the panel layout. The four others are the shared widgets of omx-panel's schema/panel.schema.json.",
+        "x-since": "1.0.0",
+        "oneOf": [
+          {
+            "const": "auto",
+            "title": "auto",
+            "description": "left out of a panel declaration: the layout picks the widget from the control",
+            "x-code": 0,
+            "x-text": "Left out of a panel declaration: the layout picks the widget from the control."
+          },
+          {
+            "const": "knob",
+            "title": "knob",
+            "description": "a rotary control",
+            "x-code": 1,
+            "x-text": "A rotary control."
+          },
+          {
+            "const": "fader",
+            "title": "fader",
+            "description": "a linear control",
+            "x-code": 2,
+            "x-text": "A linear control."
+          },
+          {
+            "const": "switch",
+            "title": "switch",
+            "description": "a two-state control",
+            "x-code": 3,
+            "x-text": "A two-state control."
+          },
+          {
+            "const": "selector",
+            "title": "selector",
+            "description": "a control that picks one of a few values",
+            "x-code": 4,
+            "x-text": "A control that picks one of a few values."
+          }
+        ]
+      },
+      "PANEL_DISPLAY_KINDS": {
+        "description": "The displays a declared panel may carry, and the extension serves (org.openmixer.panel-description/1), in the order of their codes: a panel description names a display by its place here. omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core restated these words by hand beside the families and widgets; a display kind is a declaration, so it lives here (vocabulary-owner rule).",
+        "oneOf": [
+          {
+            "const": "gain_reduction_bar",
+            "title": "gainReductionBar",
+            "description": "a bar of the gain a dynamics processor takes off",
+            "x-code": 0,
+            "x-text": "A bar showing the gain reduction."
+          },
+          {
+            "const": "transfer_curve",
+            "title": "transferCurve",
+            "description": "a dynamics processor's output level against its input level",
+            "x-code": 1,
+            "x-text": "The dynamics transfer curve: output level against input level."
+          },
+          {
+            "const": "eq_response",
+            "title": "eqResponse",
+            "description": "an equaliser's frequency response",
+            "x-code": 2,
+            "x-text": "The equaliser's frequency response."
+          },
+          {
+            "const": "meter",
+            "title": "meter",
+            "description": "a level meter",
+            "x-code": 3,
+            "x-text": "A level meter."
+          },
+          {
+            "const": "time_response",
+            "title": "timeResponse",
+            "description": "a response over time: a delay's train of taps or a reverb's decay envelope",
+            "x-code": 4,
+            "x-text": "The response over time: a delay's taps or a reverb's decay."
+          }
+        ]
+      },
+      "PANEL_DISPLAY_SOURCES": {
+        "description": "Where a panel description's display takes its data from, in the order of their codes (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core and omx-plugins restated these words by hand beside the families, widgets and display kinds; a display source is a declaration, so it lives here (vocabulary-owner rule).",
+        "oneOf": [
+          {
+            "const": "family",
+            "title": "family",
+            "description": "the data the panel family itself implies",
+            "x-code": 0,
+            "x-text": "The data the panel family implies."
+          },
+          {
+            "const": "meters",
+            "title": "meters",
+            "description": "the plugin's meter readouts",
+            "x-code": 1,
+            "x-text": "The plugin's meter readouts."
+          },
+          {
+            "const": "gain_adjustment",
+            "title": "gainAdjustment",
+            "description": "the gain the processor applies",
+            "x-code": 2,
+            "x-text": "The gain the processor applies."
+          },
+          {
+            "const": "curve",
+            "title": "curve",
+            "description": "a curve the plugin declares",
+            "x-code": 3,
+            "x-text": "A curve the plugin declares."
+          }
+        ]
+      },
+      "PANEL_PLACEMENTS": {
+        "description": "Where an instance sits, in the order of their codes: the clap.track-info/1 flags read as one value (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core and omx-plugins restated these words by hand; a placement is a declaration, so it lives here (vocabulary-owner rule).",
+        "oneOf": [
+          {
+            "const": "insert",
+            "title": "insert",
+            "description": "an instance on a track's insert chain",
+            "x-code": 0,
+            "x-text": "An instance on an insert chain."
+          },
+          {
+            "const": "return",
+            "title": "return",
+            "description": "an instance on a return track",
+            "x-code": 1,
+            "x-text": "An instance on a return track."
+          },
+          {
+            "const": "bus",
+            "title": "bus",
+            "description": "an instance on a bus",
+            "x-code": 2,
+            "x-text": "An instance on a bus."
+          },
+          {
+            "const": "master",
+            "title": "master",
+            "description": "an instance on the master",
+            "x-code": 3,
+            "x-text": "An instance on the master."
+          }
+        ]
+      },
+      "PANEL_STORE_CODES": {
+        "description": "The refusals of the descriptions store's reader and writer (omx-panel docs/descriptions-store.md, section 5): each is the qualification store's code of the same name, with panel-store. for its prefix. The loader's own codes are passed through, not repeated here.",
+        "x-since": "1.1.0",
+        "x-c-codes": true,
+        "oneOf": [
+          {
+            "const": "panel-store.absent",
+            "title": "absent",
+            "description": "the base file does not exist",
+            "x-code": 0,
+            "x-text": "The base store file does not exist."
+          },
+          {
+            "const": "panel-store.unreadable",
+            "title": "unreadable",
+            "description": "a layer exists and SQLite cannot open or read it",
+            "x-code": 1,
+            "x-text": "A store file exists and cannot be read."
+          },
+          {
+            "const": "panel-store.not-a-store",
+            "title": "notAStore",
+            "description": "a file at version 0, with no store_info row, or of another layer than the place it was opened as",
+            "x-code": 2,
+            "x-text": "The file is not a store of the layer it was opened as."
+          },
+          {
+            "const": "panel-store.schema-mismatch",
+            "title": "schemaMismatch",
+            "description": "the opened files are at different schema versions",
+            "x-code": 3,
+            "x-text": "The store files are at different schema versions."
+          },
+          {
+            "const": "panel-store.schema-other",
+            "title": "schemaOther",
+            "description": "a file is at a schema version other than the reader's",
+            "x-code": 4,
+            "x-text": "A store file is at another schema version than the reader's."
+          },
+          {
+            "const": "panel-store.domain-too-old",
+            "title": "domainTooOld",
+            "description": "an installed domain is older than the version a store was checked against",
+            "x-code": 5,
+            "x-text": "An installed domain is older than the one the store was checked against."
+          },
+          {
+            "const": "panel-store.word-unknown",
+            "title": "wordUnknown",
+            "description": "a stored word is in none of the items its column is checked against",
+            "x-code": 6,
+            "x-text": "A stored word is in none of the items its column is checked against."
+          },
+          {
+            "const": "panel-store.hot-journal",
+            "title": "hotJournal",
+            "description": "a layer has a hot journal: its writer stopped inside a transaction",
+            "x-code": 7,
+            "x-text": "A layer has a hot journal: its writer stopped inside a transaction."
+          },
+          {
+            "const": "panel-store.busy",
+            "title": "busy",
+            "description": "a layer stayed locked past the busy timeout",
+            "x-code": 8,
+            "x-text": "A layer stayed locked past the timeout."
+          },
+          {
+            "const": "panel-store.entry-invalid",
+            "title": "entryInvalid",
+            "description": "a put whose JSON is not an entry of the description schema, or whose words are not in their items",
+            "x-code": 9,
+            "x-text": "The entry is not an entry of the description schema, or holds a word its item lacks."
+          }
+        ]
+      },
+      "PANEL_DESCRIBE_CODES": {
+        "description": "The refusals describe states for a plugin (omx-panel tools/describe.mjs DESCRIBE_CODES): a stored entry with no description names the one that refused it.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "panel.describe.no-controls",
+            "title": "noControls",
+            "description": "the plugin has no controls",
+            "x-code": 0,
+            "x-text": "The plugin has no controls."
+          },
+          {
+            "const": "panel.describe.family-not-backed",
+            "title": "familyNotBacked",
+            "description": "the family has no panel backing",
+            "x-code": 1,
+            "x-text": "The family has no panel the layout backs."
+          },
+          {
+            "const": "panel.describe.layout-invalid",
+            "title": "layoutInvalid",
+            "description": "the layout the plugin states is invalid",
+            "x-code": 2,
+            "x-text": "The layout the plugin states is invalid."
+          },
+          {
+            "const": "panel.describe.override-unavailable",
+            "title": "overrideUnavailable",
+            "description": "an override layer was given and no applier",
+            "x-code": 3,
+            "x-text": "An override layer was given and nothing can apply it."
+          },
+          {
+            "const": "panel.describe.override-refused",
+            "title": "overrideRefused",
+            "description": "an override layer was refused",
+            "x-code": 4,
+            "x-text": "An override layer was refused."
+          },
+          {
+            "const": "panel.describe.override-dropped",
+            "title": "overrideDropped",
+            "description": "an override entry was dropped",
+            "x-code": 5,
+            "x-text": "An override entry was dropped."
+          },
+          {
+            "const": "panel.describe.role-dropped",
+            "title": "roleDropped",
+            "description": "a role was dropped",
+            "x-code": 6,
+            "x-text": "A role was dropped."
+          },
+          {
+            "const": "panel.describe.skin-dropped",
+            "title": "skinDropped",
+            "description": "a skin field was dropped",
+            "x-code": 7,
+            "x-text": "A skin field was dropped."
+          },
+          {
+            "const": "panel.describe.meter-refused",
+            "title": "meterRefused",
+            "description": "a meter was refused",
+            "x-code": 8,
+            "x-text": "A meter was refused."
+          },
+          {
+            "const": "panel.describe.param-unserved",
+            "title": "paramUnserved",
+            "description": "a path or text parameter of another range is not served",
+            "x-code": 9,
+            "x-text": "A parameter of another range is not served."
+          }
+        ]
+      },
+      "PANEL_GROUP_OUTCOMES": {
+        "description": "The verdict of the port-group inference (omx-panel docs/group-inference.md): what the rules decided for a plugin.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "nothing-to-do",
+            "title": "nothingToDo",
+            "description": "the plugin is left exactly as it is",
+            "x-code": 0,
+            "x-text": "The plugin is left as it is."
+          },
+          {
+            "const": "grouped",
+            "title": "grouped",
+            "description": "every control was placed in a group",
+            "x-code": 1,
+            "x-text": "Every control was placed in a group."
+          },
+          {
+            "const": "no-confident-grouping",
+            "title": "noConfidentGrouping",
+            "description": "the rules found no grouping they trust",
+            "x-code": 2,
+            "x-text": "The rules found no grouping they trust."
+          }
+        ]
+      },
+      "PANEL_GROUP_REASONS": {
+        "description": "Why the port-group inference left a plugin as it is (omx-panel docs/group-inference.md).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "no-controls",
+            "title": "noControls",
+            "description": "the plugin has no placeable controls",
+            "x-code": 0,
+            "x-text": "The plugin has no controls to place."
+          },
+          {
+            "const": "own-groups-complete",
+            "title": "ownGroupsComplete",
+            "description": "the plugin's own groups already place every control",
+            "x-code": 1,
+            "x-text": "The plugin's own groups already place every control."
+          },
+          {
+            "const": "fits-one-screen",
+            "title": "fitsOneScreen",
+            "description": "the controls fit one screen",
+            "x-code": 2,
+            "x-text": "The controls fit one screen."
+          },
+          {
+            "const": "unplaced-controls",
+            "title": "unplacedControls",
+            "description": "a control was placed by no rule",
+            "x-code": 3,
+            "x-text": "A control was placed by no rule."
+          },
+          {
+            "const": "too-few-groups",
+            "title": "tooFewGroups",
+            "description": "the rules made fewer groups than the minimum",
+            "x-code": 4,
+            "x-text": "The rules made too few groups."
+          },
+          {
+            "const": "too-many-groups",
+            "title": "tooManyGroups",
+            "description": "the rules made more groups than the maximum",
+            "x-code": 5,
+            "x-text": "The rules made too many groups."
+          },
+          {
+            "const": "mostly-by-index",
+            "title": "mostlyByIndex",
+            "description": "most controls were placed only by a run of port indexes",
+            "x-code": 6,
+            "x-text": "Most controls were placed only by a run of port indexes."
+          }
+        ]
+      },
+      "PANEL_GROUP_RULES": {
+        "description": "The rule that made a port group (omx-panel docs/group-inference.md, in the order the rules run; instance for a group of a repeated instance).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "own",
+            "title": "own",
+            "description": "the plugin's own pg:group assignment",
+            "x-code": 0,
+            "x-text": "The plugin's own group."
+          },
+          {
+            "const": "designation",
+            "title": "designation",
+            "description": "an lv2:designation of the parameters vocabulary",
+            "x-code": 1,
+            "x-text": "A designation of the parameters vocabulary."
+          },
+          {
+            "const": "name",
+            "title": "name",
+            "description": "a shared name or symbol prefix, or a shared trailing number",
+            "x-code": 2,
+            "x-text": "A shared name or symbol prefix, or number."
+          },
+          {
+            "const": "unit",
+            "title": "unit",
+            "description": "a shared units:unit",
+            "x-code": 3,
+            "x-text": "A shared unit."
+          },
+          {
+            "const": "index",
+            "title": "index",
+            "description": "a contiguous run of lv2:index",
+            "x-code": 4,
+            "x-text": "A run of port indexes."
+          },
+          {
+            "const": "modgui",
+            "title": "modgui",
+            "description": "the plugin's own MOD GUI layout",
+            "x-code": 5,
+            "x-text": "The plugin's own MOD GUI layout."
+          },
+          {
+            "const": "instance",
+            "title": "instance",
+            "description": "a group of one instance of a repeated group",
+            "x-code": 6,
+            "x-text": "A group of one instance of a repeated group."
+          }
+        ]
+      }
+    }
+  }
+}

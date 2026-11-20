@@ -1,3 +1,69 @@
+omx-panel (0.15.1) unstable; urgency=medium
+
+  * Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import
+    and the rest that decide run-not-imported with omx-contract's isMain)
+    resolve @openmixer/omx-contract: node_modules/@openmixer/omx-contract
+    links the omx-contract package's /usr/lib/omx-contract, and omx-panel
+    depends on omx-contract (>= 3.20.2~). In 0.15.0
+    `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with
+    ERR_MODULE_NOT_FOUND. The build and debian/tests run the installed tools.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 20 Nov 2026 19:00:00 +0100
+
+omx-panel (0.15.0) unstable; urgency=medium
+
+  * First release with Debian trixie arm64 packages (0.14.0 was rpm-only);
+    Fedora 45 only (Fedora 44 is dropped).
+  * New: the vintage knob drawn by the renderer from the look's scene (the C
+    raster paints the bytes the JS painter does), kept in a static-layer
+    cache; the panel domain at 1.1.0, whose x-since is the version of the
+    domain that added each item; the tools decide run-not-imported with
+    omx-contract's isMain, so a bin run through a symlink runs.
+  * New: the descriptions store core, packaged: libomx-panel-store0 carries
+    libomx-panel-store.so.0, libomx-panel-store-dev its .so link, header,
+    pkg-config file and the DDL (panel.sql), omx-panel-store the command.
+    Built against SQLite >= 3.38.0.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 16:00:00 +0100
+
+omx-panel (0.14.0) unstable; urgency=medium
+
+  * Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >=
+    0.33.0 and plugin-hostd-contract >= 0.20.7: floors only, with no ceiling on
+    our packages.
+  * New: the panel domain ships alone in omx-panel-contract (contract.d/panel,
+    its catalogs); the MOD GUI generator reads curves from omx-dsp-wasm through
+    a link, with no copy; three MOD GUI looks; the utility panel family; the
+    group model on every surface; the gesture C reference in
+    libomx-panel-render.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 13:30:00 +0100
+
+omx-panel (0.13.8) unstable; urgency=medium
+
+  * Built against omx-contract >= 3.18.0 and below 4 (was 3.16.0), and plugin-
+    hostd and plugin-hostd-contract >= 0.20.7 and below 0.21 (were 0.20.3):
+    every floor its newest version, served or released before it in the same
+    pass, with its ceiling (D30). The
+    jobs' dnf lines, three of them still at 3.13.0, state the same.
+  * New: the spectrum layer, drawn by the renderer on the console analyser's
+    axes (built against omx-dsp >= 0.32.3 and below 0.33); the time_response
+    display kind, a delay's taps and a reverb's decay; describe reads a plugin's
+    served panel as the declared form and takes parameter roles from it.
+  * Fixes: the commit-msg hook takes the current stub from the checker's release
+    line; artifact retention is explicit (30 days on a tag, 2 otherwise); the
+    Makefile names the shared checks' checkout through OPENMIXER_DOTGITHUB; the
+    renderer tests remove their scratch directories and read readelf in the C
+    locale; debian/control floors libomx-contract-dev as the spec floors
+    omx-contract-devel; the omx-eq8 fixture matches the installed file.
+  * Contract files keep the $schema the floor's reader reads.
+  * The organisation's name: FreeMixer becomes Open-Mixer and OpenMixer; an
+    ordinary CI run builds against the channel, not the staging channel.
+  * systemd: a sync drop-in's post step exits 0 when its opt-in unit is
+    disabled (plugin-qualify#56).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 13 Nov 2026 17:00:00 +0100
+
 omx-panel (0.13.7) unstable; urgency=medium
 
   * tools/gesture-words.mjs ships as a command: executable, its declaration

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
+  <!-- The 3d look's knob, ONE drawing: a drop shadow, a skirt, a domed cap, a highlight and the pointer. Colours are the look's
+       tokens; {angle} is the frame's, from -135 to +135 degrees. tools/svg-knob.mjs reads the subset used here. -->
+  <defs>
+    <linearGradient id="skirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{--border-strong}"/>
+      <stop offset="1" stop-color="{--glass}"/>
+    </linearGradient>
+    <radialGradient id="cap" cx="0.36" cy="0.3" r="0.85">
+      <stop offset="0" stop-color="{--ink-dim}"/>
+      <stop offset="0.5" stop-color="{--border-strong}"/>
+      <stop offset="1" stop-color="{--surface-3}"/>
+    </radialGradient>
+    <radialGradient id="shine" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="25" cy="26.5" r="21.5" fill="#000000" fill-opacity="0.35"/>
+  <circle cx="24" cy="24" r="22" fill="url(#skirt)"/>
+  <circle cx="24" cy="24.5" r="18" fill="#000000" fill-opacity="0.45"/>
+  <circle cx="24" cy="23.5" r="17.5" fill="url(#cap)"/>
+  <ellipse cx="19.5" cy="14.5" rx="9" ry="5.5" fill="url(#shine)"/>
+  <g transform="rotate({angle} 24 24)">
+    <line x1="24" y1="9" x2="24" y2="17" stroke="{--accent}" stroke-width="3"/>
+  </g>
+</svg>

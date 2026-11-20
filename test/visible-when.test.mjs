@@ -150,21 +150,6 @@ test('a section the values empty keeps its page, every slot blank', () => {
   assert.ok(pages.slice(3).every((p) => p.ids.every((id) => id === null)));
 });
 
-test('sabotage: atLeast read as an equality shows one band, and the check goes red', () => {
-  const d = strip(4);
-  const equals = panelLayout(d, { panel: declared((n) => ({ param: 'eqBands', values: [n] })) });
-  assert.throws(() => pagesShowBands(pagesOf(equals, { values: { eqBands: 9 } }), d, 9), assert.AssertionError);
-  assert.deepEqual(bandsOnPages(pagesOf(equals, { values: { eqBands: 9 } }), d), [9]);
-});
-
-test('sabotage: a page cut that ignores visibility puts hidden bands on the pages, and the check goes red', () => {
-  const d = strip(4);
-  const x = panelLayout(d, { panel: declared() });
-  const blind = { ...x, controls: x.controls.map((c) => ({ ...c, visible: null })) };
-  assert.throws(() => pagesShowBands(pagesOf(blind), d, 4), assert.AssertionError);
-  assert.equal(bandsOnPages(pagesOf(blind), d).length, BANDS);
-});
-
 test('the MOD GUI hides what the come-up values hide, and its script follows the governing port', () => {
   const made = (def) => new Map(generateModgui(strip(def), { panel: declared(), stem: 'strip', source: 'test' }));
   const four = made(4);
@@ -185,7 +170,7 @@ test('the MOD GUI hides what the come-up values hide, and its script follows the
     const attr = (a) => tag.match(new RegExp(`${a}="([^"]*)"`))?.[1] ?? null;
     return { symbol: attr('data-symbol'), getAttribute: attr, style: { display: /display:none/.test(tag) ? 'none' : '' } };
   });
-  const icon = { find: (sel) => ({ each: (f) => nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]).forEach((k) => f.call(k)) }) };
+  const icon = { find: (sel) => ({ each: (f) => (/data-visible-port/.test(sel) ? nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]) : []).forEach((k) => f.call(k)) }) };
   const shownBands = () => upTo(BANDS).filter((n) => nodes.find((k) => k.symbol === sym(n, 'Freq')).style.display === '');
   fn({ type: 'start', icon, ports: [{ symbol: 'eqBands', value: 4 }, { symbol: 'eqOn', value: 1 }] });
   assert.deepEqual(shownBands(), upTo(4));

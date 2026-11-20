@@ -1,0 +1,145 @@
+{
+ "input": "omx-plugins/omx-eq8.descriptor.json",
+ "uri": null,
+ "groups": [
+  {
+   "key": "Bands",
+   "label": "Bands",
+   "kind": "repeated",
+   "source": "declared",
+   "family": "eq",
+   "parameters": [],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "hpf",
+     "label": "HPF",
+     "on": "hpf_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#1",
+     "label": "Band 1",
+     "on": "b1_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#2",
+     "label": "Band 2",
+     "on": "b2_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#3",
+     "label": "Band 3",
+     "on": "b3_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#4",
+     "label": "Band 4",
+     "on": "b4_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#5",
+     "label": "Band 5",
+     "on": "b5_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#6",
+     "label": "Band 6",
+     "on": "b6_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#7",
+     "label": "Band 7",
+     "on": "b7_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#8",
+     "label": "Band 8",
+     "on": "b8_on",
+     "sense": "on"
+    },
+    {
+     "key": "lpf",
+     "label": "LPF",
+     "on": "lpf_on",
+     "sense": "on"
+    }
+   ],
+   "lines": [
+    {
+     "key": "freq",
+     "label": "Frequency"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "q",
+     "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
+    }
+   ],
+   "cells": [
+    [
+     "hpf_freq",
+     "b1_freq",
+     "b2_freq",
+     "b3_freq",
+     "b4_freq",
+     "b5_freq",
+     "b6_freq",
+     "b7_freq",
+     "b8_freq",
+     "lpf_freq"
+    ],
+    [
+     "hpf_slope",
+     "b1_gain",
+     "b2_gain",
+     "b3_gain",
+     "b4_gain",
+     "b5_gain",
+     "b6_gain",
+     "b7_gain",
+     "b8_gain",
+     "lpf_slope"
+    ],
+    [
+     null,
+     "b1_q",
+     "b2_q",
+     "b3_q",
+     "b4_q",
+     "b5_q",
+     "b6_q",
+     "b7_q",
+     "b8_q",
+     null
+    ],
+    [
+     null,
+     "b1_type",
+     "b2_type",
+     "b3_type",
+     "b4_type",
+     "b5_type",
+     "b6_type",
+     "b7_type",
+     "b8_type",
+     null
+    ]
+   ]
+  }
+ ]
+}

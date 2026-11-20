@@ -1,0 +1,69 @@
+{
+  "$comment": "GENERATED — the console's vintage glass, pinned. Re-pin: `node tools/look-pin.mjs --write <tokens.css> <commit>`, then `node tools/look.mjs`.",
+  "source": {
+    "project": "the OpenMixer console, its tokens.css (vintage dark theme)",
+    "commit": "67b4d542aaf661c9d01e78f578024cf8103393b8",
+    "sha256": "7dcacd1fecf8012494b5e073d412e514661c6fe4a04c682a4a26b20a35f8f256",
+    "valuesSha256": "7a60e01ceb21525ab46f4d631503990d30eb2dd54070d2963e9392266c215781"
+  },
+  "tokens": {
+    "--glass": "#05070a",
+    "--glass-grid": "rgba(233,223,198,.10)",
+    "--legend": "#e9dfc6",
+    "--accent": "#e8732c"
+  },
+  "relief": {
+    "--shade": "#000",
+    "--shadow-1": "0 1px 2px rgba(0,0,0,.5)",
+    "--shadow-2": "0 4px 14px rgba(0,0,0,.55)",
+    "--inset-track": "inset 0 0 0 1px rgba(0,0,0,.6), inset 0 2px 6px rgba(0,0,0,.55)"
+  },
+  "base": {
+    "--knob-pointer": "#f4efe2",
+    "--fader-cap-line": "#f0e8d6",
+    "--cap-legend": "#e6dcc4"
+  },
+  "light": {
+    "--ink": "#11171d",
+    "--ink-dim": "#3a3b3c"
+  },
+  "defaultFinish": "aluminium",
+  "finish": {
+    "aluminium": {
+      "--knob-face": "#7d848b",
+      "--knob-edge": "#a9b0b7",
+      "--knob-cap-hi": "#b9c0c6",
+      "--knob-knurl": "#5d646b",
+      "--fader-cap": "#c9ced3",
+      "--fader-cap-ridge": "#9ea4aa",
+      "--fader-cap-groove": "#1a1d20",
+      "--btn-face": "#3b4046",
+      "--toggle-face": "#a9b0b7",
+      "--screw": "#9aa1a8"
+    },
+    "graphite": {
+      "--knob-face": "#4a4f55",
+      "--knob-edge": "#6b7178",
+      "--knob-cap-hi": "#6e747b",
+      "--knob-knurl": "#33373c",
+      "--fader-cap": "#5a6067",
+      "--fader-cap-ridge": "#3e4348",
+      "--fader-cap-groove": "#121315",
+      "--btn-face": "#2b2f33",
+      "--toggle-face": "#6b7178",
+      "--screw": "#6b7178"
+    },
+    "black": {
+      "--knob-face": "#1c1d1f",
+      "--knob-edge": "#3a3c40",
+      "--knob-cap-hi": "#3a3c40",
+      "--knob-knurl": "#0e0f10",
+      "--fader-cap": "#2a2c2f",
+      "--fader-cap-ridge": "#161718",
+      "--fader-cap-groove": "#050506",
+      "--btn-face": "#18191b",
+      "--toggle-face": "#3a3c40",
+      "--screw": "#3a3c40"
+    }
+  }
+}

@@ -16,21 +16,34 @@ override_dh_auto_build:
 	test -d node_modules || npm ci --no-audit --no-fund
 	dh_auto_build
 	$(MAKE) -C renderer WINDOW=0 PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include DATADIR=/usr/share
+	$(MAKE) -C store PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	make test
+	OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 endif
 
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/omx-panel -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share UNITDIR=/usr/lib/systemd/system SYSCONFDIR=/etc
 	# the renderer's shared library, header, link and pkg-config file, split by debian/libomx-panel-render*.install
 	$(MAKE) install-renderer DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include BINDIR=/usr/bin DATADIR=/usr/share
+	# the descriptions store: library, development files and command, split by debian/libomx-panel-store*.install and
+	# debian/omx-panel-store.install
+	$(MAKE) install-store DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include BINDIR=/usr/bin DATADIR=/usr/share MANDIR=/usr/share/man
 	# the vendored modules' lint and VCS dotfiles are theirs, not the package's: lintian refuses .eslintrc.yml
 	find debian/omx-panel/usr/share/omx-panel -path '*/node_modules/*' -name '.*' -type f -delete
 	# the catalogs are the language packs' (debian/omx-panel-l10n-<lang>.install takes them from debian/tmp)
 	install -d debian/tmp/usr/share/omx-panel/catalogs
 	mv debian/omx-panel/usr/share/omx-panel/catalogs/*.json debian/tmp/usr/share/omx-panel/catalogs/
+	# the panel domain is omx-panel-contract's (debian/omx-panel-contract.install takes it from debian/tmp)
+	install -d debian/tmp/usr/share/omx-contract/contract.d
+	mv debian/omx-panel/usr/share/omx-contract/contract.d/panel debian/tmp/usr/share/omx-contract/contract.d/
+	rmdir -p --ignore-fail-on-non-empty debian/omx-panel/usr/share/omx-contract/contract.d
+	# the tools as the omx-panel package installs them load and run: their @openmixer/omx-contract resolves through the
+	# package's own node_modules (debian/tests/installed-tools runs the same check on an installed host)
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	tools/installed-tools-check.sh $(CURDIR)/debian/omx-panel/usr/share/omx-panel
+endif
 
 # the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
 # omx-complement-sync) is the choice; so an upgrade has nothing of ours to stop either, and on a host that never had the
