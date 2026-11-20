@@ -1,0 +1,60 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.\" Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+.TH OMX-PANEL-STORE 1 "2026-11-20" "omx-panel" "User Commands"
+.SH NAME
+omx-panel-store \- read and write the descriptions store of panel descriptions
+.SH SYNOPSIS
+.B omx-panel-store get
+.BI --sha256 " H" " --format " F " --uri " U " --source " H
+.RB [ --rules
+.IR N ]
+.B --json
+.br
+.B omx-panel-store put
+.BI --sha256 " H" " --format " F " --uri " U
+.br
+.B omx-panel-store remove
+.BI --sha256 " H" " --format " F " --uri " U
+.br
+.B omx-panel-store check
+.br
+.B omx-panel-store source
+.BI --format " lv2|clap" " --path " P
+.br
+.B omx-panel-store places
+.BI --production " user|system"
+.SH DESCRIPTION
+The descriptions store holds a panel description per plugin in three files panel.sqlite: the base
+(/usr/share/omx/panel/panel.sqlite, read only), the system layer (/var/lib/omx/panel/panel.sqlite) and the user layer
+(~/.local/share/omx/panel/panel.sqlite). A reader takes the user layer, the system layer and the base, in that order;
+root reads the system layer and the base only. The writer writes the layer of the effective uid: the system layer as
+root, the user layer otherwise, never the base.
+.PP
+.B get
+prints the entry of the plugin and the layer it came from as JSON, or null when no layer holds it; an entry made from
+another source than
+.B --source
+is skipped as stale.
+.B put
+writes the entry read as JSON on standard input, and
+.B remove
+removes it.
+.B check
+opens every layer and prints ok or the refusal's code.
+.B source
+prints the source hash of an installed plugin, and
+.B places
+the files of a scope.
+.PP
+The command is a door of libomx-panel-store.so.0, which holds every rule. The schema a layer is created with is
+compiled in; /usr/share/omx-panel-store/panel.sql, in the development package, is the same text.
+.SH OPTIONS
+.TP
+.BI --scope " user|system" ", --base " F ", --system " F ", --user " F ", --contract-dir " D
+the scope and the places, for a test; absent, OMX_PANEL_STORE_BASE, OMX_PANEL_STORE_SYSTEM, OMX_PANEL_STORE_USER and
+OMX_CONTRACT_PATH, then the installed places
+.SH EXIT STATUS
+0 on success (and for a get of a key no layer holds), 1 with the refusal's code (panel-store.*) on standard error, 2 on
+a usage error.
+.SH SEE ALSO
+.BR omx-panel (1)
