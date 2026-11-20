@@ -17,7 +17,7 @@ check() {
 		return 2
 	fi
 	local hits
-	hits=$(grep -rnE 'fedora:44|fc44|fedora.*[^0-9]44([^0-9]|$)' "$wf" || true)
+	hits=$(grep -rnE 'fedora:44|fc44|fedora.*[^0-9]44([^0-9]|$)|releases[^:]*:.*[^0-9]44([^0-9]|$)' "$wf" || true)
 	local blocks
 	blocks=$(find "$wf" -type f \( -name '*.yml' -o -name '*.yaml' \) -exec awk '
 		FNR == 1 { fed = 0 }
