@@ -224,6 +224,8 @@ CREATE TABLE port_group_member (
   the two are byte-equal by construction, and a corpus test holds it. `pages` is never stored: it depends on the surface's width. No client
   needs the plugin's descriptor: plugin-hostd and Zynthian have none for a third-party plugin.
 
+**Bodies stored before the axis (panel domain 1.2.0).** A body stored without `displays[].axis` is refused by `describeFromStored`, by name, and never completed from the display's kind. What happens to the rows that exist at the upgrade: the base is built new by the release that adds the axis (3.5: never migrated), and a derived row of the system layer is stale (`rules` raised with the change, 3.6) and derived again. A person's EDITED row of the user layer (`edited` 1) without an axis is refused by name, and the edit is LOST unless the owner rules a carry-over (a mechanism that fills the axis from the old row is a compatibility mechanism, which needs the owner: OPEN QUESTION for the owner, section 14; no default is inferred from the kind).
+
 ### 3.5 `user_version`
 
 `PRAGMA user_version = 1`, `OMX_PANEL_STORE_SCHEMA_VERSION`, held once in `schema/panel.sql` and compiled into the reader
