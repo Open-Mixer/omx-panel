@@ -162,6 +162,17 @@ A derived panel whose family has a closed form (`eq`, `dynamics`, `gate`, `drive
 form), else `modelled`, which every surface prints in the display's caption place. `basis` is a view and stays out of the canonical
 form. A declared panel's `origins` (band_freq symbol to the planter that owns the band, an authored descriptor's only) gives the role an `origin`, and a surface draws a mark there; nothing is inferred.
 
+### Displays and their axis
+
+Every display also carries its `axis`, a word of the panel domain's `PANEL_DISPLAY_AXES` (`contract.d/panel/panel.json`, since
+1.2.0): `log-frequency` (an `eq_response`: frequency in Hz on a log axis, the dB symmetric about 0), `linear` (a `transfer_curve`:
+input and output dB on one linear span; a `gain_reduction_bar` or a `meter`: its fill a linear fraction of its range) or `time` (a
+`time_response`: ms from 0, the level window from the floor). The layout gives it where it makes the display and `describe` serves
+it, so a surface reads the axis as data and never picks one by the kind's name (owner ruling: layout data comes via the
+description). A display whose axis is absent or no word of the item is refused by name: by `describe` and `describeFromStored`
+(`panel.describe.layout-invalid`), by a skin (`panel.describe.skin-dropped`, reason `axis`) and by the renderer; nothing is inferred.
+Like `basis`, `axis` is a view and stays out of the canonical form.
+
 The description also serves `easy` (the Easy controls) and its `pages`, cut after the skin applies; a control the values hide keeps its slot in a page, blank.
 
 ## Bars
