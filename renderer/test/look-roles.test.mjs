@@ -42,7 +42,7 @@ const PANELS = ['omx-delay', 'dyn-curve'].map((name) => {
   const fx = FIXTURES.find((f) => f.name === 'dyn-curve'), dir = scratch();
   const ref = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/rta/console-scene.json'), 'utf8')), b = ref.input.bands;
   const d = JSON.parse(readFileSync(descriptionFile(fx, dir), 'utf8'));
-  d.displays[0].kind = 'eq_response';
+  d.displays[0].kind = 'eq_response', d.displays[0].axis = 'log-frequency';
   const st = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
   st.curves = { 0: { x: ref.input.curve.map((p) => p.hz), y: ref.input.curve.map((p) => p.gain) } }, st.marks = {};
   st.spectrum = { 0: { hz: b.map((x) => x.hz), db: b.map((x) => x.db), peak: b.map((x) => x.peakDb), dbMin: ref.window.dbMin,
