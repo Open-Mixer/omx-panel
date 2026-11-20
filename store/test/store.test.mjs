@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict';
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { DatabaseSync, entry, flags, get, grouped, hex, mkStore, panelVersion, places, run, snapshot } from './helpers.mjs';
+import { DatabaseSync, entry, flags, get, grouped, hex, mkStore, panelVersion, places, RULES, run, snapshot } from './helpers.mjs';
 
 const PV = (p) => panelVersion(p.contract);
 
@@ -227,13 +227,13 @@ test('an entry whose source differs from the caller\'s is skipped, and the next 
 
 test('a derived entry below the reader\'s rules version is skipped; an edited one is not', (t) => {
   const p = places(t);
-  const derived = entry({ edited: 0, rules: 1, body: { from: 'user-derived' } });
-  const edited = entry({ uri: 'urn:test:edited', edited: 1, rules: 1, body: { from: 'user-edited' } });
+  const derived = entry({ edited: 0, rules: RULES, body: { from: 'user-derived' } });
+  const edited = entry({ uri: 'urn:test:edited', edited: 1, rules: RULES, body: { from: 'user-edited' } });
   mkStore(p.user, { layer: 2, entries: [derived, edited], panel: PV(p) });
-  mkStore(p.base, { layer: 0, entries: [entry({ rules: 5, body: { from: 'base' } }), entry({ uri: 'urn:test:edited', rules: 5, body: { from: 'base-edited' } })], panel: PV(p) });
+  mkStore(p.base, { layer: 0, entries: [entry({ rules: RULES + 4, body: { from: 'base' } }), entry({ uri: 'urn:test:edited', rules: RULES + 4, body: { from: 'base-edited' } })], panel: PV(p) });
   assert.equal(get(p, derived).answer.layer, 'user');
-  assert.equal(get(p, derived, { rules: 5 }).answer.layer, 'base', 'rules 1 is below a reader at 5');
-  assert.equal(get(p, edited, { rules: 5 }).answer.layer, 'user', 'a person\'s edit stands across omx-panel releases');
+  assert.equal(get(p, derived, { rules: RULES + 4 }).answer.layer, 'base', 'the current rules version is below a reader four above it');
+  assert.equal(get(p, edited, { rules: RULES + 4 }).answer.layer, 'user', 'a person\'s edit stands across omx-panel releases');
 });
 
 test('a stale edited entry is named and not deleted', (t) => {
