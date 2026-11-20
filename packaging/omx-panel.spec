@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.15.0
+Version: 0.15.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -281,6 +281,14 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 20 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.1-1
+- Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import and
+  the rest that decide run-not-imported with omx-contract's isMain) resolve
+  @openmixer/omx-contract: node_modules/@openmixer/omx-contract links the
+  omx-contract package's /usr/lib/omx-contract, and omx-panel requires
+  omx-contract >= 3.20.2. In 0.15.0 `node /usr/share/omx-panel/tools/modgui-gen.mjs`
+  died with ERR_MODULE_NOT_FOUND. %check runs the installed tools.
+
 * Thu Nov 19 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.0-1
 - Fedora 45 only (Fedora 44 is dropped); the same release is the first with
   Debian trixie arm64 packages.
