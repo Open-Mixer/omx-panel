@@ -25,10 +25,11 @@ pass() { echo "PASS $*"; }
 users=$(grep -l "@openmixer/omx-contract" "$PKGDIR"/tools/*.mjs)
 [ -n "$users" ] || fail "no installed tool imports @openmixer/omx-contract: the check would prove nothing"
 for t in $users; do
-  if out=$(cd / && node --input-type=module -e 'await import(process.argv[1])' "$t" 2>&1); then
+  # the path in the environment, not argv: argv[1] would make the tool's isMain true and run it
+  if out=$(cd / && TOOL="$t" node --input-type=module -e 'await import(process.env.TOOL)' 2>&1); then
     pass "loads: $t"
   else
-    fail "loads: $t: $(grep -m1 -E 'Error|Cannot' <<< "$out")"
+    fail "loads: $t: $(grep -m1 -E 'Error|Cannot' <<< "$out" || head -n1 <<< "$out")"
   fi
 done
 
