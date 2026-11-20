@@ -24,7 +24,7 @@ jobs:
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -38,10 +38,10 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.2'
           # the panel domain's checks: omx-contract (validate, fmt), its domain installer (omx-contract-devel) and the C
           # loader's omx-domain command (libomx-domain-devel), from the release that has all three
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.0' 'omx-contract-devel >= 3.20.0' 'libomx-domain-devel >= 3.20.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-devel >= 3.20.2' 'libomx-domain-devel >= 3.20.2'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
           dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.7' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
@@ -98,7 +98,7 @@ jobs:
   renderer:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON and node
         run: |
@@ -107,7 +107,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -130,7 +130,7 @@ jobs:
   store:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, SQLite, cJSON, node and python
         run: |
@@ -139,7 +139,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7'
+          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7'
       - uses: actions/checkout@v4
       - name: The tree the golden of the rules version reads
         run: npm ci && make
@@ -152,7 +152,7 @@ jobs:
   meter-surfaces:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
         run: |
@@ -162,7 +162,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -194,7 +194,7 @@ jobs:
   renderer-window:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, OpenGL and Xvfb
         run: |
@@ -204,7 +204,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.0' 'omx-contract-data >= 3.20.0' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -265,12 +265,12 @@ jobs:
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
       # reads are the test job's
-      - name: The RPM (fedora:44)
+      - name: The RPM (fedora:45)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.20.0" "omx-dsp-devel >= 0.32.3"
+              "omx-contract-devel >= 3.20.2" "omx-dsp-devel >= 0.32.3"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
@@ -286,6 +286,23 @@ jobs:
       - name: No copy of omx-dsp in the packages
         run: |
           docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -uo pipefail -c '
+            rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
+            list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
+            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
+            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
+            req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
+            grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
+            echo "PASS rpm: omx-dsp linked, not copied, required"'
+      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
+      - name: The renderer's library in its RPMs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
+      # omx-dsp is omx-dsp-wasm's: the RPM carries the one link node_modules/@openmixer/omx-dsp and no file under it
+      - name: No copy of omx-dsp in the RPM
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -uo pipefail -c '
             rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
             list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
             grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
@@ -459,13 +476,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.0' 'omx-contract-data >= 3.20.0'
+      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-data >= 3.20.2'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -482,3 +499,6 @@ jobs:
 
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
+    with:
+      # the one shared Fedora workflow guard (.github#175): no workflow names a Fedora release outside 45
+      fedora-workflows: true
