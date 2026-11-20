@@ -26,7 +26,7 @@ BuildRequires: omx-contract-data >= 3.20.2
 BuildRequires: plugin-hostd-contract >= 0.20.7
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.20.2
+BuildRequires: omx-contract >= 3.21.0
 BuildRequires: omx-dsp-wasm >= 0.33.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
@@ -43,8 +43,8 @@ BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
 # %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
-BuildRequires: omx-contract-devel >= 3.20.2
-BuildRequires: libomx-domain-devel >= 3.20.0
+BuildRequires: omx-contract-devel >= 3.21.0
+BuildRequires: libomx-domain-devel >= 3.21.0
 BuildRequires: pkgconfig(omxdsp) >= 0.32.3
 # the descriptions store (store/Makefile): SQLite at its floor (STRICT, json_valid), cJSON and libomx-domain above
 BuildRequires: sqlite-devel >= 3.38.0

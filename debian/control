@@ -12,9 +12,9 @@ Build-Depends: debhelper-compat (= 13),
                plugin-hostd-contract (>= 0.20.7~) <!nocheck>,
                libcjson-dev,
                libsqlite3-dev (>= 3.38.0~),
-               libomx-contract-dev (>= 3.20.2~),
-               omx-contract (>= 3.20.2~),
-               libomx-domain-dev (>= 3.20.0~),
+               libomx-contract-dev (>= 3.21.0~),
+               omx-contract (>= 3.21.0~),
+               libomx-domain-dev (>= 3.21.0~),
                libomxdsp-dev (>= 0.32.3~),
                omx-dsp-wasm (>= 0.33.0~)
 Standards-Version: 4.6.2
