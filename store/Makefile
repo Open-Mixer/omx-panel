@@ -9,12 +9,16 @@
 #
 #   make [-C store]     build/ : the library, the command, the pkg-config file
 #   make check          the tests (node 22 or above: its SQLite builds the fixtures), over the built command
-#   make install PREFIX=... DESTDIR=...
+#   make install PREFIX=... DESTDIR=...   the library, its .so link, header and pkg-config file, the command and its page,
+#                                         and the DDL as $(DATADIR)/omx-panel-store/panel.sql (compiled in; the copy is for
+#                                         a build that makes a store with other tools)
 
 PREFIX ?= /usr/local
 LIBDIR ?= $(PREFIX)/lib
 INCLUDEDIR ?= $(PREFIX)/include
 BINDIR ?= $(PREFIX)/bin
+DATADIR ?= $(PREFIX)/share
+MANDIR ?= $(DATADIR)/man
 PKG_CONFIG ?= pkg-config
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' ../package.json)
 SQLITE_FLOOR := 3.38.0
@@ -68,12 +72,14 @@ check: all
 	node --no-warnings --test --test-concurrency=2 test/*.test.mjs
 
 install: all
-	install -d $(DESTDIR)$(LIBDIR)/pkgconfig $(DESTDIR)$(INCLUDEDIR)/omx-panel $(DESTDIR)$(BINDIR)
+	install -d $(DESTDIR)$(LIBDIR)/pkgconfig $(DESTDIR)$(INCLUDEDIR)/omx-panel $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(DATADIR)/omx-panel-store
 	install -m 0755 $(B)/$(SONAME) $(DESTDIR)$(LIBDIR)/
 	ln -sf $(SONAME) $(DESTDIR)$(LIBDIR)/libomx-panel-store.so
 	install -m 0644 include/omx-panel/omx_panel_store.h $(DESTDIR)$(INCLUDEDIR)/omx-panel/
 	install -m 0644 $(B)/omx-panel-store.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0755 $(B)/omx-panel-store $(DESTDIR)$(BINDIR)/
+	install -m 0644 ../man/omx-panel-store.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0644 ../schema/panel.sql $(DESTDIR)$(DATADIR)/omx-panel-store/
 
 clean:
 	rm -rf $(B)
