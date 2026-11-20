@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-// Sorting pass rows M4, P1, P2 (omx-panel#160, #161, #162): omx-panel speaks the standard unit ids only, read from
-// omx-contract's param domain (PARAM_UNITS: each word's id, its symbol x-symbol and its x-dimension, V23a). It reads no
-// LV2 table (plugin-hostd's PLUGIN_HOSTD_LV2_MAP, P1) and no CLAP code sheet (OMX_PARAM_CONTRACT_UNITS, P2): whether a
-// face serves a unit is the face writer's question (%7). Its own unit groups (tools/role-table.mjs, the level units of
-// tools/panel-description.mjs) name standard ids and dimensions (M4, F3).
+// Sorting pass rows M4, P1 (omx-panel#160, #161): omx-panel speaks the standard unit ids, read from omx-contract's param
+// domain (PARAM_UNITS: each word's id, its symbol x-symbol and its x-dimension, V23a). It reads no LV2 table
+// (plugin-hostd's PLUGIN_HOSTD_LV2_MAP, P1): a unit's LV2 term is plugin-db's F1 word. V23d (and with it P2) is out of the
+// pass (%4): a unit is served, as on main, when omx-contract's param-contract sheet gives its term a code. Its own unit
+// groups (tools/role-table.mjs, the level units of tools/panel-description.mjs) name standard ids and dimensions (M4, F3).
 // (a) golden: a descriptor unit's id, the role table's ids, the level units by dimension; (c) a temporary contract
 // directory whose param domain has no dBu: a dBu control has no unit id and a read-only one is no level meter.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -38,8 +38,8 @@ test('(a) the param domain is installed where the tools read it (omx-contract >=
 });
 
 test('(a) a descriptor unit is read as its standard id; a unit the list lacks has none', () => {
-  assert.deepEqual(answers(['dB', '%', 'dB/oct', '', 'kHz', 'x', 'st', 'cents', 'furlong']).map(([id]) => id),
-    ['dB', 'percent', 'dB-oct', 'none', 'kHz', 'x', 'st', 'cents', null]);
+  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'x', 'st', 'cents', 'furlong']).map(([id]) => id),
+    ['dB', 'percent', 'none', 'kHz', 'x', 'st', 'cents', null]);
 });
 
 test('(a) every unit the role table names is a standard id', () => {
@@ -65,10 +65,10 @@ test('(c) a param domain with no dBu: a dBu unit has no id and a read-only dBu c
   assert.deepEqual(answers(['dBu'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }), [[null, 'display']]);
 });
 
-test('(3) no file reads plugin-hostd\'s LV2 table or the CLAP code sheet', () => {
+test('(3) no file reads plugin-hostd\'s LV2 table', () => {
   let out = '';
   try {
-    out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'OMX_PARAM_CONTRACT_UNITS', '-e', 'param-contract.json', '-e', 'PLUGIN_HOSTD_TABLES',
+    out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'PLUGIN_HOSTD_TABLES',
       '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', '.github'], { cwd: ROOT, encoding: 'utf8' });
   } catch (e) {
     assert.equal(e.status, 1, e.stderr);
@@ -76,5 +76,24 @@ test('(3) no file reads plugin-hostd\'s LV2 table or the CLAP code sheet', () =>
   assert.equal(out, '', out);
   // the spec's package sections (its %changelog is history)
   const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
-  assert.doesNotMatch(spec, /PLUGIN_HOSTD_LV2_MAP|OMX_PARAM_CONTRACT_UNITS|param-contract\.json|plugin-hostd-contract/);
+  assert.doesNotMatch(spec, /PLUGIN_HOSTD_LV2_MAP|plugin-hostd-contract/);
+});
+
+// V23d is out of the pass (%4, 2026-11-21): the param-contract sheet stays omx-contract's, and a unit is served, as on
+// main, when the sheet gives the unit's LV2 term a code; the term is plugin-db's F1 word for the standard id (P1).
+test('(a) a standard unit the param-contract sheet gives no code takes no role, as on main; a slope still names dB-oct', () => {
+  assert.deepEqual(answers(['dB', '%', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
+    ['dB', 'percent', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', null, null, null, null, 'none']);
+});
+
+test('(c) omx-contract\'s sheet decides: a sheet with no lufs leaves LUFS unserved', (t) => {
+  const from = contractDirs().find((d) => existsSync(join(d, '3/omx-contract/param-contract.json')));
+  assert.ok(from, `no 3/omx-contract/param-contract.json in ${contractDirs().join(':')}`);
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-p2-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const doc = JSON.parse(readFileSync(join(from, '3/omx-contract/param-contract.json'), 'utf8'));
+  delete doc.OMX_PARAM_CONTRACT_UNITS.value.lufs;
+  mkdirSync(join(dir, '3/omx-contract'), { recursive: true });
+  writeFileSync(join(dir, '3/omx-contract/param-contract.json'), JSON.stringify(doc));
+  assert.deepEqual(answers(['LUFS', 'dB'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }).map(([id]) => id), [null, 'dB']);
 });
