@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // The panel domain as its owner ships it (omx-contract docs/consumer-move.md): a conforming document in the one
-// formatting, no vocabulary render and no codes header (no C code switches on a panel word), installed by
+// formatting, one codes header (include/omxdomain/panel_codes.h, omx-contract render, for the renderer's widget table and
+// the plugin ABI, row V1), no other render, installed by
 // omx-contract's domain installer where the loader reads it, and packaged alone in omx-panel-contract.
 // The installed omx-contract (validate, fmt) and omx-domain (the C loader) commands run, or OMX_CONTRACT_CLI and
 // OMX_DOMAIN_CLI name others (a checkout's); a missing command is red by name, never skipped.
@@ -43,13 +44,20 @@ test('the document is in the one formatting (omx-contract fmt --check)', () => {
   assert.equal(r.status, 0, `omx-contract fmt --check:\n${r.stdout}${r.stderr}`);
 });
 
-test('no vocabulary render of the domain exists or is named; the one item C reads by code is marked x-c-codes, and no other', () => {
-  assert.equal(existsSync(join(ROOT, 'include/omxdomain')), false, 'include/omxdomain/ still holds a render');
-  const named = run(['git', 'grep', '-l', '-e', 'panel_vocabulary', '-e', 'omxdomain/', '--', '.', ':!CHANGELOG.md', ':!debian/changelog', ':!test/panel-domain-contract.test.mjs']);
-  assert.equal(named.stdout, '', `files still name the vocabulary render:\n${named.stdout}`);
-  // the store's refusals are codes (docs/descriptions-store.md, section 5); no C code switches on another panel word
+test('one render of the domain: omxdomain/panel_codes.h, what omx-contract render gives; the items C reads by code are marked x-c-codes, the six word items x-c-xmacro too, and no other', (t) => {
+  const out = mkdtempSync(join(tmpdir(), 'omx-panel-codes-'));
+  t.after(() => rmSync(out, { recursive: true, force: true }));
+  const r = run([...command('OMX_CONTRACT_CLI', 'omx-contract'), 'render', '--target', 'c', '--out', out, '--contract-dir', 'contract.d', '--package', 'panel']);
+  assert.equal(r.status, 0, `omx-contract render:\n${r.stdout}${r.stderr}`);
+  assert.deepEqual(readdirSync(out), ['panel_codes.h']);
+  assert.equal(read('include/omxdomain/panel_codes.h'), readFileSync(join(out, 'panel_codes.h'), 'utf8'), 'include/omxdomain/panel_codes.h is not what omx-contract render gives: re-render it');
+  assert.deepEqual(readdirSync(join(ROOT, 'include/omxdomain')), ['panel_codes.h']);
+  const named = run(['git', 'grep', '-l', '-e', 'panel_vocabulary', '--', '.', ':!CHANGELOG.md', ':!debian/changelog', ':!test/panel-domain-contract.test.mjs']);
+  assert.equal(named.stdout, '', `files still name a vocabulary render:\n${named.stdout}`);
+  const WORDS = ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS'];
   for (const [item, s] of Object.entries(doc.components.schemas)) {
-    assert.equal(s['x-c-codes'], item === 'PANEL_STORE_CODES' ? true : undefined, `${item}: x-c-codes`);
+    assert.equal(s['x-c-codes'], item === 'PANEL_STORE_CODES' || WORDS.includes(item) ? true : undefined, `${item}: x-c-codes`);
+    assert.equal(s['x-c-xmacro'], WORDS.includes(item) ? true : undefined, `${item}: x-c-xmacro`);
   }
 });
 
@@ -72,7 +80,7 @@ test('make install-contract installs the domain as it is, by omx-contract\'s dom
   for (const w of words) assert.match(o.stdout, new RegExp(`\\b${w}\\b`), `the loader did not list ${w}`);
 });
 
-test('the domain ships alone in omx-panel-contract: noarch in the rpm, Architecture all in debian', () => {
+test('the domain and its codes header ship alone in omx-panel-contract: noarch in the rpm, Architecture all in debian', () => {
   const spec = read('packaging/omx-panel.spec');
   assert.match(spec, /^%package contract$/m);
   const contractPkg = spec.slice(spec.indexOf('%package contract'));
@@ -84,5 +92,7 @@ test('the domain ships alone in omx-panel-contract: noarch in the rpm, Architect
   const control = read('debian/control');
   assert.match(control, /^Package: omx-panel-contract\nArchitecture: all$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));
-  assert.deepEqual(lines, ['usr/share/omx-contract/contract.d/panel/']);
+  assert.deepEqual(lines, ['usr/share/omx-contract/contract.d/panel/', 'usr/include/omxdomain/panel_codes.h']);
+  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{_includedir\}\/omxdomain\/panel_codes\.h$/m);
+  assert.doesNotMatch(mainFiles, /omxdomain/, 'the main package lists the codes header');
 });

@@ -6,13 +6,12 @@
  * and the widgets are the MOD GUI face's (tools/modgui-gen.mjs: layout, renderFace, drawKnob ...), the
  * numbers tools/look/geometry.json's and the colours the colour roles' (schema/look-roles.json, whose list
  * look_roles.h carries), valued by the look its host passes, tools/look.json by default; nothing here types a size or
- * a colour. The widget names are omx-contract's (PANEL_STANDARD_WIDGETS).
+ * a colour. The widget names are omx-panel's panel domain's (PANEL_STANDARD_WIDGETS).
  */
 #include "omx_panel_render.h"
 
 #include <cjson/cJSON.h>
 #include <math.h>
-#include <omxcontract/omx_vocabulary.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +20,13 @@
 #include "scene.h"
 #include "gesture_words.h"
 #include "view.h"
+
+/* whether `w` is the widget word whose X-macro name is `name` (view.h): the word is the name in lower case */
+static int is_widget_word(const char *w, const char *name) {
+  for (; *name; w++, name++)
+    if (*w != (*name >= 'A' && *name <= 'Z' ? *name - 'A' + 'a' : *name)) return 0;
+  return *w == 0;
+}
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -195,7 +201,7 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
     }
     int found = -1;
     for (size_t k = 0; k < sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES; k++)
-      if (strcmp(w, WIDGET_NAMES[k].name) == 0) found = (int)WIDGET_NAMES[k].w;
+      if (is_widget_word(w, WIDGET_NAMES[k].name)) found = (int)WIDGET_NAMES[k].w;
     if (found < 0) {
       fail(err, n, "description: control '%s' names the widget '%s', which is not a standard widget", sym, w);
       goto bad;

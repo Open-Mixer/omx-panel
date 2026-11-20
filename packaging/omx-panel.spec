@@ -56,6 +56,8 @@ Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
 Requires: omx-contract-data >= 3.20.2
 Requires: plugin-hostd-contract >= 0.20.7
+# the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
+Requires: omx-panel-contract >= %{version}-%{release}
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
 Requires: omx-dsp-wasm >= 0.33.0
 Provides: bundled(nodejs-ajv)
@@ -78,7 +80,8 @@ BuildArch: noarch
 The panel domain (contract.d/panel): the families, widgets, display kinds,
 display sources and placements a panel description speaks, with their
 translations, installed into the contract directory where omx-contract's
-loader reads it. A program that reads the panel words requires this package.
+loader reads it, and its codes header omxdomain/panel_codes.h. A program that
+reads the panel words requires this package.
 
 %package -n omx-panel-render
 Summary: The omx-panel renderer, a library that draws a panel description into a pixel buffer
@@ -169,6 +172,8 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 %files contract
 %license LICENSE
 %{omx_contract_domain_dir}/panel/
+%dir %{_includedir}/omxdomain
+%{_includedir}/omxdomain/panel_codes.h
 
 %files -n omx-panel-render
 %license LICENSE

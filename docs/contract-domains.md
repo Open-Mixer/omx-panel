@@ -29,12 +29,15 @@ copy (omx-contract `docs/consumer-move.md`). A domain gets a codes header only f
 Its words and codes are those omx-contract main held in `data/panel.json` at b2e9bba (the last commit before they left; no release carried them) (`PANEL_FAMILIES`, `PANEL_WIDGETS`,
 `PANEL_STANDARD_WIDGETS`, `PANEL_DISPLAY_KINDS`, `PANEL_DISPLAY_SOURCES`, `PANEL_PLACEMENTS`); a word is a `oneOf` entry
 `{ const, title, description, x-code, x-text }`, its code its place in the order. The document states
-`info.x-stability` (`experimental`) and is in omx-contract's one formatting (`omx-contract fmt --check`). No C code
-switches on a panel word, so the domain has no codes header and no rendered vocabulary: a consumer opens it through the
-loader, `omx_domain_open("panel", "1.0.0", ...)`.
+`info.x-stability` (`experimental`) and is in omx-contract's one formatting (`omx-contract fmt --check`). A consumer
+opens it through the loader, `omx_domain_open("panel", "1.0.0", ...)` in C, `openDomainAt` in JavaScript (the tools,
+`tools/vocabulary.mjs` `panelWords`). The six word items and `PANEL_STORE_CODES` are marked `x-c-codes`, the six word
+items `x-c-xmacro` too (sorting pass row V1): C code that tables them by code (the renderer's standard widgets,
+omx-clap-core's panel ABI) includes the one codes header, `include/omxdomain/panel_codes.h`, which `omx-contract render
+--target c --package panel --contract-dir contract.d` gives byte for byte; no other render exists.
 
 The translations of the words are `contract.d/panel/catalogs/<lang>.json` (six languages, one entry per word, moved from omx-contract's catalogs with nothing dropped). The family word is validated by `schema/skin-package.schema.json` `$defs.family` (a plain string in omx-contract's override schema), held equal to the domain's `PANEL_FAMILIES` by `test/panel-domain.test.mjs`. `make install` (its `install-contract` step)
 installs the domain as it is with omx-contract's domain installer (`install-contract-dir.sh --domain`) at
 `$(CONTRACTDIR)/panel/`, and the `omx-panel-contract` package ships it alone (noarch; a program that reads the panel
-words requires it). `test/panel-domain-contract.test.mjs` holds the document, the formatting, the absence of a render,
+words requires it). `test/panel-domain-contract.test.mjs` holds the document, the formatting, the one codes header,
 the installed tree as the loader opens it, and the package.

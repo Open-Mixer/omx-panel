@@ -71,3 +71,19 @@ test('(c) a contract directory whose panel domain lacks `knob` is what the tools
   if (r.status === 0) assert.ok(!JSON.parse(r.stdout).includes('knob'), `the tools still read knob: ${r.stdout}`);
   else assert.match(r.stderr, /panel|knob|STANDARD_WIDGETS/, r.stderr);
 });
+
+test('(a)+(c) the skin schema\'s family, display kind and display source enums are the domain\'s render; a domain without time_response makes it stale', (t) => {
+  const tool = join(ROOT, 'tools/skin-schema-words.mjs');
+  const ok = spawnSync(process.execPath, [tool, '--check'], { encoding: 'utf8' });
+  assert.equal(ok.status, 0, ok.stderr);
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-v1-schema-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  cpSync(join(ROOT, 'contract.d/panel'), join(dir, 'panel'), { recursive: true });
+  const f = join(dir, 'panel/panel.json');
+  const doc = JSON.parse(readFileSync(f, 'utf8'));
+  const dk = doc.components.schemas.PANEL_DISPLAY_KINDS;
+  dk.oneOf = dk.oneOf.filter((e) => e.const !== 'time_response');
+  writeFileSync(f, JSON.stringify(doc, null, 2));
+  const red = spawnSync(process.execPath, [tool, '--check'], { encoding: 'utf8', env: { ...process.env, OMX_CONTRACT_PATH: dir } });
+  assert.equal(red.status, 1, `the schema is still taken for the domain's without time_response:\n${red.stdout}${red.stderr}`);
+});
