@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, panelCodes, panelWords, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
+import { meaningOfRole, panelCodes, panelWords, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -38,8 +38,10 @@ export const STANDARD_WIDGETS = Object.freeze(panelWords('PANEL_STANDARD_WIDGETS
 /** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
  * `ppm` are not words. */
 export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
-/** The units a read-only travel is a level meter in. */
-const LEVEL_UNITS = ['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU'];
+/** The dimensions a read-only travel is a level meter in (omx-contract's PARAM_UNIT_DIMENSIONS, M4): its unit is one of
+ * their standard units (dB, dBFS, dBTP, dBu, LUFS, LU). */
+const LEVEL_DIMENSIONS = ['gain', 'level', 'loudness'];
+const isLevelUnit = (unit) => unitsOfDimensions(LEVEL_DIMENSIONS).includes(unit);
 /** The units a level meter's clip word can be in: a digital clip, never a modelled one (contract §7.9). */
 const CLIP_UNITS = ['dBFS', 'dBTP'];
 /** A word that names the state of an analogue input stage (phantom power, a pad, a head amp): a meter is a measurement,
@@ -66,7 +68,7 @@ export function widgetOf(c, declared) {
   if (declared !== undefined) return { widget: DECLARED_WIDGET[declared] ?? declared };
   if (c.readonly) {
     const unit = c.travel?.unit;
-    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
+    return isLevelUnit(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
   }
   if (c.kind === 'toggle') return { widget: 'switch' };
   if (c.kind === 'trigger') return { widget: 'switch', momentary: true };
@@ -98,10 +100,9 @@ export const basisOf = (descriptor, section) => (section.basis === 'exact' && de
 /** The displays a host computes from a family's roles in closed form. */
 const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
-/** A descriptor unit -> the token a role checks it against: the param-contract extension's own table,
- * so a unit it serves is a unit a role can take. A unit it has no token for (`unknown` among them) is
- * a plain number and takes no role. */
-export const unitToken = (unit) => servedToken(unit);
+/** A descriptor unit -> the standard id a role checks it against (omx-contract's PARAM_UNITS, P1, P2). A unit the list
+ * has no id for (`unknown` among them) is a plain number and takes no role. */
+export const unitToken = (unit) => unitIdOf(unit);
 
 /** Each family's roles and the units each accepts, and the roles that repeat by index: tools/role-table.mjs's, the
  * one table, data a browser loads as it is. */
@@ -298,7 +299,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? SLOPE_UNITS[unit] : undefined) ?? unitToken(unit);
+    const token = rest.token ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
@@ -425,7 +426,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
   const have = new Set(meters.map((m) => m.symbol));
   for (const c of all) {
-    if (!c.readonly || have.has(keyOf(c)) || !LEVEL_UNITS.includes(c.travel?.unit)) continue;
+    if (!c.readonly || have.has(keyOf(c)) || !isLevelUnit(c.travel?.unit)) continue;
     const named = [c.meaning, keyOf(c), c.name].filter((t) => typeof t === 'string').find(namesAnalogueState);
     if (named !== undefined) { refuseMeter(keyOf(c), `a meter is a measurement; '${named}' names an analogue input state`); continue; }
     meters.push({ declared: false, symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });

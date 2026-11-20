@@ -20,10 +20,9 @@ BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
 # the vendored tarball (tools/vendored-source.sh), which holds them; the build still runs npm itself
 BuildRequires: npm
-# %%check reads the installed vocabulary: omx-contract's schema, plugin-hostd's LV2 table, and the param-contract
-# unit sheet (omx-contract's OMX_PARAM_CONTRACT_UNITS, from 3.6.0); nothing of omx-plugins, which builds with this package
-BuildRequires: omx-contract-data >= 3.20.2
-BuildRequires: plugin-hostd-contract >= 0.20.7
+# %%check reads the installed vocabulary: omx-contract's schema and the standard units of its param domain (from 3.21.0);
+# nothing of omx-plugins, which builds with this package, and nothing of plugin-hostd or omx-clap (sorting pass P1, P2)
+BuildRequires: omx-contract-data >= 3.21.0
 # %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
 BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
@@ -55,9 +54,8 @@ BuildRequires: pkgconfig(omxdsp) >= 0.34.0
 BuildRequires: sqlite-devel >= 3.38.0
 
 Requires: nodejs >= 18
-# the layout reads omx-contract's meanings and plugin-hostd's unit table from the contract directory these install
-Requires: omx-contract-data >= 3.20.2
-Requires: plugin-hostd-contract >= 0.20.7
+# the layout reads omx-contract's meanings and standard units (its param domain) from the contract directory it installs
+Requires: omx-contract-data >= 3.21.0
 # the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
 Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)

@@ -50,7 +50,7 @@ const PLANTS = {
   'spec ceiling on the plugin-hostd Recommends': ['packaging/omx-panel.spec', 'Recommends: plugin-hostd >= 0.20.7', 'Recommends: (plugin-hostd >= 0.20.7 with plugin-hostd < 0.21)'],
   'spec upward Recommends on omx-plugins-contract': ['packaging/omx-panel.spec', 'Provides: bundled(nodejs-ajv)', 'Recommends: omx-plugins-contract >= 0.19.3\nProvides: bundled(nodejs-ajv)'],
   'control << ceiling': ['debian/control', `omx-contract-data (>= ${CONTRACT_FLOOR}~) <!nocheck>,`, `omx-contract-data (>= ${CONTRACT_FLOOR}~), omx-contract-data (<< 4~) <!nocheck>,`],
-  'control <= ceiling': ['debian/control', 'plugin-hostd-contract (>= 0.20.7~), omx-dsp-wasm', 'plugin-hostd-contract (>= 0.20.7~), plugin-hostd-contract (<= 0.21~), omx-dsp-wasm'],
+  'control <= ceiling': ['debian/control', 'omx-dsp-wasm (>= 0.33.0~), omx-contract (', 'omx-dsp-wasm (>= 0.33.0~), omx-dsp-wasm (<= 0.34~), omx-contract ('],
   'control < ceiling': ['debian/control', 'Recommends: plugin-hostd (>= 0.20.7~)', 'Recommends: plugin-hostd (>= 0.20.7~), plugin-hostd (< 0.21~)'],
   'control upward Recommends on omx-plugins-contract': ['debian/control', 'Recommends: plugin-hostd (>= 0.20.7~)', 'Recommends: plugin-hostd (>= 0.20.7~), omx-plugins-contract (>= 0.19.3~)'],
 };

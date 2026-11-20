@@ -69,9 +69,12 @@ test('(3) no file reads plugin-hostd\'s LV2 table or the CLAP code sheet', () =>
   let out = '';
   try {
     out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'OMX_PARAM_CONTRACT_UNITS', '-e', 'param-contract.json', '-e', 'PLUGIN_HOSTD_TABLES',
-      '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'packaging', 'debian/control', '.github'], { cwd: ROOT, encoding: 'utf8' });
+      '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', '.github'], { cwd: ROOT, encoding: 'utf8' });
   } catch (e) {
     assert.equal(e.status, 1, e.stderr);
   }
   assert.equal(out, '', out);
+  // the spec's package sections (its %changelog is history)
+  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
+  assert.doesNotMatch(spec, /PLUGIN_HOSTD_LV2_MAP|OMX_PARAM_CONTRACT_UNITS|param-contract\.json|plugin-hostd-contract/);
 });

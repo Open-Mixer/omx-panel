@@ -158,7 +158,7 @@ export function servedParamOf(c, { factor = false } = {}) {
   }
   const t = c.travel;
   const stated = t.unit && t.unit !== 'unknown';
-  const token = factor && !stated ? 'coef' : unitToken(t.unit);
+  const token = factor && !stated ? 'x' : unitToken(t.unit);
   const stepped = t.scale === 'stepped' || (t.step ?? 0) >= 1;
   // log over a floor at or below zero is served linear (contract.override.scale-floor)
   const scale = stepped ? 'stepped' : t.scale === 'log' && t.min > 0 ? 'log' : 'linear';
@@ -276,7 +276,7 @@ export function describe(descriptor, { overrides = [], applyOverride, skin, pane
 
   for (const m of layout.meterRefusals ?? []) refusals.push(refuse(DESCRIBE_CODES.meterRefused, { plugin, symbol: m.symbol, reason: m.reason }));
 
-  const factors = new Set(layout.roles.filter((r) => r.role === 'band_gain' && r.inferred && (r.token ?? r.unit) === 'coef').map((r) => r.symbol));
+  const factors = new Set(layout.roles.filter((r) => r.role === 'band_gain' && r.inferred && (r.token ?? r.unit) === 'x').map((r) => r.symbol));
   // a path or text parameter is served after the controls' facts, and drawn as a control of the panel's last section
   const params = [...effective.controls.map((c) => servedParamOf(c, { factor: factors.has(keyOf(c)) })), ...texts.served];
   const textSection = layout.sections.at(-1)?.key;
