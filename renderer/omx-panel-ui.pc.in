@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: omx-panel-ui
+Description: A plugin's own panel for a host's GUI protocol (CLAP clap.gui, LV2 ui:X11UI): bound to its parameters, in a window
+Version: @VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lomx-panel-ui
