@@ -533,6 +533,12 @@ export const GROUP = Symbol('group');
 /** The label of the repeated-group instance a control belongs to (`Band 3`), for the page cut: a symbol, so no serialisation sees it. */
 export const INSTANCE = Symbol('instance');
 
+/** The place of a repeated-group instance's slot (0 its on/off where the heads have one, then one a matrix row), for the page cut: a symbol. */
+export const PLACE = Symbol('place');
+
+/** The label of the matrix row a repeated-group instance's slot is (`Type`), for the page cut: a symbol. */
+export const ROW = Symbol('row');
+
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
@@ -553,8 +559,15 @@ export const PAGE_SIZE = 8;
  *    on one, never mixed with its neighbour. A derived page holds a control once. A control with no group is its own.
  *    A section of several pages names each page by the controls it holds, "Band: Freq - Q".
  *
+ * An instance of a repeated group (`INSTANCE`, its slots' places `PLACE` and rows `ROW`) is a page of its own. From two
+ * encoders up, an instance longer than the page has its first `perPage` places as its screen, and each place past them is a
+ * row of the aligned matrix: after the instances, one screen per run of `perPage` instances that have that cell, slot `j`
+ * the run's instance `j`, named by the row (`Type`, a second run `Type 2`). A cut never splits an instance onto a
+ * continuation of its own.
+ *
  * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) keeps its
- * slot, blank: the slots do not move with the governing values. Below two encoders a group is plain controls (one a page).
+ * slot, blank: the slots do not move with the governing values. No screen has zero visible items: a page whose every slot
+ * is blank (hidden, taken by the Easy pages, or an empty cell) is not cut. Below two encoders a group is plain controls (one a page).
  */
 export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
@@ -568,6 +581,8 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     return out;
   };
   const easy = (x.easy ?? []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
+  // no screen has zero visible items: a page of blank slots alone is not cut
+  const shown = (pages) => pages.filter((p) => p.ids.some((id) => id !== null));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
@@ -580,15 +595,25 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: k === 0 ? name : `${name} ${k / size + 1}`, ids: pad(r.ids.slice(k, k + size)) });
       return pages;
     });
-    return [...easyPages, ...declared];
+    return shown([...easyPages, ...declared]);
   }
-  return [...easyPages, ...x.sections.flatMap((s, section) => {
+  return shown([...easyPages, ...x.sections.flatMap((s, section) => {
     // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
     // after it stay where every other instance has them, and the blanks an instance would end on are left off
     const taken = (c) => c.param === null || easy.includes(c.symbol);
-    const cs = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
-      .map((c) => (taken(c) ? { ...c, param: null } : c))
+    const mine = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
+      .map((c) => (taken(c) ? { ...c, param: null } : c));
+    // the places past a page are the aligned matrix's rows, cut after the instances (from two encoders up)
+    const past = (c) => size >= 2 && c[INSTANCE] !== undefined && c[PLACE] >= size;
+    const cs = mine.filter((c) => !past(c))
       .filter((c, i, all) => c.param !== null || all.slice(i + 1).some((d) => d[GROUP] === c[GROUP] && d.param !== null));
+    const rowPages = [];
+    const beyond = mine.filter(past);
+    for (const k of [...new Set(beyond.map((c) => c[PLACE]))].sort((a, b) => a - b)) {
+      // the instances that have this cell, in the matrix's order; a cell the Easy pages took keeps its slot, blank
+      const row = beyond.filter((c) => c[PLACE] === k && c.symbol !== null);
+      for (let r = 0; r < row.length; r += size) rowPages.push({ row: row[0][ROW], run: r / size, controls: row.slice(r, r + size) });
+    }
     const pages = [];
     let page = [];
     const flush = () => {
@@ -611,7 +636,7 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       if (run.length > size || alone) flush();
     }
     flush();
-    // a page of one repeated-group instance is named by it (`Band 3`, a continuation `Band 3 2`)
+    // a page of one repeated-group instance is named by it (`Band 3`; below two encoders a continuation `Band 3 2`)
     const seen = new Map();
     return pages.map((p, k) => {
       const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
@@ -621,9 +646,9 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
         seen.set(instance, n);
         return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
       }
-      return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
-    });
-  })];
+      return { section, sectionName: s.label, pageName: pages.length === 1 && rowPages.length === 0 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
+    }).concat(rowPages.map(({ row, run, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${run === 0 ? row : `${row} ${run + 1}`}`, ids: pad(controls.map((c) => c.param)) })));
+  })]);
 }
 
 /** The shortest decimal that round-trips to the same binary64, -0 written 0. */

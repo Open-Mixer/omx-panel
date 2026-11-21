@@ -34,3 +34,10 @@ test('the panel domain carries PANEL_DISPLAY_AXES (1.2.0), so describe serves di
   assert.match(domain, /"PANEL_DISPLAY_AXES"/, 'the domain names the axis words');
   assert.ok(rules >= 2, `describe serves displays[].axis, an entry derived at rules 1 has none: OMX_PANEL_RULES_VERSION is ${rules}, it must be at least 2`);
 });
+
+test('describe cuts no page screen of zero visible items and puts a band\'s places past the page on the matrix\'s rows (#175), so a derived entry stored at rules 2 is stale', () => {
+  const mbc = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/group-model/mbc.descriptor.json'), 'utf8'));
+  const { description } = describe(mbc, { perPage: 4 });
+  assert.ok(description.pages.every((p) => p.ids.some((id) => id !== null)), 'every screen shows a control');
+  assert.ok(rules >= 3, `the page cut moved for the same input after rules 2 (#149's display axis): OMX_PANEL_RULES_VERSION is ${rules}, it must be at least 3`);
+});
