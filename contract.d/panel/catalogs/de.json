@@ -590,6 +590,24 @@
       "by": "machine",
       "model": "draft-prose",
       "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
+    },
+    "PANEL_DISPLAY_AXES.linear": {
+      "text": "Eine lineare Achse: ein Pegel in dB auf einer linearen Spanne.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "097771ce5282009b7b2da9af193c41fa13e9f790eec1403a377fc198e6395dfb"
+    },
+    "PANEL_DISPLAY_AXES.log-frequency": {
+      "text": "Eine logarithmische Frequenzachse: die Frequenz in Hz logarithmisch, der Pegel in dB um 0.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84d71cb0c7ff5bf29c11e5c194d56996b5a27b65b656aea4f5fd4f8af6c9a8da"
+    },
+    "PANEL_DISPLAY_AXES.time": {
+      "text": "Eine Zeitachse: die Zeit in ms ab 0, der Pegel in dB ab dem Boden.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "46633ca72d9a1af20d0ea479e30cbe230a33da294832b58580df3aabae9b5d10"
     }
   }
 }

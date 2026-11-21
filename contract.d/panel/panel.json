@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openmixer.org/contract/panel",
   "info": {
-    "title": "The panel vocabulary: families, widgets, display kinds, display sources and placements of a panel",
+    "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
     "version": "1.2.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
@@ -907,6 +907,34 @@
               "plugin",
               "licence"
             ]
+          }
+        ]
+      },
+      "PANEL_DISPLAY_AXES": {
+        "description": "The axis a panel description's display is drawn on (omx-panel docs/panel-layout.md \"Displays and their axis\"), in the order of their codes: describe serves it on every display as data, so no surface picks an axis by the display kind's name. omx-panel's tools/panel-description.mjs DISPLAY_AXES reads them, and the renderer reads the word.",
+        "x-since": "1.2.0",
+        "x-why": "The C renderer chose the log frequency axis by the display kind's name and a second client would have copied it; layout data comes via the description (owner ruling), so the axis is a word of the panel vocabulary.",
+        "oneOf": [
+          {
+            "const": "linear",
+            "title": "linear",
+            "description": "x and y on linear spans: a transfer curve's input and output dB on one span with the unity line, a bar's fill a linear fraction of its range",
+            "x-code": 0,
+            "x-text": "A linear axis: a level in dB on a linear span."
+          },
+          {
+            "const": "log-frequency",
+            "title": "logFrequency",
+            "description": "x the frequency in Hz on a log axis, y the dB symmetric about 0 to the next 6 dB",
+            "x-code": 1,
+            "x-text": "A log frequency axis: frequency in Hz on a log scale, level in dB about 0."
+          },
+          {
+            "const": "time",
+            "title": "time",
+            "description": "x the time in ms from 0 to the content's end, y the level in dB from the floor, -60, to 0 or the next 6 dB above a level",
+            "x-code": 2,
+            "x-text": "A time axis: time in ms from 0, level in dB from the floor."
           }
         ]
       }

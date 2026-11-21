@@ -31,7 +31,7 @@ const W = ref.window;
 /** The state of the dyn-curve fixture with its display as an eq_response, the curve given and, when `spectrum` is, the spectrum. */
 function withSpectrum(dir, { curve = ref.input.curve, spectrum = null } = {}) {
   const d = JSON.parse(readFileSync(descriptionFile(fx, dir), 'utf8'));
-  d.displays[0].kind = 'eq_response';
+  d.displays[0].kind = 'eq_response', d.displays[0].axis = 'log-frequency';
   const desc = join(dir, 'eq.layout.json');
   writeFileSync(desc, JSON.stringify(d));
   const state = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
@@ -139,11 +139,11 @@ for (const [why, change] of [
   });
 }
 
-test('a spectrum on a display with no log axis (a transfer_curve) is refused', () => {
+test('a spectrum on a display with no log frequency axis (a transfer_curve on its linear axis) is refused', () => {
   const dir = scratch();
   const { desc, state } = withSpectrum(dir, { spectrum: SPECTRUM });
   const d = JSON.parse(readFileSync(desc, 'utf8'));
-  d.displays[0].kind = 'transfer_curve';
+  d.displays[0].kind = 'transfer_curve', d.displays[0].axis = 'linear';
   writeFileSync(desc, JSON.stringify(d));
   const st = JSON.parse(readFileSync(state, 'utf8'));
   st.curves = { 0: { x: [-80, 0], y: [-80, 0] } };

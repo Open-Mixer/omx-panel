@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { DISPLAY_KINDS, FAMILIES, DISPLAY_SOURCES, PLACEMENTS, STANDARD_WIDGETS } from '../tools/panel-description.mjs';
+import { DISPLAY_AXES, DISPLAY_KINDS, FAMILIES, DISPLAY_SOURCES, PLACEMENTS, STANDARD_WIDGETS } from '../tools/panel-description.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const doc = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8'));
@@ -17,7 +17,7 @@ test('the domain names itself, its owner and its own version', () => {
   assert.equal(doc.$id, 'https://openmixer.org/contract/panel');
   assert.equal(doc.info['x-owner'], 'omx-panel');
   assert.match(doc.info.version, /^\d+\.\d+\.\d+$/);
-  assert.deepEqual(Object.keys(doc.components.schemas), ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS', 'PANEL_STORE_CODES', 'PANEL_DESCRIBE_CODES', 'PANEL_GROUP_OUTCOMES', 'PANEL_GROUP_REASONS', 'PANEL_GROUP_RULES', 'PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES']);
+  assert.deepEqual(Object.keys(doc.components.schemas), ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS', 'PANEL_STORE_CODES', 'PANEL_DESCRIBE_CODES', 'PANEL_GROUP_OUTCOMES', 'PANEL_GROUP_REASONS', 'PANEL_GROUP_RULES', 'PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES', 'PANEL_DISPLAY_AXES']);
 });
 
 test('a code is the place of its word, and no word is twice', () => {
@@ -27,8 +27,9 @@ test('a code is the place of its word, and no word is twice', () => {
   }
 });
 
-test('the words the tools read are the domain\'s: display kinds, sources, placements, standard widgets', () => {
+test('the words the tools read are the domain\'s: display kinds, axes, sources, placements, standard widgets', () => {
   assert.deepEqual(words('PANEL_DISPLAY_KINDS'), DISPLAY_KINDS);
+  assert.deepEqual(words('PANEL_DISPLAY_AXES'), DISPLAY_AXES);
   assert.deepEqual(words('PANEL_DISPLAY_SOURCES'), DISPLAY_SOURCES);
   assert.deepEqual(words('PANEL_PLACEMENTS'), PLACEMENTS);
   assert.deepEqual(words('PANEL_STANDARD_WIDGETS'), STANDARD_WIDGETS);

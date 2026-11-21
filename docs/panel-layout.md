@@ -162,6 +162,17 @@ A derived panel whose family has a closed form (`eq`, `dynamics`, `gate`, `drive
 form), else `modelled`, which every surface prints in the display's caption place. `basis` is a view and stays out of the canonical
 form. A declared panel's `origins` (band_freq symbol to the planter that owns the band, an authored descriptor's only) gives the role an `origin`, and a surface draws a mark there; nothing is inferred.
 
+### Displays and their axis
+
+Every display also carries its `axis`, a word of the panel domain's `PANEL_DISPLAY_AXES` (`contract.d/panel/panel.json`, since
+1.2.0): `log-frequency` (an `eq_response`: frequency in Hz on a log axis, the dB symmetric about 0), `linear` (a `transfer_curve`:
+input and output dB on one linear span; a `gain_reduction_bar` or a `meter`: its fill a linear fraction of its range) or `time` (a
+`time_response`: ms from 0, the level window from the floor). The layout gives it where it makes the display and `describe` serves
+it, so a surface reads the axis as data and never picks one by the kind's name (owner ruling: layout data comes via the
+description). A display whose axis is absent or no word of the item is refused by name: by `describe` and `describeFromStored`
+(`panel.describe.layout-invalid`), by a skin (`panel.describe.skin-dropped`, reason `axis`) and by the renderer; nothing is inferred.
+Like `basis`, `axis` is a view and stays out of the canonical form.
+
 The description also serves `easy` (the Easy controls) and its `pages`, cut after the skin applies; a control the values hide keeps its slot in a page, blank.
 
 ## Bars
@@ -257,13 +268,16 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
 3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
    every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
    its own, never mixed with its neighbour. **A repeated group is cut by instance**: where a section carries a group-model
-   `matrix` (docs/group-model.md, P1), each instance is one group, its on/off first, and one page where it fits; the
+   `matrix` (docs/group-model.md, P1), each instance is one group, its on/off first, on one page of its own; the
    instances come in the matrix's order (an EQ's high-pass first, its bands in their number order, its low-pass last:
    the drawing's order, the audio order untouched) and keep the same places, a place an instance has no control at left
-   blank. A control with no group is its own. A derived page holds a control once, so the Easy
+   blank. An instance longer than the page keeps its first `perPage` places, and each place past them is a row of the
+   aligned matrix, after the instances: that parameter of `perPage` instances a screen (`Bands: Type`, `Bands: Type 2`).
+   A control with no group is its own. A derived page holds a control once, so the Easy
    controls are not repeated: in an instance, the slot of a control the Easy pages took stays, blank. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
 
-Every page carries `perPage` slots, a short page's last ones `null`. Below two encoders a bar group (the Bars section)
+Every page carries `perPage` slots, a short page's last ones `null`. **No screen has zero visible items**: a page whose
+every slot is blank (its controls on the Easy pages, hidden by the values, or a declared page naming none) is not cut. Below two encoders a bar group (the Bars section)
 is plain controls, one a page. `omx-panel layout --pages [--per-page N]` cuts the layout; `omx-panel describe --pages
 [--per-page N] [--skin file] [--remote file]` serves the same cut over the whole derivation, the skin applied first, as JSON
 to a surface that is not node. The page sequence of the parity fixtures is held at 4 and 8 (`test/pages-fixtures.test.mjs`).
@@ -279,7 +293,7 @@ parameter of the plugin (a choice, a toggle, or a travel with step 1), every val
 governing parameter's id) and `mask` (bit v set: shown while the value is v; `atLeast: n` sets bits n to 63), both in the
 fingerprint, and as `visibleWhen: { symbol, default }`, the governing control and its come-up value, for a renderer.
 
-The pages follow: a control the governing values hide keeps its slot, blank, so the slots after it do not move; a section whose controls are all hidden keeps its page, every slot blank.
+The pages follow: a control the governing values hide keeps its slot, blank, so the slots after it do not move; a page whose controls are all hidden is not cut (no screen has zero visible items), so a section the values empty has no page.
 `omx-panel layout --pages --value eqBands=9` cuts at those values; a governing control left out reads its come-up value.
 A host cuts again when a governing value changes (a CLAP face announces its remote-controls changed). With a strip's
 band controls in band order, five a band, a band count of 4 gives the same page boundaries as before, with no hidden band
