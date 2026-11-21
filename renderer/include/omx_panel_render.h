@@ -74,6 +74,9 @@ omx_panel_view_t *omx_panel_view_create(const omx_panel_sources_t *sources, char
 omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err,
                                                    size_t err_size);
 
+/** The same with the description in memory (`description_json`, `omx-panel layout`'s output): a plugin that carries its own. */
+omx_panel_view_t *omx_panel_view_create_from_data(const char *description_json, const char *data_dir, char *err, size_t err_size);
+
 void omx_panel_view_destroy(omx_panel_view_t *view);
 
 /** The controls, in the description's order: their count, and the index of the one named `symbol`

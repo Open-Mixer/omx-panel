@@ -121,5 +121,27 @@ class test_the_door_reads_through_the_library(unittest.TestCase):
             door.source("vst3", p)
 
 
+class test_the_store_codes_are_the_domains(unittest.TestCase):
+    """Sorting pass row V2 (omx-panel#156): the refusal strings stay in C (store.c CODES: the domain-too-old answer must
+    be given when the domain cannot open), and every one is the panel domain's PANEL_STORE_CODES word of its code."""
+    ABSENT, ENTRY_INVALID = 2, 11  # omx_panel_store.h: OMX_PANEL_STORE_ABSENT .. OMX_PANEL_STORE_ENTRY_INVALID
+
+    def domain_words(self, path=os.path.join(ROOT, "contract.d", "panel", "panel.json")):
+        with open(path) as f:
+            words = json.load(f)["components"]["schemas"]["PANEL_STORE_CODES"]["oneOf"]
+        return [w["const"] for w in sorted(words, key=lambda w: w["x-code"])]
+
+    def library_words(self):
+        return [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+
+    def test_each_status_code_is_the_domain_word(self):
+        self.assertEqual(self.library_words(), self.domain_words())
+
+    def test_a_domain_word_the_library_does_not_answer_is_seen(self):
+        words = self.domain_words()
+        words[0] = "panel-store.sabotaged"
+        self.assertNotEqual(self.library_words(), words)
+
+
 if __name__ == "__main__":
     unittest.main()

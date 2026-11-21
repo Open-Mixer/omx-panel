@@ -34,12 +34,11 @@ import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
 import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
-import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
-import { SLOPE_UNITS } from './vocabulary.mjs';
+import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
-import { installedDescriptorFile } from './vocabulary.mjs';
+import { installedDescriptorFile, unitIdOf } from './vocabulary.mjs';
 import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
@@ -188,7 +187,17 @@ export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', 
 /** A delay tap's leg as the letter above its stem: a tap that lands on both legs carries none. */
 export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
-/** The terms of a curve request from a layout's roles, each at its come-up value, in the unit the description gives the role. */
+/** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
+ * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
+ * three omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
+const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', 'dB-oct': 'db' });
+function curveUnitOf(id) {
+  const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
+  if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);
+  return word;
+}
+
+/** The terms of a curve request from a layout's roles, each at its come-up value, in omx-dsp's word for the unit the description gives the role. */
 function curveTerms(descriptor, x) {
   const roles = new Set(DSP.words.roles);
   const control = (symbol) => descriptor.controls.find((c) => keyOf(c) === symbol);
@@ -196,7 +205,7 @@ function curveTerms(descriptor, x) {
   return x.roles.filter((r) => roles.has(r.role)).map((r) => {
     const value = valueOf(control(r.symbol));
     return {
-      role: r.role, index: r.index, value, unit: r.token ?? (/^(hpf|lpf)_slope$/.test(r.role) ? SLOPE_UNITS[r.unit] : undefined) ?? unitTokenOf(r.unit),
+      role: r.role, index: r.index, value, unit: curveUnitOf(r.token ?? (/^(hpf|lpf)_slope$/.test(r.role) ? unitIdOf(r.unit) : undefined) ?? unitTokenOf(r.unit) ?? 'none'),
       ...(r.shape ? { shape: r.shape } : {}),
       ...(r.role === 'band_type' && r.shapes ? { shape: r.shapes[value] } : {}),
       ...(r.origin ? { origin: r.origin } : {}),
@@ -353,7 +362,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   try {
     panel = panelOf(descriptor, shaped?.panel, wantEasyFirst);
   } catch (err) {
-    throw err.code === 'panel.describe.no-controls' ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
+    throw err instanceof NoControls ? new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`) : err;
   }
   const controls = descriptor.controls ?? [];
   // a control a declared rule governs carries it: the governing port's symbol and the mask of the values that show it,

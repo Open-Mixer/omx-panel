@@ -42,6 +42,12 @@ uintptr_t omx_panel_window_native(const omx_panel_window_t *window);
 void omx_panel_window_redraw(omx_panel_window_t *window);
 void omx_panel_window_idle(omx_panel_window_t *window);
 
+/** A pointer, wheel or key event of the window, in the panel's logical px (the window's device px over its scale), as
+ * omx_panel_view_input takes it: a left-button press, move and release are DOWN, MOVE and UP of pointer 0 (a mouse), a scroll step is
+ * a WHEEL notch, and Backspace and the arrows are KEYs. The window redraws after the call. Called from `omx_panel_window_idle`. */
+typedef void (*omx_panel_window_input_fn)(void *user, const omx_panel_event_t *event);
+void omx_panel_window_set_input(omx_panel_window_t *window, omx_panel_window_input_fn input, void *user);
+
 /** The window's next frame, read back into `buffer` (its size must be the window's) in the buffer's format: a picture
  * of what the window shows, for a test or a screenshot. False when no frame was drawn within a second. */
 bool omx_panel_window_read(omx_panel_window_t *window, const omx_panel_buffer_t *buffer);

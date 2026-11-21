@@ -6,13 +6,12 @@
  * and the widgets are the MOD GUI face's (tools/modgui-gen.mjs: layout, renderFace, drawKnob ...), the
  * numbers tools/look/geometry.json's and the colours the colour roles' (schema/look-roles.json, whose list
  * look_roles.h carries), valued by the look its host passes, tools/look.json by default; nothing here types a size or
- * a colour. The widget names are omx-contract's (PANEL_STANDARD_WIDGETS).
+ * a colour. The widget names are omx-panel's panel domain's (PANEL_STANDARD_WIDGETS).
  */
 #include "omx_panel_render.h"
 
 #include <cjson/cJSON.h>
 #include <math.h>
-#include <omxcontract/omx_vocabulary.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +20,13 @@
 #include "scene.h"
 #include "gesture_words.h"
 #include "view.h"
+
+/* whether `w` is the widget word whose X-macro name is `name` (view.h): the word is the name in lower case */
+static int is_widget_word(const char *w, const char *name) {
+  for (; *name; w++, name++)
+    if (*w != (*name >= 'A' && *name <= 'Z' ? *name - 'A' + 'a' : *name)) return 0;
+  return *w == 0;
+}
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -195,7 +201,7 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
     }
     int found = -1;
     for (size_t k = 0; k < sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES; k++)
-      if (strcmp(w, WIDGET_NAMES[k].name) == 0) found = (int)WIDGET_NAMES[k].w;
+      if (is_widget_word(w, WIDGET_NAMES[k].name)) found = (int)WIDGET_NAMES[k].w;
     if (found < 0) {
       fail(err, n, "description: control '%s' names the widget '%s', which is not a standard widget", sym, w);
       goto bad;
@@ -469,14 +475,16 @@ static char *slurp(const char *path, size_t *size) {
   return buf;
 }
 
-omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+/* The description as text and the look, geometry, font and gestures from `data_dir`: what create_from_files reads, for a host that holds
+ * the description in memory (a plugin's own, generated into its binary). */
+omx_panel_view_t *omx_panel_view_create_from_data(const char *desc, const char *data_dir, char *err, size_t n) {
   char look_path[4096], geom_path[4096], font_path[4096], gest_path[4096];
   snprintf(look_path, sizeof look_path, "%s/look.json", data_dir);
   snprintf(geom_path, sizeof geom_path, "%s/look/geometry.json", data_dir);
   omx_panel_view_t *v = NULL;
   size_t font_size = 0;
-  char *desc = slurp(description_path, NULL), *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
-  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); goto out; }
+  char *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
+  if (!desc) { fail(err, n, "no description%s%s", NULL, NULL); goto out; }
   if (!look) { fail(err, n, "cannot read %s%s", look_path, NULL); goto out; }
   if (!geom) { fail(err, n, "cannot read %s%s", geom_path, NULL); goto out; }
   {
@@ -504,7 +512,15 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
   omx_panel_sources_t s = {desc, look, geom, (const uint8_t *)font, font_size, gest};
   v = omx_panel_view_create(&s, err, n);
 out:
-  free(desc), free(look), free(geom), free(font), free(gest);
+  free(look), free(geom), free(font), free(gest);
+  return v;
+}
+
+omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+  char *desc = slurp(description_path, NULL);
+  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); return NULL; }
+  omx_panel_view_t *v = omx_panel_view_create_from_data(desc, data_dir, err, n);
+  free(desc);
   return v;
 }
 
