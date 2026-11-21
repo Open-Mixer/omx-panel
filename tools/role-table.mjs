@@ -26,7 +26,7 @@ export const ROLES = {
   dynamics: { threshold: LVL, ratio: RATIO, attack: T, release: T, knee: DB, makeup: DB, lookahead: ['ms'], ...WET },
   limiter: { ceiling: LVL, release: T, lookahead: ['ms'], threshold: LVL, ...WET },
   deesser: { frequency: FREQ, threshold: LVL, range: DB, width: ['oct'], ratio: RATIO, attack: T, release: T, knee: DB, mode: CHOICE, listen: CHOICE, ...WET },
-  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['dB', 'x'], band_q: ['none', 'x', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'dB', 'dB-oct'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'dB', 'dB-oct'], lpf_on: CHOICE, output: DB },
+  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['dB', 'x', 'coef'], band_q: ['none', 'x', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'dB', 'dB-oct'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'dB', 'dB-oct'], lpf_on: CHOICE, output: DB },
   filter: { cutoff: FREQ, resonance: PLAIN, filter_type: CHOICE, ...WET },
   drive: { drive: DB, tone: PLAIN, model: CHOICE, ...WET },
   modulation: { rate: ['Hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },

@@ -159,10 +159,11 @@ export function shapesOf(c) {
   return any ? out : undefined;
 }
 
-/** The standard unit id a gain is read in: dB, or a linear factor x (a range that stays above zero). */
+/** The standard unit id a gain is read in: dB, or a linear factor, the curve's coef (a range that stays above zero; a
+ * curve term is a descriptor word, so its descriptor-scope id, %4). */
 function gainToken(c) {
   if (unitOf(c) === 'db') return 'dB';
-  return typeof c.travel?.min === 'number' && c.travel.min > 0 ? 'x' : 'dB';
+  return typeof c.travel?.min === 'number' && c.travel.min > 0 ? 'coef' : 'dB';
 }
 
 /** Infer `controls`' EQ bands. See the file's header for the verdict. */
