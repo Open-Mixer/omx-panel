@@ -86,10 +86,15 @@ test('(3) no file reads plugin-hostd\'s LV2 table or names its package, docs and
 test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-hostd-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  execFileSync('git', ['clone', '-q', '--no-hardlinks', ROOT, dir]);
+  // a scratch tree holding this tree's release.yml and spec, the package name planted in release.yml
+  for (const rel of ['.github/workflows/release.yml', 'packaging/omx-panel.spec']) {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    cpSync(join(ROOT, rel), join(dir, rel));
+  }
   const f = join(dir, '.github/workflows/release.yml');
   writeFileSync(f, `${readFileSync(f, 'utf8')}# plugin-hostd-contract\n`);
-  execFileSync('git', ['-C', dir, 'add', '.github/workflows/release.yml']);
+  execFileSync('git', ['init', '-q', dir]);
+  execFileSync('git', ['-C', dir, 'add', '.']);
   assert.match(hostdNames(dir), /release\.yml:.*plugin-hostd-contract/);
 });
 
