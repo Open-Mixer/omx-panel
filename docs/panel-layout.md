@@ -24,14 +24,14 @@ with labelled values a `choice`, every other parameter a `travel` with the decla
 
 ## Units
 
-A control's unit is the descriptor's `travel.unit`. A role checks it against the units the
-param-contract extension serves (`tools/vocabulary.mjs`, `servedToken`): a unit's token is the LV2 unit a
-face writes for it, plugin-hostd's installed LV2 table read backwards, or the name of a unit in the
-extension's vendor block (`dBu`, `ratio`); it is served when the extension's unit table,
+A control's unit is the descriptor's `travel.unit`, read as its standard id (omx-contract's PARAM_UNITS, its param
+domain: `%` is `percent`, `dB/oct` is `dB-oct`; sorting pass P1, M4). A role checks the id against the units the
+param-contract extension serves (`tools/vocabulary.mjs`, `servedUnit`): the unit's LV2 term is plugin-db's F1 word for
+the id, or the id names a unit of the extension's vendor block (`dBu`, `ratio`); it is served when the extension's unit table,
 `OMX_PARAM_CONTRACT_UNITS` (omx-contract's sheet, `3/omx-contract/param-contract.json` in the contract directory, omx-contract-data from 3.6.0), gives the token a value. So a unit that table or that block knows (`LUFS`, `dBu`
 among them) is checked like any other. A unit with no token there, `unknown` included, takes no role and
 is drawn as a plain number. Nothing here types a unit: the reader reads the installed table
-(`$PLUGIN_HOSTD_TABLES` stands in for it) and the installed unit sheet (`param-contract.json` in omx-contract's directory), and refuses by name when either is missing.
+(plugin-db's F1 mapping of the LV2 units, its `lv2` domain) and the installed unit sheet (`param-contract.json` in omx-contract's directory), and refuses by name when either is missing.
 
 The level roles (`threshold`, `ceiling`) take `dB`, `dBFS`, `dBu` and `LUFS`.
 
