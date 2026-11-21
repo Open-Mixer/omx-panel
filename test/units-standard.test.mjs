@@ -65,18 +65,32 @@ test('(c) a param domain with no dBu: a dBu unit has no id and a read-only dBu c
   assert.deepEqual(answers(['dBu'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }), [[null, 'display']]);
 });
 
-test('(3) no file reads plugin-hostd\'s LV2 table', () => {
+/** The lines of this tree (or of `root`) that name plugin-hostd's LV2 table or its package: code, packaging, CI, docs. */
+function hostdNames(root = ROOT) {
   let out = '';
   try {
-    out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'PLUGIN_HOSTD_TABLES',
-      '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', '.github'], { cwd: ROOT, encoding: 'utf8' });
+    out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'PLUGIN_HOSTD_TABLES', '-e', 'plugin-hostd-contract',
+      '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', 'debian/rules', '.github', 'BUILDING.md', 'README.md', 'docs', 'man'], { cwd: root, encoding: 'utf8' });
   } catch (e) {
     assert.equal(e.status, 1, e.stderr);
   }
-  assert.equal(out, '', out);
   // the spec's package sections (its %changelog is history)
-  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
-  assert.doesNotMatch(spec, /PLUGIN_HOSTD_LV2_MAP|plugin-hostd-contract/);
+  const spec = readFileSync(join(root, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
+  return out + (/PLUGIN_HOSTD_LV2_MAP|PLUGIN_HOSTD_TABLES|plugin-hostd-contract/.test(spec) ? 'packaging/omx-panel.spec: names plugin-hostd\n' : '');
+}
+
+test('(3) no file reads plugin-hostd\'s LV2 table or names its package, docs and CI included', () => {
+  assert.equal(hostdNames(), '');
+});
+
+test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-hostd-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  execFileSync('git', ['clone', '-q', '--no-hardlinks', ROOT, dir]);
+  const f = join(dir, '.github/workflows/release.yml');
+  writeFileSync(f, `${readFileSync(f, 'utf8')}# plugin-hostd-contract\n`);
+  execFileSync('git', ['-C', dir, 'add', '.github/workflows/release.yml']);
+  assert.match(hostdNames(dir), /release\.yml:.*plugin-hostd-contract/);
 });
 
 // V23d is out of the pass (%4, 2026-11-21): the param-contract sheet stays omx-contract's, and a unit is served, as on
