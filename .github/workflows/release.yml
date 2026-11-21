@@ -57,7 +57,7 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.21.0' 'plugin-db-contract >= 0.5.0'
           # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
           # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
           dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-devel >= 3.20.2' 'libomx-domain-devel >= 3.20.2'
@@ -112,7 +112,7 @@ jobs:
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
-      # omx-contract-data and plugin-hostd-contract, which %check reads,
+      # omx-contract-data and plugin-db-contract, which %check reads,
       # come from the channel
       channel-deps: true
     secrets: inherit
@@ -129,7 +129,7 @@ jobs:
       republish: ${{ inputs.republish == true }}
       dependencies: ''
       requires: ''
-      # omx-contract-data and plugin-hostd-contract, which the tests read,
+      # omx-contract-data and plugin-db-contract, which the tests read,
       # come from the channel
       channel-deps: true
     secrets: inherit

@@ -115,6 +115,7 @@ function sabotagedCli(source) {
   try {
     for (const f of ['src', 'include', 'Makefile', 'omx-panel-render.pc.in']) cpSync(join(RENDERER, f), join(dir, 'renderer', f), { recursive: true });
     cpSync(join(RENDERER, '..', 'package.json'), join(dir, 'package.json'));
+    cpSync(join(RENDERER, '..', 'include'), join(dir, 'include'), { recursive: true }); // the panel domain's codes header (view.h)
     writeFileSync(join(dir, 'renderer', 'src', 'gesture.c'), source);
     execFileSync('make', ['-C', join(dir, 'renderer'), 'WINDOW=0', 'build/omx-panel-render', '-j4'], { stdio: ['ignore', 'pipe', 'pipe'] });
     return wheelForHiddenControl(join(dir, 'renderer', 'build', 'omx-panel-render'));

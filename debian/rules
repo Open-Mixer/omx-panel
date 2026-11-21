@@ -35,9 +35,14 @@ override_dh_auto_install:
 	# the catalogs are the language packs' (debian/omx-panel-l10n-<lang>.install takes them from debian/tmp)
 	install -d debian/tmp/usr/share/omx-panel/catalogs
 	mv debian/omx-panel/usr/share/omx-panel/catalogs/*.json debian/tmp/usr/share/omx-panel/catalogs/
-	# the panel domain is omx-panel-contract's (debian/omx-panel-contract.install takes it from debian/tmp)
+	# the panel and gestures domains are omx-panel-contract's (debian/omx-panel-contract.install takes them from debian/tmp)
 	install -d debian/tmp/usr/share/omx-contract/contract.d
 	mv debian/omx-panel/usr/share/omx-contract/contract.d/panel debian/tmp/usr/share/omx-contract/contract.d/
+	mv debian/omx-panel/usr/share/omx-contract/contract.d/gestures debian/tmp/usr/share/omx-contract/contract.d/
+	# and the panel domain's codes header (row V1)
+	install -d debian/tmp/usr/include/omxdomain
+	mv debian/omx-panel/usr/include/omxdomain/panel_codes.h debian/tmp/usr/include/omxdomain/
+	rmdir -p --ignore-fail-on-non-empty debian/omx-panel/usr/include/omxdomain
 	rmdir -p --ignore-fail-on-non-empty debian/omx-panel/usr/share/omx-contract/contract.d
 	# the tools as the omx-panel package installs them load and run: their @openmixer/omx-contract resolves through the
 	# package's own node_modules (debian/tests/installed-tools runs the same check on an installed host)
