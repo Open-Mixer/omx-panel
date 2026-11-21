@@ -98,7 +98,7 @@ test('an LSP-shaped EQ with the declared class is an eq from inferred bands: fre
   assert.equal(description.family, 'eq');
   const r = (role, index) => description.roles.find((x) => x.role === role && x.index === index);
   assert.deepEqual(r('band_freq', 2), { role: 'band_freq', index: 2, symbol: 'f_2', unit: 'Hz', inferred: true });
-  assert.deepEqual(r('band_gain', 2), { role: 'band_gain', index: 2, symbol: 'g_2', unit: 'x', inferred: true });
+  assert.deepEqual(r('band_gain', 2), { role: 'band_gain', index: 2, symbol: 'g_2', unit: 'coef', inferred: true });
   assert.deepEqual(r('band_q', 2), { role: 'band_q', index: 2, symbol: 'w_2', unit: 'oct', inferred: true });
   assert.deepEqual(r('band_type', 2).shapes, ['off', 'bell', 'highshelf', 'lowshelf']);
   assert.ok(description.roles.every((x) => x.inferred === true));

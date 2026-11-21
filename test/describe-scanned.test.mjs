@@ -81,10 +81,10 @@ test('LSP Para Equalizer x16 Mono: the declared ParaEQ class is kept, with every
   assert.ok(description.roles.every((r) => r.inferred === true));
   assert.deepEqual(description.displays.map((x) => [x.kind, x.basis]), [['eq_response', 'modelled']]);
 });
-test('LSP: a band gain read as a linear factor, its unit unstated, is served `x`; a gain beside it in no band stays none', () => {
+test('LSP: a band gain read as a linear factor, its unit unstated, is served `coef` (the descriptor-scope standard id, %4); a gain beside it in no band stays none', () => {
   const d = fixture('scanned-lv2-lsp-para-equalizer-x16-mono.json');
   const unit = (s) => describe(d).description.params.find((p) => p.symbol === s).unit;
-  assert.deepEqual(Array.from({ length: 16 }, (_, i) => unit(`g_${i}`)), Array(16).fill('x'));
+  assert.deepEqual(Array.from({ length: 16 }, (_, i) => unit(`g_${i}`)), Array(16).fill('coef'));
   assert.equal(unit('g_in'), 'none');
   // arm: the same controls with no declared class make no eq, so no band, so no factor
   const plain = { ...d, extensions: {} };
