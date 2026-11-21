@@ -24,6 +24,8 @@
  *   family, or a user's override naming one, wins and is applied as the layout applies it;
  * - the DISPLAYS of a derived panel are the family's closed form on the section holding its required roles, each with its
  *   `basis`: `exact` only when an authored descriptor declares it, else `modelled`;
+ * - every DISPLAY serves its `axis`, a PANEL_DISPLAY_AXES word (the layout's, by kind): data, so no surface picks an axis by the
+ *   kind's name; a display whose axis is no word, a stored one or a skin's, is refused by name;
  * - the ROLES carry `unit` (the contract token), `inferred`, a band's `shape` and a band-type role's `shapes`;
  * - the SECTIONS carry `bars` (tools/bars.mjs), a view of the panel that stays out of the fingerprint, and the one that holds a
  *   repeated group its `matrix` (tools/group-model.mjs `matrixOf`, docs/group-model.md), another view; a matrix section has no bars;
@@ -33,7 +35,7 @@
 import { applySkinOverride } from '../src/skin-package.js';
 import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
-import { FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
 
@@ -291,7 +293,7 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
     }),
-    displays: layout.displays.map((d) => ({ kind: d.kind, section: d.sectionKey, source: d.source, meterIds: d.meters, curveIndex: d.curve, floor: d.floor, labelKey: d.labelKey ?? '', label: d.label, basis: d.basis ?? 'modelled' })),
+    displays: layout.displays.map((d) => ({ kind: d.kind, axis: d.axis, section: d.sectionKey, source: d.source, meterIds: d.meters, curveIndex: d.curve, floor: d.floor, labelKey: d.labelKey ?? '', label: d.label, basis: d.basis ?? 'modelled' })),
   };
   // what the matrices and the pages read of the controls, and the repeated groups: kept beside the body (storedOf)
   const inLayout = new Set(layout.controls.map((c) => c.symbol));
@@ -313,6 +315,7 @@ export function describe(descriptor, { skin, perPage, remote, withLayout = false
   if (!derived.stored) return { description: null, refusals: derived.refusals };
   const done = finish(derived.stored, { skin, perPage, remote });
   const refusals = [...derived.refusals, ...done.refusals];
+  if (!done.description) return { description: null, refusals };
   return withLayout ? { description: done.description, refusals, layout: layoutOf(derived.layout, done.steps) } : { description: done.description, refusals };
 }
 
@@ -337,14 +340,32 @@ export function describeFromStored(stored, { skin, perPage, remote } = {}) {
   return { description, refusals };
 }
 
+/** Why display `d` (the `i`th) has no axis a surface can draw on, or null: its `axis` is a PANEL_DISPLAY_AXES word. */
+function axisFault(d, i) {
+  if (d.axis === undefined || d.axis === null) return `display ${i} (${d.kind}) has no axis, one of PANEL_DISPLAY_AXES (${DISPLAY_AXES.join(', ')})`;
+  if (!DISPLAY_AXES.includes(d.axis)) return `display ${i} (${d.kind}) has the axis '${d.axis}', none of PANEL_DISPLAY_AXES (${DISPLAY_AXES.join(', ')})`;
+  return null;
+}
+
 /** The skin, then the matrices over the sections as the skin left them, then the pages: the one tail of a description. */
 function finish(stored, { skin, perPage, remote }) {
   const refusals = [];
   let description = stored.body;
+  // each display's axis is a PANEL_DISPLAY_AXES word (a stored body may be a person's edit): one that is not refuses the entry by
+  // name, and none is inferred from the kind
+  const badAxis = description.displays.map((d, i) => axisFault(d, i)).find(Boolean);
+  if (badAxis) return { description: null, refusals: [refuse(DESCRIBE_CODES.layoutInvalid, { plugin: stored.plugin, message: badAxis })], steps: [] };
   if (skin) {
     const applied = applySkinOverride(description, skin);
     description = applied.description;
     for (const d of applied.dropped) refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin: stored.plugin, field: d.field, entry: d.entry, reason: d.reason }));
+    // a skin's display states its axis as the description's do; one that does not, or names no word, is dropped by name
+    const kept = description.displays.filter((d) => {
+      if (!axisFault(d, 0)) return true;
+      refusals.push(refuse(DESCRIBE_CODES.skinDropped, { plugin: stored.plugin, field: 'displays', entry: `${d.kind}@${d.section}`, reason: 'axis' }));
+      return false;
+    });
+    if (kept.length !== description.displays.length) description = { ...description, displays: kept };
   }
   const servedOf = new Map(stored.controls.map((c) => [c.key, c.symbol]));
   const grouped = withMatrices(description, stored, servedOf);

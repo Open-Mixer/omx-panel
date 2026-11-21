@@ -80,6 +80,11 @@ export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 /** The display kinds and sources, by enum value. */
 export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
 export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The axes a display is drawn on (the panel domain's PANEL_DISPLAY_AXES, in its code order), and the one the layout gives each kind:
+ * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
+ * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
+export const DISPLAY_AXES = ['linear', 'log-frequency', 'time'];
+export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
 export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
@@ -375,7 +380,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     if (!CLOSED_FORMS[family]?.includes(kind)) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, and the ${family} family has no ${kind} a host computes`);
     // `exact` only when an authored descriptor declares it (the one-panel spec §5.3); any other curve is modelled
     const basis = basisOf(descriptor, s);
-    return [{ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
+    return [{ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
   });
   // a derived panel (derive: true): a family whose closed form is known draws it on the section holding its first required role, once
   // every required role is mapped (the one-panel spec §3.1)
@@ -384,7 +389,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const section = controls.find((c) => c.symbol === first.symbol)?.section;
     if (section !== undefined) {
       const kind = CLOSED_FORMS[family][0];
-      displays.push({ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
+      displays.push({ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
     }
   }
 
@@ -442,7 +447,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
-    displays.push({ kind: 'gain_reduction_bar', section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
   }
   // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
   const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;

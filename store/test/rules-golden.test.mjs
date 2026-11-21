@@ -28,3 +28,9 @@ test('describe of the fixture is what the golden holds for this rules version', 
 test('the golden holds a hash for no version above the header\'s', () => {
   for (const v of Object.keys(golden)) assert.ok(Number(v) <= rules, `${v} is above ${rules}`);
 });
+
+test('the panel domain carries PANEL_DISPLAY_AXES (1.2.0), so describe serves displays[].axis and a derived entry stored at rules 1 is stale', () => {
+  const domain = readFileSync(join(ROOT, 'contract.d', 'panel', 'panel.json'), 'utf8');
+  assert.match(domain, /"PANEL_DISPLAY_AXES"/, 'the domain names the axis words');
+  assert.ok(rules >= 2, `describe serves displays[].axis, an entry derived at rules 1 has none: OMX_PANEL_RULES_VERSION is ${rules}, it must be at least 2`);
+});
