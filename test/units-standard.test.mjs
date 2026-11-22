@@ -100,11 +100,11 @@ test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
 
 // V23d is out of the pass (%4, 2026-11-21): the param-contract sheet stays omx-contract's, and a unit is served, as on
 // main, when the sheet gives the unit's LV2 term a code; the term is plugin-db's F1 word for the standard id (P1).
-// omx-contract 3.21.0's sheet codes dbtp (262) and lu (263) (clap#163), so dBTP and LU take their role; the slopes
-// stay unserved.
-test('(a) a standard unit the param-contract sheet gives no code takes no role, as on main; a slope still names dB-oct', () => {
+// omx-contract 3.21.0's sheet codes dbPerOct (260), dbPerS (261), dbtp (262) and lu (263) in its vendor block (clap#163),
+// so dB/oct, dB/s, dBTP and LU take their role; x and the empty unit as before.
+test('(a) a standard unit the param-contract sheet codes takes its role, by its LV2 term or its vendor-block name', () => {
   assert.deepEqual(answers(['dB', '%', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
-    ['dB', 'percent', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', null, null, 'none']);
+    ['dB', 'percent', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB-s', 'dB-oct', 'none']);
 });
 
 test('(c) omx-contract\'s sheet decides: a sheet with no lufs leaves LUFS unserved', (t) => {

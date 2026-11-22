@@ -206,12 +206,13 @@ export const lv2UnitTerms = once(() => new Map(openDomainAt(contractDirs(), 'lv2
 const VENDOR_BLOCK = 0x100;
 
 /** A standard id the param-contract extension serves (`none` is): the sheet gives its LV2 term a value, or, as main read
- * a unit of the extension's own, the id by name (dBFS -> DBFS) is a unit of its vendor block. */
+ * a unit of the extension's own, the id by name (dBFS -> DBFS) is a unit of its vendor block. An id's `-` is its symbol's
+ * `/`, read "per" as the sheet spells it (dB-oct -> DBPEROCT, the sheet's dbPerOct). */
 export function servedUnit(id) {
   if (id === 'none') return true;
   const term = lv2UnitTerms().get(id);
   if (term && paramUnits().get(term.replaceAll('_', '').toUpperCase())) return true;
-  return (paramUnits().get(String(id).replace(/[^A-Za-z0-9]/g, '').toUpperCase()) ?? 0) >= VENDOR_BLOCK;
+  return (paramUnits().get(String(id).replaceAll('-', 'per').replace(/[^A-Za-z0-9]/g, '').toUpperCase()) ?? 0) >= VENDOR_BLOCK;
 }
 
 /** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:

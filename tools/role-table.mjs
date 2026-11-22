@@ -34,9 +34,9 @@ export const ROLES = {
   reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
   pitch: { shift: ['st', 'cents'], fine: ['cents'], ...WET },
   // omx-plugins' trim (gain), width (width, pseudo-stereo, bass mono), balancer (amount, range) and clipper (drive, ceiling,
-  // softness): one role per control they declare whose unit a token serves. The balancer's speed (dB/s) and slope (dB/oct) have
-  // no token, so no role takes them.
-  utility: { gain: DB, width: PLAIN, pseudo: CHOICE, pseudo_time: ['ms'], bass_mono: CHOICE, bass_mono_freq: FREQ, amount: PLAIN, range: DB, drive: DB, ceiling: LVL, softness: PLAIN },
+  // softness, speed, slope): one role per control they declare whose unit a token serves. The balancer's speed is declared in
+  // dB or dB/s, its slope in dB/oct (omx-contract 3.21.0's sheet codes dbPerS and dbPerOct).
+  utility: { gain: DB, width: PLAIN, pseudo: CHOICE, pseudo_time: ['ms'], bass_mono: CHOICE, bass_mono_freq: FREQ, amount: PLAIN, range: DB, drive: DB, ceiling: LVL, softness: PLAIN, speed: ['dB', 'dB-s'], slope: ['dB-oct'] },
 };
 
 /**
