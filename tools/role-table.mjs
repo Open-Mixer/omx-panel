@@ -13,8 +13,8 @@
 
 // the standard unit ids (omx-contract's PARAM_UNITS, sorting pass M4): a role's units are named by id, never by a
 // format's token; test/units-standard.test.mjs holds every id to the installed list
-const T = ['ms', 's'], LVL = ['dB', 'dBFS', 'dBu', 'LUFS'], DB = ['dB'], FREQ = ['Hz', 'kHz'], PLAIN = ['none', 'percent', 'x'], RATIO = ['ratio', 'x'], CHOICE = ['none'];
-const WET = { mix: ['percent', 'x', 'none'], output: DB };
+const T = ['ms', 's'], LVL = ['dB', 'dBFS', 'dBu', 'LUFS'], DB = ['dB'], FREQ = ['Hz', 'kHz'], PLAIN = ['none', 'percent', 'coef'], RATIO = ['ratio', 'coef'], CHOICE = ['none'];
+const WET = { mix: ['percent', 'coef', 'none'], output: DB };
 
 /**
  * Each family's roles and the standard unit ids each accepts (omx-contract's PARAM_UNITS).
@@ -26,7 +26,7 @@ export const ROLES = {
   dynamics: { threshold: LVL, ratio: RATIO, attack: T, release: T, knee: DB, makeup: DB, lookahead: ['ms'], ...WET },
   limiter: { ceiling: LVL, release: T, lookahead: ['ms'], threshold: LVL, ...WET },
   deesser: { frequency: FREQ, threshold: LVL, range: DB, width: ['oct'], ratio: RATIO, attack: T, release: T, knee: DB, mode: CHOICE, listen: CHOICE, ...WET },
-  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['dB', 'x', 'coef'], band_q: ['none', 'x', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'dB', 'dB-oct'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'dB', 'dB-oct'], lpf_on: CHOICE, output: DB },
+  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['dB', 'coef'], band_q: ['none', 'coef', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'dB', 'dB-oct'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'dB', 'dB-oct'], lpf_on: CHOICE, output: DB },
   filter: { cutoff: FREQ, resonance: PLAIN, filter_type: CHOICE, ...WET },
   drive: { drive: DB, tone: PLAIN, model: CHOICE, ...WET },
   modulation: { rate: ['Hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
