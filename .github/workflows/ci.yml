@@ -20,8 +20,8 @@ concurrency:
 jobs:
   test:
     # the private development copy runs on OpenMixer's own runners (hosted runners are refused there); the public
-    # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema, plugin-hostd's LV2
-    # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
+    # repository runs on GitHub's. The suite reads the installed vocabulary (omx-contract's schema and its param domain:
+    # the standard units and the served set), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
       image: fedora:45
