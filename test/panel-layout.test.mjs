@@ -8,7 +8,7 @@
  *
  *   1. the widget step: each standard widget from the descriptor, a meter's measurement, the widget a
  *      face serves;
- *   2. units come from the descriptor through the param-contract table: a LUFS and a dBu level role are
+ *   2. units come from the descriptor, served when omx-contract's PARAM_UNITS_CLAP_ENCODED holds them: a LUFS and a dBu level role are
  *      published with their unit, an `unknown` unit is a plain number and takes no role (#145);
  *   3. roles from meanings: each meaning plays its family's role, an indexed role takes every band, a
  *      second control of a plain role is named, not published;
@@ -19,7 +19,7 @@
  *      installed package holds them) each give a sensible panel.
  *
  * Part of `make test`. It reads the installed vocabulary (tools/vocabulary.mjs): omx-contract's schema,
- * plugin-hostd's LV2 table and the param-contract unit table. The rule over omx-plugins' own plugins (their authored
+ * its param domain (the standard units and the served set, PARAM_UNITS_CLAP_ENCODED). The rule over omx-plugins' own plugins (their authored
  * descriptors state no unknown, and the layout with no declared panel finds the declared family and roles) loads
  * their declarations, so it stays in omx-plugins.
  */
