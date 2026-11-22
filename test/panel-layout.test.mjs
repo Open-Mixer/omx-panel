@@ -100,7 +100,7 @@ const phaser = { family: 'modulation', roles: { rate: 'p0', depth: 'p1' }, secti
 const phaserX = panelLayout(descriptor([rate, sweep('oct')]), { panel: phaser });
 check('a modulation depth in octaves is published with its unit', [rolesOf(phaserX), phaserX.unpublished], [[['rate', 0, 'p0', 'Hz'], ['depth', 0, 'p1', 'oct']], []]);
 const dB = panelLayout(descriptor([rate, sweep('dB')]), { panel: phaser });
-check('arm: a depth in dB is still named, not published', [rolesOf(dB), dB.unpublished], [[['rate', 0, 'p0', 'Hz']], [{ role: 'depth', symbol: 'p1', why: 'the depth role takes none, percent, x, oct, not dB' }]]);
+check('arm: a depth in dB is still named, not published', [rolesOf(dB), dB.unpublished], [[['rate', 0, 'p0', 'Hz']], [{ role: 'depth', symbol: 'p1', why: 'the depth role takes none, percent, coef, oct, not dB' }]]);
 
 // 4. the family from meanings
 check('threshold and ratio make dynamics', panelLayout(comp).family, 'dynamics');
@@ -129,7 +129,7 @@ check('scanned LV2 compressor: the widgets, each control by its port symbol', lv
   ['threshold', 'knob', 'knob'], ['ratio', 'knob', 'knob'], ['release_beats', 'knob', 'knob'], ['makeup', 'knob', 'knob'], ['enable', 'switch', 'switch'], ['gr', 'meter', 'auto'],
 ]);
 check('scanned LV2 compressor: the threshold role, by meaning', rolesOf(lv2), [['threshold', 0, 'threshold', 'dB']]);
-check('scanned LV2 compressor: its ratio states no unit (LV2 has none for a ratio), so the role is named, not published', lv2.unpublished, [{ role: 'ratio', symbol: 'ratio', why: 'the ratio role takes ratio, x, not no unit' }]);
+check('scanned LV2 compressor: its ratio states no unit (LV2 has none for a ratio), so the role is named, not published', lv2.unpublished, [{ role: 'ratio', symbol: 'ratio', why: 'the ratio role takes ratio, coef, not no unit' }]);
 check('scanned LV2 compressor: the gain-reduction meter states no measurement, held or clip', lv2.controls.find((c) => c.symbol === 'gr').standard, { widget: 'meter', measurement: null, held: false, clip: false });
 check('scanned LV2 compressor: the ports, side-chain among them', lv2.ports, {
   inputs: [{ id: 'main_in', name: 'Input', role: 'main', channels: 2 }, { id: 'sidechain_in', name: 'Side-chain', role: 'sidechain', channels: 1 }],
