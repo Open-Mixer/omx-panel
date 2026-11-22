@@ -12,11 +12,10 @@
  *     in), never a list of this package's own;
  *   - the units: a descriptor unit (its symbol, `%`, `dB/oct`, `""`) is read as its standard id, the word of omx-contract's
  *     PARAM_UNITS whose `x-symbol` it is, with its `x-dimension` (the param domain, `<contractdir>/param/param.json`,
- *     installed by omx-contract-data from 3.21.0; sorting pass rows P1, M4). A unit is served when the param-contract
- *     extension's unit table gives it a value (omx-contract's OMX_PARAM_CONTRACT_UNITS sheet,
- *     `<contractdir>/3/omx-contract/param-contract.json`, installed by omx-contract-data from 3.6.0), the sheet keyed by the
- *     unit's LV2 term: plugin-db's F1 word for the standard id (its lv2 domain, LV2_UNIT_IDS). omx-panel reads no
- *     plugin-hostd table;
+ *     installed by omx-contract-data from 3.21.0; sorting pass rows P1, M4). A unit is served when omx-contract's
+ *     PARAM_UNITS_CLAP_ENCODED, of the same domain, holds its id (the ids org.openmixer.param-contract/1 encodes;
+ *     omx-contract-data from 3.23.0, V23d P2). omx-panel reads no code sheet, no plugin-hostd table and nothing of
+ *     omx-clap;
  *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
@@ -174,45 +173,20 @@ export const unitIdOf = (unit) => standardUnits().get(unit ?? '')?.id;
 /** The symbols of the standard units of `dimensions` (`['gain', 'level', 'loudness']` -> dB, dBFS, LUFS, dBTP, dBu, LU). */
 export const unitsOfDimensions = (dimensions) => [...standardUnits()].filter(([, u]) => dimensions.includes(u.dimension)).map(([symbol]) => symbol);
 
-/** The sheet of the param-contract units is omx-contract's: OMX_PARAM_CONTRACT_UNITS, in its param-contract.json. */
-export const PARAM_UNITS_ITEM = 'OMX_PARAM_CONTRACT_UNITS';
+/** The units the param-contract extension serves are omx-contract's (V23d, P2): PARAM_UNITS_CLAP_ENCODED of its param
+ * domain, a words item whose words are the standard ids org.openmixer.param-contract/1 encodes. */
+export const CLAP_ENCODED_ITEM = 'PARAM_UNITS_CLAP_ENCODED';
 
-/** The file that declares it: the first JSON file of the merged contract directory that holds the item (omx-contract's
- * `3/omx-contract/param-contract.json`, from omx-contract-data 3.6.0), found like every other item. */
-export function paramUnitsFile() {
-  return contractFiles().find((file) => {
-    try {
-      return PARAM_UNITS_ITEM in (JSON.parse(readFileSync(file, 'utf8')) ?? {});
-    } catch {
-      return false;
-    }
-  });
-}
-
-/** The param-contract units' values, by name in capitals without underscores (SEMITONE12TET): `Map<name, value>`. */
-export const paramUnits = once(() => {
-  const file = paramUnitsFile();
-  if (!file) throw new Error(`vocabulary: omx-contract's param-contract units (3/omx-contract/param-contract.json) are not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.6.0)`);
-  const value = JSON.parse(readFileSync(file, 'utf8'))[PARAM_UNITS_ITEM]?.value;
-  if (!value || typeof value !== 'object') throw new Error(`vocabulary: ${file} declares no ${PARAM_UNITS_ITEM} value`);
-  return new Map(Object.entries(value).map(([name, code]) => [name.replaceAll('_', '').toUpperCase(), code]));
+/** The served ids, in the item's order: `Set<id>`. */
+export const clapEncoded = once(() => {
+  const file = paramDomainFile();
+  const words = file ? JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.[CLAP_ENCODED_ITEM]?.oneOf : undefined;
+  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.23.0)`);
+  return new Set(words.map((w) => w.const));
 });
 
-/** plugin-db's F1 mapping of the LV2 units to the standard ids, read backwards (its lv2 domain, LV2_UNIT_IDS: the
- * term's key is the word's title, the standard id its word): `Map<id, term>`. */
-export const lv2UnitTerms = once(() => new Map(openDomainAt(contractDirs(), 'lv2').words('LV2_UNIT_IDS').map((w) => [w.word, w.title])));
-
-/** The first value of the extension's vendor block: the units of its own, past the LV2 ones. */
-const VENDOR_BLOCK = 0x100;
-
-/** A standard id the param-contract extension serves (`none` is): the sheet gives its LV2 term a value, or, as main read
- * a unit of the extension's own, the id by name (dBFS -> DBFS) is a unit of its vendor block. */
-export function servedUnit(id) {
-  if (id === 'none') return true;
-  const term = lv2UnitTerms().get(id);
-  if (term && paramUnits().get(term.replaceAll('_', '').toUpperCase())) return true;
-  return (paramUnits().get(String(id).replace(/[^A-Za-z0-9]/g, '').toUpperCase()) ?? 0) >= VENDOR_BLOCK;
-}
+/** A standard id the param-contract extension serves: one PARAM_UNITS_CLAP_ENCODED holds (`none` among them). */
+export const servedUnit = (id) => clapEncoded().has(id);
 
 /** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:
  * `<contractdir>/3/<package>/plugins/<name>.json`. */
