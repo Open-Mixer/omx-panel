@@ -10,7 +10,7 @@
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
 #   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
-#   4. `omx-panel vocabulary` reads the meanings, plugin-hostd's LV2 table and the param-contract units from
+#   4. `omx-panel vocabulary` reads the meanings, the standard units and the served units (omx-contract's param domain) from
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
 #   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
 #   6. the installed tools load and run (tools/installed-tools-check.sh): @openmixer/omx-contract resolves.
@@ -176,7 +176,7 @@ expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "
 expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\$"
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
 expect "the standard units from omx-contract's param domain" "^ok   param-units [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
-expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-contract/param-contract\\.json\$"
+expect "the served units from omx-contract's param domain" "^ok   clap-encoded [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
 
 # 5. the curve function: node_modules/@openmixer/omx-dsp is a link to omx-dsp-wasm's files, and answers one curve
 if listed omx-dsp-wasm; then
