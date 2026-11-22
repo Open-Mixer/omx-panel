@@ -29,16 +29,16 @@ BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
 BuildRequires: omx-contract >= 3.21.0
-BuildRequires: omx-dsp-wasm >= 0.33.0
+BuildRequires: omx-dsp-wasm >= 0.34.0
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
-Requires: omx-contract >= 3.20.2
+Requires: omx-contract >= 3.21.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: plugin-hostd >= 0.20.7
+Recommends: plugin-hostd >= 0.21.0
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -62,7 +62,7 @@ Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
 Requires: plugin-db-contract >= 0.5.0
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.33.0
+Requires: omx-dsp-wasm >= 0.34.0
 Provides: bundled(nodejs-ajv)
 
 %description
