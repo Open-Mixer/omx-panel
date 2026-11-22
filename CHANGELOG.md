@@ -2,6 +2,10 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # Changelog
 
+## 0.16.0 - 2026-11-22
+
+- Sorting pass: V1, V2, V3, V4, V22 and V23d.
+
 ## Unreleased
 
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the

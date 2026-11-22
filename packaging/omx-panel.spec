@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.15.1
+Version: 0.16.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -292,6 +292,9 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sun Nov 22 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.0-1
+- Sorting pass: V1, V2, V3, V4, V22 and V23d.
+
 * Fri Nov 20 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.1-1
 - Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import and
   the rest that decide run-not-imported with omx-contract's isMain) resolve
