@@ -5,6 +5,9 @@
 ## 0.16.0 - 2026-11-22
 
 - Sorting pass: V1, V2, V3, V4, V22 and V23d.
+- Units: dB/oct and dB/s are served, the vendor-block codes omx-contract 3.21.0's sheet gives dbPerOct and dbPerS
+  (clap#163), beside dBTP and LU; the utility family gains the roles `speed` and `slope`, so omx-balancer's four controls
+  all take a role.
 
 ## Unreleased
 
