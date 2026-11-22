@@ -38,8 +38,8 @@ test('(a) the param domain is installed where the tools read it (omx-contract >=
 });
 
 test('(a) a descriptor unit is read as its standard id; a unit the list lacks has none', () => {
-  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'x', 'st', 'cents', 'furlong']).map(([id]) => id),
-    ['dB', 'percent', 'none', 'kHz', 'x', 'st', 'cents', null]);
+  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'coef', 'st', 'cents', 'furlong']).map(([id]) => id),
+    ['dB', 'percent', 'none', 'kHz', 'coef', 'st', 'cents', null]);
 });
 
 test('(a) every unit the role table names is a standard id', () => {

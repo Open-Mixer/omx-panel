@@ -80,12 +80,12 @@ check('an unknown unit is a plain number: a knob with no token', [lostX.controls
 check('every unit the param-contract table serves has the standard id a role reads', [...standardUnits()].filter(([, u]) => servedUnit(u.id)).map(([symbol]) => symbol).filter((u) => typeof unitToken(u) !== 'string'), []);
 
 // 3. roles from meanings, with no declared panel
-const comp = descriptor([travel('dB', { meaning: 'threshold' }), { kind: 'travel', meaning: 'ratio', travel: { min: 1, max: 20, unit: 'x', default: 4, scale: 'log' } }, travel('dB', { meaning: 'makeup' })]);
-check('each meaning plays its family role', rolesOf(panelLayout(comp)), [['threshold', 0, 'p0', 'dB'], ['ratio', 0, 'p1', 'x'], ['makeup', 0, 'p2', 'dB']]);
+const comp = descriptor([travel('dB', { meaning: 'threshold' }), { kind: 'travel', meaning: 'ratio', travel: { min: 1, max: 20, unit: 'coef', default: 4, scale: 'log' } }, travel('dB', { meaning: 'makeup' })]);
+check('each meaning plays its family role', rolesOf(panelLayout(comp)), [['threshold', 0, 'p0', 'dB'], ['ratio', 0, 'p1', 'coef'], ['makeup', 0, 'p2', 'dB']]);
 const twice = clone(comp);
 twice.controls[2].meaning = 'threshold';
 const twiceX = panelLayout(twice);
-check('arm: a second threshold is not published, and names the first', [rolesOf(twiceX), twiceX.unpublished], [[['threshold', 0, 'p0', 'dB'], ['ratio', 0, 'p1', 'x']], [{ role: 'threshold', symbol: 'p2', why: 'the threshold role is played by p0' }]]);
+check('arm: a second threshold is not published, and names the first', [rolesOf(twiceX), twiceX.unpublished], [[['threshold', 0, 'p0', 'dB'], ['ratio', 0, 'p1', 'coef']], [{ role: 'threshold', symbol: 'p2', why: 'the threshold role is played by p0' }]]);
 const hz = (m) => ({ kind: 'travel', meaning: m, travel: { min: 20, max: 20000, unit: 'Hz', default: 1000, scale: 'log' } });
 const gain = { kind: 'travel', meaning: 'gain', travel: { min: -18, max: 18, unit: 'dB', default: 0, scale: 'linear' } };
 const q = { kind: 'travel', meaning: 'q', travel: { min: 0.1, max: 10, unit: '', default: 0.7, scale: 'log' } };
