@@ -81,6 +81,24 @@ WINDOW ?= 0
 renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
+# The published reference: Open-Mixer/.github's docs-publish.yml runs this with DOCS_OUT, an empty absolute directory,
+# then renders the Markdown and the man pages and, at a release tag, publishes the tree under
+# https://www.openmixer.org/reference/omx-panel/<version>/. Only what the tree generates or keeps: the renderer's C API
+# reference doxygen renders with the Doxyfile the documentation gate reads (api/), the design pages of docs/ with their
+# shots, the man pages, README, BUILDING and LICENSE. The gate itself (doc-gate, against the base) is ci.yml's job docs.
+.PHONY: docs-site
+docs-site:
+	@case "$(DOCS_OUT)" in /*) ;; *) echo "docs-site: FAIL - DOCS_OUT '$(DOCS_OUT)' is not an absolute directory: name the directory the reference is written to" >&2; exit 1;; esac
+	rm -rf build/doxygen && mkdir -p build/doxygen
+	doxygen Doxyfile
+	@test -f build/doxygen/html/index.html || { echo "docs-site: FAIL - doxygen wrote no build/doxygen/html/index.html" >&2; exit 1; }
+	mkdir -p $(DOCS_OUT)/api $(DOCS_OUT)/docs $(DOCS_OUT)/man
+	cp -a build/doxygen/html/. $(DOCS_OUT)/api/
+	cp README.md BUILDING.md LICENSE $(DOCS_OUT)/
+	cp -a docs/. $(DOCS_OUT)/docs/
+	rm -f $(DOCS_OUT)/docs/doxygen-baseline.txt $(DOCS_OUT)/docs/doxygen-version.txt
+	cp man/*.1 $(DOCS_OUT)/man/
+
 # run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
 # the role vocabulary the layout reads: this tree's stand-in, as npm test reads it, unless the caller names one (docs/renderer.md)
 renderer-check: build
