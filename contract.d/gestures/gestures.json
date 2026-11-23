@@ -268,74 +268,94 @@
         "x-since": "1.0.0",
         "oneOf": [
           {
-            "const": "GESTURE_READ_ONLY",
+            "const": "panel.gesture.read-only",
             "title": "readOnly",
             "description": "A read-only control takes no gesture.",
             "x-code": 0,
-            "x-text": "A read-only control takes no gesture."
+            "x-text": "A read-only control takes no gesture.",
+            "x-args": [],
+            "x-name": "GESTURE_READ_ONLY"
           },
           {
-            "const": "GESTURE_CONTROL_OWNED",
+            "const": "panel.gesture.control-owned",
             "title": "owned",
             "description": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused.",
             "x-code": 1,
-            "x-text": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused."
+            "x-text": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused.",
+            "x-args": [],
+            "x-name": "GESTURE_CONTROL_OWNED"
           },
           {
-            "const": "GESTURE_NO_DEFAULT",
+            "const": "panel.gesture.no-default",
             "title": "noDefault",
             "description": "A reset on a control that declares no default.",
             "x-code": 2,
-            "x-text": "A reset on a control that declares no default."
+            "x-text": "A reset on a control that declares no default.",
+            "x-args": [],
+            "x-name": "GESTURE_NO_DEFAULT"
           },
           {
-            "const": "GESTURE_NOT_IN_TABLE",
+            "const": "panel.gesture.not-in-table",
             "title": "notInTable",
             "description": "The widget has no such input in the table.",
             "x-code": 3,
-            "x-text": "The widget has no such input in the table."
+            "x-text": "The widget has no such input in the table.",
+            "x-args": [],
+            "x-name": "GESTURE_NOT_IN_TABLE"
           },
           {
-            "const": "GESTURE_HOLD_SHORT",
+            "const": "panel.gesture.hold-short",
             "title": "holdShort",
             "description": "A control marked hold was released before the safety hold.",
             "x-code": 4,
-            "x-text": "A control marked hold was released before the safety hold."
+            "x-text": "A control marked hold was released before the safety hold.",
+            "x-args": [],
+            "x-name": "GESTURE_HOLD_SHORT"
           },
           {
-            "const": "GESTURE_HOLD_BELOW_FLOOR",
+            "const": "panel.gesture.hold-below-floor",
             "title": "holdBelowFloor",
             "description": "A safety hold shorter than the declared floor.",
             "x-code": 5,
-            "x-text": "A safety hold shorter than the declared floor."
+            "x-text": "A safety hold shorter than the declared floor.",
+            "x-args": [],
+            "x-name": "GESTURE_HOLD_BELOW_FLOOR"
           },
           {
-            "const": "GESTURE_NO_TARGET",
+            "const": "panel.gesture.no-target",
             "title": "noTarget",
             "description": "A step with no bar or handle member to take it.",
             "x-code": 6,
-            "x-text": "A step with no bar or handle member to take it."
+            "x-text": "A step with no bar or handle member to take it.",
+            "x-args": [],
+            "x-name": "GESTURE_NO_TARGET"
           },
           {
-            "const": "GESTURE_PAINT_REQUIRED_ON_TOUCH",
+            "const": "panel.gesture.paint-required-on-touch",
             "title": "paintRequired",
             "description": "Painting is required on touch and cannot be turned off.",
             "x-code": 7,
-            "x-text": "Painting is required on touch and cannot be turned off."
+            "x-text": "Painting is required on touch and cannot be turned off.",
+            "x-args": [],
+            "x-name": "GESTURE_PAINT_REQUIRED_ON_TOUCH"
           },
           {
-            "const": "GESTURE_BAD_SETTING",
+            "const": "panel.gesture.bad-setting",
             "title": "badSetting",
             "description": "An unknown timing, or one not above zero.",
             "x-code": 8,
-            "x-text": "An unknown timing, or one not above zero."
+            "x-text": "An unknown timing, or one not above zero.",
+            "x-args": [],
+            "x-name": "GESTURE_BAD_SETTING"
           },
           {
-            "const": "GESTURE_BAD_INPUT",
+            "const": "panel.gesture.bad-input",
             "title": "badInput",
             "description": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number.",
             "x-code": 9,
-            "x-text": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number."
+            "x-text": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number.",
+            "x-args": [],
+            "x-name": "GESTURE_BAD_INPUT"
           }
         ]
       },

@@ -40,10 +40,19 @@ export const GESTURE_CODES = {
   badInput: 'GESTURE_BAD_INPUT',
 };
 
+/**
+ * Each refusal code's code word in the one codes sheet, schema/codes.json (docs/panel-gestures.md, ruled omx-panel#106):
+ * `panel.gesture.<kebab>` of its name, as the gestures domain declares it (`const` the word, `x-name` the name). A surface shows a
+ * refusal's text by this word; the name is what the reference and the C unit answer.
+ */
+export const GESTURE_CODE_WORDS = Object.freeze(Object.fromEntries(Object.values(GESTURE_CODES).map((name) => [name, `panel.gesture.${name.replace(/^GESTURE_/, '').toLowerCase().replaceAll('_', '-')}`])));
+
 export class GestureError extends Error {
   constructor(code, why) {
     super(`${code}: ${why}`);
     this.code = code;
+    /** the code word of schema/codes.json, its sentence in every catalog */
+    this.word = GESTURE_CODE_WORDS[code];
   }
 }
 

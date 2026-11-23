@@ -17,6 +17,7 @@ import { SKIN_REFUSAL_CODES } from '../dist/src/skin-package.js';
 import { DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
+import { GESTURE_CODE_WORDS } from '../dist/tools/gestures.mjs';
 import { gte } from './semver.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
@@ -28,7 +29,8 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
 
 /** Every code the package puts in a refusal, read off the modules that emit them. */
-const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];
+// the gesture reference's refusals by their code words (omx-panel#106), the GESTURE_* name being what it answers
+const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code, ...Object.values(GESTURE_CODE_WORDS)];
 
 /** The file's entries by their code word; an absent file reads as no entries, so every code below is red by name. */
 /** A shipped catalog; an absent one reads as empty, so every code is red by name. */

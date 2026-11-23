@@ -73,8 +73,8 @@ layered on it there, and none is used.
 `GESTURE_BAD_INPUT` (input neither reference can read, refused in the same words by the C unit and by `tools/gestures.mjs`).
 Each code also has a code word in the shape of `schema/codes.json`, `panel.gesture.<kebab>` (`GESTURE_READ_ONLY` is
 `panel.gesture.read-only`, `GESTURE_PAINT_REQUIRED_ON_TOUCH` `panel.gesture.paint-required-on-touch`): the gestures
-domain declares the pair once (`GESTURES_CODES`, `const` the `GESTURE_*` name the C unit and the reference answer,
-`x-word` the code word), and `tools/codes-render.mjs` renders each into the one sheet, `schema/codes.json`, and its
+domain declares the pair once (`GESTURES_CODES`, in omx-contract's codes shape: `const` the code word, `x-name` the
+`GESTURE_*` name the C unit and the reference answer), and `tools/codes-render.mjs` renders each into the one sheet, `schema/codes.json`, and its
 sentence in every language into `catalogs/<lang>.json` (from `contract.d/gestures/catalogs/<lang>.json`), as the panel's
 own codes are. A surface shows a refusal's text by its code word; the `GESTURE_*` name stays what the units answer.
 **RULED (owner, via the coordinator, 2026-11-24, omx-panel#106):** "YES — panel.gesture.<kebab> code words mapped to the

@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
+  `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
+  `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.
+  `GESTURE_CODE_WORDS` (tools/gestures.mjs) maps a name to its word and a `GestureError` carries it as `word`; the
+  reference and the C unit still answer the `GESTURE_*` name.
+
 - The served matrix opens with its head row (docs/group-model.md L3, ruled omx-panel#121): a band's name and on/off head
   its column on the MOD GUI face and in the renderer, which refuses a head row that is not the first. A consumer that read
   the head row as the last (the console's processing view, Zynthian's builder) reads `rows[0]`. A parameter row whose cell

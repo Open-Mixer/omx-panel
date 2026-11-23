@@ -130,6 +130,66 @@
     "panel.describe.easy-refused": {
       "text": "S'ha refusat la llista Easy de {plugin} ({message}); la pàgina Easy pren la regla en lloc seu.",
       "by": "human"
+    },
+    "panel.gesture.read-only": {
+      "text": "Un control de només lectura no admet cap gest.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f97c076b01b3e90f20c1ec5d801c09c5fc5c5c9acf9ad7d91420b01821f14fe9"
+    },
+    "panel.gesture.control-owned": {
+      "text": "El control pertany al punter, o a la reserva del pas a pas, que el té; una pulsació posterior es rebutja.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8081b8e79f7e0724effcb17723a5ba8f5f25c5de4f441f8f1571d9eda6b300ea"
+    },
+    "panel.gesture.no-default": {
+      "text": "Un restabliment en un control que no declara cap valor per defecte.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "643188a4251b0a035b579bd6fdbde9437c498d2f3a8e9734c3fd27e5749c3079"
+    },
+    "panel.gesture.not-in-table": {
+      "text": "El giny no té aquesta entrada a la taula.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ff909491d49fc442e3b9aacc4a6b6638e73e7bbacad395699cfabe27ead753f4"
+    },
+    "panel.gesture.hold-short": {
+      "text": "Un control marcat amb retenció s'ha deixat anar abans de la retenció de seguretat.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "89e31ee4a7ef5c9ebf188b0c1d2a3e272cc774a87d0df2ddf16c0f8b0c58933a"
+    },
+    "panel.gesture.hold-below-floor": {
+      "text": "Una retenció de seguretat més curta que el mínim declarat.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "59fae1e49f35a53db18a09e1f750b5daab598068584479b585c8d9427c051f45"
+    },
+    "panel.gesture.no-target": {
+      "text": "Un pas sense cap barra ni cap membre de nansa que el rebi.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "958f360c78fe4b2688e793363e86efbc616bcbf4b33a5c469af9b0f4b4e35b82"
+    },
+    "panel.gesture.paint-required-on-touch": {
+      "text": "Pintar és obligatori en tàctil i no es pot desactivar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "7ae1671808b774711614d8240a75c859930aa8fd8a43e651f03b9d482f37499e"
+    },
+    "panel.gesture.bad-setting": {
+      "text": "Una temporització desconeguda, o una que no és més gran que zero.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "226df5d144430e5f7a390e0d9e45a24020541fc6f247a74149e1ad7277f750ea"
+    },
+    "panel.gesture.bad-input": {
+      "text": "Una entrada que cap de les dues referències no pot llegir: un control el recorregut del qual no té extrems, un extrem que no supera l'altre, un recorregut logarítmic des de zero, un pas negatiu, una longitud dibuixada no més gran que zero o un objectiu sense mida; un esdeveniment sense temps o sense cap dels sis tipus, una pulsació sense posició, identificador o tipus de punter, un nombre de passos que no és un número.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "87eb2d1171ef7282ab045ab52ec2fd6406682d516c4ea9cb5d86a015f52623cf"
     }
   }
 }
