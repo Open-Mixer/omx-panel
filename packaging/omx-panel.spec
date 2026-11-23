@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.16.0
+Version: 0.17.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -292,6 +292,11 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Mon Nov 23 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
+- Chain 3: V23d P2, a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED
+  holds its id (omx-contract-data 3.22.0); the #170 consumers, coef is the plain
+  multiplier in the role table.
+
 * Sun Nov 22 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.0-1
 - Sorting pass: V1, V2, V3, V4, V22 and V23d.
 
