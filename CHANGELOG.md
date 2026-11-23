@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The kind of a scanned control is one rule, omx-panel's (`docs/control-kind.md`, #153): an enumeration is a choice,
+  else lv2:toggled is a toggle, else a stepped control of exactly the two positions 0 and 1 is a toggle, else a travel
+  with its scale. `tools/control-kind.mjs` (`@openmixer/omx-panel/control-kind`) is the rule and
+  `schema/control-kind-vectors.json` with its schema the 28 vectors every reader is held to (both exported by name).
+  The group inference's LV2 port reader and the group model over a descriptor apply it: an `lv2:integer` 0..1 port and
+  a stepped 0..1 travel with no step were travels there and are toggles.
+
 - The gesture parity scripts live in `fixtures/gestures/scripts.json`, the shipped fixtures, no longer under `test/`:
   the export `@openmixer/omx-panel/gestures/scripts.json` keeps its name and resolves to
   `dist/fixtures/gestures/scripts.json`, and a test refuses an export backed by a test path (#101). An installed reader

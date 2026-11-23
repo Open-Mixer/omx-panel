@@ -12,6 +12,7 @@
  *   c  the units, kinds and ranges of a parameter, matched across the instances (b's candidates and a's alike).
  * An inference that does not hold is never drawn as a guessed matrix: the group is a plain list and carries a REASON code.
  */
+import { controlKind } from './control-kind.mjs';
 import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
 import { keyOf } from './panel-description.mjs';
@@ -67,8 +68,11 @@ export function controlsOfDescriptor(descriptor, { panel } = {}) {
     .map((c, i) => {
       const symbol = keyOf(c);
       const written = c.symbol ?? (typeof c.id === 'string' ? c.id : null);
-      // a CLAP scan states no toggle: a whole-number travel of the two points 0 and 1 is one (a band's On, an edge's On)
-      const kind = c.kind === 'travel' && c.travel?.step === 1 && c.travel.min === 0 && c.travel.max === 1 ? 'toggle' : c.kind;
+      // a CLAP scan states no toggle: a stepped travel of the two positions 0 and 1 is one (a band's On, an edge's On), by
+      // the one rule of docs/control-kind.md
+      const kind = c.kind === 'travel' && c.travel
+        ? controlKind({ scale: c.travel.scale, min: c.travel.min, max: c.travel.max, ...(c.travel.step !== undefined ? { step: c.travel.step } : {}) }).kind === 'toggle' ? 'toggle' : 'travel'
+        : c.kind;
       return {
         symbol,
         name: c.name ?? symbol,

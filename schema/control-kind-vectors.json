@@ -1,0 +1,402 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-panel/main/control-kind-vectors.schema.json",
+  "doc": "The conformance vectors of the kind of a scanned control (docs/control-kind.md): one row per case, `stated` what the plugin states for the control (enumeration: CLAP_PARAM_IS_ENUM or lv2:enumeration; toggled: lv2:toggled; stepped: CLAP_PARAM_IS_STEPPED or lv2:integer; scale: the parameter-contract entry's word, or the format's own; min, max; step: the contract entry's, none or 0 being one step per unit; default) and `expect` the kind the rule gives, a toggle's default when one is stated and a travel's scale. Every reader that derives a kind (omx-panel's group inference and group model, plugin-hostd's describe, openmixer's catalog) is held to every row; tools/control-kind.mjs is omx-panel's own reading. Hand-written, held to schema/control-kind-vectors.schema.json; no declaration.",
+  "rows": [
+    {
+      "id": "clap-stepped-0-1-default-0",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": false
+      },
+      "why": "CLAP's boolean: stepped, no enumeration, 0..1 (omx-comp keyListen, duck; a bypass flagged IS_BYPASS | IS_STEPPED is the same control with a meaning), and LV2's lv2:integer over 0..1 without lv2:toggled, the same statement. Off: the default is 0."
+    },
+    {
+      "id": "clap-stepped-0-1-default-1",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 1
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "The same control, on by default."
+    },
+    {
+      "id": "clap-stepped-0-1-default-0.5",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 0.5
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "A default of 0.5 is no position of a two-position control; it is not 0, so it is on. The reader that compared with 0 and the one that compared with 0.5 agreed here."
+    },
+    {
+      "id": "clap-stepped-0-1-default-0.3",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 0.3
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "Where the two readers disagreed: not 0 is on (LV2's law for a toggled port, zero off and anything else on); a reader that compares with 0.5 goes red here."
+    },
+    {
+      "id": "clap-stepped-0-1-no-default",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1
+      },
+      "expect": {
+        "kind": "toggle"
+      },
+      "why": "No default stated: a toggle with no `default`."
+    },
+    {
+      "id": "clap-stepped-0-1-step-1",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "step": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": false
+      },
+      "why": "A step of exactly 1 over 0..1 is two positions, stated: still a toggle."
+    },
+    {
+      "id": "clap-stepped-0-1-step-0.25",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "step": 0.25,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "A step of 0.25 over 0..1 is five positions, not a boolean: a stepped travel. A reader that tests the range alone goes red here."
+    },
+    {
+      "id": "clap-stepped-0-1-step-0.5",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "step": 0.5,
+        "default": 1
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Three positions over 0..1: a stepped travel."
+    },
+    {
+      "id": "contract-stepped-step-0-0-1",
+      "stated": {
+        "scale": "stepped",
+        "step": 0,
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": false
+      },
+      "why": "A step of 0 is none (plugin-hostd writes none for it): one step per unit, two positions, a toggle."
+    },
+    {
+      "id": "contract-stepped-no-flag-0-1",
+      "stated": {
+        "scale": "stepped",
+        "min": 0,
+        "max": 1,
+        "default": 1
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "The contract scale word without the CLAP flag: the word is the plugin's statement, so the control is stepped and a toggle."
+    },
+    {
+      "id": "clap-stepped-contract-stepped-0-1",
+      "stated": {
+        "stepped": true,
+        "scale": "stepped",
+        "min": 0,
+        "max": 1,
+        "default": 1
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "The flag and the word agree: a toggle (omx-plugins' faces state both)."
+    },
+    {
+      "id": "clap-stepped-contract-linear-0-1",
+      "stated": {
+        "stepped": true,
+        "scale": "linear",
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "linear"
+      },
+      "why": "The flag with a contract word of linear: the contract entry is the fuller statement and its word wins, so a linear travel, no toggle."
+    },
+    {
+      "id": "clap-stepped-contract-unknown-0-1",
+      "stated": {
+        "stepped": true,
+        "scale": "unknown",
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": false
+      },
+      "why": "A contract word of unknown is no word: the flag stands, a toggle."
+    },
+    {
+      "id": "clap-enum-stepped-0-1",
+      "stated": {
+        "enumeration": true,
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "choice"
+      },
+      "why": "A two-option choice flagged an enumeration over 0..1 (omx-comp kind, keySource once omx-plugins#97 sets the flag): the enumeration flag tells a choice from a switch, whatever the range."
+    },
+    {
+      "id": "clap-enum-0-3",
+      "stated": {
+        "enumeration": true,
+        "stepped": true,
+        "min": 0,
+        "max": 3,
+        "default": 2
+      },
+      "expect": {
+        "kind": "choice"
+      },
+      "why": "A four-option enumeration: a choice."
+    },
+    {
+      "id": "clap-enum-not-stepped-0-1",
+      "stated": {
+        "enumeration": true,
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "choice"
+      },
+      "why": "An enumeration is a choice even with no stepped flag beside it: the enumeration is read first."
+    },
+    {
+      "id": "lv2-enumeration-integer-0-1",
+      "stated": {
+        "enumeration": true,
+        "stepped": true,
+        "min": 0,
+        "max": 1,
+        "default": 1
+      },
+      "expect": {
+        "kind": "choice"
+      },
+      "why": "LV2: lv2:enumeration with lv2:integer over 0..1 is a choice, as the CLAP enumeration is."
+    },
+    {
+      "id": "lv2-toggled-default-1",
+      "stated": {
+        "toggled": true,
+        "min": 0,
+        "max": 1,
+        "default": 1
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": true
+      },
+      "why": "LV2 states a boolean in its own word: lv2:toggled, on."
+    },
+    {
+      "id": "lv2-toggled-default-0",
+      "stated": {
+        "toggled": true,
+        "min": 0,
+        "max": 1,
+        "default": 0
+      },
+      "expect": {
+        "kind": "toggle",
+        "default": false
+      },
+      "why": "lv2:toggled, off."
+    },
+    {
+      "id": "clap-stepped-0-2",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 2,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Three positions (omx-comp detectorOversampling): a stepped travel, not a toggle."
+    },
+    {
+      "id": "clap-stepped-0-3",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 3,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Four positions (omx-comp detectLink): a stepped travel."
+    },
+    {
+      "id": "clap-stepped-1-2",
+      "stated": {
+        "stepped": true,
+        "min": 1,
+        "max": 2,
+        "default": 1
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Two positions, but min is 1, not 0: a boolean's positions are 0 and 1, so a stepped travel."
+    },
+    {
+      "id": "clap-stepped-minus1-0",
+      "stated": {
+        "stepped": true,
+        "min": -1,
+        "max": 0,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Two positions, but max is 0, not 1: a stepped travel."
+    },
+    {
+      "id": "clap-stepped-0-1.5",
+      "stated": {
+        "stepped": true,
+        "min": 0,
+        "max": 1.5,
+        "default": 0
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "stepped"
+      },
+      "why": "Max is not exactly 1: a stepped travel."
+    },
+    {
+      "id": "clap-plain-0-1",
+      "stated": {
+        "min": 0,
+        "max": 1,
+        "default": 0.5
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "unknown"
+      },
+      "why": "Nothing stepped and no word (a CLAP mix knob over 0..1): a travel whose scale the plugin does not state."
+    },
+    {
+      "id": "contract-linear-0-1",
+      "stated": {
+        "scale": "linear",
+        "min": 0,
+        "max": 1,
+        "default": 0.5
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "linear"
+      },
+      "why": "A linear travel over 0..1: no toggle without a stepped statement."
+    },
+    {
+      "id": "contract-log-20-20000",
+      "stated": {
+        "scale": "log",
+        "min": 20,
+        "max": 20000,
+        "default": 1000
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "log"
+      },
+      "why": "A log travel, the word carried through."
+    },
+    {
+      "id": "lv2-logarithmic-integer-1-1000",
+      "stated": {
+        "stepped": true,
+        "scale": "log",
+        "min": 1,
+        "max": 1000,
+        "default": 100
+      },
+      "expect": {
+        "kind": "travel",
+        "scale": "log"
+      },
+      "why": "lv2:integer with pprops:logarithmic: the stated word wins over the stepped flag, a log travel."
+    }
+  ]
+}
