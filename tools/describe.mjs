@@ -290,7 +290,8 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: [...layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })), ...textControls],
     // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
-    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
+    // unitText is the unit as a person reads it, its x-symbol: the caption a renderer draws (the unit stays the id)
+    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, unitText: unitSymbolOf(m.unit), min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };

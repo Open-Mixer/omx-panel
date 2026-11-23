@@ -382,13 +382,15 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
       const char *label = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "label"));
       const char *unit = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unit"));
+      /* the caption shows the unit as a person reads it, its x-symbol (percent is %): describe's unitText, the id when absent */
+      const char *unit_text = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unitText"));
       const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
       cJSON *mn = cJSON_GetObjectItemCaseSensitive(it, "min"), *mx = cJSON_GetObjectItemCaseSensitive(it, "max");
       if (!sym || !label || !unit || !kind || !cJSON_IsNumber(mn) || !cJSON_IsNumber(mx) || !(mx->valuedouble > mn->valuedouble)) {
         fail(err, n, "description: meter '%s' lacks a label, a unit, a kind or a range%s", sym ? sym : "?", NULL);
         goto bad;
       }
-      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit);
+      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit_text ? unit_text : unit);
       m->min = mn->valuedouble, m->max = mx->valuedouble, m->gain_reduction = strcmp(kind, "gain-reduction") == 0;
       m->in_band = 1;
       for (size_t k = 0; k < v->ncontrols; k++)
