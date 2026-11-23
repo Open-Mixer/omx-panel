@@ -2,13 +2,6 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # Changelog
 
-## 0.16.0 - 2026-11-22
-
-- Sorting pass: V1, V2, V3, V4, V22 and V23d.
-- Units: dB/oct and dB/s are served, the vendor-block codes omx-contract 3.21.0's sheet gives dbPerOct and dbPerS
-  (clap#163), beside dBTP and LU; the utility family gains the roles `speed` and `slope`, so omx-balancer's four controls
-  all take a role.
-
 ## Unreleased
 
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
@@ -77,6 +70,8 @@
   took) is a blank slot, so slot k is the same parameter on every band's screen. A surface that pages an EQ sees one more
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
+
+- 0.16.0: the sorting pass (V1, V2, V3, V4, V22 and V23d), delivered with omx-contract 3.21.0, omx-dsp 0.34.0, plugin-db 0.5.0 and plugin-hostd 0.21.0, and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.21.0, omx-dsp-wasm and omx-dsp-devel >= 0.34.0, plugin-db-contract >= 0.5.0, plugin-hostd >= 0.21.0 (recommended). Units: dB/oct and dB/s are served, the vendor-block codes omx-contract 3.21.0's sheet gives dbPerOct and dbPerS (clap#163), beside dBTP and LU; the utility family gains the roles `speed` and `slope`, so omx-balancer's four controls all take a role. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm.
 
 - 0.15.1: the installed tools resolve `@openmixer/omx-contract`: 0.15.0's tools import `@openmixer/omx-contract/entry` (isMain, #143) but the package linked only omx-dsp, so `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with `ERR_MODULE_NOT_FOUND`. `node_modules/@openmixer/omx-contract` now links the omx-contract package's `/usr/lib/omx-contract`, omx-panel requires `omx-contract >= 3.20.2` (rpm Requires, deb Depends, a floor only), and `tools/installed-tools-check.sh` loads every installed tool and runs the installed modgui-gen in %check, debian/rules, debian/tests and the CI runtime install.
 
