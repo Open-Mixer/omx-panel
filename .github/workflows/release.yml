@@ -60,7 +60,7 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.21.0' 'plugin-db-contract >= 0.5.0'
           # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
           # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-devel >= 3.20.2' 'libomx-domain-devel >= 3.20.2'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.21.0' 'omx-contract-devel >= 3.21.0' 'libomx-domain-devel >= 3.21.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

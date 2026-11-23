@@ -74,7 +74,7 @@ Package: libomx-panel-store-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libomx-panel-store0 (= ${binary:Version}), libsqlite3-dev (>= 3.38.0~), libcjson-dev, libomx-domain-dev (>= 3.20.0~), ${misc:Depends}
+Depends: libomx-panel-store0 (= ${binary:Version}), libsqlite3-dev (>= 3.38.0~), libcjson-dev, libomx-domain-dev (>= 3.21.0~), ${misc:Depends}
 Description: descriptions store of panel descriptions, development files
  The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
  omx-panel-store pkg-config file and the store's DDL (panel.sql), to build

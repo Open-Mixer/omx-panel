@@ -125,7 +125,7 @@ Summary: Header, link, pkg-config file and schema of the descriptions store
 Requires: omx-panel-store%{?_isa} = %{version}-%{release}
 Requires: sqlite-devel >= 3.38.0
 Requires: pkgconfig(libcjson)
-Requires: libomx-domain-devel >= 3.20.0
+Requires: libomx-domain-devel >= 3.21.0
 
 %description -n omx-panel-store-devel
 The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
