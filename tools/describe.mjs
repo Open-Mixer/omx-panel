@@ -38,7 +38,7 @@ import { inferBands } from './meaning-infer.mjs';
 import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
-import { panelCodes } from './vocabulary.mjs';
+import { panelCodes, unitSymbolOf } from './vocabulary.mjs';
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's: the panel domain's PANEL_DESCRIBE_CODES. */
 const CODE = panelCodes('PANEL_DESCRIBE_CODES');
