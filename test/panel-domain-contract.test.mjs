@@ -5,7 +5,11 @@
 // the plugin ABI, row V1), no other render, installed by
 // omx-contract's domain installer where the loader reads it, and packaged alone in omx-panel-contract.
 // The installed omx-contract (validate, fmt) and omx-domain (the C loader) commands run, or OMX_CONTRACT_CLI and
-// OMX_DOMAIN_CLI name others (a checkout's); a missing command is red by name, never skipped.
+// OMX_DOMAIN_CLI name others (a checkout's); a missing command is red by name, never skipped. The omx-contract CLI is the
+// installed package's by its path, /usr/lib/omx-contract/bin/omx-contract.mjs, never a PATH lookup: under `npm test` the
+// PATH starts with node_modules/.bin, whose omx-contract is the npm devDependency (3.20.2 on wave f45s), older than the
+// packages' floor, and it refused the gestures domain's sheet items that 3.21.0 reads. The CLI that runs is held at or
+// above the floor the spec states.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
@@ -13,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { compareVersions, packagingFloor } from './packaging-floors.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DOMAIN = join(ROOT, 'contract.d/panel');
@@ -21,6 +26,9 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
 /** The command `name` names, split on spaces (`node /x/omx-contract.mjs`), else the installed `installed`. */
 const command = (name, installed) => (process.env[name] || installed).split(' ');
+/** The installed omx-contract CLI, where the omx-contract package puts it (%check and debian/rules name the same path). */
+const INSTALLED_CONTRACT_CLI = '/usr/lib/omx-contract/bin/omx-contract.mjs';
+const contractCli = () => command('OMX_CONTRACT_CLI', INSTALLED_CONTRACT_CLI);
 
 function run(argv, opts = {}) {
   const [cmd, ...args] = argv;
@@ -29,25 +37,36 @@ function run(argv, opts = {}) {
   return r;
 }
 
+test('the omx-contract CLI this suite runs is the package at or above the floor the spec states', () => {
+  const script = contractCli().find((a) => a.endsWith('.mjs'));
+  assert.ok(script, `${contractCli().join(' ')} names no omx-contract.mjs: the version cannot be read`);
+  const pkg = join(dirname(script), '..', 'package.json');
+  assert.ok(existsSync(pkg), `${pkg} is absent: install omx-contract or name a checkout's CLI in OMX_CONTRACT_CLI`);
+  const { name, version } = JSON.parse(readFileSync(pkg, 'utf8'));
+  assert.equal(name, '@openmixer/omx-contract', `${pkg} is not omx-contract's`);
+  const floor = packagingFloor('omx-contract');
+  assert.ok(compareVersions(version, floor) >= 0, `${script} is omx-contract ${version}, below the packages' floor ${floor}`);
+});
+
 test('the document conforms: its $schema, $id, owner and stability, every item prefixed PANEL_', () => {
   assert.equal(doc.$schema, 'https://json-schema.org/draft/2020-12/schema');
   assert.equal(doc.$id, 'https://openmixer.org/contract/panel');
   assert.equal(doc.info['x-owner'], 'omx-panel');
   assert.equal(doc.info['x-stability'], 'experimental');
   for (const item of Object.keys(doc.components.schemas)) assert.match(item, /^PANEL_/);
-  const r = run([...command('OMX_CONTRACT_CLI', 'omx-contract'), 'validate', '--contract-dir', 'contract.d']);
+  const r = run([...contractCli(), 'validate', '--contract-dir', 'contract.d']);
   assert.equal(r.status, 0, `omx-contract validate refused the domain:\n${r.stdout}${r.stderr}`);
 });
 
 test('the document is in the one formatting (omx-contract fmt --check)', () => {
-  const r = run([...command('OMX_CONTRACT_CLI', 'omx-contract'), 'fmt', '--check', '--contract-dir', 'contract.d']);
+  const r = run([...contractCli(), 'fmt', '--check', '--contract-dir', 'contract.d']);
   assert.equal(r.status, 0, `omx-contract fmt --check:\n${r.stdout}${r.stderr}`);
 });
 
 test('one render of the domain: omxdomain/panel_codes.h, what omx-contract render gives; the items C reads by code are marked x-c-codes, the six word items x-c-xmacro too, and no other', (t) => {
   const out = mkdtempSync(join(tmpdir(), 'omx-panel-codes-'));
   t.after(() => rmSync(out, { recursive: true, force: true }));
-  const r = run([...command('OMX_CONTRACT_CLI', 'omx-contract'), 'render', '--target', 'c', '--out', out, '--contract-dir', 'contract.d', '--package', 'panel']);
+  const r = run([...contractCli(), 'render', '--target', 'c', '--out', out, '--contract-dir', 'contract.d', '--package', 'panel']);
   assert.equal(r.status, 0, `omx-contract render:\n${r.stdout}${r.stderr}`);
   assert.deepEqual(readdirSync(out), ['panel_codes.h']);
   assert.equal(read('include/omxdomain/panel_codes.h'), readFileSync(join(out, 'panel_codes.h'), 'utf8'), 'include/omxdomain/panel_codes.h is not what omx-contract render gives: re-render it');
