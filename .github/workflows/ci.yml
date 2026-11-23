@@ -498,6 +498,12 @@ jobs:
           spec: packaging/omx-panel.spec
           gate: tools/catalogs-gate.sh
 
+  # the documentation gate of the renderer's installed headers, from Open-Mixer/.github (docs/doc-gate.md): doxygen's
+  # warnings held to docs/doxygen-baseline.txt, which only shrinks against the pull request's base, under the doxygen
+  # docs/doxygen-version.txt pins. The rendered reference is `make docs-site`, published by docs.yml at a tag.
+  docs:
+    uses: Open-Mixer/.github/.github/workflows/doc-gate.yml@openmixer-v1
+
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
     with:

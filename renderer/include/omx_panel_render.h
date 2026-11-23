@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
- *
- * omx_panel_render.h — the panel renderer: one C library that draws a panel description (what
+ */
+/**
+ * @file omx_panel_render.h
+ * @brief The panel renderer: one C library that draws a panel description (what
  * `omx-panel layout` writes, tools/panel-description.mjs) in the omx look, into a plain CPU pixel
  * buffer. Every surface that shows a plugin's panel draws through it: a plugin window (the buffer is
  * blitted into it), a host-embedded inline view at the size the host gives, and a buffer another
