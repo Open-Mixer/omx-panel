@@ -24,8 +24,9 @@
  *   look [--check]                                       tools/look.mjs: tools/look.json from the colour roles
  *   copies <tree> | --self-test                          tools/copies-check.mjs: no tracked file copies what omx-panel renders or ships
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
- *                                                        directories, the meanings, the LV2 unit table, the param-contract
- *                                                        unit table and each descriptor named; exit 1 when one is missing
+ *                                                        directories, the meanings, the standard units, the units the
+ *                                                        param-contract extension serves and each descriptor named; exit 1
+ *                                                        when one is missing
  *   descriptors --installed                              each installed plugin descriptor file, one path per line
  */
 import { spawnSync } from 'node:child_process';
@@ -246,7 +247,7 @@ async function vocabulary(refs) {
   line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
   line('role-meanings', () => `${v.roleMeanings().size} roles from ${process.env.OMX_ROLE_MEANINGS || 'the contract directories'}`);
   line('param-units', () => `${v.standardUnits().size} units from ${v.paramDomainFile()}`);
-  line('param-contract', () => `${v.paramUnits().size} units from ${v.paramUnitsFile()}`);
+  line('clap-encoded', () => `${v.clapEncoded().size} units from ${v.paramDomainFile()}`);
   for (const ref of refs) {
     line(`descriptor ${ref}`, () => {
       const file = v.installedDescriptorFile(ref);

@@ -3,7 +3,7 @@
 // Sorting pass rows M4, P1 (omx-panel#160, #161): omx-panel speaks the standard unit ids, read from omx-contract's param
 // domain (PARAM_UNITS: each word's id, its symbol x-symbol and its x-dimension, V23a). It reads no LV2 table
 // (plugin-hostd's PLUGIN_HOSTD_LV2_MAP, P1): a unit's LV2 term is plugin-db's F1 word. V23d (and with it P2) is out of the
-// pass (%4): a unit is served, as on main, when omx-contract's param-contract sheet gives its term a code. Its own unit
+// pass (%4). A unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED holds its id (V23d, P2). Its own unit
 // groups (tools/role-table.mjs, the level units of tools/panel-description.mjs) name standard ids and dimensions (M4, F3).
 // (a) golden: a descriptor unit's id, the role table's ids, the level units by dimension; (c) a temporary contract
 // directory whose param domain has no dBu: a dBu control has no unit id and a read-only one is no level meter.
@@ -38,8 +38,8 @@ test('(a) the param domain is installed where the tools read it (omx-contract >=
 });
 
 test('(a) a descriptor unit is read as its standard id; a unit the list lacks has none', () => {
-  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'x', 'st', 'cents', 'furlong']).map(([id]) => id),
-    ['dB', 'percent', 'none', 'kHz', 'x', 'st', 'cents', null]);
+  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'coef', 'st', 'cents', 'furlong']).map(([id]) => id),
+    ['dB', 'percent', 'none', 'kHz', 'coef', 'st', 'cents', null]);
 });
 
 test('(a) every unit the role table names is a standard id', () => {
@@ -98,23 +98,23 @@ test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
   assert.match(hostdNames(dir), /release\.yml:.*plugin-hostd-contract/);
 });
 
-// V23d is out of the pass (%4, 2026-11-21): the param-contract sheet stays omx-contract's, and a unit is served, as on
-// main, when the sheet gives the unit's LV2 term a code; the term is plugin-db's F1 word for the standard id (P1).
-// omx-contract 3.21.0's sheet codes dbPerOct (260), dbPerS (261), dbtp (262) and lu (263) in its vendor block (clap#163),
-// so dB/oct, dB/s, dBTP and LU take their role; x and the empty unit as before.
-test('(a) a standard unit the param-contract sheet codes takes its role, by its LV2 term or its vendor-block name', () => {
-  assert.deepEqual(answers(['dB', '%', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
-    ['dB', 'percent', 'x', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB-s', 'dB-oct', 'none']);
+// V23d, P2 (omx-panel#162): a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED (its param domain, the ids
+// org.openmixer.param-contract/1 encodes) holds its standard id. omx-panel reads omx-contract only: no code sheet, no
+// LV2 term, nothing of omx-clap.
+test('(a) a standard unit the param-contract extension encodes takes its role; one it does not encode takes none', () => {
+  assert.deepEqual(answers(['dB', '%', 'x', 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
+    ['dB', 'percent', null, 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB-s', 'dB-oct', 'none']);
 });
 
-test('(c) omx-contract\'s sheet decides: a sheet with no lufs leaves LUFS unserved', (t) => {
-  const from = contractDirs().find((d) => existsSync(join(d, '3/omx-contract/param-contract.json')));
-  assert.ok(from, `no 3/omx-contract/param-contract.json in ${contractDirs().join(':')}`);
+test('(c) omx-contract\'s served set decides: a PARAM_UNITS_CLAP_ENCODED with no LUFS leaves LUFS unserved', (t) => {
+  assert.ok(paramDir(), `no param/param.json in ${contractDirs().join(':')}`);
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-p2-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const doc = JSON.parse(readFileSync(join(from, '3/omx-contract/param-contract.json'), 'utf8'));
-  delete doc.OMX_PARAM_CONTRACT_UNITS.value.lufs;
-  mkdirSync(join(dir, '3/omx-contract'), { recursive: true });
-  writeFileSync(join(dir, '3/omx-contract/param-contract.json'), JSON.stringify(doc));
+  const doc = JSON.parse(readFileSync(join(paramDir(), 'param/param.json'), 'utf8'));
+  const served = doc.components.schemas.PARAM_UNITS_CLAP_ENCODED;
+  assert.ok(served?.oneOf?.some((w) => w.const === 'LUFS'), 'positive control: the installed served set holds LUFS');
+  served.oneOf = served.oneOf.filter((w) => w.const !== 'LUFS').map((w, i) => ({ ...w, 'x-code': i }));
+  mkdirSync(join(dir, 'param'), { recursive: true });
+  writeFileSync(join(dir, 'param/param.json'), JSON.stringify(doc));
   assert.deepEqual(answers(['LUFS', 'dB'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }).map(([id]) => id), [null, 'dB']);
 });
