@@ -14,7 +14,7 @@
  *     PARAM_UNITS whose `x-symbol` it is, with its `x-dimension` (the param domain, `<contractdir>/param/param.json`,
  *     installed by omx-contract-data from 3.21.0; sorting pass rows P1, M4). A unit is served when omx-contract's
  *     PARAM_UNITS_CLAP_ENCODED, of the same domain, holds its id (the ids org.openmixer.param-contract/1 encodes;
- *     omx-contract-data from 3.23.0, V23d P2). omx-panel reads no code sheet, no plugin-hostd table and nothing of
+ *     omx-contract-data from 3.22.0, V23d P2). omx-panel reads no code sheet, no plugin-hostd table and nothing of
  *     omx-clap;
  *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
@@ -181,7 +181,7 @@ export const CLAP_ENCODED_ITEM = 'PARAM_UNITS_CLAP_ENCODED';
 export const clapEncoded = once(() => {
   const file = paramDomainFile();
   const words = file ? JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.[CLAP_ENCODED_ITEM]?.oneOf : undefined;
-  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.23.0)`);
+  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.22.0)`);
   return new Set(words.map((w) => w.const));
 });
 

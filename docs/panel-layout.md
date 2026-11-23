@@ -27,7 +27,7 @@ with labelled values a `choice`, every other parameter a `travel` with the decla
 A control's unit is the descriptor's `travel.unit`, read as its standard id (omx-contract's PARAM_UNITS, its param
 domain: `%` is `percent`, `dB/oct` is `dB-oct`; sorting pass P1, M4). A role checks the id against the units the
 param-contract extension serves (`tools/vocabulary.mjs`, `servedUnit`): omx-contract's `PARAM_UNITS_CLAP_ENCODED`, of
-the same param domain, the ids `org.openmixer.param-contract/1` encodes (omx-contract-data from 3.23.0; sorting pass
+the same param domain, the ids `org.openmixer.param-contract/1` encodes (omx-contract-data from 3.22.0; sorting pass
 V23d, P2). So a unit that set holds (`LUFS`, `dBu`, `dB-oct` among them) is checked like any other. A unit it does not
 hold, `unknown` included, takes no role and is drawn as a plain number. Nothing here types a unit, and nothing reads a
 code sheet or omx-clap: the reader reads the installed param domain, and refuses by name when the set is missing.

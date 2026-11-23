@@ -4,7 +4,7 @@
 
 Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract's
 schema, contract directory, standard units and the units the param-contract extension serves (its param domain:
-PARAM_UNITS, and PARAM_UNITS_CLAP_ENCODED from 3.23.0) (`omx-contract-data`), and plugin-db's LV2 terms
+PARAM_UNITS, and PARAM_UNITS_CLAP_ENCODED from 3.22.0) (`omx-contract-data`), and plugin-db's LV2 terms
 and their F1 mapping to the standard words (its `lv2` domain, `plugin-db-contract` from 0.5.0). Nothing of
 omx-plugins is needed to build or test: its descriptors (`omx-plugins-contract`) are not a dependency of this package; `modgui --installed` reads them when they are installed. The contract directory is `$OMX_CONTRACT_PATH` (a `:`
 list, the first that holds a package wins), else omx-contract's pkg-config variable `contractdir` where
