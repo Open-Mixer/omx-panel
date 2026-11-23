@@ -3,9 +3,12 @@
 # One gesture vocabulary
 
 Every surface moves a panel's controls with one set of gestures, declared once here and in `schema/gestures.json`; each
-surface maps its own inputs onto it. `tools/gestures.mjs` is the reference: given a control and a script of events with
-timestamps, it answers the value in the control's own unit and the begin and end of each gesture. Every surface is
-checked against it, and the parity fixtures carry scripted gestures (`test/fixtures/gestures/scripts.json`). A panel
+surface maps its own inputs onto it. The reference is one C implementation, `renderer/src/gesture.c` in the renderer's
+library (`omx_panel_gesture.h`, `docs/renderer.md` "The gesture unit"): given a control and a script of events with
+timestamps, it answers the value in the control's own unit and the begin and end of each gesture. `tools/gestures.mjs`
+answers the same until it becomes the loader of that unit's WebAssembly build, and the two are held equal on the shipped
+scripts. Every surface is checked against it, and the parity fixtures carry scripted gestures
+(`test/fixtures/gestures/scripts.json`). A panel
 description gains nothing: the table is keyed by the standard widget, and by a bar and a curve handle bound by their roles.
 
 The console's own gesture table is the law this conforms to. It adds two things to it: painting across a bar group, and the timings declared here.
@@ -62,6 +65,14 @@ layered on it there, and none is used.
   It has no long-press: the hold is its press.
 - Steps of one source within the claim are one gesture, one undo entry.
 
+## The refusal codes
+
+`schema/gestures.json` declares each code with its sentence under `codes`; the reference and the C unit answer no other.
+`GESTURE_READ_ONLY`, `GESTURE_CONTROL_OWNED`, `GESTURE_NO_DEFAULT`, `GESTURE_NOT_IN_TABLE`, `GESTURE_HOLD_SHORT`,
+`GESTURE_HOLD_BELOW_FLOOR`, `GESTURE_NO_TARGET`, `GESTURE_PAINT_REQUIRED_ON_TOUCH`, `GESTURE_BAD_SETTING` and
+`GESTURE_BAD_INPUT` (input neither reference can read, refused in the same words by the C unit and by `tools/gestures.mjs`).
+The codes are not yet in the shape of `schema/codes.json`; that is tracked in issue #106.
+
 ## The timings
 
 Declared defaults in `schema/gestures.json`; no component keeps a timing constant. Each surface shows them in its own
@@ -83,6 +94,9 @@ value follows the finger; the read-back replaces it. The reference says so in ea
 claim).
 
 ## The reference
+
+The C unit (`omx_gesture_open`, `omx_gesture_run`, `omx_gesture_close`) takes the same control and events as the module
+below and answers the same JSON; the module is its JavaScript twin until the loader replaces it.
 
 ```js
 import { runGesture, timingsOf, withinStep } from '@openmixer/omx-panel/gestures';

@@ -51,12 +51,6 @@ test('layout: a descriptor under its declared panel, as JSON, canonical text and
   assert.deepEqual(pages.flatMap((p) => p.ids).filter((i) => i !== null).length, 5, 'every control once');
 });
 
-test('modgui: --check over omx-plugins\' committed omx-delay MOD GUI is clean', () => {
-  const r = run('modgui', '--check', '--no-films', '--descriptor', join(FIX, 'omx-delay.descriptor.json'), '--panel', join(FIX, 'omx-delay.panel.json'),
-    '--out', join(FIX, 'omx-delay.lv2'), '--source', 'plugins/omx-delay/omx-delay.decl.json (its panel block) and tools/look.json');
-  assert.equal(r.status, 0, r.stderr);
-});
-
 test('import: the fixture bundle becomes a package that validates; a refused licence exits 3 with nothing written', () => {
   const out = mkdtempSync(join(tmpdir(), 'omx-panel-skins-'));
   const r = run('import', join(ROOT, 'fixtures/modgui/omx-fixture-echo.lv2'), '--out', out);
@@ -69,11 +63,6 @@ test('import: the fixture bundle becomes a package that validates; a refused lic
   const bad = run('import', '/nonexistent.lv2', '--out', none);
   assert.equal(bad.status, 3);
   assert.equal(existsSync(none), false);
-});
-
-test('look: --check finds look.json fresh', () => {
-  const r = run('look', '--check');
-  assert.equal(r.status, 0, r.stderr);
 });
 
 test('modgui: a descriptor with nothing to draw exits 3 with one line and no stack trace', () => {

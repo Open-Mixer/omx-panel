@@ -18,7 +18,8 @@ export const snap = (v) => Math.round(v * 16) / 16;
 
 /** `#rrggbb` -> [r, g, b]. A token that is not a plain hex colour is refused, never guessed. */
 export function rgbOf(hex) {
-  const m = /^#([0-9a-f]{6})$/i.exec(String(hex).trim());
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(String(hex).trim()); // the console's three-digit shade
+  const m = short ? [null, short[1] + short[1] + short[2] + short[2] + short[3] + short[3]] : /^#([0-9a-f]{6})$/i.exec(String(hex).trim());
   if (!m) throw new Error(`raster: '${hex}' is not a #rrggbb colour`);
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
@@ -55,6 +56,26 @@ function fillShape(c, box, inside, rgb) {
         for (let sx = 0; sx < SS; sx++) if (inside(x + (sx + 0.5) / SS, y + (sy + 0.5) / SS)) n++;
       }
       blend(c, x, y, rgb, n / (SS * SS));
+    }
+  }
+}
+
+/**
+ * Fill the box by the fraction of its samples `inside` accepts, each pixel coloured by `colourAt(x, y)` at its centre:
+ * `[r, g, b, a]`, `a` 0..1. The gradients of tools/svg-knob.mjs are painted with it.
+ */
+export function paint(c, box, inside, colourAt) {
+  const x0 = Math.max(0, Math.floor(box[0])), y0 = Math.max(0, Math.floor(box[1]));
+  const x1 = Math.min(c.w, Math.ceil(box[2])), y1 = Math.min(c.h, Math.ceil(box[3]));
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      let n = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) if (inside(x + (sx + 0.5) / SS, y + (sy + 0.5) / SS)) n++;
+      }
+      if (n === 0) continue;
+      const [r, g, b, a] = colourAt(x + 0.5, y + 0.5);
+      blend(c, x, y, [Math.round(r), Math.round(g), Math.round(b)], (n / (SS * SS)) * a);
     }
   }
 }

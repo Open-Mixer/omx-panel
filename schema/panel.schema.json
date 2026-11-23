@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Open-Mixer/omx-panel/schema/panel.schema.json",
+  "$id": "https://openmixer.org/schema/omx-panel/panel.schema.json",
   "title": "The panel's declared lists",
   "description": "What a declared panel names from this package: the widgets a control is drawn with, the roles that repeat by index and the rule that shows a control by another control's value. A plugin's own declaration schema references these $defs; tools/modgui-gen.mjs and tools/panel-description.mjs read them.",
   "$defs": {
@@ -36,6 +36,46 @@
       "items": { "type": "string" },
       "title": "Easy controls",
       "description": "The controls the plugin opens on, in order, by symbol. Every control stays one click away. Left out, tools/easy.mjs picks them from the roles."
+    },
+    "tier": {
+      "enum": ["easy", "advanced"],
+      "default": "advanced",
+      "title": "Tier",
+      "description": "Who a control is for: `easy` controls are the ones a plugin shows in its Easy generation, `advanced` is every control. A control that names no tier is advanced, so nothing disappears until a plugin says so."
+    },
+    "tiers": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+      "additionalProperties": { "$ref": "#/$defs/tier" },
+      "title": "Tiers",
+      "description": "Each control's tier, by parameter symbol, in the plugin's declaration beside its widgets. A control left out is advanced. The MOD GUI is generated for one tier (`omx-panel modgui --tier easy|advanced`, the `modgui-tier` setting, default advanced): Easy draws the easy controls and leaves the advanced ones out, Advanced draws every control. MOD has no live switch; a surface that has one reads the same field."
+    },
+    "choiceUnits": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "title": "Choice units",
+      "description": "The unit of a CHOICE's values, by parameter symbol: one unit for the choice, as the descriptor gives a travel its `unit` (a descriptor has no word for it). A filter slope that is a choice of 12 and 24 declares `dB/oct` (or `dB`), so the section's curve takes its roll-off in dB per octave. The same declaration as the panel description's `choiceUnits` extras (tools/panel-description.mjs, panelLayout); a surface that reads a declared panel passes it on. A choice left out has no unit."
+    },
+    "sectionEdges": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first": { "$ref": "#/$defs/edgeBand" },
+        "last": { "$ref": "#/$defs/edgeBand" }
+      },
+      "title": "Edge bands",
+      "description": "A section's first and last band, borrowed from another section's controls: an EQ draws its plugin's high-pass filter as its first band and its low-pass as its last, [HPF] [Band 1..N] [LPF]. Only the drawing moves; the audio order is the plugin's, and an Order control the plugin declares shows it. The curve of the section includes the filters' roll-off when the panel's `roles` bind hpf_* and lpf_* roles."
+    },
+    "edgeBand": {
+      "type": "object",
+      "required": ["from", "label", "controls"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "description": "The key of the section that lists the controls." },
+        "label": { "type": "string", "description": "The band's name, drawn on each of its controls (data-band)." },
+        "controls": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "The controls, by symbol, that section lists and this section draws." }
+      }
     },
     "visibleWhen": {
       "type": "object",

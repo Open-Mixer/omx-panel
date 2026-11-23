@@ -1,0 +1,219 @@
+{
+ "origin": "authored",
+ "plugin": {
+  "id": "urn:omx-panel:test:taps",
+  "format": "lv2",
+  "uri": "urn:omx-panel:test:taps",
+  "name": "Test Taps",
+  "vendor": "omx-panel tests",
+  "features": [
+   "audio-effect"
+  ]
+ },
+ "controls": [
+  {
+   "id": "t1_gain",
+   "symbol": "t1_gain",
+   "name": "Tap 1 Gain",
+   "label": "Tap 1 Gain",
+   "group": [
+    "Tap 1"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -60,
+    "max": 6,
+    "unit": "dB",
+    "scale": "linear",
+    "default": -6
+   }
+  },
+  {
+   "id": "t1_pan",
+   "symbol": "t1_pan",
+   "name": "Tap 1 Pan",
+   "label": "Tap 1 Pan",
+   "group": [
+    "Tap 1"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -1,
+    "max": 1,
+    "unit": "",
+    "scale": "linear",
+    "default": 0
+   }
+  },
+  {
+   "id": "t1_time",
+   "symbol": "t1_time",
+   "name": "Tap 1 Time",
+   "label": "Tap 1 Time",
+   "group": [
+    "Tap 1"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": 1,
+    "max": 2000,
+    "unit": "ms",
+    "scale": "log",
+    "default": 250
+   }
+  },
+  {
+   "id": "t2_gain",
+   "symbol": "t2_gain",
+   "name": "Tap 2 Gain",
+   "label": "Tap 2 Gain",
+   "group": [
+    "Tap 2"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -60,
+    "max": 6,
+    "unit": "dB",
+    "scale": "linear",
+    "default": -6
+   }
+  },
+  {
+   "id": "t2_pan",
+   "symbol": "t2_pan",
+   "name": "Tap 2 Pan",
+   "label": "Tap 2 Pan",
+   "group": [
+    "Tap 2"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -1,
+    "max": 1,
+    "unit": "",
+    "scale": "linear",
+    "default": 0
+   }
+  },
+  {
+   "id": "t2_time",
+   "symbol": "t2_time",
+   "name": "Tap 2 Time",
+   "label": "Tap 2 Time",
+   "group": [
+    "Tap 2"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": 1,
+    "max": 2000,
+    "unit": "ms",
+    "scale": "log",
+    "default": 500
+   }
+  },
+  {
+   "id": "t3_gain",
+   "symbol": "t3_gain",
+   "name": "Tap 3 Gain",
+   "label": "Tap 3 Gain",
+   "group": [
+    "Tap 3"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -60,
+    "max": 6,
+    "unit": "dB",
+    "scale": "linear",
+    "default": -6
+   }
+  },
+  {
+   "id": "t3_pan",
+   "symbol": "t3_pan",
+   "name": "Tap 3 Pan",
+   "label": "Tap 3 Pan",
+   "group": [
+    "Tap 3"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -1,
+    "max": 1,
+    "unit": "",
+    "scale": "linear",
+    "default": 0
+   }
+  },
+  {
+   "id": "t3_time",
+   "symbol": "t3_time",
+   "name": "Tap 3 Time",
+   "label": "Tap 3 Time",
+   "group": [
+    "Tap 3"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": 1,
+    "max": 2000,
+    "unit": "ms",
+    "scale": "log",
+    "default": 750
+   }
+  },
+  {
+   "id": "t4_gain",
+   "symbol": "t4_gain",
+   "name": "Tap 4 Gain",
+   "label": "Tap 4 Gain",
+   "group": [
+    "Tap 4"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -60,
+    "max": 6,
+    "unit": "dB",
+    "scale": "linear",
+    "default": -6
+   }
+  },
+  {
+   "id": "t4_pan",
+   "symbol": "t4_pan",
+   "name": "Tap 4 Pan",
+   "label": "Tap 4 Pan",
+   "group": [
+    "Tap 4"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": -1,
+    "max": 1,
+    "unit": "",
+    "scale": "linear",
+    "default": 0
+   }
+  },
+  {
+   "id": "t4_time",
+   "symbol": "t4_time",
+   "name": "Tap 4 Time",
+   "label": "Tap 4 Time",
+   "group": [
+    "Tap 4"
+   ],
+   "kind": "travel",
+   "travel": {
+    "min": 1,
+    "max": 2000,
+    "unit": "ms",
+    "scale": "log",
+    "default": 1000
+   }
+  }
+ ]
+}

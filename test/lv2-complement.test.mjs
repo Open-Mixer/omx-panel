@@ -230,10 +230,14 @@ describe('the groups', () => {
     const triples = readInstalledBundle(dir);
     const verdict = inferGroups(readPluginPorts(pluginTriples(triples, uris[0]), uris[0]), readModguiLayout(pluginTriples(triples, uris[0]), uris[0]));
     assert.equal(verdict.outcome, 'grouped');
+    // the flat inference's groups, less the ports the model's instances took, then the instances (docs/group-model.md, P2): the
+    // instance groups replace the flat ones for their ports, so the three bands count down below the two edges
+    const flat = verdict.groups.map((g) => [g.symbol, g.name, g.ports.join(' '), `${PG}Group`]);
     assert.deepEqual(
-      Object.values(groups).map((g) => [g.symbol[0], g.name[0], Number(g.displayPriority[0]), g.ports.join(' '), g.type[0]]),
-      verdict.groups.map((g) => [g.symbol, g.name, g.displayPriority, g.ports.join(' '), `${PG}Group`]),
+      Object.values(groups).map((g) => [g.symbol[0], g.name[0], g.ports.join(' '), g.type[0]]),
+      flat,
     );
+    assert.deepEqual(Object.fromEntries(Object.values(groups).map((g) => [g.symbol[0], Number(g.displayPriority[0])])), { low: 5, high: 4, band_1: 3, band_2: 2, band_3: 1 });
     assert.deepEqual(Object.values(groups).map((g) => g.name[0]), ['Low', 'Band 1', 'Band 2', 'Band 3', 'High']);
   });
 

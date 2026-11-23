@@ -2,16 +2,17 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # The panel renderer
 
-One C library draws a plugin's panel from its panel description, the document `omx-panel layout` writes
-([panel-layout.md](panel-layout.md)). Every place a panel is shown draws through it:
+One C library draws a plugin's panel from its panel description, the document `omx-panel describe --layout` serves
+([panel-layout.md](panel-layout.md)): the layout, the family's displays and a repeated group's served matrix. Every place a panel is shown draws through it:
 
 - a plugin window in a DAW (CLAP `clap.gui`) or in omx-clap-host;
 - a host-embedded inline view, at whatever size the host gives;
 - a plain CPU pixel buffer (RGBA or BGRA, a width, a height, a stride and a scale): what a host that
-  embeds a plugin's view hands the plugin to draw into, and what an out-of-process worker sends to the
-  web console so it can show the same view.
+  embeds a plugin's view hands the plugin to draw into.
 
-Each of these draws the same description with the same layout and widget code. The source is in `renderer/`.
+Each of these draws the same description with the same layout and widget code. The renderer is omx-panel's own
+toolkit, for a plugin's own GUI; the web console draws its panels with its own (Nuxt UI) and shows none of its pixels.
+The source is in `renderer/`.
 
 ## What it draws
 
@@ -27,8 +28,10 @@ value and reads no travel, so a third-party plugin's panel is drawn exactly as o
 
 The face is the MOD GUI's face, drawn the same way to the bit: the head (maker and name), each section with
 its label, each control in its cell with its label and value text. The look (colours, font) is
-the colour roles of `schema/look-roles.json` as its host values them, `tools/look.json` (the roles' defaults) when
-it passes no other; a look short of any role is refused by the role's name. The geometry and text sizes are
+the colour roles of `schema/look-roles.json` as its host values them, `tools/look.json` (the vintage tokens, the
+roles' defaults: [modgui.md](modgui.md) "The look") when it passes no other; a look short of any role is refused by
+the role's name, with no other role drawn in its place. A knob's pointer is drawn in `--knob-pointer` and a curve's
+stroke in `--curve-stroke`, neither in `--accent`. The geometry and text sizes are
 `tools/look/geometry.json`, which `tools/modgui-gen.mjs` reads too. The renderer types no colour and no size.
 
 A meter fills along the foot of its frame to its reading. A display and an xy pad show a frame and their text
@@ -37,11 +40,72 @@ for now; an xy pad gets its own drawing when a description carries what it needs
 A section's `bars` (a bar group, [panel-layout.md](panel-layout.md) "Bars") is a row of faders: each control of a run is drawn as a fader,
 its label the bar's, in its own cell, so `omx_panel_view_control_rect` gives each bar's rectangle for hit-testing as for every control.
 
+A section of a repeated group (an EQ's bands, a multiband compressor's bands: [group-model.md](group-model.md)) carries `matrix`,
+the group model's served matrix (`servedMatrix`, "The served matrix") exactly as `omx-panel describe --layout` serves it:
+`{ orientation, title, heads, rows, cells, count? }`. The renderer READS it and recomputes nothing: no group, no row order, no
+head row, no caption place, no transposition. `heads` are the instances and edges in drawing order, each `{ label, on, edge }`
+(`on` its on/off control as `{ symbol, sense }`, nothing else, or null; `edge` the EQ filter's name for a high-pass, shelf or
+low-pass, else null); `rows` are the parameters in the owner's order (freq, gain with the high-pass's and low-pass's slope on
+that row, q, type, the rest), then the head row, always the last, `{ label: 'On' | '', head: true }`; `cells[row][head]` is a
+control's symbol or null. The section is titled by `title`. It draws, in the section's box: the curve rows, then the section's
+other controls (those no cell names) flowed in rows of `rowControls` as any section's, then the matrix. In `columns` each head
+is a column, left to right, and each row a row; in `rows` each head is a row and each row a column. Every cell, the head row's
+among them, is placed as a cell: the control of that row at that head, named by the row's label (a head-row control by its
+head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
+row of its own (a matrix whose heads have no on/off, omx-delay's taps, has a caption row, and no caption overprints a row of
+controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the last, or a head
+whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
+as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
+does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
+`min(across, max(1, floor(width / (cellW x scale))))`, `across` the drawn heads in `columns` and the served rows (the head row
+among them) in `rows`, 0 with no matrix; the command's `--visible-columns <width>` prints it, and the test vector
+`test/fixtures/group-model/visible-columns.json` holds it to the JavaScript answer. The EQ is `columns`, its high-pass the
+first column and its low-pass the last: the order is of the drawing, the audio order is the plugin's.
+
+`count: { symbol, default }` (`default` null when the control has none: every instance is drawn until the host gives a value)
+names the control that says how many instances the plugin runs (an EQ's band count); the served matrix carries it only where no
+`visibleWhen` rule already governs the instances. The heads drawn are the group model's `drawnHeads`: every head that has an
+`edge`, and the first `count` of the others, closed up in order: a hidden head's controls take no cell, are not drawn and have
+no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the host gives one with
+`omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section. A hidden control of
+a drawn head keeps its cell empty. A `matrix` that is not an object, names a control that is not there or not in its section,
+places one twice, has a `cells` row of another length than `heads`, or whose `orientation` is neither word is refused by
+message, as `bars` is. A section with no `matrix`, and a description with none, is laid out as before.
+
+The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multiband compressor) from `omx-panel describe
+--layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
+tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
+and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
+
+The layout reads the role vocabulary ([panel-layout.md](panel-layout.md), "Meanings and roles"): with none, no role plays a
+meaning, omx-eq8 derives no curve, and its goldens would be drawn without one. So the renderer's tests read the vocabulary as
+the JavaScript suite does, with nothing of omx-plugins: `make renderer-check` points `$OMX_ROLE_MEANINGS` at this tree's
+stand-in, `test/fixtures/role-meanings/panel-roles.json`, unless the caller names one, and a test run whose vocabulary
+declares no role FAILS, naming `$OMX_ROLE_MEANINGS`, before it draws anything.
+
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
-(`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
-`eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
-and output on one span and the unity line. A display with no points draws the frame and the word alone. `omx_panel_view_set_marks` gives an `eq_response` its marks, one per band a planter owns (frequency, depth, the planter's letter): a disc on the curve and the letter above it; the renderer infers none. The state file's `"marks"` is `{"<display index>": [{"freq", "depth", "letter"}]}`.
+(`omx_panel_view_set_curve`). The renderer computes no point and picks no axis: the axis is the display's `axis` word, read from the
+description (`PANEL_DISPLAY_AXES`, [panel-layout.md](panel-layout.md) "Displays and their axis"), and a display with none, or with
+another word, refuses the description by name. The host's points are copied, ascending in x, and scaled to the frame, an
+`eq_response` (`log-frequency`) on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` (`linear`) on linear dB with input
+and output on one span and the unity line. A `time_response` (`time`) (a delay's tap train, a reverb's decay envelope: the processing-view spec, amendment 2026-09-16h) is drawn on a
+time axis in ms from 0 to the content's end and a level window from the floor, -60 dB, to 0 (raised to the next 6 dB when a level
+exceeds 0), with the 0 dB line as the reference: its envelope is the display's curve (x in ms, y in dB) and its stems are
+`omx_panel_view_set_stems`, one per tap from the floor to its level, dimmed by its shade and with its leg letter above; each array is
+drawn when the host sets it. A display with no points draws the frame and the word alone. `omx_panel_view_set_marks` gives an `eq_response` its marks, one per band a planter owns (frequency, depth, the planter's letter): a disc on the curve and the letter above it; the renderer infers none. The state file's `"marks"` is `{"<display index>": [{"freq", "depth", "letter"}]}`.
+
+`omx_panel_view_set_spectrum` gives an `eq_response` a measured spectrum: the bands' centres, levels and peaks in dBFS
+(`-INFINITY` is silence, drawn as nothing) on the level window the host declares, with a graticule line every `grid_db`.
+While one is set the display is drawn on the console analyser's axes, as its line mode draws them: the log frequency axis
+the bands and the curve share; ONE dB graticule, the level window's, labelled; the trace's area to the foot in the meter
+gradient (red at the top, amber at 0.18, green from 0.5 down) at 0.34, the trace, and a clip tick over each band whose peak
+reaches the top of the window; then the curve, a gain, parked with 0 dB at the window's middle, and its marks on the same
+axis. `n == 0` clears it and the display returns to its own curve axis, exactly. The parity test
+(`renderer/test/spectrum.test.mjs`) holds the strokes and the graticule within 1 px of the console's own scene for the same
+bands and curve (`test/fixtures/rta/console-scene.json`, made by `tools/rta-console-reference.mjs` from an openmixer
+checkout). The state file's `"spectrum"` is `{"<display index>": {"hz", "db", "peak", "dbMin", "dbMax", "gridDb"}}`, a null
+level for silence.
 
 The parity of a surface that draws with another rasteriser is held in `renderer/test/harness.mjs`: `strokeParity` (every stroke pixel of the curve layer within 1 px for the console, 2 px for Tk, of the other's, both ways), `barHeights` and `barParity` (heights within a pixel, count, order and labels equal as text). The state file of
 `omx-panel-render` gives them as `"curves": {"<display index>": {"x": [...], "y": [...]}}`.
@@ -84,7 +148,8 @@ the functions of the header and nothing else (`renderer/src/exports.map`, held t
 a surface that loads the renderer at run time, such as Zynthian's Tk panel through Python's ctypes, opens the shared one.
 
 The description a host draws is `omx-panel describe --layout`: the layout the one derivation made the description from, the
-family's displays included, in the shape this library reads. `omx-panel layout` alone lays out the declared panel and derives
+family's displays included, a repeated group's sections merged into the one that carries its served `matrix`, in the shape
+this library reads. `omx-panel layout` alone lays out the declared panel and derives
 no display.
 
 `omx_panel_view_draw` fills every pixel of the buffer, transparent where the panel does not reach. At the
@@ -114,7 +179,7 @@ sections: a frame captioned with the label, the range and its unit, a bar along 
 level from the foot, a gain reduction from 0 dB), the marker holds the peak (the deepest reduction) and falls by `elapsed`
 seconds at omx-dsp's rate (`fallDbPerSecond` of its `data/primitives/meter.json`, 18 dB/s), the same at any draw rate and on
 silence. The marker is omx-dsp's own view law, `omx_meter_view_step` of `<omxdsp/mix/omx_meter_view.h>` (header-only, omx-dsp-devel
-at or above 0.32.0 and below 0.33, checked by the build), the meter's range standing for the scale; no number of the law is
+at or above 0.32.2, checked by the build), the meter's range standing for the scale; no number of the law is
 copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
 the frame stands, which is what the MOD GUI face draws.
 
@@ -166,6 +231,40 @@ gesture drew.
 of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
+
+### The gesture unit
+
+The arithmetic of every gesture is one C unit, `renderer/src/gesture.c`, built into `libomx-panel-render`: drag past 10 px
+(dead travel), fine at 0.3, step (declared, else 1%; coarse is 5), second (a handle's Q), reset to the declared default,
+more and select (never a value), toggle on release inside, painting across a bar group (columns jumped over are
+interpolated, one gesture id per sweep), ownership and the claim, the safety hold. `input.c` keeps only the renderer's
+mapping: which of the view's controls form a target, where each sits on the surface, and what a gesture changed in the
+controls; it hands the engine (`src/gesture.h`, internal) the targets and the event on every call.
+
+The same unit has a JSON door, `renderer/include/omx_panel_gesture.h`, three calls and no struct across them:
+`omx_gesture_open(gestures_json, settings_json)`, `omx_gesture_run(ctx, control_json, events_json, answer, cap)` and
+`omx_gesture_close(ctx)`. A run takes one control (the member the JavaScript reference's `runGesture` takes) and a
+script of events, replays it through a fresh engine and answers as JSON what `runGesture` answers. The ABI of the three is
+`renderer/abi/omx_panel_gesture.abi`, held to the header, the export map and the built library by
+`renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
+unit's WebAssembly build.
+
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
+`tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
+its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
+`renderer/test/gesture-c-sabotage.test.mjs` breaks 51 rules in a copy of the source and watches each go red.
+
+Where the two references differ (each a finding of the first run, none reached by a shipped script; the first disappears when the JS loads this unit as wasm):
+
+- A logarithmic travel's value agrees to a relative 1e-11, not bit for bit: `log` and `exp` are the platform's in C and V8's in
+  JavaScript, and `exp(log(x))` doubles the last digit's difference. The shipped log-frequency scripts are exact.
+- An integer travel rounds as JavaScript's `Math.round` does, exactly (`round()` then a negative half back up, and -0); the first C port used
+  `round()`, which rounds a negative half away from zero, a behaviour fix with its test and arms.
+- A wheel's or detent's notch count is a double in both (a fraction counts, 1e300 runs to the end), not an int32.
+- Input neither reference can read is refused `GESTURE_BAD_INPUT` by both, in the same words (`tools/gestures.mjs` gained `validateInput` for it).
+- A reset with no bar selected is refused `GESTURE_NO_DEFAULT` in both, in the same words (`null declares no default`); the refused gesture's id is spent in both.
+- (A JS bug, for the wasm lane to retire with the JS: the reference throws on a move of the finger left of a pinch after the other lifted; the unit ignores that move.)
 
 Still to come: redrawing only what changed.
 
@@ -219,7 +318,7 @@ test or a screenshot. A build without `WINDOW=1` links no window system: the buf
 view and a headless worker pay for nothing they do not use.
 
 A window is held to the buffer by structure, not by pixel (`renderer/test/window.test.mjs`, run under
-Xvfb). Both must have the same size. In every control's cell, the accent (a knob's pointer, a fader's line,
+Xvfb). Both must have the same size. In every control's cell, the accent (a fader's line,
 a switch, a meter's fill) must be in the same place within 1 px and of about the same amount. The text in
 the cell must cover the same extent within 2 px. Block by block, the image must have the same mean colour,
 within 20 in a channel for 97 in 100 blocks.
@@ -233,7 +332,7 @@ is a desktop to prove it on), and redrawing only what changed.
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |
-| omx-dsp's meter view (>= 0.32.0, < 0.33) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
+| omx-dsp's meter view (>= 0.32.2) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
 | libm | | glibc | libc6 | |
 | pugl (window) | the window and its events | `pugl-devel` | `libpugl-dev` | ISC |
 | NanoVG (window) | drawing in the window | `nanovg-devel` | `libnanovg-dev` | Zlib |

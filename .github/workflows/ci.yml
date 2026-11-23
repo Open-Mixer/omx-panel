@@ -24,7 +24,7 @@ jobs:
     # table, the param-contract unit table), so it runs on Fedora with the OpenMixer channel, as the RPM's %check does.
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -38,9 +38,12 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.20.2'
+          # the panel domain's checks: omx-contract (validate, fmt), its domain installer (omx-contract-devel) and the C
+          # loader's omx-domain command (libomx-domain-devel), from the release that has all three
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-devel >= 3.20.2' 'libomx-domain-devel >= 3.20.2'
           # plugin-hostd's LV2 table: plugin-hostd-contract at the packages' range; plugin-hostd-devel installs the same file before it
-          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' \
+          dnf install -y --setopt=install_weak_deps=False 'plugin-hostd-contract >= 0.20.7' \
             || dnf install -y --setopt=install_weak_deps=False plugin-hostd-devel
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
@@ -65,7 +68,16 @@ jobs:
           OMX_PANEL_REAL_BUNDLES: required
           # the lilv proofs (the complements and the modgui sync read by a real lilv world) run here, or the job fails
           OMX_PANEL_LILV: required
+          # the panel domain's header is re-rendered and compared here, or the job fails: no skip for a missing renderer
+          OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: make test
+      - name: Sabotage, the panel domain without its stability is red
+        run: |
+          set -eu
+          sed -i '/"x-stability": "experimental"/d; s/"x-owner": "omx-panel",/"x-owner": "omx-panel"/' contract.d/panel/panel.json
+          git diff --quiet contract.d/panel/panel.json && { echo "the plant did not land"; exit 1; }
+          if node --test test/panel-domain-contract.test.mjs; then echo "the plant stayed green: the domain test does not guard the document"; exit 1; fi
+          git checkout contract.d/panel/panel.json
       - id: handback-spdx
         name: Every file a comment can be written in opens with its licence and copyright
         uses: Open-Mixer/.github/.github/actions/spdx-check@openmixer-v1
@@ -73,7 +85,7 @@ jobs:
         name: No tracked file copies a film strip or a fixture omx-panel ships (and the check's sabotage arms)
         run: make copies
       - id: handback-look
-        name: look.json and the renderer's role list are what the colour roles give
+        name: look.json and the renderer's role list are what the colour roles give, and the console pin hashes to its own seal
         run: make look
       - name: The renderer's gesture word names and omx_panel_word_t are what gestures.json gives (#23)
         run: node tools/gesture-words.mjs --check
@@ -86,7 +98,7 @@ jobs:
   renderer:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON and node
         run: |
@@ -95,7 +107,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -113,13 +125,34 @@ jobs:
       - name: A host that is not JavaScript reads the word names and the compare values
         run: make test-host-reads
 
+  # The descriptions store's reader and writer (docs/descriptions-store.md): the C library and its command built with warnings as
+  # errors, then the store's tests (node's SQLite builds the fixtures), the sabotage arms and the Python door's.
+  store:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:45
+    steps:
+      - name: Install the compiler, SQLite, cJSON, node and python
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config sqlite-devel cjson-devel nodejs npm python3 binutils dnf5-plugins
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
+        run: |
+          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7'
+      - uses: actions/checkout@v4
+      - name: The tree the golden of the rules version reads
+        run: npm ci && make
+      - name: The store, its tests, its sabotage arms and the Python door
+        run: make store-check
+
   # One recorded meter stream drawn by the renderer, by the MOD GUI's template in Chromium (playwright-core, the twin of omx-dsp's
   # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and
   # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5).
   meter-surfaces:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, Chromium, Tk and Xvfb
         run: |
@@ -129,7 +162,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -138,9 +171,15 @@ jobs:
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
       - uses: actions/checkout@v4
-      - name: The tree, the renderer, playwright-core and omx-dsp's twin
-        run: npm ci && make && make renderer && npm i --no-save --no-audit --no-fund playwright-core@1.57.0 '@openmixer/omx-dsp@>=0.32.0 <0.33'
+      - name: The tree and the renderer
+        run: npm ci && make && make renderer
+      # omx-dsp is a dependency of package.json (npm ci installs it); the browser driver is the one extra, not saved
+      - name: The browser driver
+        run: npm i --no-save --no-audit --no-fund playwright-core@1.57.0
+      # the role vocabulary the layout reads, this tree's stand-in, as make renderer-check names it (docs/renderer.md)
       - name: The three surfaces from one stream
+        env:
+          OMX_ROLE_MEANINGS: ${{github.workspace}}/test/fixtures/role-meanings/panel-roles.json
         run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
       - uses: actions/upload-artifact@v4
         if: always()
@@ -155,7 +194,7 @@ jobs:
   renderer-window:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install the compiler, cJSON, node, OpenGL and Xvfb
         run: |
@@ -165,7 +204,7 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.13.0' 'omx-contract-devel < 4' 'omx-contract-data >= 3.13.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.3' 'plugin-hostd-contract < 0.21' 'omx-dsp-devel >= 0.32.0' 'omx-dsp-devel < 0.33' 'omx-dsp-contract >= 0.32.0' 'omx-dsp-contract < 0.33'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.20.2' 'omx-contract-data >= 3.20.2' 'plugin-hostd-contract >= 0.20.7' 'omx-dsp-devel >= 0.32.3' 'omx-dsp-contract >= 0.32.3'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -185,11 +224,35 @@ jobs:
           OMX_PANEL_WINDOW_REQUIRED: '1'
         run: xvfb-run -a -s '-screen 0 1280x1024x24' make renderer-check WINDOW=1
 
+  # The cells the DEB jobs and the runtime install run: check-matrix's answer (ruling D25), each cell with the runner of
+  # its own architecture. A Debian container of one architecture cannot install the packages of another: apt picked
+  # libomxdsp-dev arm64 on an amd64 runner and dpkg refused it (ci 44563540081). While OMX_RELEASE_MATRIX is quick that
+  # is trixie arm64 and fc45 x86_64; full adds trixie amd64 and bookworm.
+  checks:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || 'ubuntu-latest' }}
+    timeout-minutes: 5
+    outputs:
+      deb: ${{ steps.m.outputs.deb }}
+      deb-count: ${{ steps.m.outputs.deb-count }}
+      cells: ${{ steps.m.outputs.cells }}
+      count: ${{ steps.m.outputs.count }}
+    steps:
+      - id: m
+        uses: Open-Mixer/.github/.github/actions/check-matrix@openmixer-v1
+        with:
+          wave: ${{ vars.OMX_RELEASE_MATRIX }}
+          rpm-releases: '["45"]'
+          rpm-arches: '["x86_64"]'
+          deb-releases: ${{ vars.OMX_RELEASE_MATRIX == 'full' && '["bookworm", "trixie"]' || '["trixie"]' }}
+          deb-arches: '["amd64", "arm64"]'
+          x86-runner: ${{ vars.OMX_RUNNER || 'ubuntu-latest' }}
+
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
   # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.
   packages:
-    name: build the RPM and the DEB
+    name: build the RPM
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -202,75 +265,161 @@ jobs:
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
       # reads are the test job's
-      - name: The RPM (fedora:44)
+      - name: The RPM (fedora:45)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
             dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "omx-contract-devel >= 3.13.0" "omx-contract-devel < 4" "omx-dsp-devel >= 0.32.0" "omx-dsp-devel < 0.33"
+              "sqlite-devel >= 3.38.0" "omx-contract-devel >= 3.20.2" "libomx-domain-devel >= 3.20.0" "omx-dsp-devel >= 0.32.3"
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
             rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm out/'
-      - name: The DEB (bookworm)
+              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
+              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm out/'
+      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
+      - name: The renderer's library in its RPMs
         run: |
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
+      # omx-dsp is omx-dsp-wasm's: the RPM carries the one link node_modules/@openmixer/omx-dsp and no file under it
+      - name: No copy of omx-dsp in the RPM
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -uo pipefail -c '
+            rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
+            list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
+            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
+            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
+            req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
+            grep -q "^omx-dsp-wasm >= 0.33.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.33.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
+            echo "PASS rpm: omx-dsp linked, not copied, required"'
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its RPMs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
+            dnf install -y -q cpio binutils
+            tools/store-package-check.sh --self-test out/omx-panel-store-[0-9]*.rpm out/omx-panel-store-devel-[0-9]*.rpm'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omx-panel-rpm
+          path: out/
+          if-no-files-found: error
+          retention-days: 7
+
+  # The DEB of each check-matrix cell, built in that cell's Debian image on the runner of its architecture.
+  packages-deb:
+    name: build the DEB (${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    env:
+      IMAGE: ${{ matrix.cell.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: The source tarball the spec names
+        run: |
+          v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
+          mkdir -p src out
+          git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
+      - name: The DEB (the cell's suite)
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
             curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
             apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
             apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
-              libcjson-dev libomx-contract-dev libomxdsp-dev
+              libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /w/out/'
+            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
+              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /w/out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:44 bash -euo pipefail -c '
-            dnf install -y -q cpio binutils
-            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
-          docker run --rm -v "$PWD:/w" -w /w debian:bookworm bash -euo pipefail -c '
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
             tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
+      # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
+      # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
+      - name: The descriptions store in its DEBs
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
+            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
+            tools/store-package-check.sh --self-test out/libomx-panel-store0_*.deb out/libomx-panel-store-dev_*.deb out/omx-panel-store_*.deb'
+      # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
+      - name: No copy of omx-dsp in the packages
+        run: |
+          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -uo pipefail -c '
+            deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
+            list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
+            grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
+            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
+            dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
+            grep -q "omx-dsp-wasm (>= 0.33.0~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.33.0~) in: $dep"; exit 1; }
+            echo "PASS deb: omx-dsp linked, not copied, a dependency"'
       - uses: actions/upload-artifact@v4
         with:
-          name: omx-panel-packages
+          name: omx-panel-deb-${{ matrix.cell.suite }}-${{ matrix.cell.arch }}
           path: out/
           if-no-files-found: error
           retention-days: 7
 
   # A distribution build has no registry: the vendored tarball builds with --network=none, and the plain archive does not.
   offline:
-    name: build with no network (${{ matrix.kind }})
+    name: build with no network (rpm)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        kind: [rpm, deb]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: tools/offline-build-check.sh ${{ matrix.kind }}
+      - run: tools/offline-build-check.sh rpm
 
-  # The DEB as the release builds it: built from the checkout in a Debian container of each release and linted with
-  # lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without packages (#85).
-  deb-lint:
-    name: build and lint the DEB (${{ matrix.suite }})
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+  # the same for the DEB, in each check-matrix cell's Debian image on the runner of its architecture
+  offline-deb:
+    name: build with no network (deb ${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        suite: [bookworm, trixie]
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: tools/offline-build-check.sh deb
+        env:
+          IMAGE: ${{ matrix.cell.image }}
+
+  # The DEB as the release builds it: built from the checkout in a Debian container of each check-matrix cell and linted
+  # with lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without
+  # packages (#85).
+  deb-lint:
+    name: build and lint the DEB (${{ matrix.cell.suite }} ${{ matrix.cell.arch }})
+    needs: checks
+    if: needs.checks.outputs.deb-count != '0'
+    runs-on: ${{ matrix.cell.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        cell: ${{ fromJSON(needs.checks.outputs.deb) }}
     container:
-      image: debian:${{ matrix.suite }}
+      image: ${{ matrix.cell.image }}
     steps:
       - name: Install the build tools
         run: |
@@ -278,28 +427,30 @@ jobs:
           apt-get install -y -qq --no-install-recommends ca-certificates git dpkg-dev debhelper build-essential lintian nodejs npm make
       - name: Add the OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - name: The renderer's build dependencies
-        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libomx-contract-dev libomxdsp-dev
+      - name: The renderer's and the store's build dependencies
+        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
       - uses: actions/checkout@v4
       - name: Build the DEB and lint it
         run: tools/deb-lint-check.sh "$PWD/out-deb"
 
+  # each check-matrix cell (the rpm and the deb ones) installs the package built for it, on the runner of its architecture
   runtime-install:
-    name: runtime install (${{ matrix.image }})
-    needs: packages
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    name: runtime install (${{ matrix.cell.image }} ${{ matrix.cell.arch }})
+    needs: [checks, packages, packages-deb]
+    if: needs.checks.outputs.count != '0'
+    runs-on: ${{ matrix.cell.runner }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        image: ['fedora:44', 'debian:bookworm']
+        cell: ${{ fromJSON(needs.checks.outputs.cells) }}
     container:
-      image: ${{ matrix.image }}
+      image: ${{ matrix.cell.image }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: omx-panel-packages
+          name: ${{ matrix.cell.suite && format('omx-panel-deb-{0}-{1}', matrix.cell.suite, matrix.cell.arch) || 'omx-panel-rpm' }}
           path: out
       - name: The OpenMixer repository
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
@@ -308,8 +459,9 @@ jobs:
 
       - name: Installed with weak dependencies off, no development package arrives and omx-panel reads the contract data
         run: |
-          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); else pkg=$(ls out/omx-panel_*_all.deb); fi
-          bash tools/runtime-install-check.sh "$PWD/$pkg"
+          if command -v dnf >/dev/null; then pkg=$(ls out/omx-panel-[0-9]*.rpm); cpkg=$(ls out/omx-panel-contract-[0-9]*.rpm)
+          else pkg=$(ls out/omx-panel_*_all.deb); cpkg=$(ls out/omx-panel-contract_*_all.deb); fi
+          bash tools/runtime-install-check.sh "$PWD/$pkg" "$PWD/$cpkg"
 
   # the checks every OpenMixer repository runs on what it publishes: commit messages, private references, and no
   # local copy of either (Open-Mixer/.github's public-sources-check)
@@ -322,13 +474,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - run: dnf install -y --setopt=install_weak_deps=False git python3 nodejs
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.16.0' 'omx-contract < 4' 'omx-contract-data >= 3.16.0'
+      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.20.2' 'omx-contract-data >= 3.20.2'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -341,8 +493,17 @@ jobs:
           name: omx-panel
           owner: omx-panel
           spec: packaging/omx-panel.spec
-          moved: ca:0.13.6
           gate: tools/catalogs-gate.sh
 
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
+    with:
+      # the one shared Fedora workflow guard (.github#175): no workflow names a Fedora release outside 45
+      fedora-workflows: true
+
+  pr-fixes-issue:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: Open-Mixer/.github/.github/workflows/pr-fixes-issue.yml@openmixer-v1

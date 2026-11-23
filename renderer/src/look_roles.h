@@ -7,7 +7,7 @@
 #ifndef OMX_PANEL_LOOK_ROLES_H
 #define OMX_PANEL_LOOK_ROLES_H
 
-#define OMX_LOOK_ROLE_COUNT 22
+#define OMX_LOOK_ROLE_COUNT 24
 
 static const char *const omx_look_roles[OMX_LOOK_ROLE_COUNT] = {
     "--surface",
@@ -21,6 +21,8 @@ static const char *const omx_look_roles[OMX_LOOK_ROLE_COUNT] = {
     "--ink-faint",
     "--legend",
     "--accent",
+    "--knob-pointer",
+    "--curve-stroke",
     "--meter-green",
     "--meter-amber",
     "--meter-red",

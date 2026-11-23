@@ -1,0 +1,385 @@
+{
+ "input": "omx-plugins/omx-eq32.descriptor.json",
+ "uri": null,
+ "groups": [
+  {
+   "key": "Bands",
+   "label": "Bands",
+   "kind": "repeated",
+   "source": "declared",
+   "family": "eq",
+   "parameters": [],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "hpf",
+     "label": "HPF",
+     "on": "hpf_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#1",
+     "label": "Band 1",
+     "on": "b1_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#2",
+     "label": "Band 2",
+     "on": "b2_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#3",
+     "label": "Band 3",
+     "on": "b3_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#4",
+     "label": "Band 4",
+     "on": "b4_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#5",
+     "label": "Band 5",
+     "on": "b5_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#6",
+     "label": "Band 6",
+     "on": "b6_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#7",
+     "label": "Band 7",
+     "on": "b7_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#8",
+     "label": "Band 8",
+     "on": "b8_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#9",
+     "label": "Band 9",
+     "on": "b9_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#10",
+     "label": "Band 10",
+     "on": "b10_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#11",
+     "label": "Band 11",
+     "on": "b11_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#12",
+     "label": "Band 12",
+     "on": "b12_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#13",
+     "label": "Band 13",
+     "on": "b13_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#14",
+     "label": "Band 14",
+     "on": "b14_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#15",
+     "label": "Band 15",
+     "on": "b15_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#16",
+     "label": "Band 16",
+     "on": "b16_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#17",
+     "label": "Band 17",
+     "on": "b17_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#18",
+     "label": "Band 18",
+     "on": "b18_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#19",
+     "label": "Band 19",
+     "on": "b19_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#20",
+     "label": "Band 20",
+     "on": "b20_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#21",
+     "label": "Band 21",
+     "on": "b21_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#22",
+     "label": "Band 22",
+     "on": "b22_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#23",
+     "label": "Band 23",
+     "on": "b23_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#24",
+     "label": "Band 24",
+     "on": "b24_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#25",
+     "label": "Band 25",
+     "on": "b25_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#26",
+     "label": "Band 26",
+     "on": "b26_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#27",
+     "label": "Band 27",
+     "on": "b27_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#28",
+     "label": "Band 28",
+     "on": "b28_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#29",
+     "label": "Band 29",
+     "on": "b29_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#30",
+     "label": "Band 30",
+     "on": "b30_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#31",
+     "label": "Band 31",
+     "on": "b31_on",
+     "sense": "on"
+    },
+    {
+     "key": "Bands#32",
+     "label": "Band 32",
+     "on": "b32_on",
+     "sense": "on"
+    },
+    {
+     "key": "lpf",
+     "label": "LPF",
+     "on": "lpf_on",
+     "sense": "on"
+    }
+   ],
+   "lines": [
+    {
+     "key": "freq",
+     "label": "Frequency"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "q",
+     "label": "Q"
+    },
+    {
+     "key": "type",
+     "label": "Type"
+    }
+   ],
+   "cells": [
+    [
+     "hpf_freq",
+     "b1_freq",
+     "b2_freq",
+     "b3_freq",
+     "b4_freq",
+     "b5_freq",
+     "b6_freq",
+     "b7_freq",
+     "b8_freq",
+     "b9_freq",
+     "b10_freq",
+     "b11_freq",
+     "b12_freq",
+     "b13_freq",
+     "b14_freq",
+     "b15_freq",
+     "b16_freq",
+     "b17_freq",
+     "b18_freq",
+     "b19_freq",
+     "b20_freq",
+     "b21_freq",
+     "b22_freq",
+     "b23_freq",
+     "b24_freq",
+     "b25_freq",
+     "b26_freq",
+     "b27_freq",
+     "b28_freq",
+     "b29_freq",
+     "b30_freq",
+     "b31_freq",
+     "b32_freq",
+     "lpf_freq"
+    ],
+    [
+     "hpf_slope",
+     "b1_gain",
+     "b2_gain",
+     "b3_gain",
+     "b4_gain",
+     "b5_gain",
+     "b6_gain",
+     "b7_gain",
+     "b8_gain",
+     "b9_gain",
+     "b10_gain",
+     "b11_gain",
+     "b12_gain",
+     "b13_gain",
+     "b14_gain",
+     "b15_gain",
+     "b16_gain",
+     "b17_gain",
+     "b18_gain",
+     "b19_gain",
+     "b20_gain",
+     "b21_gain",
+     "b22_gain",
+     "b23_gain",
+     "b24_gain",
+     "b25_gain",
+     "b26_gain",
+     "b27_gain",
+     "b28_gain",
+     "b29_gain",
+     "b30_gain",
+     "b31_gain",
+     "b32_gain",
+     "lpf_slope"
+    ],
+    [
+     null,
+     "b1_q",
+     "b2_q",
+     "b3_q",
+     "b4_q",
+     "b5_q",
+     "b6_q",
+     "b7_q",
+     "b8_q",
+     "b9_q",
+     "b10_q",
+     "b11_q",
+     "b12_q",
+     "b13_q",
+     "b14_q",
+     "b15_q",
+     "b16_q",
+     "b17_q",
+     "b18_q",
+     "b19_q",
+     "b20_q",
+     "b21_q",
+     "b22_q",
+     "b23_q",
+     "b24_q",
+     "b25_q",
+     "b26_q",
+     "b27_q",
+     "b28_q",
+     "b29_q",
+     "b30_q",
+     "b31_q",
+     "b32_q",
+     null
+    ],
+    [
+     null,
+     "b1_type",
+     "b2_type",
+     "b3_type",
+     "b4_type",
+     "b5_type",
+     "b6_type",
+     "b7_type",
+     "b8_type",
+     "b9_type",
+     "b10_type",
+     "b11_type",
+     "b12_type",
+     "b13_type",
+     "b14_type",
+     "b15_type",
+     "b16_type",
+     "b17_type",
+     "b18_type",
+     "b19_type",
+     "b20_type",
+     "b21_type",
+     "b22_type",
+     "b23_type",
+     "b24_type",
+     "b25_type",
+     "b26_type",
+     "b27_type",
+     "b28_type",
+     "b29_type",
+     "b30_type",
+     "b31_type",
+     "b32_type",
+     null
+    ]
+   ]
+  }
+ ]
+}

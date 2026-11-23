@@ -4,7 +4,7 @@
  * A meter of the description is drawn as a bar and a marker over the description's range (contract 7.9, omx-dsp#301): the bar by
  * the value (a level from the foot of the range, a gain reduction from 0 dB), the marker holding the peak (the deepest
  * reduction) and falling by elapsed time at omx-dsp's rate, whatever the draw tick's rate, silence included. The marker is omx-dsp's
- * own omx_meter_view_step (omx-dsp-devel >= 0.32.0 < 0.33): its rate is held to omx-dsp's data/primitives/meter.json and every
+ * own omx_meter_view_step (omx-dsp-devel >= 0.32.2): its rate is held to omx-dsp's data/primitives/meter.json and every
  * drawn tick to omx-dsp's golden fall vectors. Each rule has its arm in the sabotage the commit message names.
  */
 import assert from 'node:assert/strict';
@@ -13,11 +13,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { FIXTURES, RENDERER, descriptionFile, render, scratch, stateFile } from './harness.mjs';
+import { gte } from '../../test/semver.mjs';
 
 const modgui = await import(join(RENDERER, '..', 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'meters');
 const g = modgui.GEOMETRY;
-const look = modgui.loadLook().tokens;
+const look = modgui.loadLook('console').tokens;
 const hex = (t) => [1, 3, 5].map((i) => parseInt(look[t].slice(i, i + 2), 16));
 const ACCENT = hex('--accent'), INK = hex('--ink');
 const p = modgui.resolvePanel(JSON.parse(readFileSync(join(RENDERER, '..', fx.descriptor), 'utf8')), { panel: JSON.parse(readFileSync(join(RENDERER, '..', fx.panel), 'utf8')), stem: fx.stem });
@@ -37,9 +38,16 @@ function lawFall() {
   assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
   assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
   const built = readFileSync(join(RENDERER, 'build', 'omxdsp-version'), 'utf8').trim();
-  assert.match(built, /^0\.32\.\d+$/, `built against omx-dsp ${built}: the floor 0.32.0 and the ceiling 0.33`);
+  assert.ok(atOrAboveFloor(built), `built against omx-dsp ${built}: the floor 0.32.2`);
   return fall;
 }
+/** The built omx-dsp is at or above the renderer's floor (renderer/Makefile OMXDSP_FLOOR): no ceiling, a later major passes. */
+const atOrAboveFloor = (v) => gte(v, '0.32.2');
+test('a built omx-dsp at or above the floor passes: a later major is not refused', () => {
+  assert.ok(atOrAboveFloor('1.0.0'), 'omx-dsp 1.0.0 is above the floor 0.32.2');
+  assert.ok(atOrAboveFloor('0.32.2'), 'the floor itself passes');
+  assert.ok(!atOrAboveFloor('0.32.1'), 'below the floor is refused');
+});
 /** omx-dsp's golden vectors of the view law (vectors/meter-view.json, installed as pkg-config omxdsp's meterviewvectors). */
 const VECTORS = JSON.parse(readFileSync(pc('meterviewvectors'), 'utf8'));
 
@@ -65,8 +73,8 @@ const markerAt = (img, f) => { for (let x = Math.round(f.x) + 2; x < Math.round(
 const outside = (img, f, y) => { let n = 0; for (let x = Math.round(f.x + f.w) - 1; x < img.w; x++) if (near(at(img, x, y), ACCENT)) n++; return n; };
 const inner = (f) => f.w - 4;
 
-test('the law the renderer was built with is omx-dsp\'s meter view, 18 dB per second', () => {
-  assert.equal(lawFall(), 18);
+test('the law the renderer was built with is omx-dsp\'s meter view: the header\'s fall is the vectors\'', () => {
+  assert.equal(lawFall(), VECTORS.law.fallDbPerSecond);
 });
 test('the marker is omx-dsp\'s: every tick of the golden fall vectors, at each draw rate, within a pixel', () => {
   const f = frame('in_level');
@@ -112,38 +120,11 @@ test('with no reading the frame stands: no bar, no marker', () => {
   assert.equal(run(img, f, barRow(f), ACCENT), 0);
   assert.equal(markerAt(img, f), null);
 });
-test('the marker falls by elapsed time at the law\'s rate: the peak, then 18 dB for each second', () => {
-  const f = frame('in_level'), fall = lawFall();
-  const place = (db) => ((db + 60) / 60) * inner(f);
-  for (const [elapsed, from] of [[0, -6], [0.5, -6], [1, -6], [2, -6]]) {
-    const m = markerAt(draw('in_level', [{ value: from, elapsed: 0 }, { value: -60, elapsed }]), f);
-    const want = place(Math.max(-60, from - fall * elapsed));
-    assert.ok(m !== null && Math.abs(m + 1 - want) <= 2, `${elapsed} s: marker at ${m}, wanted about ${want}`);
-  }
-});
-test('the fall is by elapsed time, not by tick: one second in one tick, in ten and in sixty is one place', () => {
-  const f = frame('in_level');
-  const at1 = (n) => markerAt(draw('in_level', [{ value: -6, elapsed: 0 }, ...Array.from({ length: n }, () => ({ value: -60, elapsed: 1 / n }))]), f);
-  const one = at1(1);
-  assert.ok(one !== null);
-  for (const n of [5, 10, 20, 60]) assert.ok(Math.abs(at1(n) - one) <= 1, `${n} ticks`);
-});
-test('the marker keeps the peak while the level stays under it, and rises with a louder one', () => {
-  const f = frame('in_level');
-  const held = markerAt(draw('in_level', [{ value: -12, elapsed: 0 }, { value: -40, elapsed: 0.1 }]), f);
-  const up = markerAt(draw('in_level', [{ value: -12, elapsed: 0 }, { value: -3, elapsed: 0.1 }]), f);
-  assert.ok(up > held, `${up} over ${held}`);
-  assert.ok(Math.abs(held + 1 - ((-12 - 1.8 + 60) / 60) * inner(f)) <= 2);
-});
-test('silence falls: the marker reaches the foot of the range and stays', () => {
-  const f = frame('in_level');
-  assert.equal(markerAt(draw('in_level', [{ value: -6, elapsed: 0 }, { value: -60, elapsed: 5 }]), f), 0);
-});
 test('a gain reduction\'s marker holds the deepest and recovers toward 0 dB at the same rate', () => {
   const f = frame('gr');
   const place = (db) => ((0 - db) / 24) * inner(f);
   const m = markerAt(draw('gr', [{ value: -20, elapsed: 0 }, { value: 0, elapsed: 0.5 }]), f);
-  assert.ok(m !== null && Math.abs(m + 1 - place(-20 + 18 * 0.5)) <= 2, `${m}`);
+  assert.ok(m !== null && Math.abs(m + 1 - place(-20 + lawFall() * 0.5)) <= 2, `${m}`);
 });
 test('a reading that is no finite value, or a negative elapsed time, is refused by the command', () => {
   const dir = scratch();

@@ -1,0 +1,4628 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.7.0"
+  },
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.eq32",
+    "format": "clap",
+    "uri": "urn:openmixer:eq32",
+    "name": "omx eq32",
+    "vendor": "openmixer",
+    "version": "0.19.3",
+    "doc": "The OpenMixer console's channel EQ, 32-band form: 32 parametric bands (bell, shelves, notch, all-pass) and a high-pass and a low-pass filter at 12 or 24 dB/oct, stereo, zero latency; every band ships off, so a racked instance is a wire.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "hpf_on",
+      "name": "HPF On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "HPF"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_HPF_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "hpf_freq",
+      "name": "HPF Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 1000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 80,
+        "scale": "log"
+      },
+      "group": [
+        "HPF"
+      ],
+      "meaning": "lowCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#HPF_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "hpf_slope",
+      "name": "HPF Slope",
+      "kind": "choice",
+      "ids": [
+        "12",
+        "24"
+      ],
+      "labels": [
+        "12 dB/oct",
+        "24 dB/oct"
+      ],
+      "values": [
+        12,
+        24
+      ],
+      "default": "12",
+      "group": [
+        "HPF"
+      ],
+      "meaning": "slope",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#FILTER_SLOPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "lpf_on",
+      "name": "LPF On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "LPF"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_LPF_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "lpf_freq",
+      "name": "LPF Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 1000,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 18000,
+        "scale": "log"
+      },
+      "group": [
+        "LPF"
+      ],
+      "meaning": "highCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#LPF_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "lpf_slope",
+      "name": "LPF Slope",
+      "kind": "choice",
+      "ids": [
+        "12",
+        "24"
+      ],
+      "labels": [
+        "12 dB/oct",
+        "24 dB/oct"
+      ],
+      "values": [
+        12,
+        24
+      ],
+      "default": "12",
+      "group": [
+        "LPF"
+      ],
+      "meaning": "slope",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#FILTER_SLOPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "b1_type",
+      "name": "Band 1 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "1",
+      "group": [
+        "Bands",
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "b1_freq",
+      "name": "Band 1 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 22.4,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 1"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "b1_gain",
+      "name": "Band 1 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 1"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "b1_q",
+      "name": "Band 1 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 1"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "b1_on",
+      "name": "Band 1 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "b2_type",
+      "name": "Band 2 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "b2_freq",
+      "name": "Band 2 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 28,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 2"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "b2_gain",
+      "name": "Band 2 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 2"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "b2_q",
+      "name": "Band 2 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 2"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "b2_on",
+      "name": "Band 2 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "b3_type",
+      "name": "Band 3 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "b3_freq",
+      "name": "Band 3 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 35.5,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 3"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "b3_gain",
+      "name": "Band 3 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 3"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "b3_q",
+      "name": "Band 3 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 3"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "symbol": "b3_on",
+      "name": "Band 3 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "symbol": "b4_type",
+      "name": "Band 4 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "symbol": "b4_freq",
+      "name": "Band 4 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 45,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 4"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "symbol": "b4_gain",
+      "name": "Band 4 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 4"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "symbol": "b4_q",
+      "name": "Band 4 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 4"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "symbol": "b4_on",
+      "name": "Band 4 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "symbol": "b5_type",
+      "name": "Band 5 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "symbol": "b5_freq",
+      "name": "Band 5 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 50,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 5"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "symbol": "b5_gain",
+      "name": "Band 5 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 5"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "symbol": "b5_q",
+      "name": "Band 5 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 5"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "symbol": "b5_on",
+      "name": "Band 5 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "symbol": "b6_type",
+      "name": "Band 6 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "symbol": "b6_freq",
+      "name": "Band 6 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 63,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 6"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 33,
+      "symbol": "b6_gain",
+      "name": "Band 6 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 6"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 34,
+      "symbol": "b6_q",
+      "name": "Band 6 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 6"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "symbol": "b6_on",
+      "name": "Band 6 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "symbol": "b7_type",
+      "name": "Band 7 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 7"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "symbol": "b7_freq",
+      "name": "Band 7 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 80,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 7"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "symbol": "b7_gain",
+      "name": "Band 7 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 7"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "symbol": "b7_q",
+      "name": "Band 7 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 7"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "symbol": "b7_on",
+      "name": "Band 7 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 7"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "symbol": "b8_type",
+      "name": "Band 8 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 8"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 42,
+      "symbol": "b8_freq",
+      "name": "Band 8 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 100,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 8"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 43,
+      "symbol": "b8_gain",
+      "name": "Band 8 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 8"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 44,
+      "symbol": "b8_q",
+      "name": "Band 8 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 8"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 45,
+      "symbol": "b8_on",
+      "name": "Band 8 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 8"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 46,
+      "symbol": "b9_type",
+      "name": "Band 9 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 9"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 47,
+      "symbol": "b9_freq",
+      "name": "Band 9 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 125,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 9"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 48,
+      "symbol": "b9_gain",
+      "name": "Band 9 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 9"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 49,
+      "symbol": "b9_q",
+      "name": "Band 9 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 9"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 50,
+      "symbol": "b9_on",
+      "name": "Band 9 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 9"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 51,
+      "symbol": "b10_type",
+      "name": "Band 10 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 10"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 52,
+      "symbol": "b10_freq",
+      "name": "Band 10 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 160,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 10"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 53,
+      "symbol": "b10_gain",
+      "name": "Band 10 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 10"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 54,
+      "symbol": "b10_q",
+      "name": "Band 10 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 10"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 55,
+      "symbol": "b10_on",
+      "name": "Band 10 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 10"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 56,
+      "symbol": "b11_type",
+      "name": "Band 11 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 11"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 57,
+      "symbol": "b11_freq",
+      "name": "Band 11 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 200,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 11"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 58,
+      "symbol": "b11_gain",
+      "name": "Band 11 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 11"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 59,
+      "symbol": "b11_q",
+      "name": "Band 11 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 11"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 60,
+      "symbol": "b11_on",
+      "name": "Band 11 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 11"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 61,
+      "symbol": "b12_type",
+      "name": "Band 12 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 12"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 62,
+      "symbol": "b12_freq",
+      "name": "Band 12 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 250,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 12"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 63,
+      "symbol": "b12_gain",
+      "name": "Band 12 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 12"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 64,
+      "symbol": "b12_q",
+      "name": "Band 12 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 12"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 65,
+      "symbol": "b12_on",
+      "name": "Band 12 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 12"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 66,
+      "symbol": "b13_type",
+      "name": "Band 13 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 13"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 67,
+      "symbol": "b13_freq",
+      "name": "Band 13 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 315,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 13"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 68,
+      "symbol": "b13_gain",
+      "name": "Band 13 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 13"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 69,
+      "symbol": "b13_q",
+      "name": "Band 13 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 13"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 70,
+      "symbol": "b13_on",
+      "name": "Band 13 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 13"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 71,
+      "symbol": "b14_type",
+      "name": "Band 14 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 14"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 72,
+      "symbol": "b14_freq",
+      "name": "Band 14 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 355,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 14"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 73,
+      "symbol": "b14_gain",
+      "name": "Band 14 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 14"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 74,
+      "symbol": "b14_q",
+      "name": "Band 14 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 14"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 75,
+      "symbol": "b14_on",
+      "name": "Band 14 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 14"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 76,
+      "symbol": "b15_type",
+      "name": "Band 15 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 15"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 77,
+      "symbol": "b15_freq",
+      "name": "Band 15 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 450,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 15"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 78,
+      "symbol": "b15_gain",
+      "name": "Band 15 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 15"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 79,
+      "symbol": "b15_q",
+      "name": "Band 15 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 15"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 80,
+      "symbol": "b15_on",
+      "name": "Band 15 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 15"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 81,
+      "symbol": "b16_type",
+      "name": "Band 16 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 16"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 82,
+      "symbol": "b16_freq",
+      "name": "Band 16 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 560,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 16"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 83,
+      "symbol": "b16_gain",
+      "name": "Band 16 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 16"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 84,
+      "symbol": "b16_q",
+      "name": "Band 16 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 16"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 85,
+      "symbol": "b16_on",
+      "name": "Band 16 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 16"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 86,
+      "symbol": "b17_type",
+      "name": "Band 17 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 17"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 87,
+      "symbol": "b17_freq",
+      "name": "Band 17 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 710,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 17"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 88,
+      "symbol": "b17_gain",
+      "name": "Band 17 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 17"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 89,
+      "symbol": "b17_q",
+      "name": "Band 17 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 17"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 90,
+      "symbol": "b17_on",
+      "name": "Band 17 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 17"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 91,
+      "symbol": "b18_type",
+      "name": "Band 18 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 18"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 92,
+      "symbol": "b18_freq",
+      "name": "Band 18 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 900,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 18"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 93,
+      "symbol": "b18_gain",
+      "name": "Band 18 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 18"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 94,
+      "symbol": "b18_q",
+      "name": "Band 18 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 18"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 95,
+      "symbol": "b18_on",
+      "name": "Band 18 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 18"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 96,
+      "symbol": "b19_type",
+      "name": "Band 19 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 19"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 97,
+      "symbol": "b19_freq",
+      "name": "Band 19 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 1120,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 19"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 98,
+      "symbol": "b19_gain",
+      "name": "Band 19 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 19"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 99,
+      "symbol": "b19_q",
+      "name": "Band 19 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 19"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 100,
+      "symbol": "b19_on",
+      "name": "Band 19 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 19"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 101,
+      "symbol": "b20_type",
+      "name": "Band 20 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 20"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 102,
+      "symbol": "b20_freq",
+      "name": "Band 20 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 1400,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 20"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 103,
+      "symbol": "b20_gain",
+      "name": "Band 20 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 20"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 104,
+      "symbol": "b20_q",
+      "name": "Band 20 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 20"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 105,
+      "symbol": "b20_on",
+      "name": "Band 20 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 20"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 106,
+      "symbol": "b21_type",
+      "name": "Band 21 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 21"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 107,
+      "symbol": "b21_freq",
+      "name": "Band 21 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 1600,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 21"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 108,
+      "symbol": "b21_gain",
+      "name": "Band 21 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 21"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 109,
+      "symbol": "b21_q",
+      "name": "Band 21 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 21"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 110,
+      "symbol": "b21_on",
+      "name": "Band 21 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 21"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 111,
+      "symbol": "b22_type",
+      "name": "Band 22 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 22"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 112,
+      "symbol": "b22_freq",
+      "name": "Band 22 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 2000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 22"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 113,
+      "symbol": "b22_gain",
+      "name": "Band 22 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 22"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 114,
+      "symbol": "b22_q",
+      "name": "Band 22 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 22"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 115,
+      "symbol": "b22_on",
+      "name": "Band 22 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 22"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 116,
+      "symbol": "b23_type",
+      "name": "Band 23 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 23"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 117,
+      "symbol": "b23_freq",
+      "name": "Band 23 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 2500,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 23"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 118,
+      "symbol": "b23_gain",
+      "name": "Band 23 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 23"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 119,
+      "symbol": "b23_q",
+      "name": "Band 23 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 23"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 120,
+      "symbol": "b23_on",
+      "name": "Band 23 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 23"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 121,
+      "symbol": "b24_type",
+      "name": "Band 24 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 24"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 122,
+      "symbol": "b24_freq",
+      "name": "Band 24 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 3150,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 24"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 123,
+      "symbol": "b24_gain",
+      "name": "Band 24 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 24"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 124,
+      "symbol": "b24_q",
+      "name": "Band 24 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 24"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 125,
+      "symbol": "b24_on",
+      "name": "Band 24 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 24"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 126,
+      "symbol": "b25_type",
+      "name": "Band 25 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 25"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 127,
+      "symbol": "b25_freq",
+      "name": "Band 25 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 4000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 25"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 128,
+      "symbol": "b25_gain",
+      "name": "Band 25 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 25"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 129,
+      "symbol": "b25_q",
+      "name": "Band 25 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 25"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 130,
+      "symbol": "b25_on",
+      "name": "Band 25 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 25"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 131,
+      "symbol": "b26_type",
+      "name": "Band 26 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 26"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 132,
+      "symbol": "b26_freq",
+      "name": "Band 26 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 5000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 26"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 133,
+      "symbol": "b26_gain",
+      "name": "Band 26 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 26"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 134,
+      "symbol": "b26_q",
+      "name": "Band 26 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 26"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 135,
+      "symbol": "b26_on",
+      "name": "Band 26 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 26"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 136,
+      "symbol": "b27_type",
+      "name": "Band 27 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 27"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 137,
+      "symbol": "b27_freq",
+      "name": "Band 27 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 6300,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 27"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 138,
+      "symbol": "b27_gain",
+      "name": "Band 27 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 27"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 139,
+      "symbol": "b27_q",
+      "name": "Band 27 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 27"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 140,
+      "symbol": "b27_on",
+      "name": "Band 27 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 27"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 141,
+      "symbol": "b28_type",
+      "name": "Band 28 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 28"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 142,
+      "symbol": "b28_freq",
+      "name": "Band 28 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 8000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 28"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 143,
+      "symbol": "b28_gain",
+      "name": "Band 28 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 28"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 144,
+      "symbol": "b28_q",
+      "name": "Band 28 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 28"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 145,
+      "symbol": "b28_on",
+      "name": "Band 28 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 28"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 146,
+      "symbol": "b29_type",
+      "name": "Band 29 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 29"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 147,
+      "symbol": "b29_freq",
+      "name": "Band 29 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 9000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 29"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 148,
+      "symbol": "b29_gain",
+      "name": "Band 29 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 29"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 149,
+      "symbol": "b29_q",
+      "name": "Band 29 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 29"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 150,
+      "symbol": "b29_on",
+      "name": "Band 29 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 29"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 151,
+      "symbol": "b30_type",
+      "name": "Band 30 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 30"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 152,
+      "symbol": "b30_freq",
+      "name": "Band 30 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 11200,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 30"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 153,
+      "symbol": "b30_gain",
+      "name": "Band 30 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 30"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 154,
+      "symbol": "b30_q",
+      "name": "Band 30 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 30"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 155,
+      "symbol": "b30_on",
+      "name": "Band 30 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 30"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 156,
+      "symbol": "b31_type",
+      "name": "Band 31 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "0",
+      "group": [
+        "Bands",
+        "Band 31"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 157,
+      "symbol": "b31_freq",
+      "name": "Band 31 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 14000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 31"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 158,
+      "symbol": "b31_gain",
+      "name": "Band 31 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 31"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 159,
+      "symbol": "b31_q",
+      "name": "Band 31 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 31"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 160,
+      "symbol": "b31_on",
+      "name": "Band 31 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 31"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 161,
+      "symbol": "b32_type",
+      "name": "Band 32 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf",
+        "Notch",
+        "All-pass 1st",
+        "All-pass 2nd"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "2",
+      "group": [
+        "Bands",
+        "Band 32"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 162,
+      "symbol": "b32_freq",
+      "name": "Band 32 Frequency",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 18000,
+        "scale": "log"
+      },
+      "group": [
+        "Bands",
+        "Band 32"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 163,
+      "symbol": "b32_gain",
+      "name": "Band 32 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 32"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 164,
+      "symbol": "b32_q",
+      "name": "Band 32 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 116,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Bands",
+        "Band 32"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_NOTCH_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 165,
+      "symbol": "b32_on",
+      "name": "Band 32 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Bands",
+        "Band 32"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/eq.json#EQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_EQUALIZER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ParaEQPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-eq32/omx_eq32_clap.c#clap_entry"
+  }
+}

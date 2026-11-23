@@ -69,6 +69,69 @@ static void fill_shape(omx_canvas *c, double bx0, double by0, double bx1, double
   }
 }
 
+void omx_paint(omx_canvas *c, double bx0, double by0, double bx1, double by1, omx_inside_fn inside, omx_colour_fn colour, const void *ctx) {
+  int x0 = (int)maxd(0, floor(bx0)), y0 = (int)maxd(0, floor(by0));
+  int x1 = (int)mind(c->w, ceil(bx1)), y1 = (int)mind(c->h, ceil(by1));
+  for (int y = y0; y < y1; y++) {
+    for (int x = x0; x < x1; x++) {
+      int n = 0;
+      for (int sy = 0; sy < SS; sy++)
+        for (int sx = 0; sx < SS; sx++)
+          if (inside(ctx, x + (sx + 0.5) / SS, y + (sy + 0.5) / SS)) n++;
+      if (n == 0) continue;
+      double rgba[4];
+      colour(ctx, x + 0.5, y + 0.5, rgba);
+      omx_rgb rgb = {{(uint8_t)omx_round(rgba[0]), (uint8_t)omx_round(rgba[1]), (uint8_t)omx_round(rgba[2])}};
+      blend(c, x, y, rgb, ((double)n / (SS * SS)) * rgba[3]);
+    }
+  }
+}
+
+/* The gradient's colour at y: the stops' colours, linear between them, flat beyond the first and the last. */
+static omx_rgb gradient_at(double y, double y0, double y1, const double *t, const omx_rgb *stops, size_t ns) {
+  double f = y1 > y0 ? (y - y0) / (y1 - y0) : 0;
+  if (f <= t[0]) return stops[0];
+  for (size_t k = 1; k < ns; k++)
+    if (f <= t[k]) {
+      double u = t[k] > t[k - 1] ? (f - t[k - 1]) / (t[k] - t[k - 1]) : 1;
+      omx_rgb o;
+      for (int j = 0; j < 3; j++) o.c[j] = (uint8_t)omx_round(stops[k - 1].c[j] + (stops[k].c[j] - stops[k - 1].c[j]) * u);
+      return o;
+    }
+  return stops[ns - 1];
+}
+
+void omx_fill_under(omx_canvas *c, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
+                    const omx_rgb *stops, size_t nstops, double alpha) {
+  if (n < 2 || !nstops || !(alpha > 0)) return;
+  double top = base_y;
+  for (size_t k = 0; k < n; k++) top = mind(top, ys[k]);
+  int X0 = (int)maxd(0, floor(xs[0])), X1 = (int)mind(c->w, ceil(xs[n - 1]));
+  int Y0 = (int)maxd(0, floor(top)), Y1 = (int)mind(c->h, ceil(base_y));
+  size_t seg = 0;
+  for (int x = X0; x < X1; x++) {
+    double cy[SS];
+    int in[SS];
+    for (int sx = 0; sx < SS; sx++) { /* the polyline's y under each sample column */
+      double px = x + (sx + 0.5) / SS;
+      in[sx] = px >= xs[0] && px <= xs[n - 1];
+      if (!in[sx]) continue;
+      while (seg + 2 < n && xs[seg + 1] < px) seg++;
+      double dx = xs[seg + 1] - xs[seg], u = dx > 0 ? (px - xs[seg]) / dx : 0;
+      cy[sx] = ys[seg] + u * (ys[seg + 1] - ys[seg]);
+    }
+    for (int y = Y0; y < Y1; y++) {
+      int hits = 0;
+      for (int sy = 0; sy < SS; sy++) {
+        double py = y + (sy + 0.5) / SS;
+        if (py > base_y) break;
+        for (int sx = 0; sx < SS; sx++) hits += in[sx] && py >= cy[sx];
+      }
+      if (hits) blend(c, x, y, gradient_at(y + 0.5, y0, y1, t, stops, nstops), alpha * hits / (SS * SS));
+    }
+  }
+}
+
 struct rr { double x, y, w, h, r; };
 static int in_rr(const void *v, double px, double py) {
   const struct rr *s = v;

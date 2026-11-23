@@ -7,7 +7,7 @@
  * a PNG read back to pixels. Reads the built tree (the parent's `npm ci && make`) and renderer/build/.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,37 +16,72 @@ import { deflateSync, inflateSync } from 'node:zlib';
 export const RENDERER = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const ROOT = resolve(RENDERER, '..');
 export const CLI = join(RENDERER, 'build', 'omx-panel-render');
-/** The tools directory the renderer reads the look, the geometry and the font from: the source tree's. */
-export const DATA = join(ROOT, 'tools');
+/** The source tree's tools directory: the look (its default style is vintage), the geometry and the font. */
+export const TOOLS = join(ROOT, 'tools');
+/** A copy of the tools directory whose look.json names the console style: the renderer draws the knob the style's `--knob` names (the
+ * vintage scene by default, omx-panel#123), and the goldens and the parity checks are held to the flat console knob, so they pin it
+ * here, explicitly. A real copy, not links: a test that rewrites a file of the directory must not write through to the tree. */
+function pinnedData(style = 'console') {
+  // the gesture declaration is schema/gestures.json, found beside the tools directory (view.c): the copy keeps that layout
+  const base = mkdtempSync(join(tmpdir(), 'omx-panel-data-'));
+  const dir = join(base, 'tools');
+  cpSync(TOOLS, dir, { recursive: true });
+  cpSync(join(ROOT, 'schema'), join(base, 'schema'), { recursive: true });
+  const look = JSON.parse(readFileSync(join(TOOLS, 'look.json'), 'utf8'));
+  writeFileSync(join(dir, 'look.json'), `${JSON.stringify({ ...look, style }, null, 2)}\n`);
+  process.on('exit', () => rmSync(base, { recursive: true, force: true }));
+  return dir;
+}
+/** The tools directory the renderer reads the look, the geometry and the font from, the console style pinned (see pinnedData). */
+export const DATA = pinnedData();
 const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 
 /** The panels drawn: ours (omx-delay, a declared panel) and a third party's LV2 plugin (ZamComp, scanned), the latter
  * both as the layout lays it out from the scan alone and under the panel the worked example writes for it. Each names
  * the MOD GUI face the generator committed for it, where one exists. */
-/** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`, not yet released): a fixture that draws a curve needs it, and
- * is skipped without it unless OMX_PANEL_DSP=required. */
+/** Whether omx-dsp's TypeScript twin is installed (`@openmixer/omx-dsp`): a fixture that draws a curve needs it, and its tests
+ * FAIL without it, naming it, never skip (docs/renderer.md); CI's renderer job installs it. */
 export const HAVE_TWIN = await import('@openmixer/omx-dsp').then(() => true, () => false);
-export const skipWithoutTwin = (fx) => (fx.needsTwin && !HAVE_TWIN ? { skip: 'omx-dsp twin (@openmixer/omx-dsp) not installed' } : {});
+/** Throw, naming the twin, when `fx` draws a curve and the twin is not installed. */
+export function requireTwin(fx) {
+  if (fx.needsTwin && !HAVE_TWIN) throw new Error(`omx-dsp's twin (@openmixer/omx-dsp) is not installed: fixture '${fx.name}' draws a curve and needs it (npm i --no-save '@openmixer/omx-dsp@>=0.32.2')`);
+}
+
+const { roleMeanings } = await import(join(ROOT, 'dist', 'tools', 'vocabulary.mjs'));
+/** Throw, naming it, when the role vocabulary declares no role: a layout then plays no meaning and an EQ derives no curve, so a
+ * fixture drawn so would be held to the wrong picture (docs/renderer.md). `make renderer-check` names the tree's stand-in. */
+export function requireVocabulary() {
+  if (roleMeanings().size > 0) return;
+  throw new Error(`no role vocabulary: $OMX_ROLE_MEANINGS (${process.env.OMX_ROLE_MEANINGS ?? 'unset'}) and the installed contract directories declare no role; run make renderer-check, or set OMX_ROLE_MEANINGS=test/fixtures/role-meanings/panel-roles.json`);
+}
 
 export const FIXTURES = [
   { name: 'omx-delay', descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', screenshot: 'test/fixtures/omx-delay/omx-delay.lv2/modgui/screenshot-omx-delay.png' },
+  // the reverb's declared panel: its decay-envelope is a time_response display, the frame and the word until a host sets the envelope
+  { name: 'omx-reverb', descriptor: 'test/fixtures/omx-reverb/omx-reverb.descriptor.json', panel: 'test/fixtures/omx-reverb/omx-reverb.panel.json', stem: 'omx-reverb' },
   // a bar group (nine drawbars by their footage, a section of its own) beside two knobs: the rule finds the run, the renderer and the MOD GUI draw it as a row of faders
   { name: 'organ', descriptor: 'test/fixtures/organ/organ.descriptor.json', stem: 'organ' },
   // a compressor whose declared panel draws its curve: the frame and the basis word in the caption place, the points the host's
   { name: 'dyn-curve', descriptor: 'test/fixtures/dyn-curve/dyn.descriptor.json', panel: 'test/fixtures/dyn-curve/dyn.panel.json', stem: 'dyn', needsTwin: true },
   // an EQ whose bands two planters own: the static curve through omx-dsp's twin, and a mark at each planted band
-  { name: 'eq-marks', descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
+  { name: 'eq-marks', served: true, descriptor: 'test/fixtures/eq-marks/eq.descriptor.json', panel: 'test/fixtures/eq-marks/eq.panel.json', stem: 'eq', needsTwin: true },
   // a compressor with the descriptor's meters word: the band below the sections, a frame with the range and the unit
   { name: 'meters', descriptor: 'test/fixtures/meters/meters.descriptor.json', panel: 'test/fixtures/meters/meters.panel.json', stem: 'meters' },
+  // a repeated group (docs/group-model.md): an EQ's bands as columns, HPF first and LPF last; a compressor's four bands as rows
+  { name: 'omx-eq8', served: true, descriptor: 'test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json', stem: 'omx-eq8', needsTwin: true },
+  { name: 'mbc', served: true, descriptor: 'test/fixtures/group-model/mbc.descriptor.json', stem: 'mbc' },
+  // a repeated group whose heads have no on/off (four delay taps): each head's caption in a row of its own, the last
+  { name: 'taps', served: true, descriptor: 'test/fixtures/group-model/taps.descriptor.json', stem: 'taps' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
 
-const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
+export const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const { renderFace, layout, loadLook, resolvePanel } = modgui;
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
 export function resolved(fx) {
+  requireTwin(fx);
   const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));
   const panel = fx.panel ? JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')) : undefined;
   return resolvePanel(descriptor, { panel, stem: fx.stem });
@@ -55,11 +90,19 @@ export function resolved(fx) {
 /** The MOD GUI generator's face of the fixture at `scale`, as pixels. */
 export function face(fx, scale) {
   const p = resolved(fx);
-  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook(), scale));
+  return decodePng(renderFace({ ...layout(p), brand: p.brand, name: p.name ?? p.stem }, loadLook('console'), scale));
 }
 
-/** The fixture's panel description, as `omx-panel layout` writes it, in a file. */
+/** The fixture's panel description, in a file: a repeated group's (`served`) as `omx-panel describe --layout` serves it, the
+ * merged section and its matrix, as a host draws it; the others as `omx-panel layout` writes them. */
 export function descriptionFile(fx, dir) {
+  requireVocabulary();
+  if (fx.served) {
+    const args = [OMX_PANEL, 'describe', '--layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
+    const file = join(dir, `${fx.name}.layout.json`);
+    writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8', maxBuffer: 1 << 26 }));
+    return file;
+  }
   const args = [OMX_PANEL, 'layout', '--descriptor', resolve(ROOT, fx.descriptor), ...(fx.panel ? ['--panel', resolve(ROOT, fx.panel)] : [])];
   const file = join(dir, `${fx.name}.layout.json`);
   writeFileSync(file, execFileSync(process.execPath, args, { encoding: 'utf8' }));
@@ -79,19 +122,37 @@ export function stateFile(fx, dir, readings = {}) {
     else values[k.symbol] = { fraction: modgui.travelFraction(k, k.def), text };
   }
   // the points and marks the MOD GUI's static curve was drawn from, handed to the renderer as a host would
-  const curves = {}, marks = {};
+  const curves = {}, marks = {}, stems = {};
   let at = 0;
   for (const sec of p.sections) for (const dsp of sec.displays) {
-    if (dsp.curve?.points) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
+    if (dsp.curve?.stems?.length) stems[at] = dsp.curve.stems.map((t) => ({ x: t.x, y: t.y, shade: t.shade, letter: modgui.LEG_LETTER[t.leg] ?? ' ' }));
+    if (dsp.curve?.points?.length) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
     if (dsp.curve?.marks?.length) marks[at] = dsp.curve.marks.map((m) => ({ freq: m.freq, depth: m.depthDb, letter: modgui.ORIGIN_LETTER[m.origin] }));
     at++;
   }
   const file = join(dir, `${fx.name}.state.json`);
-  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks }, null, 2));
+  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks, stems }, null, 2));
   return file;
 }
 
-export const scratch = () => mkdtempSync(join(tmpdir(), 'omx-panel-render-'));
+/** Scratch directories: each one made is removed when the process exits, a failed test, an uncaught error, process.exit()
+ * and SIGINT/SIGTERM/SIGHUP included (#45). OMX_PANEL_KEEP_SCRATCH=1 keeps them all, to debug a failure, and names them on
+ * stderr at exit. */
+const KEEP = process.env.OMX_PANEL_KEEP_SCRATCH === '1';
+const made = new Set();
+const drop = (dir) => { if (KEEP) return; rmSync(dir, { recursive: true, force: true }); made.delete(dir); };
+function sweep() {
+  if (KEEP && made.size) process.stderr.write(`OMX_PANEL_KEEP_SCRATCH=1: kept ${made.size} scratch dir(s):\n${[...made].join('\n')}\n`);
+  for (const dir of [...made]) drop(dir);
+}
+process.on('exit', sweep);
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(sig, () => { sweep(); process.kill(process.pid, sig); });
+
+export const scratch = (prefix = 'omx-panel-render-') => {
+  const dir = mkdtempSync(join(tmpdir(), prefix));
+  made.add(dir);
+  return dir;
+};
 
 /** The renderer over a description and a state: `{ w, h, data }`, RGBA with straight alpha unless `format`/`alpha` say
  * otherwise. `size` [w, h] in device px, or the natural size; `window` reads a window's frame instead (natural size);
@@ -102,8 +163,13 @@ export function render(description, state, { scale = 1, size, format = 'rgba', a
   const args = ['--description', description, '--data', data, '--state', state, '--scale', String(scale), '--format', format, '--alpha', alpha, '--raw', out];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   if (window) args.push('--window');
-  const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);
-  return { w, h, data: new Uint8Array(readFileSync(out)) };
+  try {
+    const [w, h] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split(' ').map(Number);
+    return { w, h, data: new Uint8Array(readFileSync(out)) };
+  } finally {
+    // the pixels are in memory now; a failed draw's directory is kept only under OMX_PANEL_KEEP_SCRATCH=1
+    drop(dir);
+  }
 }
 
 /** A PNG's pixels, RGBA: 8-bit RGBA, not interlaced, every scanline filter None (what both of this tree's writers make). */
@@ -163,8 +229,8 @@ export function encodePng({ w, h, data }) {
 }
 
 /** Each control's cell where the renderer places it in a box: `[x, y, w, h]` in device px, in the description's order. */
-export function rects(description, { scale = 1, size } = {}) {
-  const args = ['--description', description, '--data', DATA, '--scale', String(scale), '--rects'];
+export function rects(description, { scale = 1, size, data = DATA } = {}) {
+  const args = ['--description', description, '--data', data, '--scale', String(scale), '--rects'];
   if (size) args.push('--width', String(size[0]), '--height', String(size[1]));
   return execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n').slice(1).map((l) => l.split(' ').map(Number));
 }
@@ -177,12 +243,12 @@ export function rects(description, { scale = 1, size } = {}) {
 const look = JSON.parse(readFileSync(join(ROOT, 'tools', 'look.json'), 'utf8')).tokens;
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
-/** The stroke pixels of the curve layer inside `frame` ({x, y, w, h}, device px): a pixel that is the accent over the frame's body, part
- * way (a hairline's edge pixels blend): along the body-to-accent line by at least 0.4 and off it by less than 25. The frame's own rim and
+/** The stroke pixels of the curve layer inside `frame` ({x, y, w, h}, device px): a pixel that is the curve stroke (--curve-stroke) over the frame's body, part
+ * way (a hairline's edge pixels blend): along the body-to-stroke line by at least 0.4 and off it by less than 25. The frame's own rim and
  * its caption are outside the inner area; no text is read. */
 export function strokePixels(img, frame, inset = 5) {
-  const accent = rgb(look['--accent']), body = rgb(look['--surface-3']);
-  const d = accent.map((c, k) => c - body[k]), dd = d.reduce((s, v) => s + v * v, 0);
+  const stroke = rgb(look['--curve-stroke']), body = rgb(look['--surface-3']);
+  const d = stroke.map((c, k) => c - body[k]), dd = d.reduce((s, v) => s + v * v, 0);
   const out = [];
   for (let y = frame.y + inset; y < frame.y + frame.h - inset - 12; y++) for (let x = frame.x + inset; x < frame.x + frame.w - inset; x++) {
     const i = (y * img.w + x) * 4, p = [0, 1, 2].map((k) => img.data[i + k] - body[k]);

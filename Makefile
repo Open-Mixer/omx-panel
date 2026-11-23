@@ -12,12 +12,18 @@ DATADIR ?= $(PREFIX)/share
 MANDIR ?= $(DATADIR)/man
 LIBDIR ?= $(PREFIX)/lib
 INCLUDEDIR ?= $(PREFIX)/include
+CONTRACTDIR ?= $(DATADIR)/omx-contract/contract.d
+# omx-contract's domain installer (install-contract-dir.sh --domain), which installs the panel domain as it is
+OMX_CONTRACT_INSTALLER ?= $(shell pkg-config --variable=datadir omx-contract 2>/dev/null)/install-contract-dir.sh
 SYSCONFDIR ?= /etc
 UNITDIR ?= $(PREFIX)/lib/systemd/system
 PKGDIR = $(DATADIR)/omx-panel
+# the omx-contract package's importable tree (package.json, lib/entry.mjs): the installed tools import
+# @openmixer/omx-contract/entry through a link to it
+OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies install renderer renderer-check install-renderer test-host-reads
+.PHONY: all build check test spdx public-sources look copies install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
 
 all: build
 
@@ -33,21 +39,23 @@ check: build spdx public-sources look copies
 test:
 	npm test
 
-OPENMIXER_DOTGITHUB ?= $(or $(FREEMIXER_DOTGITHUB),../freemixer-dotgithub)
+OPENMIXER_DOTGITHUB ?= ../openmixer-dotgithub
 
 # Every file a comment can be written in opens with its licence and copyright: Open-Mixer/.github's spdx-check, from a
-# checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI runs the action.
+# checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI runs the action.
 spdx:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/spdx-check/check.sh .
 
 # No tracked file points into a private repository, branch, issue or path.
-# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../freemixer-dotgithub); CI
-# runs it through the public-sources-check workflow.
+# Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI
+# runs it through the public-sources-check workflow. The check reads this repository's visibility and topics from GitHub
+# first, with GH_TOKEN (or GITHUB_TOKEN); on a desk: GH_TOKEN=$$(gh auth token) make public-sources.
 public-sources:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
 
 look:
 	node tools/look.mjs --check
+	node tools/look-pin.mjs --self
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
@@ -62,28 +70,57 @@ WINDOW ?= 0
 renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
 
+# run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
+# the role vocabulary the layout reads: this tree's stand-in, as npm test reads it, unless the caller names one (docs/renderer.md)
 renderer-check: build
-	$(MAKE) -C renderer check WINDOW=$(WINDOW)
+	OMX_ROLE_MEANINGS="$${OMX_ROLE_MEANINGS:-$(CURDIR)/test/fixtures/role-meanings/panel-roles.json}" \
+	  sh tools/renderer-scratch-check.sh $(MAKE) -C renderer check WINDOW=$(WINDOW)
 
 # a host that is not JavaScript reads the gesture word names and the compare values from what the panel ships (#23):
 # the shared library and the command of this tree, or an installed package's (OMX_PANEL_RENDER_LIB, OMX_PANEL)
 test-host-reads: build renderer
 	python3 test/host_reads.py
 
+# The descriptions store's reader and writer, C (docs/descriptions-store.md): its own Makefile (needs sqlite-devel 3.38 or above,
+# cjson-devel and omx-contract's libomx-domain-devel). store-check builds it, runs its tests and the Python door's over the
+# built tree: the tests build their fixtures with node 22's SQLite, and the golden of the rules version reads the built dist/.
+store:
+	$(MAKE) -C store
+
+store-check: build store
+	$(MAKE) -C store check
+	python3 store/test/door.py
+
+# The packages ship the store (omx-panel-store and -devel; libomx-panel-store0, libomx-panel-store-dev and the command's
+# omx-panel-store): store/'s install, all of it: the library, its .so link, header and pkg-config file, the command and
+# its page, and the DDL as $(DATADIR)/omx-panel-store/panel.sql. Never the static library: it is not installed.
+install-store:
+	$(MAKE) -C store install PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR) MANDIR=$(MANDIR)
+
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
 
-install: build
+# The panel domain (docs/contract-domains.md), as it is, by omx-contract's one domain installer: the loader reads
+# $(CONTRACTDIR)/panel/panel.json and its catalogs/.
+install-contract:
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
+
+install: build install-contract
 	install -d $(DESTDIR)$(PKGDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(DATADIR)/omx/skins
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/
 	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/
 	# the runtime modules only (ajv and what it needs), never the build's
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
-	  rel=$${m#$(CURDIR)/}; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
+	  rel=$${m#$(CURDIR)/}; [ "$$rel" = node_modules/@openmixer/omx-dsp ] && continue; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \
 	done
 	# their pages are theirs, not the package's: the package's one page is its README
 	if [ -d $(DESTDIR)$(PKGDIR)/node_modules ]; then find $(DESTDIR)$(PKGDIR)/node_modules -type f -iname '*.md' -delete; fi
+	# omx-dsp is the omx-dsp-wasm package's: its dist/ and wasm/ are linked, never copied
+	install -d $(DESTDIR)$(PKGDIR)/node_modules/@openmixer
+	ln -sfn $(DATADIR)/omx-dsp $(DESTDIR)$(PKGDIR)/node_modules/@openmixer/omx-dsp
+	# omx-contract is the omx-contract package's: the tools' isMain (@openmixer/omx-contract/entry) is linked, never copied
+	ln -sfn $(OMX_CONTRACT_LIB) $(DESTDIR)$(PKGDIR)/node_modules/@openmixer/omx-contract
 	ln -sf ../share/omx-panel/bin/omx-panel.mjs $(DESTDIR)$(BINDIR)/omx-panel
 	install -d $(DESTDIR)$(MANDIR)/man1
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/

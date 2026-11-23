@@ -1,0 +1,114 @@
+{
+ "input": "lv2-groups/x42-fil4/fil4.ttl",
+ "uri": "http://gareus.org/oss/lv2/fil4#mono",
+ "groups": [
+  {
+   "key": "",
+   "label": null,
+   "kind": "repeated",
+   "source": "indexed",
+   "family": "eq",
+   "parameters": [
+    "gain",
+    "peakreset"
+   ],
+   "orientation": "columns",
+   "heads": [
+    {
+     "key": "hpf",
+     "label": "Highpass",
+     "on": "HighPass",
+     "sense": "on"
+    },
+    {
+     "key": "lowshelf",
+     "label": "Lowshelf",
+     "on": "LSsec",
+     "sense": "on"
+    },
+    {
+     "key": "#1",
+     "label": "Section 1",
+     "on": "sec1",
+     "sense": "on"
+    },
+    {
+     "key": "#2",
+     "label": "Section 2",
+     "on": "sec2",
+     "sense": "on"
+    },
+    {
+     "key": "#3",
+     "label": "Section 3",
+     "on": "sec3",
+     "sense": "on"
+    },
+    {
+     "key": "#4",
+     "label": "Section 4",
+     "on": "sec4",
+     "sense": "on"
+    },
+    {
+     "key": "highshelf",
+     "label": "Highshelf",
+     "on": "HSsec",
+     "sense": "on"
+    },
+    {
+     "key": "lpf",
+     "label": "Lowpass",
+     "on": "LowPass",
+     "sense": "on"
+    }
+   ],
+   "lines": [
+    {
+     "key": "freq",
+     "label": "Frequency"
+    },
+    {
+     "key": "gain",
+     "label": "Gain"
+    },
+    {
+     "key": "q",
+     "label": "Bandwidth"
+    }
+   ],
+   "cells": [
+    [
+     "HPfreq",
+     "LSfreq",
+     "freq1",
+     "freq2",
+     "freq3",
+     "freq4",
+     "HSfreq",
+     "LPfreq"
+    ],
+    [
+     null,
+     "LSgain",
+     "gain1",
+     "gain2",
+     "gain3",
+     "gain4",
+     "HSgain",
+     null
+    ],
+    [
+     "HPQ",
+     "LSq",
+     "q1",
+     "q2",
+     "q3",
+     "q4",
+     "HSq",
+     "LPQ"
+    ]
+   ]
+  }
+ ]
+}

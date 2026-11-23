@@ -1,6 +1,6 @@
 {
   "name": "@openmixer/omx-panel",
-  "version": "0.13.7",
+  "version": "0.15.1",
   "description": "Panels for LV2 and CLAP plugins from what each plugin declares: the layout, the MOD GUI generator, the omx look, the skin package and the MOD GUI importer",
   "type": "module",
   "license": "GPL-3.0-or-later",
@@ -79,6 +79,10 @@
       "types": "./dist/tools/group-infer.d.mts",
       "default": "./dist/tools/group-infer.mjs"
     },
+    "./group-model": {
+      "types": "./dist/tools/group-model.d.mts",
+      "default": "./dist/tools/group-model.mjs"
+    },
     "./lv2-complement": {
       "types": "./dist/tools/lv2-complement.d.mts",
       "default": "./dist/tools/lv2-complement.mjs"
@@ -106,6 +110,8 @@
     "./schema/skin-package.schema.json": "./dist/schema/skin-package.schema.json",
     "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
     "./look-roles.json": "./dist/schema/look-roles.json",
+    "./look.json": "./dist/tools/look.json",
+    "./gestures/scripts.json": "./dist/test/fixtures/gestures/scripts.json",
     "./package.json": "./package.json"
   },
   "files": [
@@ -117,10 +123,11 @@
     "prepack": "npm run build"
   },
   "dependencies": {
+    "@openmixer/omx-dsp": ">=0.33.0",
     "ajv": "^8.17.1"
   },
   "devDependencies": {
-    "@openmixer/omx-contract": ">=3.12.0 <4",
+    "@openmixer/omx-contract": ">=3.20.2",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   },
