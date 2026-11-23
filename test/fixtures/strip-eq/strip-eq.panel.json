@@ -1,0 +1,310 @@
+{
+ "family": "eq",
+ "roles": {
+  "band_type": [
+   "eq1Type",
+   "eq2Type",
+   "eq3Type",
+   "eq4Type",
+   "eq5Type",
+   "eq6Type",
+   "eq7Type",
+   "eq8Type"
+  ],
+  "band_freq": [
+   "eq1Freq",
+   "eq2Freq",
+   "eq3Freq",
+   "eq4Freq",
+   "eq5Freq",
+   "eq6Freq",
+   "eq7Freq",
+   "eq8Freq"
+  ],
+  "band_gain": [
+   "eq1Gain",
+   "eq2Gain",
+   "eq3Gain",
+   "eq4Gain",
+   "eq5Gain",
+   "eq6Gain",
+   "eq7Gain",
+   "eq8Gain"
+  ],
+  "band_q": [
+   "eq1Q",
+   "eq2Q",
+   "eq3Q",
+   "eq4Q",
+   "eq5Q",
+   "eq6Q",
+   "eq7Q",
+   "eq8Q"
+  ],
+  "band_on": [
+   "eq1On",
+   "eq2On",
+   "eq3On",
+   "eq4On",
+   "eq5On",
+   "eq6On",
+   "eq7On",
+   "eq8On"
+  ],
+  "hpf_freq": "hpfFreq",
+  "hpf_slope": "hpfSlope",
+  "hpf_on": "hpfOn",
+  "lpf_freq": "lpfFreq",
+  "lpf_slope": "lpfSlope",
+  "lpf_on": "lpfOn"
+ },
+ "choiceUnits": {
+  "hpfSlope": "dB/oct",
+  "lpfSlope": "dB/oct"
+ },
+ "sections": [
+  {
+   "key": "filter",
+   "label": "Filters",
+   "controls": [
+    "hpfOn",
+    "hpfFreq",
+    "hpfSlope",
+    "lpfOn",
+    "lpfFreq",
+    "lpfSlope"
+   ]
+  },
+  {
+   "key": "eq",
+   "label": "EQ",
+   "controls": [
+    "eqOn",
+    "eqBands",
+    "eq1Type",
+    "eq1Freq",
+    "eq1Gain",
+    "eq1Q",
+    "eq1On",
+    "eq2Type",
+    "eq2Freq",
+    "eq2Gain",
+    "eq2Q",
+    "eq2On",
+    "eq3Type",
+    "eq3Freq",
+    "eq3Gain",
+    "eq3Q",
+    "eq3On",
+    "eq4Type",
+    "eq4Freq",
+    "eq4Gain",
+    "eq4Q",
+    "eq4On",
+    "eq5Type",
+    "eq5Freq",
+    "eq5Gain",
+    "eq5Q",
+    "eq5On",
+    "eq6Type",
+    "eq6Freq",
+    "eq6Gain",
+    "eq6Q",
+    "eq6On",
+    "eq7Type",
+    "eq7Freq",
+    "eq7Gain",
+    "eq7Q",
+    "eq7On",
+    "eq8Type",
+    "eq8Freq",
+    "eq8Gain",
+    "eq8Q",
+    "eq8On"
+   ],
+   "graph": "eq-curve",
+   "edges": {
+    "first": {
+     "from": "filter",
+     "label": "HPF",
+     "controls": [
+      "hpfOn",
+      "hpfFreq",
+      "hpfSlope"
+     ]
+    },
+    "last": {
+     "from": "filter",
+     "label": "LPF",
+     "controls": [
+      "lpfOn",
+      "lpfFreq",
+      "lpfSlope"
+     ]
+    }
+   }
+  }
+ ],
+ "visibleWhen": {
+  "eq1Type": {
+   "param": "eqBands",
+   "atLeast": 1
+  },
+  "eq1Freq": {
+   "param": "eqBands",
+   "atLeast": 1
+  },
+  "eq1Gain": {
+   "param": "eqBands",
+   "atLeast": 1
+  },
+  "eq1Q": {
+   "param": "eqBands",
+   "atLeast": 1
+  },
+  "eq1On": {
+   "param": "eqBands",
+   "atLeast": 1
+  },
+  "eq2Type": {
+   "param": "eqBands",
+   "atLeast": 2
+  },
+  "eq2Freq": {
+   "param": "eqBands",
+   "atLeast": 2
+  },
+  "eq2Gain": {
+   "param": "eqBands",
+   "atLeast": 2
+  },
+  "eq2Q": {
+   "param": "eqBands",
+   "atLeast": 2
+  },
+  "eq2On": {
+   "param": "eqBands",
+   "atLeast": 2
+  },
+  "eq3Type": {
+   "param": "eqBands",
+   "atLeast": 3
+  },
+  "eq3Freq": {
+   "param": "eqBands",
+   "atLeast": 3
+  },
+  "eq3Gain": {
+   "param": "eqBands",
+   "atLeast": 3
+  },
+  "eq3Q": {
+   "param": "eqBands",
+   "atLeast": 3
+  },
+  "eq3On": {
+   "param": "eqBands",
+   "atLeast": 3
+  },
+  "eq4Type": {
+   "param": "eqBands",
+   "atLeast": 4
+  },
+  "eq4Freq": {
+   "param": "eqBands",
+   "atLeast": 4
+  },
+  "eq4Gain": {
+   "param": "eqBands",
+   "atLeast": 4
+  },
+  "eq4Q": {
+   "param": "eqBands",
+   "atLeast": 4
+  },
+  "eq4On": {
+   "param": "eqBands",
+   "atLeast": 4
+  },
+  "eq5Type": {
+   "param": "eqBands",
+   "atLeast": 5
+  },
+  "eq5Freq": {
+   "param": "eqBands",
+   "atLeast": 5
+  },
+  "eq5Gain": {
+   "param": "eqBands",
+   "atLeast": 5
+  },
+  "eq5Q": {
+   "param": "eqBands",
+   "atLeast": 5
+  },
+  "eq5On": {
+   "param": "eqBands",
+   "atLeast": 5
+  },
+  "eq6Type": {
+   "param": "eqBands",
+   "atLeast": 6
+  },
+  "eq6Freq": {
+   "param": "eqBands",
+   "atLeast": 6
+  },
+  "eq6Gain": {
+   "param": "eqBands",
+   "atLeast": 6
+  },
+  "eq6Q": {
+   "param": "eqBands",
+   "atLeast": 6
+  },
+  "eq6On": {
+   "param": "eqBands",
+   "atLeast": 6
+  },
+  "eq7Type": {
+   "param": "eqBands",
+   "atLeast": 7
+  },
+  "eq7Freq": {
+   "param": "eqBands",
+   "atLeast": 7
+  },
+  "eq7Gain": {
+   "param": "eqBands",
+   "atLeast": 7
+  },
+  "eq7Q": {
+   "param": "eqBands",
+   "atLeast": 7
+  },
+  "eq7On": {
+   "param": "eqBands",
+   "atLeast": 7
+  },
+  "eq8Type": {
+   "param": "eqBands",
+   "atLeast": 8
+  },
+  "eq8Freq": {
+   "param": "eqBands",
+   "atLeast": 8
+  },
+  "eq8Gain": {
+   "param": "eqBands",
+   "atLeast": 8
+  },
+  "eq8Q": {
+   "param": "eqBands",
+   "atLeast": 8
+  },
+  "eq8On": {
+   "param": "eqBands",
+   "atLeast": 8
+  }
+ }
+}

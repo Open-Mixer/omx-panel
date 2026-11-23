@@ -65,6 +65,31 @@ static void nvg_segment(void *ctx, double ax, double ay, double bx, double by, d
   nvgStroke(vg);
 }
 
+/* NanoVG's gradient has two colours: the area is filled once per stop interval, each under a scissor of its rows, plus the flat
+ * rows above the first stop and below the last. */
+static void nvg_fill_under(void *ctx, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
+                           const omx_rgb *stops, size_t ns, double alpha) {
+  NVGcontext *vg = ((struct omx_panel_window *)ctx)->vg;
+  if (n < 2 || !ns) return;
+  unsigned char a = (unsigned char)fmax(0, fmin(255, alpha * 255 + 0.5));
+  for (size_t k = 0; k <= ns; k++) {
+    double ya = k == 0 ? -1e6 : y0 + t[k - 1] * (y1 - y0), yb = k == ns ? 1e6 : y0 + t[k] * (y1 - y0);
+    if (!(yb > ya)) continue;
+    omx_rgb ca = stops[k == 0 ? 0 : k - 1], cb = stops[k == ns ? ns - 1 : k];
+    nvgSave(vg);
+    nvgScissor(vg, -1e6f, (float)ya, 2e6f, (float)(yb - ya));
+    nvgBeginPath(vg);
+    nvgMoveTo(vg, (float)xs[0], (float)base_y);
+    for (size_t j = 0; j < n; j++) nvgLineTo(vg, (float)xs[j], (float)ys[j]);
+    nvgLineTo(vg, (float)xs[n - 1], (float)base_y);
+    nvgClosePath(vg);
+    nvgFillPaint(vg, nvgLinearGradient(vg, 0, (float)fmax(ya, -1e5), 0, (float)fmin(yb, 1e5), nvgRGBA(ca.c[0], ca.c[1], ca.c[2], a),
+                                       nvgRGBA(cb.c[0], cb.c[1], cb.c[2], a)));
+    nvgFill(vg);
+    nvgRestore(vg);
+  }
+}
+
 static void nvg_text(void *ctx, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   NVGcontext *vg = ((struct omx_panel_window *)ctx)->vg;
   if (!n) return;
@@ -95,7 +120,8 @@ static void expose(struct omx_panel_window *w) {
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   if (!w->vg) return;
   nvgBeginFrame(w->vg, (float)w->w, (float)w->h, 1);
-  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_text};
+  /* no scene callback: the window's NanoVG backend does not paint the look's scenes yet, so the knob is the flat one */
+  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_fill_under, nvg_text, NULL};
   omx_panel_view_paint(w->view, w->w, w->h, w->scale, &d);
   nvgEndFrame(w->vg);
   if (w->read) {

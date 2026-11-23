@@ -4,6 +4,9 @@
  * (test/shared.test.mjs holds the list to the header). */
 OMX_PANEL_RENDER_0 {
   global:
+    omx_gesture_close;
+    omx_gesture_open;
+    omx_gesture_run;
     omx_panel_word_name;
     omx_panel_view_control_rect;
     omx_panel_view_count;
@@ -25,6 +28,8 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_set_hold;
     omx_panel_view_set_integer;
     omx_panel_view_set_marks;
+    omx_panel_view_set_stems;
+    omx_panel_view_set_spectrum;
     omx_panel_view_set_meter;
     omx_panel_view_set_paint;
     omx_panel_view_set_read_only;
@@ -37,6 +42,7 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_target_rect;
     omx_panel_view_tick;
     omx_panel_view_visible;
+    omx_panel_view_visible_columns;
   local:
     *;
 };

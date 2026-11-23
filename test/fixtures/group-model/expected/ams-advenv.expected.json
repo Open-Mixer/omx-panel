@@ -1,0 +1,30 @@
+{
+ "input": "lv2-groups/ams-advenv/advenv.ttl",
+ "uri": "http://github.com/blablack/ams-lv2/advenv",
+ "groups": [
+  {
+   "key": "",
+   "label": null,
+   "kind": "list",
+   "source": "indexed",
+   "reason": "ragged-instances",
+   "parameters": [
+    "timeScale",
+    "sustain",
+    "delay",
+    "attackTime1",
+    "attackTime2",
+    "attackTime3",
+    "attackTime4",
+    "attackLevel1",
+    "attackLevel2",
+    "attackLevel3",
+    "releaseTime1",
+    "releaseTime2",
+    "releaseTime3",
+    "releaseLevel1",
+    "releaseLevel2"
+   ]
+  }
+ ]
+}

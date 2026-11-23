@@ -1,0 +1,1960 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
+  "requires": {
+    "omx-contract-schema": ">= 3.9.0"
+  },
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.dyneq",
+    "format": "clap",
+    "uri": "urn:openmixer:dyneq",
+    "name": "omx dyneq",
+    "vendor": "openmixer",
+    "version": "0.19.3",
+    "doc": "A six-band dynamic EQ: each band is an EQ bell or shelf whose gain also moves with the level of its own band, cutting above a threshold (down) or lifting below it (up), held to a range, so a harsh or boomy band is tamed only while it is too loud.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "bandOn1",
+      "name": "Band 1 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "bandOn2",
+      "name": "Band 2 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "bandOn3",
+      "name": "Band 3 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "bandOn4",
+      "name": "Band 4 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "bandOn5",
+      "name": "Band 5 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "bandOn6",
+      "name": "Band 6 On",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_ONS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "bandType1",
+      "name": "Band 1 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "bandType2",
+      "name": "Band 2 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "bandType3",
+      "name": "Band 3 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "bandType4",
+      "name": "Band 4 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "bandType5",
+      "name": "Band 5 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "bandType6",
+      "name": "Band 6 Type",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Bell",
+        "Low Shelf",
+        "High Shelf"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_BAND_TYPES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "freq1",
+      "name": "Band 1 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 40,
+        "scale": "log"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "freq2",
+      "name": "Band 2 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 125,
+        "scale": "log"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "freq3",
+      "name": "Band 3 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 400,
+        "scale": "log"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "freq4",
+      "name": "Band 4 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 1250,
+        "scale": "log"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "freq5",
+      "name": "Band 5 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 4000,
+        "scale": "log"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "freq6",
+      "name": "Band 6 Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 12500,
+        "scale": "log"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_FREQ_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "gain1",
+      "name": "Band 1 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "gain2",
+      "name": "Band 2 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "symbol": "gain3",
+      "name": "Band 3 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "symbol": "gain4",
+      "name": "Band 4 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "symbol": "gain5",
+      "name": "Band 5 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "symbol": "gain6",
+      "name": "Band 6 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_GAIN_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "symbol": "q1",
+      "name": "Band 1 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "symbol": "q2",
+      "name": "Band 2 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "symbol": "q3",
+      "name": "Band 3 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "symbol": "q4",
+      "name": "Band 4 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "symbol": "q5",
+      "name": "Band 5 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "symbol": "q6",
+      "name": "Band 6 Q",
+      "kind": "travel",
+      "travel": {
+        "min": 0.3,
+        "max": 8,
+        "step": 0,
+        "unit": "",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "meaning": "q",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_Q_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "symbol": "dynMode1",
+      "name": "Band 1 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "symbol": "dynMode2",
+      "name": "Band 2 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "symbol": "dynMode3",
+      "name": "Band 3 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 33,
+      "symbol": "dynMode4",
+      "name": "Band 4 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 34,
+      "symbol": "dynMode5",
+      "name": "Band 5 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "symbol": "dynMode6",
+      "name": "Band 6 Dynamics",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Off",
+        "Down",
+        "Up"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_DYN_MODES",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "symbol": "threshold1",
+      "name": "Band 1 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "symbol": "threshold2",
+      "name": "Band 2 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "symbol": "threshold3",
+      "name": "Band 3 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "symbol": "threshold4",
+      "name": "Band 4 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "symbol": "threshold5",
+      "name": "Band 5 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "symbol": "threshold6",
+      "name": "Band 6 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 42,
+      "symbol": "ratio1",
+      "name": "Band 1 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 43,
+      "symbol": "ratio2",
+      "name": "Band 2 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 44,
+      "symbol": "ratio3",
+      "name": "Band 3 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 45,
+      "symbol": "ratio4",
+      "name": "Band 4 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 46,
+      "symbol": "ratio5",
+      "name": "Band 5 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 47,
+      "symbol": "ratio6",
+      "name": "Band 6 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RATIO_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 48,
+      "symbol": "range1",
+      "name": "Band 1 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 49,
+      "symbol": "range2",
+      "name": "Band 2 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 50,
+      "symbol": "range3",
+      "name": "Band 3 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 51,
+      "symbol": "range4",
+      "name": "Band 4 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 52,
+      "symbol": "range5",
+      "name": "Band 5 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 53,
+      "symbol": "range6",
+      "name": "Band 6 Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 12,
+        "step": 0,
+        "unit": "dB",
+        "default": -6,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RANGE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 54,
+      "symbol": "attack1",
+      "name": "Band 1 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 55,
+      "symbol": "attack2",
+      "name": "Band 2 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 56,
+      "symbol": "attack3",
+      "name": "Band 3 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 57,
+      "symbol": "attack4",
+      "name": "Band 4 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 58,
+      "symbol": "attack5",
+      "name": "Band 5 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 59,
+      "symbol": "attack6",
+      "name": "Band 6 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_ATTACK_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 60,
+      "symbol": "release1",
+      "name": "Band 1 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 61,
+      "symbol": "release2",
+      "name": "Band 2 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 62,
+      "symbol": "release3",
+      "name": "Band 3 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 63,
+      "symbol": "release4",
+      "name": "Band 4 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 64,
+      "symbol": "release5",
+      "name": "Band 5 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 65,
+      "symbol": "release6",
+      "name": "Band 6 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_RELEASE_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 66,
+      "symbol": "listen1",
+      "name": "Band 1 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 1"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 67,
+      "symbol": "listen2",
+      "name": "Band 2 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 2"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 68,
+      "symbol": "listen3",
+      "name": "Band 3 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 3"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 69,
+      "symbol": "listen4",
+      "name": "Band 4 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 4"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 70,
+      "symbol": "listen5",
+      "name": "Band 5 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 5"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 71,
+      "symbol": "listen6",
+      "name": "Band 6 Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 6"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_LISTENS",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 72,
+      "symbol": "mixPct",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "%",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Output"
+      ],
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#DYNEQ_MIX_PCT_RANGE",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "band1Gain",
+      "name": "Band 1 gain",
+      "doc": "The gain band 1's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band1GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "band2Gain",
+      "name": "Band 2 gain",
+      "doc": "The gain band 2's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band2GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "band3Gain",
+      "name": "Band 3 gain",
+      "doc": "The gain band 3's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band3GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "band4Gain",
+      "name": "Band 4 gain",
+      "doc": "The gain band 4's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band4GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "band5Gain",
+      "name": "Band 5 gain",
+      "doc": "The gain band 5's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band5GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "band6Gain",
+      "name": "Band 6 gain",
+      "doc": "The gain band 6's dynamics apply now, in dB, both ways: a cut negative, a boost positive, 0 while the band rests, is off or its dynamics are off. The band's gain computer re-run on the level its detector reached at the block's last sample (omx_band_dyn_offset_db), so the reading and the gain the sample took are one computation.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 12,
+      "scale": "linear",
+      "source": {
+        "from": {
+          "link": "data/kernels/dyneq.json#readouts[band6GainDb]",
+          "at": "omx-dsp@0.32.0"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_EQUALIZER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ParaEQPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-dyneq/omx_dyneq_clap.c#clap_entry"
+  }
+}

@@ -33,3 +33,13 @@ jobs:
   # local copy of either (Open-Mixer/.github's public-sources-check)
   public-sources:
     uses: Open-Mixer/.github/.github/workflows/public-sources-check.yml@openmixer-v1
+    with:
+      # the one shared Fedora workflow guard (.github#175): no workflow names a Fedora release outside 45
+      fedora-workflows: true
+
+  # a pull request names the issue it fixes (Open-Mixer/.github's pr-fixes-issue)
+  pr-fixes-issue:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: Open-Mixer/.github/.github/workflows/pr-fixes-issue.yml@openmixer-v1

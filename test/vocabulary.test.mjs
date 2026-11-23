@@ -6,7 +6,7 @@
 // `omx-panel vocabulary` reads each source from where the lookup puts it.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test, { after } from 'node:test';
@@ -105,19 +105,36 @@ test('omx-panel vocabulary reads each source where the lookup puts it, and fails
   assert.match(missing.stdout, /^FAIL descriptor omx-plugins\/omx-nothing vocabulary: no descriptor omx-plugins\/omx-nothing is installed/m);
 });
 
-test('the unit codes are omx-contract\'s sheet; a stale omx-plugins param-units.json beside it is never read', () => {
+test('the unit codes are the sheet any package of the merged contract directory declares', () => {
   const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
   const dir = contractDir({
     'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13, midiNote: 24, dbu: 0x101 }) },
-    'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 99 }) },
+    'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR },
   });
   const set = { OMX_CONTRACT_PATH: dir, PKG_CONFIG: NO_PKG_CONFIG };
   assert.equal(lookup('v.paramUnitsFile()', set), join(dir, '3/omx-contract/param-contract.json'));
   assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13], ['MIDINOTE', 24], ['DBU', 0x101]]);
-  // a directory with only omx-plugins' sheet (omx-contract before 3.6.0) has no units: the read refuses and names the fix
-  const old = contractDir({ 'omx-plugins': { 'param-units.json': sheet({ none: 0, db: 13 }) } });
-  const r = command([], { OMX_CONTRACT_PATH: old, PKG_CONFIG: NO_PKG_CONFIG });
+  // a directory that declares no sheet has no units: the read refuses and names the fix
+  const none = contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
+  const r = command([], { OMX_CONTRACT_PATH: none, PKG_CONFIG: NO_PKG_CONFIG });
   assert.match(r.stdout, /^FAIL param-contract .*install omx-contract-data \(>= 3\.6\.0\)/m);
+});
+
+test('a package reached through a symlink is read like one installed in place', () => {
+  // a composed contract directory links the installed packages beside a tree's own (omx-plugins' round trip and its
+  // gen --check arms, Open-Mixer/omx-plugins#98): its items are the installed ones, found through the link
+  const sheet = (value) => ({ OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value } });
+  const roles = { OMX_PLUGINS_ROLE_MEANINGS: { kind: 'roleMeanings', roles: { threshold: { role: 'threshold', meaning: 'threshold' } } } };
+  const installed = contractDir({ 'omx-contract': { 'param-contract.json': sheet({ none: 0, db: 13 }) }, 'omx-plugins': { 'role-meanings.json': roles, 'plugins/omx-delay.json': DESCRIPTOR } });
+  const composed = scratch(join(tmpdir(), 'omx-panel-composed-'));
+  mkdirSync(join(composed, '3'));
+  for (const pkg of ['omx-contract', 'omx-plugins']) symlinkSync(join(installed, '3', pkg), join(composed, '3', pkg));
+  // the role meanings read through the composed directory, not from a file $OMX_ROLE_MEANINGS names (CI sets it)
+  const set = { OMX_CONTRACT_PATH: composed, PKG_CONFIG: NO_PKG_CONFIG, OMX_ROLE_MEANINGS: '' };
+  assert.equal(lookup('v.paramUnitsFile()', set), join(composed, '3/omx-contract/param-contract.json'));
+  assert.deepEqual(lookup('[...v.paramUnits()]', set), [['NONE', 0], ['DB', 13]]);
+  assert.deepEqual(lookup('[...v.roleMeanings().keys()]', set), ['threshold']);
+  assert.deepEqual(lookup('v.installedDescriptorFiles()', set), [join(composed, '3/omx-plugins/plugins/omx-delay.json')]);
 });
 
 test('an install with omx-contract-data and no omx-contract.pc reads its schema from the default directory', { skip: !existsSync('/usr/share/omx-contract/omx-contract.schema.json') && 'omx-contract-data is not installed' }, () => {

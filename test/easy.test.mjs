@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -30,7 +30,10 @@ test('the roles answer in the family row\'s order, whatever order the plugin lis
 });
 
 test('every family of the layout has a row, and no row is past the rule\'s six', () => {
-  for (const family of ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch']) {
+  // the families are the skin schema's enum (schema/skin-package.schema.json), not a list typed here
+  const families = JSON.parse(readFileSync(join(ROOT, 'schema/skin-package.schema.json'), 'utf8')).$defs.family.enum;
+  assert.ok(families.length > 0);
+  for (const family of families) {
     assert.ok(Array.isArray(EASY_ROLES[family]), family);
     assert.ok(EASY_ROLES[family].length <= 6, family);
   }
@@ -144,4 +147,10 @@ test('a scanned descriptor takes the easy of the descriptor its package installe
   assert.deepEqual(easyFromInstalled(lv2, [authored]), ['timeMs', 'tone']);
   assert.equal(easyFromInstalled({ ...clap, plugin: { id: 'other' } }, [authored]), undefined);
   assert.equal(easyFromInstalled({ ...clap, controls: [{ id: 0, name: 'Time' }] }, [authored]), undefined, 'a key this binary lacks: no list rather than half of one');
+});
+
+test('the Easy dynamics roles are named and checked against the shared list: a role the list lacks throws, naming it', async () => {
+  const { pick } = await import('../tools/easy.mjs');
+  assert.deepEqual(pick(['threshold', 'ratio']), ['threshold', 'ratio']);
+  assert.throws(() => pick(['release'], ['threshold', 'ratio']), /easy: 'release' is no dynamics role/);
 });
