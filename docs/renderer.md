@@ -126,6 +126,7 @@ const char *omx_panel_word_name(omx_panel_word_t word);
 uint32_t omx_panel_view_count(const omx_panel_view_t *view);
 int32_t omx_panel_view_find(const omx_panel_view_t *view, const char *symbol);
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
+void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count,
                                const char *text);
@@ -161,6 +162,12 @@ The buffer names its pixel format: RGBA or BGRA, each with its colours premultip
 what a compositor blends) or straight. The panel is drawn with straight alpha and premultiplied at the end,
 each channel times its alpha rounded to the nearest. A PNG holds straight alpha, so the command asks for
 straight when it writes one: the conversion is at the edge, never inside the drawing.
+
+A face has its head (the maker, the plugin's name, the accent rule and dot, `headH` of the geometry tall) unless the host
+calls `omx_panel_view_set_head(view, false)`: then there is none, the sections start at `pad` from the top and the face is
+`sectionTop - pad` shorter, so a host drawing one control per view (Zynthian's stock controller under the vintage look,
+Open-Mixer/zynthian-ui#70) gets the control, its label and its value and no empty head (#94). The command's state file
+says the same with `"head": false`. *Test: `renderer/test/headless.test.mjs`, held to a golden image.*
 
 `omx_panel_view_control_rect` gives a control's cell in a buffer of a given size and scale: what a pointer
 event will be hit-tested against.

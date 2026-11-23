@@ -1,0 +1,29 @@
+{
+ "origin": "authored",
+ "plugin": {
+  "id": "urn:omx-panel:test:one-control",
+  "format": "lv2",
+  "uri": "urn:omx-panel:test:one-control",
+  "name": "Test One Control",
+  "vendor": "omx-panel tests",
+  "features": [
+   "audio-effect"
+  ]
+ },
+ "controls": [
+  {
+   "id": "gain",
+   "symbol": "gain",
+   "name": "Gain",
+   "label": "Gain",
+   "kind": "travel",
+   "travel": {
+    "min": -60,
+    "max": 6,
+    "unit": "dB",
+    "scale": "linear",
+    "default": -6
+   }
+  }
+ ]
+}

@@ -135,6 +135,7 @@ struct omx_panel_view {
   matrix *matrices;
   size_t nmatrices;
   char *brand, *name;
+  bool headless; /* omx_panel_view_set_head(view, false): no head, the sections start at `pad` */
   int row_controls;
   geometry g;
   textsizes t;

@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- A face without a head (#94): `omx_panel_view_set_head(view, false)` (a new function of libomx-panel-render.so.0, a
+  minor addition; the command's state file says `"head": false`) draws no head, the sections start at `pad` and the face
+  is `sectionTop - pad` (36 px) shorter, so a host drawing one control per view gets the control, its label and its value.
+  Held to a golden image of a one-control description at 1x and 2x.
+
 - The kind of a scanned control is one rule, omx-panel's (`docs/control-kind.md`, #153): an enumeration is a choice,
   else lv2:toggled is a toggle, else a stepped control of exactly the two positions 0 and 1 is a toggle, else a travel
   with its scale. `tools/control-kind.mjs` (`@openmixer/omx-panel/control-kind`) is the rule and

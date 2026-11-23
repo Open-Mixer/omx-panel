@@ -589,6 +589,10 @@ void omx_panel_view_set_title(omx_panel_view_t *v, const char *brand, const char
   v->brand = dup(brand), v->name = dup(name);
 }
 
+void omx_panel_view_set_head(omx_panel_view_t *v, bool shown) {
+  if (v) v->headless = !shown;
+}
+
 bool omx_panel_view_set_value(omx_panel_view_t *v, uint32_t i, double fraction, const char *text) {
   if (!v || i >= v->ncontrols || fraction != fraction) return false;
   control *c = &v->controls[i];
@@ -800,7 +804,9 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
   if (across_most > most) most = across_most; /* a matrix is never wrapped */
-  double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
+  /* the sections start below the head, or at the top of a face without one */
+  double top0 = v->headless ? g->pad : g->sectionTop;
+  double section_w = most * g->cellW + 2 * g->sectionPad, y = top0;
   double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
     if (!L.drawn[s]) continue;
@@ -841,7 +847,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     last = top + h;
   }
   L.w = section_w + 2 * g->pad;
-  L.h = last >= 0 ? last + g->pad : g->sectionTop + g->pad;
+  L.h = last >= 0 ? last + g->pad : top0 + g->pad;
   return L;
 }
 
@@ -1131,11 +1137,13 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
 
   d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
   d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
-  d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
-  d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
-  double head_w = (L.w - 2 * g->pad - 24) * s;
-  text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
-  text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  if (!v->headless) {
+    d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
+    d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
+    double head_w = (L.w - 2 * g->pad - 24) * s;
+    text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
+    text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  }
   for (size_t si = 0; si < v->nsections; si++) {
     if (!L.drawn[si]) continue;
     box sec = L.sections[si];
