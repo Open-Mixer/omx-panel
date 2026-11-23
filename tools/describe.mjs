@@ -159,7 +159,7 @@ export function servedParamOf(c, { factor = false } = {}) {
     return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min, max, default: Math.min(max, Math.max(min, Math.round(fallback))), ...(enumLabels ? { enumLabels } : {}) };
   }
   const t = c.travel;
-  const stated = t.unit && t.unit !== 'unknown';
+  const stated = t.unit && t.unit !== 'unknown' && t.unit !== 'none';
   const token = factor && !stated ? 'coef' : unitToken(t.unit);
   const stepped = t.scale === 'stepped' || (t.step ?? 0) >= 1;
   // log over a floor at or below zero is served linear (contract.override.scale-floor)
@@ -168,7 +168,7 @@ export function servedParamOf(c, { factor = false } = {}) {
   const at = typeof t.default === 'number' && t.default >= t.min && t.default <= t.max ? t.default : t.min;
   return {
     kind: 'number', symbol, name, unit: token ?? 'none',
-    ...(token === undefined && t.unit && t.unit !== 'unknown' ? { unitText: t.unit } : {}),
+    ...(token === undefined && stated ? { unitText: unitSymbolOf(t.unit) } : {}),
     scale, step: stepped ? Math.max(1, t.step ?? 1) : 0, min: t.min, max: t.max,
     default: stepped ? Math.min(t.max, Math.max(t.min, Math.round(at))) : at,
   };

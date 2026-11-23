@@ -59,8 +59,8 @@
   "lpf_on": "lpfOn"
  },
  "choiceUnits": {
-  "hpfSlope": "dB/oct",
-  "lpfSlope": "dB/oct"
+  "hpfSlope": "dBPerOct",
+  "lpfSlope": "dBPerOct"
  },
  "sections": [
   {
