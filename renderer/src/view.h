@@ -38,6 +38,9 @@ typedef struct {
   int64_t value;
   /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
   char *bar;
+  /* a repeated group's matrix (the section's `matrix`): `placed` when the matrix names the control, `cut` while the matrix's
+   * count closes its instance up (view.c apply_counts) */
+  int placed, cut;
   /* the travel the host gave (input.c): the control's own unit; none given is 0..1, linear, no default */
   struct { double min, max, def, step; int given, has_def, log, integer; } travel;
   int read_only, hold;
@@ -50,19 +53,48 @@ typedef struct {
 /* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
 typedef struct {
   int section;
-  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
-  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
+  /* the display's axis, the description's `axis` word (PANEL_DISPLAY_AXES), never its kind's name: */
+  int log_x;     /* log-frequency: x in Hz on a log axis; linear: x on a linear span (a transfer curve's input dB) */
+  int symmetric; /* log-frequency: y in dB about 0; linear: y on x's span (a transfer curve's output dB) */
+  int time_x;    /* time: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
+  /* the stems a host hands a time_response (omx_panel_view_set_stems): one per tap, from the floor to its level, its paint dimmed
+   * by its shade (0..1) and its leg letter above (' ' for none); none by default */
+  double *stem_x, *stem_y, *stem_shade;
+  char *stem_letter;
+  size_t nstems;
   /* the marks a host hands with the points: one per band a planter owns, none by default */
   double *mark_freq, *mark_depth;
   char *mark_letter;
   size_t nmarks;
+  /* the spectrum a host hands an eq_response (omx_panel_view_set_spectrum): its bands' centres, levels and peaks in dBFS
+   * (-INFINITY for silence) on the level window [spec_min, spec_max] with a graticule line every spec_grid; none by default */
+  double *spec_hz, *spec_db, *spec_peak;
+  size_t nspec;
+  double spec_min, spec_max, spec_grid;
 } display;
 
 /* One meter of the description's `meters` (contract 7.9): its range is the description's, its reading the host's. A meter whose
  * symbol is a control of a section is that control's reading and is not drawn again; the others stand in a band of their own. */
+/* A section's `matrix` (docs/renderer.md): the group model's matrixOf as the description carries it, read and never re-derived.
+ * `cell` is nrows x nheads control indices, -1 for an empty cell; `on` a head's on/off control, -1 for none. */
+typedef struct {
+  char *label;
+  int on, edge;
+} mhead;
+typedef struct {
+  int section, columns; /* columns: a head is a column; else a head is a row */
+  size_t nheads, nrows;
+  mhead *heads;
+  char **row_label;
+  int *cell;
+  int count_ctl;        /* the control that says how many instances run, -1 for none */
+  int64_t count;        /* its value: the description's default until the host gives one */
+  int head_row;         /* the head row, always the last: its cells are the heads' on/off, a null cell the head's caption */
+} matrix;
+
 typedef struct {
   char *symbol, *label, *unit;
   double min, max;
@@ -76,15 +108,15 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
 } geometry;
 
 typedef struct {
-  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, valueBase;
+  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, nameBaseStrip, valueBase, readingBase;
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
 } palette;
 
 struct omx_panel_view {
@@ -96,11 +128,14 @@ struct omx_panel_view {
   size_t ndisplays;
   meter *meters;
   size_t nmeters, nband;
+  matrix *matrices;
+  size_t nmatrices;
   char *brand, *name;
   int row_controls;
   geometry g;
   textsizes t;
   palette col;
+  omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */

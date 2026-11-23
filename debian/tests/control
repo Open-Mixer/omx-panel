@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# the installed tools load and run: @openmixer/omx-contract resolves through /usr/share/omx-panel/node_modules
+Test-Command: tools/installed-tools-check.sh /usr/share/omx-panel
+Depends: omx-panel
+Restrictions: superficial

@@ -20,14 +20,15 @@
 import { createHash } from 'node:crypto';
 import { easyOf } from './easy.mjs';
 import { barsOf } from './bars.mjs';
-import { shapesOf } from './meaning-infer.mjs';
+import { shapesOf, statesMeaning } from './meaning-infer.mjs';
+import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken } from './vocabulary.mjs';
+import { meaningOfRole, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
 /** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch'];
+export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility'];
 
 /** The widgets a face serves, by enum value. */
 export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
@@ -47,8 +48,8 @@ const ANALOGUE_WORD = /phantom|(^|[^a-z])pad([^a-z]|$)|head[-_ ]?amp|headamp/;
 /** Whether `text` (a meaning in camelCase, a symbol, a name) names such a state, whole words only. */
 export const namesAnalogueState = (text) => ANALOGUE_WORD.test(text.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase());
 export const METER_REFUSED = 'PANEL_METER_REFUSED';
-/** A declared panel's widget names -> the standard widget (`choice` is the older spelling of a selector). */
-const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector', choice: 'selector' };
+/** A declared panel's widget names -> the standard widget. */
+const DECLARED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch', selector: 'selector' };
 /** A standard widget -> the widget a face serves: a selector is AUTO (it needs CLAP_PARAM_IS_ENUM,
  * which the faces do not set), and so is any widget the extension has no value for. */
 const SERVED_WIDGET = { knob: 'knob', fader: 'fader', switch: 'switch' };
@@ -77,20 +78,30 @@ export function widgetOf(c, declared) {
 export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 
 /** The display kinds and sources, by enum value. */
-export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter'];
+export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
 export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The axes a display is drawn on (the panel domain's PANEL_DISPLAY_AXES, in its code order), and the one the layout gives each kind:
+ * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
+ * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
+export const DISPLAY_AXES = ['linear', 'log-frequency', 'time'];
+export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
 export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
 
-/** A section `graph` -> the display the extension names for it; a graph with none here is the
- * renderer's own (delay taps, a decay envelope, an LFO). */
-export const DISPLAY_OF_GRAPH = { 'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve' };
+/** A section `graph` -> the display the extension names for it; a graph word with none here is
+ * refused by name when the panel is described (a declaration error, never a silent drop). */
+export const DISPLAY_OF_GRAPH = {
+  'eq-curve': 'eq_response', 'dynamics-curve': 'transfer_curve', 'transfer-curve': 'transfer_curve',
+  // the time response (the processing-view spec, amendment 2026-09-16h): a delay's tap train and a reverb's decay envelope
+  // are one kind, x time in ms from 0, y level in dB with the floor at -60; the graph words stay the section's vocabulary
+  'delay-taps': 'time_response', 'decay-envelope': 'time_response',
+};
 /** The basis of a declared section's graph: `exact` only when an authored descriptor says so (the one-panel spec §5.3), else `modelled`. */
 export const basisOf = (descriptor, section) => (section.basis === 'exact' && descriptor.origin === 'authored' ? 'exact' : 'modelled');
 
 /** The displays a host computes from a family's roles in closed form. */
-const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'] };
+const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
 /** A descriptor unit -> the token a role checks it against: the param-contract extension's own table,
  * so a unit it serves is a unit a role can take. A unit it has no token for (`unknown` among them) is
@@ -127,8 +138,18 @@ export const FAMILY_MEANINGS = {
  * no declared family, an effect takes the first family whose meanings it carries; an instrument, or a
  * plugin no family fits, is none.
  */
-export function familyOf(controls, declared, features = []) {
-  const have = new Set(controls.map((c) => c.meaning).filter(Boolean));
+export function familyOf(controls, declared, features = [], roles = {}) {
+  const have = new Set(controls.filter(statesMeaning).map((c) => c.meaning));
+  // a declared panel's roles back the family too (#43): a control the panel binds to a role, whose own meaning the
+  // descriptor leaves unstated (a scan writes `unknown`), carries the role's meaning; a stated meaning is the descriptor's
+  for (const [role, syms] of Object.entries(roles ?? {})) {
+    const m = meaningOfRole(role);
+    if (!m) continue;
+    for (const sym of [syms].flat()) {
+      const c = controls.find((x) => keyOf(x) === sym);
+      if (c && !statesMeaning(c)) have.add(m);
+    }
+  }
   if (declared !== undefined) {
     // the declaration's family is one of the extension's (the schema's $defs.family is the same closed
     // set); a family the extension has no place for is none: no house view
@@ -201,6 +222,9 @@ function portsOf(ports = []) {
  * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
  */
 export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false } = {}) {
+  // the panel a plugin serves (plugin-hostd-probe panel: omx-clap-scan's object, parameters by id) is read as the
+  // declared form over this descriptor's keys (tools/panel-served.mjs, #43)
+  if (panel && isServedPanel(panel)) panel = declaredFromServed(panel, descriptor, { where, keyOf, indexedRoles: INDEXED_ROLES });
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
@@ -215,7 +239,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     return s;
   };
 
-  const { family, needs } = forced !== undefined ? { family: forced } : familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features);
+  const { family, needs } = forced !== undefined ? { family: forced } : familyOf(all, panel ? panel.family : undefined, descriptor.plugin?.features, panel?.roles);
   // a declared family stands on its controls' meanings: a transient designer is no compressor
   if (needs) {
     const have = [...new Set(all.map((c) => c.meaning).filter(Boolean))];
@@ -272,22 +296,35 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   const table = ROLES[family];
   const roles = [], unpublished = [];
   // `extra` is what an inference states about a role it binds: `inferred`, the `token` it reads the control in, a band's `shape`
+  // `extra` is what an inference states about a role it binds (`inferred`, the `token` it reads the control in, a band's
+  // `shape`), kept on the row; `declared` marks a declared panel's binding and is not
   const bind = (role, index, sym, extra = {}) => {
+    const { declared = false, ...rest } = extra;
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = extra.token ?? unitToken(unit);
+    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? SLOPE_UNITS[unit] : undefined) ?? unitToken(unit);
+    const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
+    // a declared role over a control whose descriptor states another meaning (#43): the words disagree, and the role is named, not bound
+    else if (declared && plays && statesMeaning(c) && c.meaning !== plays) unpublished.push({ role, symbol: sym, why: `the descriptor says it means ${c.meaning}, not ${plays}, the ${role} role's` });
     else {
       // a band-type role names the shape of each of its choice values, from the choice's own labels
-      const shapes = extra.shapes ?? (role === 'band_type' ? shapesOf(c) : undefined);
-      roles.push({ role, index, symbol: sym, param: c.id, unit, ...extra, ...(shapes ? { shapes } : {}) });
+      const shapes = rest.shapes ?? (role === 'band_type' ? shapesOf(c) : undefined);
+      roles.push({ role, index, symbol: sym, param: c.id, unit, ...rest, ...(shapes ? { shapes } : {}) });
     }
   };
   if (panel) {
     // an indexed role (an EQ band's) names every band's symbol in order: one row per band, its index the band's
-    for (const [role, syms] of Object.entries(panel.roles ?? {})) [syms].flat().forEach((sym, index) => bind(role, index, sym));
+    for (const [role, syms] of Object.entries(panel.roles ?? {})) [syms].flat().forEach((sym, index) => bind(role, index, sym, { declared: true }));
+    // a control the panel binds to a role, whose own meaning the descriptor leaves unstated (a scan's `unknown`), serves
+    // the role's meaning (#43): the panel's declaration over the scan's unknown; a stated meaning stays the descriptor's
+    for (const r of roles) {
+      const c = controls.find((x) => x.symbol === r.symbol);
+      const m = meaningOfRole(r.role);
+      if (c && m && !statesMeaning({ meaning: c.meaning })) c.meaning = m;
+    }
   } else {
     // each meaning plays the one role of the family it names; an indexed role takes every control of
     // its meaning, any other its first, and a second is named
@@ -336,12 +373,14 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
 
   const displays = listed.flatMap((s, section) => {
+    if (s.graph === undefined) return [];
     const kind = DISPLAY_OF_GRAPH[s.graph];
-    if (!kind) return [];
+    // a graph word that names no kind is a declaration error, named; dropping it drew nothing and said nothing (ruling 6)
+    if (!kind) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, which names no display kind (${Object.keys(DISPLAY_OF_GRAPH).join(', ')})`);
     if (!CLOSED_FORMS[family]?.includes(kind)) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, and the ${family} family has no ${kind} a host computes`);
     // `exact` only when an authored descriptor declares it (the one-panel spec §5.3); any other curve is modelled
     const basis = basisOf(descriptor, s);
-    return [{ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
+    return [{ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
   });
   // a derived panel (derive: true): a family whose closed form is known draws it on the section holding its first required role, once
   // every required role is mapped (the one-panel spec §3.1)
@@ -350,7 +389,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const section = controls.find((c) => c.symbol === first.symbol)?.section;
     if (section !== undefined) {
       const kind = CLOSED_FORMS[family][0];
-      displays.push({ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
+      displays.push({ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
     }
   }
 
@@ -408,7 +447,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
-    displays.push({ kind: 'gain_reduction_bar', section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
   }
   // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
   const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
@@ -491,6 +530,15 @@ const PLACEMENT_OF_KIND = { fxReturn: 'return', main: 'master' };
 /** The key a control carries its declared group under, for the page cut: a symbol, so no serialisation sees it. */
 export const GROUP = Symbol('group');
 
+/** The label of the repeated-group instance a control belongs to (`Band 3`), for the page cut: a symbol, so no serialisation sees it. */
+export const INSTANCE = Symbol('instance');
+
+/** The place of a repeated-group instance's slot (0 its on/off where the heads have one, then one a matrix row), for the page cut: a symbol. */
+export const PLACE = Symbol('place');
+
+/** The label of the matrix row a repeated-group instance's slot is (`Type`), for the page cut: a symbol. */
+export const ROW = Symbol('row');
+
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
@@ -511,8 +559,15 @@ export const PAGE_SIZE = 8;
  *    on one, never mixed with its neighbour. A derived page holds a control once. A control with no group is its own.
  *    A section of several pages names each page by the controls it holds, "Band: Freq - Q".
  *
+ * An instance of a repeated group (`INSTANCE`, its slots' places `PLACE` and rows `ROW`) is a page of its own. From two
+ * encoders up, an instance longer than the page has its first `perPage` places as its screen, and each place past them is a
+ * row of the aligned matrix: after the instances, one screen per run of `perPage` instances that have that cell, slot `j`
+ * the run's instance `j`, named by the row (`Type`, a second run `Type 2`). A cut never splits an instance onto a
+ * continuation of its own.
+ *
  * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) keeps its
- * slot, blank: the slots do not move with the governing values. Below two encoders a group is plain controls (one a page).
+ * slot, blank: the slots do not move with the governing values. No screen has zero visible items: a page whose every slot
+ * is blank (hidden, taken by the Easy pages, or an empty cell) is not cut. Below two encoders a group is plain controls (one a page).
  */
 export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
@@ -526,6 +581,8 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     return out;
   };
   const easy = (x.easy ?? []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
+  // no screen has zero visible items: a page of blank slots alone is not cut
+  const shown = (pages) => pages.filter((p) => p.ids.some((id) => id !== null));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
@@ -538,10 +595,25 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: k === 0 ? name : `${name} ${k / size + 1}`, ids: pad(r.ids.slice(k, k + size)) });
       return pages;
     });
-    return [...easyPages, ...declared];
+    return shown([...easyPages, ...declared]);
   }
-  return [...easyPages, ...x.sections.flatMap((s, section) => {
-    const cs = x.controls.filter((c) => c.section === section && !easy.includes(c.symbol));
+  return shown([...easyPages, ...x.sections.flatMap((s, section) => {
+    // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
+    // after it stay where every other instance has them, and the blanks an instance would end on are left off
+    const taken = (c) => c.param === null || easy.includes(c.symbol);
+    const mine = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
+      .map((c) => (taken(c) ? { ...c, param: null } : c));
+    // the places past a page are the aligned matrix's rows, cut after the instances (from two encoders up)
+    const past = (c) => size >= 2 && c[INSTANCE] !== undefined && c[PLACE] >= size;
+    const cs = mine.filter((c) => !past(c))
+      .filter((c, i, all) => c.param !== null || all.slice(i + 1).some((d) => d[GROUP] === c[GROUP] && d.param !== null));
+    const rowPages = [];
+    const beyond = mine.filter(past);
+    for (const k of [...new Set(beyond.map((c) => c[PLACE]))].sort((a, b) => a - b)) {
+      // the instances that have this cell, in the matrix's order; a cell the Easy pages took keeps its slot, blank
+      const row = beyond.filter((c) => c[PLACE] === k && c.symbol !== null);
+      for (let r = 0; r < row.length; r += size) rowPages.push({ row: row[0][ROW], run: r / size, controls: row.slice(r, r + size) });
+    }
     const pages = [];
     let page = [];
     const flush = () => {
@@ -554,19 +626,29 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       const run = cs.slice(i, j);
       i = j;
       // a group that fits ends the page early rather than split; a longer one starts and ends on a page of its own
-      if (run.length > size || page.length + run.length > size) flush();
+      // an instance of a repeated group is never beside another control: a page of its own, ended after it
+      const alone = run[0][INSTANCE] !== undefined;
+      if (run.length > size || page.length + run.length > size || alone) flush();
       for (const c of run) {
         if (page.length === size) flush();
         page.push(c);
       }
-      if (run.length > size) flush();
+      if (run.length > size || alone) flush();
     }
     flush();
+    // a page of one repeated-group instance is named by it (`Band 3`; below two encoders a continuation `Band 3 2`)
+    const seen = new Map();
     return pages.map((p, k) => {
       const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
-      return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
-    });
-  })];
+      const instance = p[0][INSTANCE];
+      if (instance !== undefined && p.every((c) => c[INSTANCE] === instance)) {
+        const n = (seen.get(instance) ?? 0) + 1;
+        seen.set(instance, n);
+        return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
+      }
+      return { section, sectionName: s.label, pageName: pages.length === 1 && rowPages.length === 0 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
+    }).concat(rowPages.map(({ row, run, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${run === 0 ? row : `${row} ${run + 1}`}`, ids: pad(controls.map((c) => c.param)) })));
+  })]);
 }
 
 /** The shortest decimal that round-trips to the same binary64, -0 written 0. */

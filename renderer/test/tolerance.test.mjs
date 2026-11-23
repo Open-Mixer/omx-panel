@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { FIXTURES, ROOT, barHeights, barParity, descriptionFile, render, rects, scratch, skipWithoutTwin, stateFile, strokeParity, strokePixels } from './harness.mjs';
+import { FIXTURES, ROOT, barHeights, barParity, descriptionFile, render, rects, scratch, stateFile, strokeParity, strokePixels } from './harness.mjs';
 
 const g = JSON.parse(readFileSync(join(ROOT, 'tools/look/geometry.json'), 'utf8')).geometry;
 const fxEq = FIXTURES.find((f) => f.name === 'eq-marks');
@@ -31,7 +31,7 @@ function shifted(img, dx, dy) {
   return out;
 }
 
-test('a stroke is within 1 px of itself, and a pixel off is still within 1 px', skipWithoutTwin(fxEq), () => {
+test('a stroke is within 1 px of itself, and a pixel off is still within 1 px', () => {
   const a = drawn();
   const sa = strokePixels(a, FRAME);
   assert.ok(sa.length > 200, 'there is a stroke to compare');
@@ -39,13 +39,13 @@ test('a stroke is within 1 px of itself, and a pixel off is still within 1 px', 
   assert.ok(strokeParity(sa, strokePixels(shifted(a, 1, 0), FRAME), 1).ok);
   assert.ok(strokeParity(sa, strokePixels(shifted(a, 0, 1), FRAME), 1).ok);
 });
-test('arm: two pixels off fails the console\'s 1 px and passes Tk\'s 2 px', skipWithoutTwin(fxEq), () => {
+test('arm: two pixels off fails the console\'s 1 px and passes Tk\'s 2 px', () => {
   const a = drawn(), sa = strokePixels(a, FRAME), sb = strokePixels(shifted(a, 0, 2), FRAME);
   assert.ok(!strokeParity(sa, sb, 1).ok);
   assert.ok(strokeParity(sa, sb, 2).ok);
   assert.ok(!strokeParity(sa, strokePixels(shifted(a, 0, 4), FRAME), 2).ok);
 });
-test('arm: the check runs both ways: a stroke the other lacks, and one the first lacks, are each refused', skipWithoutTwin(fxEq), () => {
+test('arm: the check runs both ways: a stroke the other lacks, and one the first lacks, are each refused', () => {
   const sa = strokePixels(drawn(), FRAME);
   const half = sa.filter(([x]) => x < FRAME.x + FRAME.w / 2);
   // `half` lacks the right half of the stroke: from the full one's side that is a stroke with no match, from the other's side nothing is extra

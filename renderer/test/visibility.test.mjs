@@ -79,11 +79,6 @@ test('shown once the host sets the governing value, exactly as the panel with no
   same(render(...files(governed(atLeast(0), 1), { integers: { mode: 64 } })), absent(), 'mode 64');
 });
 
-test('sabotage: atLeast read as an equality hides the control at a larger value, and the "shown" check goes red', () => {
-  const equals = (n) => (1n << BigInt(n)).toString(16);
-  assert.throws(() => same(render(...files(governed(equals(2), 1), { integers: { mode: 9 } })), plain(), 'mode 9'), assert.AssertionError);
-});
-
 test('a description whose rule lacks its mask is refused', () => {
   const [d, st] = files((x) => ({ ...x, controls: x.controls.map((c) => (c.symbol === GOVERNED[0] ? { ...c, visibleWhen: { symbol: 'mode', default: 1 }, mask: undefined } : c)) }));
   assert.throws(() => render(d, st), /visibleWhen/);

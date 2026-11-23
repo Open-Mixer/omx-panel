@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#
+# The corpus of test/group-model.test.mjs (docs/group-model.md, "The corpus").
+#
+# expected/*.expected.json: each plugin's inference, written from the spec's rules before tools/group-model.mjs existed.
+#
+# omx-plugins/*.descriptor.json: Open-Mixer/omx-plugins at af11dcbdeefd1d4d862cc7f0735a82e1129de16f (the plugins at
+# 0.19.3), plugins/<name>/<name>.descriptor.json, copied whole (omx-eq8, -eq16, -eq32, -strip, -dyneq, -delay). Ours,
+# GPL-3.0-or-later.
+#
+# lv2/*: TTL copied whole from Fedora 44 packages (lv2-calf-plugins-0.90.9-3.fc44, lsp-plugins-lv2-1.2.29-1.fc44),
+# 2026-11-16, with two comment lines added at the top that state the licence below and point here. The files are the
+# plugins' authors', under the licence each package states (the RPM licence tag in full).
+#
+# directory                      file                          bundle            package                           licence
+lsp-para-equalizer-x8-mono       para_equalizer_x8_mono.ttl    lsp-plugins.lv2   lsp-plugins-lv2-1.2.29-1.fc44     LGPL-3.0-or-later AND Zlib
+calf-multiband-compressor        MultibandCompressor.ttl       calf.lv2          lv2-calf-plugins-0.90.9-3.fc44    GPL-2.0-or-later AND LGPL-2.0-or-later AND LicenseRef-Fedora-Public-Domain
+#
+# x42 fil4, x42 matrixmixer and AMS advenv are read from test/fixtures/lv2-groups (provenance in its SOURCES).

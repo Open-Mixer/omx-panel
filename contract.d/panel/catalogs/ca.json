@@ -1,0 +1,481 @@
+{
+  "kind": "catalog",
+  "lang": "ca",
+  "owner": "omx-panel",
+  "messages": {
+    "PANEL_DISPLAY_SOURCES.curve": {
+      "text": "Una corba que declara el connector.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "850e649623c182a6b46558f20c630e2bcad638ace266205cfc665723ae909bd5"
+    },
+    "PANEL_DISPLAY_SOURCES.family": {
+      "text": "Les dades que implica la família de panells.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9140db72be08d430d1fb8534b75cfeb039bf9e00057ec287241839d56b5b264b"
+    },
+    "PANEL_DISPLAY_SOURCES.gain_adjustment": {
+      "text": "El guany que aplica el processador.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "dfb3bafbca9720e7d55452673fb05325a01b2eb8f7394b7053f2d36cddf9abad"
+    },
+    "PANEL_DISPLAY_SOURCES.meters": {
+      "text": "Les lectures dels mesuradors del connector.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "617533371cf411b2cf39e880a0f97fe42bf541fd22cb5a4b856a5a792d8f1e22"
+    },
+    "PANEL_PLACEMENTS.bus": {
+      "text": "Una instància en un bus.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8ca00e6dcf4cf5613a411bb25981b76beeba669fba1eeed1d2b32dc6bdffa4a0"
+    },
+    "PANEL_PLACEMENTS.insert": {
+      "text": "Una instància a la cadena d'insert.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2f1de26ee7dc81a7fd07063d3e99a009021901acc17fe13e7a47fc0f48efe6a"
+    },
+    "PANEL_PLACEMENTS.master": {
+      "text": "Una instància al master.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "de46ff87d59217184fc58d8c8747b66ac9464fb58f8d6e628b7eb7fd65bc9d11"
+    },
+    "PANEL_PLACEMENTS.return": {
+      "text": "Una instància en una pista de retorn.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "307e4ce780d050bd2508c8aa43271d077aa66074cc49d160a0c2a9c0deea9a46"
+    },
+    "PANEL_DISPLAY_KINDS.gain_reduction_bar": {
+      "text": "Una barra que mostra la reducció de guany.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "03ad40765c387734861a7a8fb00a021f7cf65907d692710647cd9726663f853f"
+    },
+    "PANEL_DISPLAY_KINDS.transfer_curve": {
+      "text": "La corba de transferència de la dinàmica: el nivell de sortida segons el d'entrada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "6025ca94dd504e70ce62f6c57cb83c633fa8604705f440486f354524fb3b819a"
+    },
+    "PANEL_DISPLAY_KINDS.eq_response": {
+      "text": "La resposta en freqüència de l'equalitzador.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "0877c82ba2901b0b7a9f5ad0430069cd3a07270ba376f08938b5295580634940"
+    },
+    "PANEL_DISPLAY_KINDS.meter": {
+      "text": "Un mesurador de nivell.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2ca8f607dd30ba6ce17aea6ba8ef8b32f270b4ee043ada7d4b891fb23e2e8b5"
+    },
+    "PANEL_DISPLAY_KINDS.time_response": {
+      "text": "La resposta en el temps: les repeticions d'un retard o la cua d'una reverberació.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ba75ee20c1bd3ded3b9f24b00af1eea2cebd05afcce7a8050fcb705eff254d35"
+    },
+    "PANEL_FAMILIES.deesser": {
+      "text": "La família de panells d'un de-esser.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "2e80851594f548fe38bf9b71c6a179e0fe226ae660b7ec422d111f08f577eaee"
+    },
+    "PANEL_FAMILIES.delay": {
+      "text": "Una família de panells per a delays.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "39632e3c2f4ccd94068f32d088de776ac7caec3b90b9ad88876743e955182d11"
+    },
+    "PANEL_FAMILIES.drive": {
+      "text": "Una família de panells per a saturadors o distorsions.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5984a37474e21563302bf0bf66b47511cf99b5967cf7842f6801639a0243a47f"
+    },
+    "PANEL_FAMILIES.dynamics": {
+      "text": "La família de panells d'un compressor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "fa2c2b321a53cef9faff3d5cc52438413529b6d8dcc3f48cccd286d51f3a01ce"
+    },
+    "PANEL_FAMILIES.eq": {
+      "text": "La família de panells d'un equalitzador, paramètric o gràfic.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "1be3fd049d5af58fa4d3f884df995604775d9ca1fc991382d6afd2a33c8852aa"
+    },
+    "PANEL_FAMILIES.filter": {
+      "text": "La família de panells d'un filtre.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5765a92579509e3b59550271c259e7e9c97c3c4c0728a1869f71e2bbf3769767"
+    },
+    "PANEL_FAMILIES.gate": {
+      "text": "La família de panells d'una porta o un expansor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "335c1e42f489bcccc2bc5ab2f2ee13bf2d8c5f33bb30772a59dc3b0b0b9669a5"
+    },
+    "PANEL_FAMILIES.limiter": {
+      "text": "La família de panells d'un limitador.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c7d6dec58579dc0d58e0fa0718612d33b66440c2e756da2089b1d4c9399e4896"
+    },
+    "PANEL_FAMILIES.modulation": {
+      "text": "Una família de panells per a chorus, flanger, phaser o tremolo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "16011b067f1656202cc6c9bb5ed5c5468161eab515c589454e915a9e46202e79"
+    },
+    "PANEL_FAMILIES.none": {
+      "text": "Un connector sense família: el seu panell es disposa a partir dels seus grups i els seus rols.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c0fdc99c45116d4cff42136cf0158a8daaee2016eab2f865fc99f8ec28a5219a"
+    },
+    "PANEL_FAMILIES.pitch": {
+      "text": "Una família de panells per a pitch shifters.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "7e5d400f3ec6105e741da32756a023f90b260dba103556d4ea8cb383e1a3ebac"
+    },
+    "PANEL_FAMILIES.reverb": {
+      "text": "Una família de panells per a reverbs.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "05ef5c056ad778a381dc2f2122deb6b774359a8658883a4d9cef2f16e81fad8b"
+    },
+    "PANEL_FAMILIES.utility": {
+      "text": "Una família de panells per a utilitats: un trim, un control d'amplada, un balancejador o un clipper.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "403438fa1cccb39d52e91587502cf94860f203012166395e4317cdb64629f803"
+    },
+    "PANEL_STANDARD_WIDGETS.curve": {
+      "text": "Una corba de resposta o de transferència, dibuixada com a gràfic.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0a7920fd9b263d3ebb3e32117e05a7f58280c4cdc0734d3fae6481ebe0087668"
+    },
+    "PANEL_STANDARD_WIDGETS.display": {
+      "text": "Un valor mostrat com a text.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "6e013d5873685d59d99827aaaf6a77533d25983f85b9215685b2e5f55009bbb1"
+    },
+    "PANEL_STANDARD_WIDGETS.fader": {
+      "text": "Un recorregut dibuixat llarg, com un fader.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "efbf109439a8c3888f791465c872ef57bcbae7cc0899165676ab95ef228ffeff"
+    },
+    "PANEL_STANDARD_WIDGETS.knob": {
+      "text": "Un recorregut, dibuixat com un botó.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e6c672d8c14ebe015ee1a3e8cb7b2aad90b4876151b8957390ec05bc0bb6cc30"
+    },
+    "PANEL_STANDARD_WIDGETS.meter": {
+      "text": "Una lectura, dibuixada com un metre.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "9a9066901c13f888069e833a57740d7b910de67f72d77fefd10c1d02b7279e0f"
+    },
+    "PANEL_STANDARD_WIDGETS.selector": {
+      "text": "Un recorregut enter o valors etiquetats, dibuixat com un selector.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ebc164759fd083dc7d7ee184182e9d60e40c491722195f36d21cb59170c66964"
+    },
+    "PANEL_STANDARD_WIDGETS.switch": {
+      "text": "Un commutador, dibuixat com un interruptor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "98b2658b477130cc95ff55c83b96ce1ece461a4cf0c5b2aac7f63c1ef3ba5566"
+    },
+    "PANEL_STANDARD_WIDGETS.xy": {
+      "text": "Dos controls dibuixats junts com un punt en un pla.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ea76439d1a2cdf7fdf71fc2f5e5c0aaeb95c12e111b4fd03311f05b0f72ef53d"
+    },
+    "PANEL_WIDGETS.auto": {
+      "text": "Omesa d'una declaració de panell: el disseny tria el widget del control.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a22458b4a94ae0983acc62a8fc805ccac81b52521ef3801d93587c89733b2676"
+    },
+    "PANEL_WIDGETS.fader": {
+      "text": "Un control lineal.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "f850832e569562ebd52de79dd1b082e1dee30ab7893f7173ae1ae6ac614092da"
+    },
+    "PANEL_WIDGETS.knob": {
+      "text": "Un control rotatori.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "dafbc707b0588ef18141ce808852c376a358804a6d9d33252556fc4fefbc9277"
+    },
+    "PANEL_WIDGETS.selector": {
+      "text": "Un control que tria un dels pocs valors.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "bc89412b58b3c796dd602bacb38091876f4c8342856f9ec50672a8deb67d4791"
+    },
+    "PANEL_WIDGETS.switch": {
+      "text": "Un control de dos estats.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "3a108468ff6ad2eef53811db2720e3738b3427f03ad7b8a0515b64de399a8383"
+    },
+    "PANEL_STORE_CODES.panel-store.absent": {
+      "text": "El fitxer de la base no existeix.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4886d70a72641c5b033e7b3fcdc28a4882979d352cec3dc811a050152877196f"
+    },
+    "PANEL_STORE_CODES.panel-store.unreadable": {
+      "text": "Un fitxer de la botiga existeix i no es pot llegir.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9442fb05d12e7f5bf6c4ac4deb884fdef51513f76069abc919beb8dad59a3a5b"
+    },
+    "PANEL_STORE_CODES.panel-store.not-a-store": {
+      "text": "El fitxer no és una botiga de la capa amb què s'ha obert.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b548c5415a33726dd9e3b43f3c6d64c821cdf1a05a372b71f621b35965dd6874"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-mismatch": {
+      "text": "Els fitxers de la botiga tenen versions d'esquema diferents.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "770133c9bd5b295a772c6c338a2097eec3a59be393a1acd3ac083670aeabd092"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-other": {
+      "text": "Un fitxer de la botiga té una versió d'esquema diferent de la del lector.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98debebefb977b5d4704404f644c39dceb85c024492032d1ac7c9bf67871e3b5"
+    },
+    "PANEL_STORE_CODES.panel-store.domain-too-old": {
+      "text": "Un domini instal·lat és més antic que el que es va usar per comprovar la botiga.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b6f217f98b6f7dd80da59171421bd6af7512a9dc882f8a4edd6b735d6a3e2f76"
+    },
+    "PANEL_STORE_CODES.panel-store.word-unknown": {
+      "text": "Una paraula emmagatzemada no és en cap dels ítems amb què es comprova la columna.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "981bbabd1afbb0fa0a1a55643cd20695b035ae186075b47af22f66f71fd2381d"
+    },
+    "PANEL_STORE_CODES.panel-store.hot-journal": {
+      "text": "Una capa té un diari actiu: el seu escriptor s'ha aturat dins una transacció.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98b1dac00f36f5e0a81d583a2856f5071480a91c2ae6841840f96f26a3116b56"
+    },
+    "PANEL_STORE_CODES.panel-store.busy": {
+      "text": "Una capa ha restat bloquejada passat el temps límit.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "207d5cc48aa4288d7a67d5103d373460c0fe370fd42613d909c0e69318e84339"
+    },
+    "PANEL_STORE_CODES.panel-store.entry-invalid": {
+      "text": "L'entrada no és una entrada de l'esquema de descripció, o té una paraula que li falta a l'ítem.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4bf1960cce76c5a5c3932e6d9332c589dfb2c1a34ea9ed291010039ea050c47e"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.no-controls": {
+      "text": "El connector no té controls.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "6c3fb28b54a0770d088108ca7634225ab54a26662dedac0c72939539175b6a05"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.family-not-backed": {
+      "text": "La família no té cap panell que el disseny admeti.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84a797d358c642db98d2622b7ff1db19a94876237b970eed2bd1027aef7d1571"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.layout-invalid": {
+      "text": "El disseny que declara el connector no és vàlid.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8856d97753cfef5bf8c53e194faddf1b34273df076bafb354427a8926236a33b"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-unavailable": {
+      "text": "S'ha donat una capa de substitució i res no la pot aplicar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "630103e16b801026e91a54f907d8e600cfeb2d75c20b167b4d14f226f8156112"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-refused": {
+      "text": "S'ha refusat una capa de substitució.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "61eab1a2953cad752cf488cad6523cf75052471687adaf78b4e749010790ed0a"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-dropped": {
+      "text": "S'ha descartat una entrada de substitució.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "483028fead367bda8858d64187d8536dc179eb1fb28f1f172651624b226a9d9e"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.role-dropped": {
+      "text": "S'ha descartat un rol.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "26fde59e03217b916e96524e0748f1e28c9ed05f44d322bec9726f61503f708f"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.skin-dropped": {
+      "text": "S'ha descartat un camp de la pell.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "991a5b1f092421791226463ae80dbd93fa325e113981fd1fa865aeeb2acea596"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.meter-refused": {
+      "text": "S'ha refusat un indicador de nivell.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "cb7f71d8761f9da6560c8cf0dfa828eb4a370fb7e5f9b54eaacaa447569726d6"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.param-unserved": {
+      "text": "No es serveix un paràmetre d'un altre rang.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "1130edfedc850846d11ab197b0a6ab797e84c53bb046f98ba846cbe95662157e"
+    },
+    "PANEL_GROUP_OUTCOMES.nothing-to-do": {
+      "text": "El connector es deixa tal com és.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f8fd9aa31a359c0b38d76ba56f11dc7ff159ab6f0bfee9fa0890deebc8ffd66b"
+    },
+    "PANEL_GROUP_OUTCOMES.grouped": {
+      "text": "Cada control s'ha col·locat en un grup.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "126fa341f699289b9f248f0b4b97cd36016f079d3569cb32d028959936dcfa2a"
+    },
+    "PANEL_GROUP_OUTCOMES.no-confident-grouping": {
+      "text": "Les regles no han trobat cap agrupació de confiança.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "da71ee8c7ba68581ceaff2a638882de8bd80a066c260c06abcc8b2beaf06c2f5"
+    },
+    "PANEL_GROUP_REASONS.no-controls": {
+      "text": "El connector no té controls per col·locar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e34d2c0387467d79db3d8b7c7b6bbc19cc4d93756f0d9b6f379f3ba5b8f85b06"
+    },
+    "PANEL_GROUP_REASONS.own-groups-complete": {
+      "text": "Els grups del propi connector ja col·loquen tots els controls.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ed9cac998cb42d947e35209b45f710ba4fbc544628ad0a9d699f9b245205b451"
+    },
+    "PANEL_GROUP_REASONS.fits-one-screen": {
+      "text": "Els controls caben en una pantalla.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e1e3590b2b38e8fe21c7b69d782a24f5f0735931d57d76e188e71ba22c8fcfd1"
+    },
+    "PANEL_GROUP_REASONS.unplaced-controls": {
+      "text": "Cap regla no ha col·locat un control.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "22f49c012a775707abe3b6ac9373e87e6201733ea05c4bcc8b7f659b089c67ab"
+    },
+    "PANEL_GROUP_REASONS.too-few-groups": {
+      "text": "Les regles han fet massa pocs grups.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "682e56081d9171f1e75411bada1a56beeca0f594a3c298ab6df2a6d46d5fdb63"
+    },
+    "PANEL_GROUP_REASONS.too-many-groups": {
+      "text": "Les regles han fet massa grups.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "5036c139cfee4b339931b175a181fe868b8094935704d34e4e1844e6bdf0d797"
+    },
+    "PANEL_GROUP_REASONS.mostly-by-index": {
+      "text": "La majoria de controls s'han col·locat només per una successió d'índexs de port.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "a69e7e129a266ed3ded35466f446bbaa756ce86e3465d345d6c71f4e50f3cc00"
+    },
+    "PANEL_GROUP_RULES.own": {
+      "text": "El grup del propi connector.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "2d7f87e4b524d41a5b6d95c77e7da0ab58b5140c0953547deb6ee96da4db0352"
+    },
+    "PANEL_GROUP_RULES.designation": {
+      "text": "Una designació del vocabulari de paràmetres.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "29a54fa52bd74ba71c5c80105b32bf5363e417172e215a8b1c20ae9d35250e7c"
+    },
+    "PANEL_GROUP_RULES.name": {
+      "text": "Un prefix de nom o símbol, o un nombre, compartit.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ae53596d003ed3654d198720814e735cf37b4855075c3a0ce56df79eef1e1d9c"
+    },
+    "PANEL_GROUP_RULES.unit": {
+      "text": "Una unitat compartida.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4ee5c86a73656aecac990237516633f0cd8895b4ce4d9435fbf821407d0eac68"
+    },
+    "PANEL_GROUP_RULES.index": {
+      "text": "Una successió d'índexs de port.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "825eee304bf393c82b98b2ebbfb3f9830f587f4504507138295d25a6ca99a398"
+    },
+    "PANEL_GROUP_RULES.modgui": {
+      "text": "El disseny MOD GUI del propi connector.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "c8745485e14ce421ae90e6a9c4ca1a182c5077a621f4e697e4cbf26509729b23"
+    },
+    "PANEL_GROUP_RULES.instance": {
+      "text": "Un grup d'una instància d'un grup repetit.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "646fe87a13d99ad9cb920ad6cbbac76cd71a57abcb5830bd1aab05f2e3a09d3d"
+    },
+    "PANEL_DISPLAY_AXES.linear": {
+      "text": "Un eix lineal: un nivell en dB en un interval lineal.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "097771ce5282009b7b2da9af193c41fa13e9f790eec1403a377fc198e6395dfb"
+    },
+    "PANEL_DISPLAY_AXES.log-frequency": {
+      "text": "Un eix de freqüència logarítmic: la freqüència en Hz en escala logarítmica, el nivell en dB al voltant de 0.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84d71cb0c7ff5bf29c11e5c194d56996b5a27b65b656aea4f5fd4f8af6c9a8da"
+    },
+    "PANEL_DISPLAY_AXES.time": {
+      "text": "Un eix de temps: el temps en ms des de 0, el nivell en dB des del terra.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "46633ca72d9a1af20d0ea479e30cbe230a33da294832b58580df3aabae9b5d10"
+    }
+  }
+}

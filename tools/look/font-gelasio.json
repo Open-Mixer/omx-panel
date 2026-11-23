@@ -1,0 +1,16 @@
+{
+  "$comment": "The vintage look's serif face, bundled in every MOD GUI so no system font is needed: Gelasio (OFL-1.1), metric-close to Georgia. Pinned by the sha-256 of the woff2 shipped and of the upstream TTF it was made from (fontTools, flavor woff2). Check: `node tools/font-pin.mjs --check`.",
+  "family": "Gelasio",
+  "license": "OFL-1.1",
+  "licenseFile": "tools/fonts/Gelasio-OFL.txt",
+  "file": "tools/fonts/Gelasio.woff2",
+  "source": {
+    "url": "https://github.com/google/fonts/raw/cc39c4c2c304bc368c9b7c311ea2bcc6013299fe/ofl/gelasio/Gelasio%5Bwght%5D.ttf",
+    "project": "google/fonts, ofl/gelasio",
+    "commit": "cc39c4c2c304bc368c9b7c311ea2bcc6013299fe",
+    "version": "1.008",
+    "ttfSha256": "4daecea457258c9ebeb8bc99ed3fd24353618bfad3ea4b93fa0b5d0468fc04e4"
+  },
+  "sha256": "adfb9b414bc2a89ddba1500e95ba45d3b800b26582b0798f564583594e2a5ef8",
+  "licenseSha256": "b393cb01867c919b44381512120dc3e4c954c7b47e2035c405f3a324799a4d29"
+}
