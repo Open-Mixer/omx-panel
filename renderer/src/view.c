@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "look_roles.h"
+#include "scene.h"
 #include "gesture_words.h"
 #include "view.h"
 
@@ -91,6 +92,26 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
   if (!look_colour(flat, tok, "--scribble-bg", &v->col.scribbleBg, err, n) || !look_colour(flat, tok, "--scribble-ink", &v->col.scribbleInk, err, n)) {
     cJSON_Delete(root);
     return 0;
+  }
+  /* the knob the look's style names: `--knob` of looks[style], `flat` or a drawing of the look (omx-panel#123); a style or a drawing the
+   * look does not carry is refused by name, never drawn flat */
+  const char *style = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "style"));
+  if (style) {
+    cJSON *entry = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(root, "looks"), style);
+    const char *knob = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--knob"));
+    if (!cJSON_IsObject(entry) || !knob) {
+      fail(err, n, "look: the style '%s' names no look with a --knob%s", style, NULL);
+      cJSON_Delete(root);
+      return 0;
+    }
+    if (strcmp(knob, "flat") != 0) {
+      const char *finish = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--finish"));
+      v->knob_scene = omx_scene_from_look(root, knob, finish ? finish : "", err, n);
+      if (!v->knob_scene) {
+        cJSON_Delete(root);
+        return 0;
+      }
+    }
   }
   cJSON_Delete(root);
   return 1;
@@ -369,7 +390,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       v->nband += (size_t)m->in_band;
     }
   }
-  /* the displays: each on a section, its kind the curve's axes, its basis the caption */
+  /* the displays: each on a section, its axis (a PANEL_DISPLAY_AXES word the description serves) the curve's axes, its basis the
+   * caption. The axis is read, never inferred from the kind: a display without one, or with another word, is refused by name */
   cJSON *dis = cJSON_GetObjectItemCaseSensitive(root, "displays");
   if (cJSON_IsArray(dis)) {
     v->ndisplays = (size_t)cJSON_GetArraySize(dis);
@@ -380,14 +402,25 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       cJSON *sec = cJSON_GetObjectItemCaseSensitive(it, "section");
       const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
       const char *basis = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "basis"));
+      const char *axis = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "axis"));
       if (!cJSON_IsNumber(sec) || sec->valueint < 0 || (size_t)sec->valueint >= v->nsections || !kind) {
         fail(err, n, "description: a display lacks a section index or a kind%s%s", NULL, NULL);
         goto bad;
       }
+      char which[96];
+      snprintf(which, sizeof which, "%zu (%.64s)", i - 1, kind);
+      if (!axis) {
+        fail(err, n, "description: display %s has no axis, one of PANEL_DISPLAY_AXES (linear, log-frequency, time)%s", which, "");
+        goto bad;
+      }
+      if (strcmp(axis, "linear") != 0 && strcmp(axis, "log-frequency") != 0 && strcmp(axis, "time") != 0) {
+        fail(err, n, "description: display %s has the axis '%s', none of PANEL_DISPLAY_AXES (linear, log-frequency, time)", which, axis);
+        goto bad;
+      }
       /* only a closed-form curve has a place on the panel; a gain-reduction bar or a meter is a control's reading */
-      d->time_x = strcmp(kind, "time_response") == 0;
-      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0 || d->time_x) ? sec->valueint : -1;
-      d->log_x = strcmp(kind, "eq_response") == 0, d->symmetric = d->log_x;
+      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0 || strcmp(kind, "time_response") == 0) ? sec->valueint : -1;
+      d->time_x = strcmp(axis, "time") == 0;
+      d->log_x = strcmp(axis, "log-frequency") == 0, d->symmetric = d->log_x;
       d->basis = dup(basis ? basis : "modelled");
     }
   }
@@ -478,6 +511,7 @@ out:
 void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
   omx_input_free(v->in);
+  omx_scene_free(v->knob_scene);
   free(v->gestures_json);
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]), free(v->section_keys ? v->section_keys[i] : NULL);
   free(v->section_keys);
@@ -820,7 +854,13 @@ void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_
 /* The widgets, each one drawing over the backend's primitives: the same calls reach the CPU raster (a buffer) and
  * NanoVG (a window), so both draw one layout with one widget code. */
 
-static void draw_knob(const omx_draw *d, double cx, double cy, double r, double f, const palette *col) {
+static void draw_knob(const omx_draw *d, double cx, double cy, double r, double f, const palette *col, omx_scene *scene, double knob_px) {
+  /* a look with a knob drawing wears it, scaled to this knob: the scene the MOD GUI's film strip is made from (tools/modgui-gen.mjs drawKnob) */
+  if (scene && d->scene) {
+    double k = (2 * r) / knob_px, half = omx_scene_size(scene) / 2;
+    d->scene(d->ctx, scene, cx - half * k, cy - half * k, k, -135 + 270 * fmin(1, fmax(0, f)));
+    return;
+  }
   d->disc(d->ctx, cx, cy, r, col->rim);
   d->disc(d->ctx, cx, cy, r - fmax(1, r * 0.08), col->body);
   double th = (-135 + 270 * fmin(1, fmax(0, f))) * (M_PI / 180);
@@ -968,9 +1008,9 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
   }
 }
 
-/* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes come from the
- * points alone: an eq_response is a log frequency axis with the dB symmetric about 0, to the next 6 dB; a transfer_curve is linear dB,
- * input and output on one span, with the unity line. No point is computed here. With no points the frame and the caption stand: a
+/* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes are the
+ * display's `axis` word over the points' extent: log-frequency (an eq_response) is a log frequency axis with the dB symmetric about 0, to
+ * the next 6 dB; linear (a transfer_curve) is linear dB, input and output on one span, with the unity line; time, below. No point is computed here. With no points the frame and the caption stand: a
  * modelled curve is never read as the plugin's response, so the word is always there. */
 static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double x, double y, double w, double h, double s,
                        const palette *col) {
@@ -1132,7 +1172,7 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
         draw_fader(d, g, (x + g->cellW / 2) * s, (y + g->knobTop) * s, g->knob * s, k->fraction, col);
         break;
       case W_KNOB:
-        draw_knob(d, (x + g->cellW / 2) * s, (y + g->knobTop + g->knob / 2) * s, (g->knob / 2) * s, k->fraction, col);
+        draw_knob(d, (x + g->cellW / 2) * s, (y + g->knobTop + g->knob / 2) * s, (g->knob / 2) * s, k->fraction, col, v->knob_scene, g->knob);
         break;
       default: /* a meter fills its frame; a display, a curve and an xy pad show a frame until each has its own drawing */
         draw_display(d, (x + (g->cellW - g->selectorW) / 2) * s, (y + g->selectorTop) * s, g->selectorW * s, g->selectorH * s,
@@ -1180,6 +1220,7 @@ static void cpu_fill_under(void *c, const double *xs, const double *ys, size_t n
                            const omx_rgb *stops, size_t nstops, double alpha) {
   omx_fill_under(c, xs, ys, n, base_y, y0, y1, t, stops, nstops, alpha);
 }
+static void cpu_scene(void *c, omx_scene *sc, double ox, double oy, double k, double angle) { omx_scene_paint(c, sc, ox, oy, k, angle); }
 static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }
@@ -1191,7 +1232,7 @@ bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
   for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
   int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
   omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra};
-  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text, cpu_scene};
   omx_panel_view_paint(v, b->width, b->height, b->scale, &d);
   /* drawn with straight alpha; a premultiplied buffer gets each colour times its alpha, rounded to the nearest */
   if (b->format == OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)

@@ -110,6 +110,772 @@
       }
     }
   },
+  "drawings": {
+    "knob-vintage": {
+      "comment": "The vintage knob, ONE drawing and the only copy: the console's Encoder cap (a radial cap-hi to face gradient, a rim in the edge colour, a knurled edge, a carved pointer between a shaded and a lit groove wall) and its silkscreened tick ring, in the console's own metal. Every colour is a placeholder of the look: {--role}, {console:--x} and {finish:--x} (the console's pin, the look's finish), never retyped; {angle} is the frame's, from -135 to +135 degrees. tools/svg-knob.mjs paints it for the film strips and the face, the renderer for a window: shapes in paint order, each under the rotations listed outermost first.",
+      "viewBox": 48,
+      "gradients": {
+        "cap": {
+          "kind": "radialGradient",
+          "attrs": {
+            "cx": 0.35,
+            "cy": 0.3,
+            "r": 0.8
+          },
+          "stops": [
+            {
+              "offset": 0,
+              "color": "{finish:--knob-cap-hi}"
+            },
+            {
+              "offset": 1,
+              "color": "{finish:--knob-face}"
+            }
+          ]
+        }
+      },
+      "shapes": [
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": -135,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": -108,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": -81,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": -54,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": -27,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 0,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 27,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 54,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 81,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 108,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 0.8,
+            "x2": 24,
+            "y2": 3.4,
+            "stroke": "{console:--legend}",
+            "stroke-opacity": 0.7,
+            "stroke-width": 0.9
+          },
+          "rotate": [
+            {
+              "angle": 135,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 24,
+            "cy": 25,
+            "r": 19.6,
+            "fill": "{console:--shade}",
+            "fill-opacity": 0.5
+          },
+          "rotate": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 24,
+            "cy": 24,
+            "r": 19.4,
+            "fill": "{finish:--knob-edge}"
+          },
+          "rotate": []
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 24,
+            "cy": 24,
+            "r": 17.6,
+            "fill": "{finish:--knob-knurl}"
+          },
+          "rotate": []
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 0,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 15,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 30,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 45,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 60,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 75,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 90,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 105,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 120,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 135,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 150,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 165,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 180,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 195,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 210,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 225,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 240,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 255,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 270,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 285,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 300,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 315,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 330,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 4.9,
+            "x2": 24,
+            "y2": 6.5,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-width": 0.7
+          },
+          "rotate": [
+            {
+              "angle": 345,
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "circle",
+          "attrs": {
+            "cx": 24,
+            "cy": 24,
+            "r": 16.9,
+            "fill": "url(#cap)"
+          },
+          "rotate": []
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 22.7,
+            "y1": 9,
+            "x2": 22.7,
+            "y2": 19,
+            "stroke": "{finish:--knob-knurl}",
+            "stroke-opacity": 0.8,
+            "stroke-width": 1.2
+          },
+          "rotate": [
+            {
+              "angle": "{angle}",
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 25.3,
+            "y1": 9,
+            "x2": 25.3,
+            "y2": 19,
+            "stroke": "{finish:--knob-cap-hi}",
+            "stroke-opacity": 0.6,
+            "stroke-width": 1.2
+          },
+          "rotate": [
+            {
+              "angle": "{angle}",
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        },
+        {
+          "tag": "line",
+          "attrs": {
+            "x1": 24,
+            "y1": 9,
+            "x2": 24,
+            "y2": 19,
+            "stroke": "{console:--knob-pointer}",
+            "stroke-width": 2.4
+          },
+          "rotate": [
+            {
+              "angle": "{angle}",
+              "cx": 24,
+              "cy": 24
+            }
+          ]
+        }
+      ]
+    }
+  },
   "looks": {
     "vintage": {
       "--enclosure": "#e9dfc7",
@@ -131,7 +897,7 @@
       "--screen-shadow": "inset 0 0 0 1px rgba(0,0,0,.6), inset 0 2px 6px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,0.12)",
       "--bypass-bg": "radial-gradient(circle at 40% 30%, #b9c0c6, #7d848b 60%, #5d646b)",
       "--bypass-shadow": "0 1px 2px rgba(0,0,0,.5), 0 0 0 2px #a9b0b7, inset 0 -2px 3px rgba(0,0,0,0.35)",
-      "--knob": "knob-vintage.svg",
+      "--knob": "knob-vintage",
       "--t-brand": "#e6dcc4",
       "--t-label": "#f3ead4",
       "--t-section": "#3a3b3c",

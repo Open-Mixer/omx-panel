@@ -26,6 +26,7 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseFont } from './font.mjs';
@@ -36,9 +37,10 @@ import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, plac
 import { unitToken as unitTokenOf, basisOf, BarsRefused, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { SLOPE_UNITS } from './vocabulary.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
-import { paintScene, parseSvg, readKnobSvg, renderSvgFilm, resolveSvg } from './svg-knob.mjs';
+import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
 import { installedDescriptorFile } from './vocabulary.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
 const TOOLS = dirname(fileURLToPath(import.meta.url));
@@ -161,15 +163,24 @@ export class NothingToDraw extends Error {
  * draws its frame and word; its stems and envelope are the renderer's (omx_panel_view_set_stems) until the twin answers the kind. */
 const CURVES = ['eq_response', 'transfer_curve', 'time_response'];
 
+/** The floor of the omx-dsp release that exports `loadCurve` (the curve function as WebAssembly), declared in package.json. */
+const DSP_FLOOR = '>=0.33.0';
+
 /**
- * The curve function of omx-dsp, its TypeScript twin (`@openmixer/omx-dsp`, `curvePoints`): never vendored here. A tree that does not
- * have it draws each curve's frame and caption alone, and says so by `curve: { code: 'no-twin' }`; with `OMX_PANEL_DSP=required` its
- * absence is an error (the release gate).
+ * The curve function of omx-dsp, `@openmixer/omx-dsp`: its WebAssembly module (`loadCurve`, async) loaded once, here, so the
+ * generator stays synchronous to use; never vendored. omx-dsp is a plain dependency: a MOD GUI drawn without its curves would be a
+ * false green, so a tree that cannot load it refuses to load this generator, naming the package and its floor.
  */
-const TWIN = await import('@openmixer/omx-dsp').catch((err) => {
-  if (process.env.OMX_PANEL_DSP === 'required') throw err;
-  return null;
-});
+const DSP = await (async () => {
+  try {
+    const { loadCurve, CURVE_WORDS } = await import('@openmixer/omx-dsp');
+    if (typeof loadCurve !== 'function') throw new Error(`the installed @openmixer/omx-dsp exports no loadCurve`);
+    const wasm = await readFile(new URL('wasm/omx-dsp.wasm', import.meta.resolve('@openmixer/omx-dsp/package.json')));
+    return { curve: await loadCurve(wasm), words: CURVE_WORDS };
+  } catch (err) {
+    throw new Error(`omx-panel's MOD GUI generator needs @openmixer/omx-dsp ${DSP_FLOOR} (its loadCurve): ${err instanceof Error ? err.message : err}. Install it; there is no generator without its curves.`, { cause: err });
+  }
+})();
 /** The rate a static curve is computed at, and the grid it is sampled on. */
 export const STATIC_CURVE = Object.freeze({ sampleRate: 48000, points: 128 });
 /** The one letter a mark wears: one per planter family, as the console's band-origin.ts names it. */
@@ -179,7 +190,7 @@ export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
 /** The terms of a curve request from a layout's roles, each at its come-up value, in the unit the description gives the role. */
 function curveTerms(descriptor, x) {
-  const roles = new Set(TWIN.CURVE_WORDS.roles);
+  const roles = new Set(DSP.words.roles);
   const control = (symbol) => descriptor.controls.find((c) => keyOf(c) === symbol);
   const valueOf = (c) => (c.kind === 'choice' ? (c.values ?? c.ids.map((_, i) => i))[Math.max(0, c.ids.indexOf(c.default))] : c.kind === 'toggle' ? (c.default === true ? 1 : 0) : (c.travel.default ?? c.travel.min));
   return x.roles.filter((r) => roles.has(r.role)).map((r) => {
@@ -195,8 +206,7 @@ function curveTerms(descriptor, x) {
 
 /** The static curve of one display at the come-up values: `{ points, marks }`, or `{ code }` where the twin draws none. */
 function staticCurve(descriptor, x, dsp) {
-  if (!TWIN) return { code: 'no-twin' };
-  const answer = TWIN.curvePoints({ kind: dsp.kind, family: x.family, ...STATIC_CURVE, terms: curveTerms(descriptor, x) });
+  const answer = DSP.curve.curvePoints({ kind: dsp.kind, family: x.family, ...STATIC_CURVE, terms: curveTerms(descriptor, x) });
   return 'code' in answer ? { code: answer.code } : { points: answer.points, marks: answer.marks, stems: answer.stems ?? [] };
 }
 
@@ -603,7 +613,7 @@ export function loadLook(name = DEFAULT_LOOK) {
   // the console's pinned relief and metal for the drawings: `{console:--x}` anywhere, `{finish:--x}` in the look's own finish
   const finish = look.console?.finish?.[depth['--finish']] ?? {};
   const pinned = Object.fromEntries([...Object.entries(look.console?.tokens ?? {}).map(([k, v]) => [`console:${k}`, v]), ...Object.entries(finish).map(([k, v]) => [`finish:${k}`, v])]);
-  return { name, theme: look.theme, personality: look.personality, tokens, depth, pinned, font: parseFont(readFileSync(fontFile)) };
+  return { name, theme: look.theme, personality: look.personality, tokens, depth, pinned, drawings: look.drawings ?? {}, font: parseFont(readFileSync(fontFile)) };
 }
 
 /** The plugin's enclosure colour in `look`: the palette's entry its name picks (a one-colour palette is its colour). */
@@ -629,7 +639,7 @@ function drawKnob(c, cx, cy, r, f, col, look) {
   // a look with a knob drawing wears it, scaled to this knob: the same SVG the film strip is made from
   if (look && look.depth['--knob'] !== 'flat') {
     const k = (2 * r) / GEOMETRY.knob, angle = -135 + 270 * Math.min(1, Math.max(0, f));
-    paintScene(c, parseSvg(resolveSvg(readKnobSvg(look.depth['--knob']), look.tokens, angle, look.pinned)), cx - 24 * k, cy - 24 * k, k);
+    paintScene(c, sceneAt(drawingOf(look, look.depth['--knob']), look.tokens, angle, look.pinned), cx - 24 * k, cy - 24 * k, k);
     return;
   }
   disc(c, cx, cy, r, col.rim);
@@ -808,7 +818,7 @@ export function renderFace(lay, look, scale) {
 export function renderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   // a look with a knob drawing: one SVG, a frame per step (tools/svg-knob.mjs); the console's is the flat knob
-  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--knob']), look.tokens, n, g.knob, 48, look.pinned);
+  if (look.depth['--knob'] !== 'flat') return renderSvgFilm(drawingOf(look, look.depth['--knob']), look.tokens, n, g.knob, 48, look.pinned);
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawKnob(c, i * g.knob + g.knob / 2, g.knob / 2, g.knob / 2 - 1, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -818,7 +828,7 @@ export function renderFilm(look) {
 export function renderFaderFilm(look) {
   const g = GEOMETRY, col = palette(look.tokens), n = g.filmFrames;
   // a look with a fader drawing: one SVG, the cap at its frame's place (the foot at the minimum, the top at the maximum)
-  if (look.depth['--fader'] !== 'flat') return renderSvgFilm(readKnobSvg(look.depth['--fader']), look.tokens, n, g.knob, 48, look.pinned, (f) => ({ capY: 33 - 30 * f }));
+  if (look.depth['--fader'] !== 'flat') return renderSvgFilm(drawingOf(look, look.depth['--fader']), look.tokens, n, g.knob, 48, look.pinned, (f) => ({ capY: 33 - 30 * f }));
   const c = canvas(g.knob * n, g.knob);
   for (let i = 0; i < n; i++) drawFader(c, i * g.knob + g.knob / 2, 0, g.knob, i / (n - 1), col);
   return encodePng(c, g.knob);
@@ -1382,4 +1392,4 @@ export function main(argv) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

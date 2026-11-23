@@ -37,11 +37,13 @@ const g = geometry;
 const FRAME = { x: g.pad + g.sectionPad, y: g.sectionTop + g.sectionTitleH, w: 5 * g.cellW + 2 * g.sectionPad - 2 * g.sectionPad, h: g.curveH };
 const inner = { ix: FRAME.x + 5, iy: FRAME.y + 5, iw: FRAME.w - 10, ih: FRAME.h - 10 - 12 };
 
-const withCurves = (dir, curves, kind) => {
+/** The fixture's description with `edit` over its display (its kind, its axis; an `axis` of undefined deletes the field), and the points. */
+const withCurves = (dir, curves, edit) => {
   let desc = descriptionFile(fx, dir);
-  if (kind) {
+  if (edit) {
     const d = JSON.parse(readFileSync(desc, 'utf8'));
-    d.displays[0].kind = kind;
+    Object.assign(d.displays[0], edit);
+    if ('axis' in edit && edit.axis === undefined) delete d.displays[0].axis;
     desc = join(dir, 'edited.layout.json');
     writeFileSync(desc, JSON.stringify(d, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)));
   }
@@ -78,12 +80,38 @@ test('an eq response is a log frequency axis with dB symmetric about 0: its ends
   const dir = scratch();
   const x = Array.from({ length: 121 }, (_, i) => 20 * Math.pow(1000, i / 120));
   const y = x.map((f) => 9 * Math.exp(-Math.pow(Math.log2(f / 1000) / 0.8, 2)));
-  const { desc, state } = withCurves(dir, { 0: { x, y } }, 'eq_response');
+  const { desc, state } = withCurves(dir, { 0: { x, y } }, { kind: 'eq_response', axis: 'log-frequency' });
   const px = strokes(render(desc, state), FRAME);
   const mid = inner.iy + inner.ih / 2, top = 12; // the next 6 dB above 9 is 12
   assert.ok(near(px, [inner.ix, mid]), 'the first point, 20 Hz at 0 dB, is the left end on the middle');
   assert.ok(near(px, [inner.ix + inner.iw, mid]), 'the last, 20 kHz');
   assert.ok(near(px, [inner.ix + 0.5 * inner.iw, mid - (y[60] / top) * (inner.ih / 2)]), '1 kHz, at the log middle, 9 dB up');
+});
+
+test('the axis is the description\'s, not the kind\'s: a transfer_curve whose axis says log-frequency is drawn on the log frequency axis', () => {
+  const dir = scratch();
+  const x = Array.from({ length: 121 }, (_, i) => 20 * Math.pow(1000, i / 120));
+  const y = x.map((f) => 9 * Math.exp(-Math.pow(Math.log2(f / 1000) / 0.8, 2)));
+  const { desc, state } = withCurves(dir, { 0: { x, y } }, { axis: 'log-frequency' });
+  assert.equal(JSON.parse(readFileSync(desc, 'utf8')).displays[0].kind, 'transfer_curve');
+  const px = strokes(render(desc, state), FRAME);
+  const mid = inner.iy + inner.ih / 2, top = 12;
+  assert.ok(near(px, [inner.ix + 0.5 * inner.iw, mid - (y[60] / top) * (inner.ih / 2)]), '1 kHz at the log middle, 9 dB up on the symmetric span');
+  // arm: the same display on its own axis, linear, puts 1 kHz elsewhere (a linear x over 20 Hz..20 kHz is 0.049 of the width)
+  const lin = withCurves(dir, { 0: { x, y } }, { axis: 'linear' });
+  assert.ok(!near(strokes(render(lin.desc, lin.state), FRAME), [inner.ix + 0.5 * inner.iw, mid - (y[60] / top) * (inner.ih / 2)]));
+});
+
+test('a description whose display has no axis, or an axis of no PANEL_DISPLAY_AXES word, is refused by name: no axis is inferred from the kind', () => {
+  const dir = scratch();
+  const none = withCurves(dir, { 0: { x: [-80, 0], y: [-80, 0] } }, { axis: undefined });
+  assert.equal('axis' in JSON.parse(readFileSync(none.desc, 'utf8')).displays[0], false);
+  assert.throws(() => render(none.desc, none.state), /display 0 \(transfer_curve\) has no axis/);
+  const odd = withCurves(dir, { 0: { x: [-80, 0], y: [-80, 0] } }, { axis: 'logarithmic' });
+  assert.throws(() => render(odd.desc, odd.state), /axis 'logarithmic'/);
+  // the field present, the same description draws
+  const ok = withCurves(dir, { 0: { x: [-80, 0], y: [-80, 0] } }, { axis: 'linear' });
+  assert.ok(render(ok.desc, ok.state).w > 0);
 });
 
 test('points that do not ascend, or are not finite, are refused and the panel is not drawn', () => {

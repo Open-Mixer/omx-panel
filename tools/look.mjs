@@ -17,9 +17,10 @@
  * schema/look-roles.json gives, or when the role file breaks a rule of checkRoles.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { consoleTokens, loadPin } from './look-pin.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
 export const ROLES_JSON = join(TOOLS, '..', 'schema', 'look-roles.json');
@@ -123,6 +124,48 @@ export const lookKeys = (looks = loadLooks()) => Object.keys(Object.values(looks
 /** The tokens whose backgrounds carry text: they may name colour roles, never the plugin's enclosure. */
 export const TEXT_PLATES = Object.freeze(['--head-bg', '--section-bg', '--key-bg', '--key-held-bg', '--screen-bg']);
 
+/** The shapes of the scene subset the film painter and the renderer's backends draw. */
+export const SCENE_SHAPES = Object.freeze(['circle', 'ellipse', 'rect', 'line']);
+/** A drawing's gradient takes two stops at most: NanoVG's gradients do, and the CPU raster is held to the same pictures. */
+export const SCENE_MAX_STOPS = 2;
+
+/** Every rule of the drawings `drawings` (the scenes of the looks file) broken, as sentences, or none. */
+export function checkDrawings(drawings, roles = loadRoles()) {
+  const faults = [];
+  const names = new Set(roles.roles.map((r) => r.name));
+  const pin = loadPin();
+  const placeholder = (where, v) => {
+    for (const m of String(v).matchAll(/\{([^{}]*)\}/g)) {
+      const k = m[1];
+      if (k === 'angle') continue;
+      const c = /^console:(--[a-z0-9-]+)$/.exec(k), f = /^finish:(--[a-z0-9-]+)$/.exec(k), r = /^(--[a-z0-9-]+)$/.exec(k);
+      if (c) { if (!(c[1] in consoleTokens(pin))) faults.push(`drawing ${where}: {${k}} is carried by no console token of the pin`); }
+      else if (f) { for (const [fn, fin] of Object.entries(pin.finish)) if (!(f[1] in fin)) faults.push(`drawing ${where}: {${k}} is carried by no ${fn} finish of the pin`); }
+      else if (r) { if (!names.has(r[1])) faults.push(`drawing ${where}: {${k}} is no colour role`); }
+      else faults.push(`drawing ${where}: {${k}} is no placeholder (--role, console:--x, finish:--x or angle)`);
+    }
+  };
+  for (const [n, d] of Object.entries(drawings ?? {})) {
+    if (typeof d?.viewBox !== 'number' || !(d.viewBox > 0)) faults.push(`drawing '${n}' has no viewBox number`);
+    for (const [id, g] of Object.entries(d?.gradients ?? {})) {
+      if (g.kind !== 'linearGradient' && g.kind !== 'radialGradient') faults.push(`drawing '${n}': gradient '${id}' is '${g.kind}', not a linearGradient or a radialGradient`);
+      if (!Array.isArray(g.stops) || g.stops.length < 2) faults.push(`drawing '${n}': gradient '${id}' has ${g.stops?.length ?? 0} stops; it needs two`);
+      else if (g.stops.length > SCENE_MAX_STOPS) faults.push(`drawing '${n}': gradient '${id}' has ${g.stops.length} stops; the renderer's backends take ${SCENE_MAX_STOPS}`);
+      for (const st of g.stops ?? []) placeholder(`'${n}' gradient '${id}'`, st.color);
+    }
+    (d?.shapes ?? []).forEach((sh, i) => {
+      if (!SCENE_SHAPES.includes(sh.tag)) faults.push(`drawing '${n}': shape ${i} is '${sh.tag}', outside the subset (${SCENE_SHAPES.join(', ')})`);
+      for (const v of Object.values(sh.attrs ?? {})) placeholder(`'${n}' shape ${i}`, v);
+      for (const r of sh.rotate ?? []) if (typeof r.angle !== 'number' && r.angle !== '{angle}') faults.push(`drawing '${n}': shape ${i} rotates by '${r.angle}', not a number or {angle}`);
+      for (const v of [sh.attrs?.fill, sh.attrs?.stroke]) {
+        const u = /^url\(#([^)]+)\)$/.exec(String(v ?? ''));
+        if (u && !(u[1] in (d.gradients ?? {}))) faults.push(`drawing '${n}': shape ${i} paints with url(#${u[1]}), which names no gradient`);
+      }
+    });
+  }
+  return faults;
+}
+
 /** Every rule of the looks file `looks` broken, as sentences, or none. */
 export function checkLooks(looks, roles = loadRoles()) {
   const faults = [];
@@ -134,8 +177,11 @@ export function checkLooks(looks, roles = loadRoles()) {
     if (!s.values.includes(s.default)) faults.push(`the setting's default '${s.default}' is none of its values`);
     if (JSON.stringify([...s.values].sort()) !== JSON.stringify([...names3].sort())) faults.push(`the setting's values (${s.values.join(', ')}) are not the looks declared (${names3.join(', ')})`);
   }
+  faults.push(...checkDrawings(looks?.drawings, roles));
   const keys = names3.length ? lookKeys(looks) : [];
   for (const [n, look] of Object.entries(looks?.looks ?? {})) {
+    const knob = look['--knob'];
+    if (typeof knob === 'string' && knob !== 'flat' && !(knob in (looks?.drawings ?? {})) && !existsSync(join(TOOLS, 'look', knob))) faults.push(`look ${n} --knob '${knob}' names no drawing (drawings) and no file tools/look/${knob}`);
     for (const k of keys) if (typeof look[k] !== 'string' || !look[k]) faults.push(`look ${n} sets no ${k}`);
     for (const k of Object.keys(look)) if (!keys.includes(k)) faults.push(`look ${n} sets ${k}, which another look does not: one schema`);
     for (const [k, v] of Object.entries(look)) {
@@ -182,6 +228,8 @@ export function emitLook(doc = loadRoles(), looks = loadLooks()) {
     tierSetting: looks.tierSetting,
     // the console's pinned relief, base paint and metal, for the drawings (the knob and the fader SVGs name them) beside the looks
     console: { commit: pin.source.commit, defaultFinish: pin.defaultFinish, tokens: consoleTokens(pin), finish: pin.finish },
+    // the scenes of the drawings the looks name (--knob): the one source, read by the film painter and the renderer
+    drawings: looks.drawings ?? {},
     looks: Object.fromEntries(Object.entries(looks.looks).map(([n, l]) => [n, Object.fromEntries(Object.entries(l).map(([k, v]) => [k, String(v).replace(/\{console:default-finish\}/g, pin.defaultFinish).replace(/\{console:(--[a-z0-9-]+)\}/g, (_m, t) => consoleTokens(pin)[t]).replace(/\{finish:(--[a-z0-9-]+)\}/g, (_m, t) => pin.finish[finishOf(l, pin)][t])]))])),
   };
   return `${JSON.stringify(look, null, 2)}\n`;
@@ -234,4 +282,4 @@ function main(argv) {
   for (const [file, want, name] of outs) writeFileSync(file, want), console.log(`look: wrote ${name}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

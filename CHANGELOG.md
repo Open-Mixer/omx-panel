@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
+  values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
+  keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the
+  instances (`Bands: Type`, `Bands: Type 2`), never a continuation of one instance. At 4 slots omx-eq8 is 14 screens (was
+  20 since 4f588e4, #96) and the Calf multiband compressor 6 (was 9, one empty). `OMX_PANEL_RULES_VERSION` is 3 (2 is #149's display axis).
+
 - The `utility` panel family's content (omx-contract's `PANEL_FAMILIES`, 3.19), the family of a trim, a width control, a
   balancer or a clipper: the role table gives it `gain`, `width`, `pseudo`, `pseudo_time`, `bass_mono`, `bass_mono_freq`,
   `amount`, `range`, `drive`, `ceiling` and `softness` (one per control omx-trim, omx-width, omx-balancer and omx-clipper
@@ -64,6 +70,18 @@
   took) is a blank slot, so slot k is the same parameter on every band's screen. A surface that pages an EQ sees one more
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
+
+- 0.15.1: the installed tools resolve `@openmixer/omx-contract`: 0.15.0's tools import `@openmixer/omx-contract/entry` (isMain, #143) but the package linked only omx-dsp, so `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with `ERR_MODULE_NOT_FOUND`. `node_modules/@openmixer/omx-contract` now links the omx-contract package's `/usr/lib/omx-contract`, omx-panel requires `omx-contract >= 3.20.2` (rpm Requires, deb Depends, a floor only), and `tools/installed-tools-check.sh` loads every installed tool and runs the installed modgui-gen in %check, debian/rules, debian/tests and the CI runtime install.
+
+- 0.15.0: the first release with Debian trixie arm64 packages (0.14.0 was rpm-only) and Fedora 45 only (Fedora 44 is dropped, #148); built against omx-contract >= 3.20.2, floors unchanged otherwise. This release carries: the vintage knob drawn by the renderer from the look's `knob-vintage` scene, the scene reader and the C raster painting the bytes of the JS painter (#124, #125), with a static-layer cache (#132, 5 ms to 0.33 ms for a 64 px knob on a Pi 5); the panel domain at 1.1.0, whose x-since is the version of the domain that added each item (#134, omx-contract#123); the descriptions store core (#138: `libomx-panel-store` and its command, the three-layer panel.sqlite reader), packaged: `omx-panel-store` (libomx-panel-store.so.0, the command omx-panel-store and its page) and `omx-panel-store-devel` (the .so link, `<omx-panel/omx_panel_store.h>`, `omx-panel-store.pc`, the DDL as /usr/share/omx-panel-store/panel.sql) in the RPM; `libomx-panel-store0`, `libomx-panel-store-dev` and `omx-panel-store` (the command) in the DEB; built against SQLite >= 3.38.0; the base panel.sqlite (omx-panel-descriptions) and the Python door are not in this release; the generated GUIs shipped key-gated for a known plugin set (#141, spec); the tools decide run-not-imported with omx-contract's isMain, so a bin run through a symlink runs (#143); the README install for Fedora 45 and trixie arm64 (#142); and the docs (#133 #136 #137 #139).
+
+- 0.14.0: built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >= 0.33.0 and plugin-hostd-contract >= 0.20.7,
+  floors only with no ceiling on our packages (#113). This release carries: the panel domain shipped alone in
+  `omx-panel-contract` (#102, #119); the MOD GUI generator reading curves through omx-dsp-wasm's async `loadCurve`, linked,
+  not copied (#128, #109); three MOD GUI looks (#58) and the vintage look roles (#98); the utility panel family (#107); the
+  group model on every surface and its renderer matrix (#63, #64, #92, #96); the gesture C reference in
+  libomx-panel-render and the exported gesture scripts (#104, #100, #88); schema addresses under openmixer.org (#110); a
+  contract directory's links followed (#95); the packaging dependency checks and the release proof (#115, #117, #129).
 
 - 0.13.8: built against omx-contract >= 3.18.0 and plugin-hostd >= 0.20.7, every floor its newest version, served or released before it in the same pass, with its ceiling (D30).
   This release also carries: the spectrum layer, drawn by the renderer on the console analyser's axes (built against

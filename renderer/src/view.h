@@ -53,9 +53,10 @@ typedef struct {
 /* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
 typedef struct {
   int section;
-  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
-  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
-  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
+  /* the display's axis, the description's `axis` word (PANEL_DISPLAY_AXES), never its kind's name: */
+  int log_x;     /* log-frequency: x in Hz on a log axis; linear: x on a linear span (a transfer curve's input dB) */
+  int symmetric; /* log-frequency: y in dB about 0; linear: y on x's span (a transfer curve's output dB) */
+  int time_x;    /* time: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
@@ -134,6 +135,7 @@ struct omx_panel_view {
   geometry g;
   textsizes t;
   palette col;
+  omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */

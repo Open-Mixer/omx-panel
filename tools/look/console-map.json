@@ -4,12 +4,12 @@
     {
       "id": "knob-cap",
       "console": "the console's Encoder .cap: a radial cap-hi to face gradient",
-      "modgui": "knob film strip, the domed cap (tools/look/knob-vintage.svg)",
+      "modgui": "knob film strip, the domed cap (the knob-vintage drawing of tools/look.json)",
       "tokens": [
         "finish:--knob-cap-hi",
         "finish:--knob-face"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "knob-rim",
@@ -18,7 +18,7 @@
       "tokens": [
         "finish:--knob-edge"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "knob-knurl",
@@ -27,7 +27,7 @@
       "tokens": [
         "finish:--knob-knurl"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "knob-pointer",
@@ -38,7 +38,7 @@
         "finish:--knob-knurl",
         "finish:--knob-cap-hi"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "knob-silk",
@@ -47,7 +47,7 @@
       "tokens": [
         "console:--legend"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "knob-shadow",
@@ -56,7 +56,7 @@
       "tokens": [
         "console:--shade"
       ],
-      "svg": "knob-vintage.svg"
+      "drawing": "knob-vintage"
     },
     {
       "id": "fader-cap",

@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const GESTURES = join(ROOT, 'schema', 'gestures.json');
@@ -56,7 +57,7 @@ export function problems(words, header, enumNames) {
   return out;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   const words = declaredWords();
   if (process.argv.includes('--check')) {
     let header = '';
