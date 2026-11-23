@@ -35,8 +35,8 @@ for (const [name, n] of [['omx-eq8', 8], ['omx-eq16', 16], ['omx-eq32', 32]]) {
     for (const b of bands) assert.equal(new Set(['type', 'freq', 'gain', 'q', 'on'].map((p) => at.get(`b${b}_${p}`).x)).size, 1, `band ${b}`);
     // the head row first, then type, slope, freq, gain, q
     const y = (sym) => at.get(sym).y;
-    // the owner's order: freq, gain (the edges' slope on it), q, type, and the on/off drawn last
-    assert.ok(y('b1_freq') < y('b1_gain') && y('b1_gain') < y('b1_q') && y('b1_q') < y('b1_type') && y('b1_type') < y('b1_on'));
+    // the on/off heads the column (L3, omx-panel#121), then the owner's order: freq, gain (the edges' slope on it), q, type
+    assert.ok(y('b1_on') < y('b1_freq') && y('b1_freq') < y('b1_gain') && y('b1_gain') < y('b1_q') && y('b1_q') < y('b1_type'));
     assert.equal(y('hpf_slope'), y('b1_gain'));
     assert.equal(y('hpf_freq'), y('b1_freq'));
     assert.equal(y('lpf_on'), y('b1_on'));

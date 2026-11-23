@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The served matrix opens with its head row (docs/group-model.md L3, ruled omx-panel#121): a band's name and on/off head
+  its column on the MOD GUI face and in the renderer, which refuses a head row that is not the first. A consumer that read
+  the head row as the last (the console's processing view, Zynthian's builder) reads `rows[0]`. A parameter row whose cell
+  holds another parameter carries `labels`, one per head (ruled omx-panel#122): an EQ edge's slope in the gain row is
+  captioned Slope on every surface, never Gain.
+
 - A face without a head (#94): `omx_panel_view_set_head(view, false)` (a new function of libomx-panel-render.so.0, a
   minor addition; the command's state file says `"head": false`) draws no head, the sections start at `pad` and the face
   is `sectionTop - pad` (36 px) shorter, so a host drawing one control per view gets the control, its label and its value.

@@ -465,11 +465,12 @@ export function withRepeats(descriptor, declared, sections) {
     const homeSection = out[placed.home];
     // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
     const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
-    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // the controls the matrix places at the drawn heads, each named by its row, or by the row's `labels` where the cell is
+    // another parameter (an edge's slope, omx-panel#122; a head toggle by its head); an instance the
     // count leaves out is not on the face
     const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
       const sym = matrix.cells[li][h];
-      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.labels?.[h] ?? r.label }] : [];
     }));
     const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
     // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
@@ -482,7 +483,7 @@ export function withRepeats(descriptor, declared, sections) {
 }
 
 /**
- * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the first), every
  * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
  */
 function matrixCells(s, top) {

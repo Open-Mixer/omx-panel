@@ -485,7 +485,12 @@ function attachEdges(groups, buckets) {
     g.edges = edges;
     // the owner's order puts an edge's slope on the gain row, one aligned row, when the bands hold no slope row of their own
     if (!g.rows.some((r) => r.key === 'slope')) {
-      for (const e of edges) if ('slope' in e.parameters && !('gain' in e.parameters)) { e.parameters.gain = e.parameters.slope; delete e.parameters.slope; }
+      for (const e of edges) {
+        if (!('slope' in e.parameters) || 'gain' in e.parameters) continue;
+        e.parameters.gain = e.parameters.slope;
+        delete e.parameters.slope;
+        e.captions = { ...e.captions, gain: capital('slope') }; // the cell is the slope, and says so (omx-panel#122)
+      }
     }
     // the rows an edge brings that no band holds go after the bands' rows
     for (const e of edges) for (const k of Object.keys(e.parameters)) if (!g.rows.some((r) => r.key === k)) g.rows.push({ key: k, label: capital(k.includes(':') ? k.split(':')[1] : k), role: ROLE_ORDER.includes(k) ? k : null });
@@ -524,13 +529,13 @@ export function matrixOf(g, { values = {} } = {}) {
   const instances = [...g.instances].sort((a, b) => a.index - b.index).map((i, ordinal) => ({ ...i, ordinal }))
     .filter((i) => !(Number.isFinite(live) && i.ordinal >= live));
   const heads = [
-    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
+    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters, captions: e.captions })),
     ...instances.map((i) => ({ key: `${g.key}#${i.index}`, label: i.label, on: i.on, edge: null, ordinal: i.ordinal, parameters: i.parameters })),
-    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
+    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters, captions: e.captions })),
   ];
   const orientation = g.family === 'eq' || heads.length >= g.rows.length ? 'columns' : 'rows';
   const grid = g.rows.map((r) => heads.map((h) => h.parameters[r.key] ?? null));
-  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge, ordinal: h.ordinal });
+  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge, ordinal: h.ordinal, ...(h.captions ? { captions: h.captions } : {}) });
   return orientation === 'columns'
     ? { orientation, columns: heads.map(strip), rows: g.rows, cells: grid }
     : { orientation, columns: g.rows, rows: heads.map(strip), cells: heads.map((_, c) => g.rows.map((_, r) => grid[r][c])) };
@@ -559,8 +564,8 @@ export function placeMatrix(g, sections) {
 /**
  * The served matrix (docs/group-model.md, "The served matrix"): the ONE shape `omx-panel describe` serves and every surface
  * (the console, modgui-gen, the C renderer, the Zynthian builder) reads and never recomputes. `heads` are every instance and
- * edge along one axis, `rows` the parameters in the owner's order then the head row (always last: `On` when any head has
- * an on/off, else a caption row labelled ''), `cells[row][head]` a symbol as `symbolOf` gives it, or null; `title` the
+ * edge along one axis, `rows` the head row (always first, L3: `On` when any head has an on/off, else a caption row
+ * labelled '') then the parameters in the owner's order, a row carrying `labels` where a cell's parameter is not the row's, `cells[row][head]` a symbol as `symbolOf` gives it, or null; `title` the
  * group's label (else `title`, the label of the section that holds it); `count` only where no visibleWhen rule governs the
  * instances (`governs(symbol)`): such a group keeps every instance's cell and its rules hide them live.
  * @param {Group} g a repeated group of inferGroupModel's
@@ -577,8 +582,12 @@ export function servedMatrix(g, { symbolOf = (x) => x, governs = () => false, ti
     orientation: m.orientation,
     title: g.label ?? title ?? null,
     heads: heads.map((h) => ({ label: h.label, on: h.on ? { symbol: symbolOf(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
-    rows: [...lines.map((l) => ({ label: l.label })), { label: headed ? 'On' : '', head: true }],
-    cells: [...lines.map((_, l) => heads.map((_h, h) => sym(at(h, l)))), heads.map((h) => (h.on ? symbolOf(h.on.symbol) : null))],
+    rows: [{ label: headed ? 'On' : '', head: true }, ...lines.map((l) => {
+      // a cell holding a parameter other than the row's (an EQ edge's slope in the gain row, L2) is captioned as itself
+      const labels = heads.map((h) => h.captions?.[l.key] ?? null);
+      return labels.some((x) => x !== null) ? { label: l.label, labels } : { label: l.label };
+    })],
+    cells: [heads.map((h) => (h.on ? symbolOf(h.on.symbol) : null)), ...lines.map((_, l) => heads.map((_h, h) => sym(at(h, l))))],
     ...(g.count && !governed ? { count: { symbol: symbolOf(g.count.symbol), default: countDefault ?? null } } : {}),
   };
 }
@@ -626,7 +635,7 @@ export function visibleColumns(served, { width, column, count } = {}) {
   return Math.min(across, Math.max(1, Math.floor(width / column)));
 }
 
-/** L7: the drawn head `n` (clamped) an encoder surface edits: its head and its cells in row order (the head row last), an empty cell null. */
+/** L7: the drawn head `n` (clamped) an encoder surface edits: its head and its cells in row order (the head row first), an empty cell null. */
 export function selectedColumn(served, n, { count } = {}) {
   const drawn = drawnHeads(served, count);
   const at = Math.min(drawn.length - 1, Math.max(0, Math.trunc(n)));

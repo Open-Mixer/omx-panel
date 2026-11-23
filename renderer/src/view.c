@@ -322,6 +322,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
           goto bad;
         }
         m->row_label[r] = dup(lab);
+        /* a cell holding a parameter other than the row's is named by the row's `labels` (omx-panel#122) */
+        cJSON *labels = cJSON_GetObjectItemCaseSensitive(row, "labels");
         size_t k = 0;
         int is_head = cJSON_IsTrue(head);
         if (is_head) {
@@ -343,16 +345,17 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
             }
           }
           if (!cJSON_IsNull(c)) {
-            PLACE(sym, is_head ? m->heads[k].label : lab, m->cell[r * m->nheads + k]);
+            const char *own = cJSON_GetStringValue(cJSON_GetArrayItem(labels, (int)k));
+            PLACE(sym, is_head ? m->heads[k].label : own ? own : lab, m->cell[r * m->nheads + k]);
             if (is_head) m->heads[k].on = m->cell[r * m->nheads + k];
           }
           k++;
         }
       }
       #undef PLACE
-      /* the served matrix always ends with its head row (docs/group-model.md L3) */
-      if (m->head_row < 0 || m->head_row != (int)m->nrows - 1) {
-        fail(err, n, "description: a matrix's head row is missing or is not its last row%s%s", NULL, NULL);
+      /* the served matrix always opens with its head row (docs/group-model.md L3, omx-panel#121) */
+      if (m->head_row != 0) {
+        fail(err, n, "description: a matrix's head row is missing or is not its first row%s%s", NULL, NULL);
         goto bad;
       }
       if (cnt && !cJSON_IsNull(cnt)) {
