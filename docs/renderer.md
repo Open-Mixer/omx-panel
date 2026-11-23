@@ -45,15 +45,16 @@ the group model's served matrix (`servedMatrix`, "The served matrix") exactly as
 `{ orientation, title, heads, rows, cells, count? }`. The renderer READS it and recomputes nothing: no group, no row order, no
 head row, no caption place, no transposition. `heads` are the instances and edges in drawing order, each `{ label, on, edge }`
 (`on` its on/off control as `{ symbol, sense }`, nothing else, or null; `edge` the EQ filter's name for a high-pass, shelf or
-low-pass, else null); `rows` are the parameters in the owner's order (freq, gain with the high-pass's and low-pass's slope on
-that row, q, type, the rest), then the head row, always the last, `{ label: 'On' | '', head: true }`; `cells[row][head]` is a
+low-pass, else null); `rows` are the head row, always the first, `{ label: 'On' | '', head: true }`, then the parameters in the owner's
+order (freq, gain with the high-pass's and low-pass's slope on that row, q, type, the rest), a row whose cell holds a
+parameter other than the row's carrying `labels` (one per head, null where the row's label holds); `cells[row][head]` is a
 control's symbol or null. The section is titled by `title`. It draws, in the section's box: the curve rows, then the section's
 other controls (those no cell names) flowed in rows of `rowControls` as any section's, then the matrix. In `columns` each head
 is a column, left to right, and each row a row; in `rows` each head is a row and each row a column. Every cell, the head row's
-among them, is placed as a cell: the control of that row at that head, named by the row's label (a head-row control by its
-head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
+among them, is placed as a cell: the control of that row at that head, named by the row's label, or by the row's `labels` entry for that head where
+it has one (a head-row control by its head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
 row of its own (a matrix whose heads have no on/off, omx-delay's taps, has a caption row, and no caption overprints a row of
-controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the last, or a head
+controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the first, or a head
 whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
 as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
 does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
@@ -75,7 +76,7 @@ message, as `bars` is. A section with no `matrix`, and a description with none, 
 The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multiband compressor) from `omx-panel describe
 --layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
 tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
-and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
+and LPF last, the count's close-up, the head row first) need no twin and run everywhere.
 
 The layout reads the role vocabulary ([panel-layout.md](panel-layout.md), "Meanings and roles"): with none, no role plays a
 meaning, omx-eq8 derives no curve, and its goldens would be drawn without one. So the renderer's tests read the vocabulary as

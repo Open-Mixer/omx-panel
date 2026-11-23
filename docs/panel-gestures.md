@@ -71,7 +71,15 @@ layered on it there, and none is used.
 `GESTURE_READ_ONLY`, `GESTURE_CONTROL_OWNED`, `GESTURE_NO_DEFAULT`, `GESTURE_NOT_IN_TABLE`, `GESTURE_HOLD_SHORT`,
 `GESTURE_HOLD_BELOW_FLOOR`, `GESTURE_NO_TARGET`, `GESTURE_PAINT_REQUIRED_ON_TOUCH`, `GESTURE_BAD_SETTING` and
 `GESTURE_BAD_INPUT` (input neither reference can read, refused in the same words by the C unit and by `tools/gestures.mjs`).
-The codes are not yet in the shape of `schema/codes.json`; that is tracked in issue #106.
+Each code also has a code word in the shape of `schema/codes.json`, `panel.gesture.<kebab>` (`GESTURE_READ_ONLY` is
+`panel.gesture.read-only`, `GESTURE_PAINT_REQUIRED_ON_TOUCH` `panel.gesture.paint-required-on-touch`): the gestures
+domain declares the pair once (`GESTURES_CODES`, `const` the `GESTURE_*` name the C unit and the reference answer,
+`x-word` the code word), and `tools/codes-render.mjs` renders each into the one sheet, `schema/codes.json`, and its
+sentence in every language into `catalogs/<lang>.json` (from `contract.d/gestures/catalogs/<lang>.json`), as the panel's
+own codes are. A surface shows a refusal's text by its code word; the `GESTURE_*` name stays what the units answer.
+**RULED (owner, via the coordinator, 2026-11-24, omx-panel#106):** "YES — panel.gesture.<kebab> code words mapped to the
+existing GESTURE_* names." Gate: `test/codes-sheet-domain.test.mjs` (every gesture code is in the sheet under its word,
+the word the kebab of its name, and in every catalog) and `tools/catalogs-gate.sh`.
 
 ## The timings
 
