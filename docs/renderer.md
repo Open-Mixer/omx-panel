@@ -228,7 +228,7 @@ gesture drew.
 
 `omx-panel-render --input <script.json>` runs a script of events through a view and prints what the renderer answered
 (the header of `renderer/src/cli.c` has the script's words). `renderer/test/input.test.mjs` runs the scripted gestures
-of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
+of the 7.5 fixtures (`fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
 
@@ -249,7 +249,7 @@ script of events, replays it through a fresh engine and answers as JSON what `ru
 `renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
 unit's WebAssembly build.
 
-`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`fixtures/gestures/scripts.json`, the package's
 `./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
 `tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
 its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.

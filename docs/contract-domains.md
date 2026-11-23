@@ -16,7 +16,7 @@ renderers, no panel word, so it is never released for one and no chain of consum
 | Domain | Document | Package | State |
 |---|---|---|---|
 | `panel` | `contract.d/panel/panel.json`: families, widgets, display kinds, display sources, placements | `omx-panel-contract` | shipped here |
-| `gestures` | `contract.d/gestures/gestures.json`: the gesture words, timings, thresholds, table, paint rule and refusal codes (`GESTURES_*`); `schema/gestures.json` and `renderer/src/gesture_words.h` are rendered from it (`node tools/gestures-render.mjs`, `node tools/gesture-words.mjs`) | `omx-panel-contract` | shipped here; the scripted fixtures (`test/fixtures/gestures/`) are a follow-up |
+| `gestures` | `contract.d/gestures/gestures.json`: the gesture words, timings, thresholds, table, paint rule and refusal codes (`GESTURES_*`); `schema/gestures.json` and `renderer/src/gesture_words.h` are rendered from it (`node tools/gestures-render.mjs`, `node tools/gesture-words.mjs`) | `omx-panel-contract` | shipped here; the scripted fixtures are `fixtures/gestures/scripts.json`, shipped with the package |
 | `look` | look roles and tokens (today `schema/look-roles.json`, `tools/look.json`) | | follow-up |
 
 Each domain has its own document and its own version line, so a consumer reads only the domain it uses and a change

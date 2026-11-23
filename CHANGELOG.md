@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- The gesture parity scripts live in `fixtures/gestures/scripts.json`, the shipped fixtures, no longer under `test/`:
+  the export `@openmixer/omx-panel/gestures/scripts.json` keeps its name and resolves to
+  `dist/fixtures/gestures/scripts.json`, and a test refuses an export backed by a test path (#101). An installed reader
+  finds them at `<datadir>/omx-panel/fixtures/gestures/scripts.json`.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the

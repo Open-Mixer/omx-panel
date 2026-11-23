@@ -8,7 +8,7 @@ library (`omx_panel_gesture.h`, `docs/renderer.md` "The gesture unit"): given a 
 timestamps, it answers the value in the control's own unit and the begin and end of each gesture. `tools/gestures.mjs`
 answers the same until it becomes the loader of that unit's WebAssembly build, and the two are held equal on the shipped
 scripts. Every surface is checked against it, and the parity fixtures carry scripted gestures
-(`test/fixtures/gestures/scripts.json`). A panel
+(`fixtures/gestures/scripts.json`). A panel
 description gains nothing: the table is keyed by the standard widget, and by a bar and a curve handle bound by their roles.
 
 The console's own gesture table is the law this conforms to. It adds two things to it: painting across a bar group, and the timings declared here.
@@ -119,7 +119,7 @@ none of its numbers. Its scripts are the fixtures' (`renderer/test/input.test.mj
 ## The parity check
 
 On each surface the value of a scripted gesture is within one declared step of the reference in the control's own unit
-(`withinStep`), and a reset or a tap is exact. The scripts are in `test/fixtures/gestures/scripts.json`, one set per fixture
+(`withinStep`), and a reset or a tap is exact. The scripts are in `fixtures/gestures/scripts.json`, one set per fixture
 of the parity check: an omx-eq band (drag, fine, reset, step, second), an omx-comp threshold, an 8-band bar group (a sweep,
 a tap, a reset) and setBfree's drawbars (a sweep, a tap, a double-tap). The expected values are worked from the declared
 travel, not taken from the module.

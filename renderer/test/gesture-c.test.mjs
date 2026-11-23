@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas
 /*
  * The C gesture reference (renderer/src/gesture.c, include/omx_panel_gesture.h: omx_gesture_open, omx_gesture_run,
- * omx_gesture_close) against the shipped scripted fixtures (test/fixtures/gestures/scripts.json, exported by the package as
+ * omx_gesture_close) against the shipped scripted fixtures (fixtures/gestures/scripts.json, exported by the package as
  * ./gestures/scripts.json) and against the JavaScript reference (tools/gestures.mjs), which stays the JS until the wasm loader
  * replaces it. Each case is run through both and the answers must be EQUAL: the value, every gesture (id, word, input, begin,
  * end, changes, fine, the shown record), the undo ids, what was selected, every refusal with its code, time and words, every

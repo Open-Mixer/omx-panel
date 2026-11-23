@@ -71,11 +71,11 @@ test('sabotage: a floor or ceiling moved on one side, or missing, is named', () 
   assert.deepEqual(buildFloorsApart(spec, 'Source: x\nBuild-Depends: libomxdsp-dev (>= 0.32.2~)\n')[0], 'omx-contract-devel: the spec floors it at 3.16.0, debian/control states no floor for libomx-contract-dev');
 });
 
-// zynthian-ui finds the omx-panel tree from the installed schema/gestures.json and reads the gesture parity scripts and
-// the descriptors they name under test/fixtures (tests/test_bar_xy_gestures.py). `make install` copies dist/ whole to
-// /usr/share/omx-panel, so what dist/ holds is what the RPM and the DEB ship (Pi 0.13.8: scripts.json absent).
-test('the package carries the gesture parity scripts and every descriptor they name, at the paths zynthian-ui reads', () => {
-  const rel = 'test/fixtures/gestures/scripts.json';
+// The gesture parity scripts are published, so they live under fixtures/, the shipped fixtures, never under test/ (a test
+// cleanup must not move a public file). `make install` copies dist/ whole to /usr/share/omx-panel, so what dist/ holds is
+// what the RPM and the DEB ship (Pi 0.13.8: scripts.json absent), the descriptors the scripts name with it.
+test('the package carries the gesture parity scripts and every descriptor they name', () => {
+  const rel = 'fixtures/gestures/scripts.json';
   const { scripts } = JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
   const named = [...new Set(scripts.map((s) => s.descriptor).filter(Boolean))];
   assert.ok(named.length > 0);
@@ -86,11 +86,13 @@ test('the package carries the gesture parity scripts and every descriptor they n
 // them by name, so a reader resolves `<package>/gestures/scripts.json` without a path into dist/.
 test('the npm package exports the gesture parity scripts by name', () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  const rel = 'dist/test/fixtures/gestures/scripts.json';
+  const rel = 'dist/fixtures/gestures/scripts.json';
   const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8' });
   assert.equal(packed.status, 0, packed.stderr);
   assert.ok(JSON.parse(packed.stdout)[0].files.map((f) => f.path).includes(rel), `the packed file list has no ${rel}`);
   assert.equal(pkg.exports['./gestures/scripts.json'], `./${rel}`, "package.json exports no './gestures/scripts.json'");
+  // a public name is never backed by a test path (omx-panel#101)
+  assert.ok(!pkg.exports['./gestures/scripts.json'].split('/').includes('test'), 'the export resolves into a test path');
   // resolved through the exports map, as a consumer resolves it
   const at = createRequire(join(ROOT, 'package.json')).resolve(`${pkg.name}/gestures/scripts.json`);
   assert.equal(at, join(ROOT, rel));

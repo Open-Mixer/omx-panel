@@ -27,8 +27,8 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
   .sort();
 /** Every catalog the tree carries, catalogs/<lang>.json, one per listed language. */
 const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `catalogs/${f}`);
-/** What zynthian-ui reads from the installed tree (tests/test_bar_xy_gestures.py): the gesture parity scripts and the descriptors they name. */
-const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
+/** The descriptors the gesture parity scripts (fixtures/gestures/scripts.json, shipped with fixtures/) name. */
+const GESTURE_FIXTURES = ['test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
 /** The panel domain, which the tools read their panel words from (tools/vocabulary.mjs panelWords): dist/ is a tree. */
 const PANEL_DOMAIN = ['contract.d/panel/panel.json', ...readdirSync(join(ROOT, 'contract.d/panel/catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `contract.d/panel/catalogs/${f}`)];
 /** Every file dist/ carries that is not a module. */
