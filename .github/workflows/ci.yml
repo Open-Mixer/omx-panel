@@ -38,12 +38,12 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.22.0'
+          dnf install -y --setopt=install_weak_deps=False omx-contract-data
           # the panel domain's checks: omx-contract (validate, fmt), its domain installer (omx-contract-devel) and the C
           # loader's omx-domain command (libomx-domain-devel), from the release that has all three
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.22.0' 'omx-contract-devel >= 3.22.0' 'libomx-domain-devel >= 3.22.0'
+          dnf install -y --setopt=install_weak_deps=False omx-contract omx-contract-devel libomx-domain-devel
           # plugin-db's lv2 domain: the F1 mapping rule 2 of the port-group inference reads (sorting pass P3)
-          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -110,9 +110,9 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.22.0' 'omx-contract-data >= 3.22.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
-          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -144,9 +144,9 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.22.0' 'omx-contract-data >= 3.22.0'
+          dnf install -y --setopt=install_weak_deps=False libomx-domain-devel omx-contract-data
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
-          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       - uses: actions/checkout@v4
       - name: The tree the golden of the rules version reads
         run: npm ci && make
@@ -171,9 +171,9 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.22.0' 'omx-contract-data >= 3.22.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
-          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -222,9 +222,9 @@ jobs:
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.22.0' 'omx-contract-data >= 3.22.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
-          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -312,7 +312,7 @@ jobs:
             grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
             if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
             req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
-            grep -q "^omx-dsp-wasm >= 0.34.1" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.34.1 in: $(tr "\n" " " <<< "$req")"; exit 1; }
+            grep -qx "omx-dsp-wasm" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm in: $(tr "\n" " " <<< "$req")"; exit 1; }
             echo "PASS rpm: omx-dsp linked, not copied, required"'
       # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
       # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
@@ -386,7 +386,7 @@ jobs:
             grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
             if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
             dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
-            grep -q "omx-dsp-wasm (>= 0.34.1~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.34.1~) in: $dep"; exit 1; }
+            grep -qE "(^|, )omx-dsp-wasm(,|$)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm in: $dep"; exit 1; }
             echo "PASS deb: omx-dsp linked, not copied, a dependency"'
       - uses: actions/upload-artifact@v4
         with:
@@ -500,7 +500,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add the OpenMixer channel
         uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
-      - run: dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.22.0' 'omx-contract-data >= 3.22.0'
+      - run: dnf install -y --setopt=install_weak_deps=False omx-contract omx-contract-data
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel

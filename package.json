@@ -133,11 +133,11 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@openmixer/omx-dsp": ">=0.33.0",
+    "@openmixer/omx-dsp": "*",
     "ajv": "^8.17.1"
   },
   "devDependencies": {
-    "@openmixer/omx-contract": ">=3.20.2",
+    "@openmixer/omx-contract": "*",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   },

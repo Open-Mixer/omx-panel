@@ -17,7 +17,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { compareVersions, packagingFloor } from './packaging-floors.mjs';
 import { treeGrep } from './tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -38,15 +37,13 @@ function run(argv, opts = {}) {
   return r;
 }
 
-test('the omx-contract CLI this suite runs is the package at or above the floor the spec states', () => {
+test('the omx-contract CLI this suite runs is the omx-contract package's', () => {
   const script = contractCli().find((a) => a.endsWith('.mjs'));
   assert.ok(script, `${contractCli().join(' ')} names no omx-contract.mjs: the version cannot be read`);
   const pkg = join(dirname(script), '..', 'package.json');
   assert.ok(existsSync(pkg), `${pkg} is absent: install omx-contract or name a checkout's CLI in OMX_CONTRACT_CLI`);
-  const { name, version } = JSON.parse(readFileSync(pkg, 'utf8'));
+  const { name } = JSON.parse(readFileSync(pkg, 'utf8'));
   assert.equal(name, '@openmixer/omx-contract', `${pkg} is not omx-contract's`);
-  const floor = packagingFloor('omx-contract');
-  assert.ok(compareVersions(version, floor) >= 0, `${script} is omx-contract ${version}, below the packages' floor ${floor}`);
 });
 
 test('the document conforms: its $schema, $id, owner and stability, every item prefixed PANEL_', () => {

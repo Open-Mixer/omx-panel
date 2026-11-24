@@ -24,22 +24,22 @@ BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, the standard units of its param domain (from 3.21.0) and
 # the units the param-contract extension serves (PARAM_UNITS_CLAP_ENCODED, from 3.22.0);
 # nothing of omx-plugins, which builds with this package, and nothing of plugin-hostd or omx-clap (sorting pass P1, P2)
-BuildRequires: omx-contract-data >= 3.22.0
+BuildRequires: omx-contract-data
 # %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
-BuildRequires: plugin-db-contract >= 0.5.0
+BuildRequires: plugin-db-contract
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.22.0
-BuildRequires: omx-dsp-wasm >= 0.34.1
+BuildRequires: omx-contract
+BuildRequires: omx-dsp-wasm
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
-Requires: omx-contract >= 3.22.0
+Requires: omx-contract
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: plugin-hostd >= 0.21.0
+Recommends: plugin-hostd
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -49,21 +49,21 @@ BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
 # %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
-BuildRequires: omx-contract-devel >= 3.22.0
-BuildRequires: libomx-domain-devel >= 3.22.0
-BuildRequires: pkgconfig(omxdsp) >= 0.34.0
+BuildRequires: omx-contract-devel
+BuildRequires: libomx-domain-devel
+BuildRequires: pkgconfig(omxdsp)
 # the descriptions store (store/Makefile): SQLite at its floor (STRICT, json_valid), cJSON and libomx-domain above
 BuildRequires: sqlite-devel >= 3.38.0
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and standard units (its param domain) from the contract directory it installs
-Requires: omx-contract-data >= 3.22.0
+Requires: omx-contract-data
 # the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
-Requires: omx-panel-contract >= %{version}-%{release}
+Requires: omx-panel-contract = %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
-Requires: plugin-db-contract >= 0.5.0
+Requires: plugin-db-contract
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.34.1
+Requires: omx-dsp-wasm
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -113,7 +113,7 @@ build against the omx-panel renderer and its gesture reference.
 %package -n omx-panel-store
 Summary: The descriptions store of panel descriptions: its library and its command
 # the store checks its words against the panel domain at open and at put
-Requires: omx-panel-contract >= %{version}-%{release}
+Requires: omx-panel-contract = %{version}-%{release}
 # without a base the store answers absent and its readers infer: the base package makes it a store
 Recommends: omx-panel-descriptions
 
@@ -138,7 +138,7 @@ Summary: Header, link, pkg-config file and schema of the descriptions store
 Requires: omx-panel-store%{?_isa} = %{version}-%{release}
 Requires: sqlite-devel >= 3.38.0
 Requires: pkgconfig(libcjson)
-Requires: libomx-domain-devel >= 3.22.0
+Requires: libomx-domain-devel
 
 %description -n omx-panel-store-devel
 The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the

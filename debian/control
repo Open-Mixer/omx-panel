@@ -8,15 +8,15 @@ Build-Depends: debhelper-compat (= 13),
                pkgconf,
                nodejs (>= 18),
                npm,
-               omx-contract-data (>= 3.22.0~) <!nocheck>,
-               plugin-db-contract (>= 0.5.0~),
+               omx-contract-data <!nocheck>,
+               plugin-db-contract,
                libcjson-dev,
                libsqlite3-dev (>= 3.38.0~),
-               libomx-contract-dev (>= 3.22.0~),
-               omx-contract (>= 3.22.0~),
-               libomx-domain-dev (>= 3.22.0~),
-               libomxdsp-dev (>= 0.34.0~),
-               omx-dsp-wasm (>= 0.34.1~)
+               libomx-contract-dev,
+               omx-contract,
+               libomx-domain-dev,
+               libomxdsp-dev,
+               omx-dsp-wasm
 Standards-Version: 4.6.2
 Homepage: https://github.com/Open-Mixer/omx-panel
 Rules-Requires-Root: no
@@ -24,8 +24,8 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data (>= 3.22.0~), omx-dsp-wasm (>= 0.34.1~), omx-contract (>= 3.22.0~), omx-panel-contract (>= ${source:Version}), plugin-db-contract (>= 0.5.0~), ${misc:Depends}
-Recommends: plugin-hostd (>= 0.21.0~)
+Depends: nodejs (>= 18), omx-contract-data, omx-dsp-wasm, omx-contract, omx-panel-contract (= ${source:Version}), plugin-db-contract, ${misc:Depends}
+Recommends: plugin-hostd
 # omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
 Suggests: python3-lilv
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -64,7 +64,7 @@ Package: libomx-panel-store0
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (= ${source:Version})
 Description: descriptions store of panel descriptions, the library
  libomx-panel-store.so.0 reads and writes the descriptions store: the base,
  the system layer and the user layer of panel.sqlite, merged in that order of
@@ -74,7 +74,7 @@ Package: libomx-panel-store-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libomx-panel-store0 (= ${binary:Version}), libsqlite3-dev (>= 3.38.0~), libcjson-dev, libomx-domain-dev (>= 3.22.0~), ${misc:Depends}
+Depends: libomx-panel-store0 (= ${binary:Version}), libsqlite3-dev (>= 3.38.0~), libcjson-dev, libomx-domain-dev, ${misc:Depends}
 Description: descriptions store of panel descriptions, development files
  The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
  omx-panel-store pkg-config file and the store's DDL (panel.sql), to build
@@ -83,7 +83,7 @@ Description: descriptions store of panel descriptions, development files
 Package: omx-panel-store
 Architecture: any
 Multi-Arch: foreign
-Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (= ${source:Version})
 Recommends: omx-panel-descriptions
 Description: descriptions store of panel descriptions, the command
  The command omx-panel-store gets, puts and removes an entry of the

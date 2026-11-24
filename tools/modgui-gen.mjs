@@ -162,13 +162,10 @@ export class NothingToDraw extends Error {
  * draws its frame and word; its stems and envelope are the renderer's (omx_panel_view_set_stems) until the twin answers the kind. */
 const CURVES = ['eq_response', 'transfer_curve', 'time_response'];
 
-/** The floor of the omx-dsp release that exports `loadCurve` (the curve function as WebAssembly), declared in package.json. */
-const DSP_FLOOR = '>=0.33.0';
-
 /**
  * The curve function of omx-dsp, `@openmixer/omx-dsp`: its WebAssembly module (`loadCurve`, async) loaded once, here, so the
  * generator stays synchronous to use; never vendored. omx-dsp is a plain dependency: a MOD GUI drawn without its curves would be a
- * false green, so a tree that cannot load it refuses to load this generator, naming the package and its floor.
+ * false green, so a tree that cannot load it refuses to load this generator, naming the package.
  */
 const DSP = await (async () => {
   try {
@@ -177,7 +174,7 @@ const DSP = await (async () => {
     const wasm = await readFile(new URL('wasm/omx-dsp.wasm', import.meta.resolve('@openmixer/omx-dsp/package.json')));
     return { curve: await loadCurve(wasm), words: CURVE_WORDS };
   } catch (err) {
-    throw new Error(`omx-panel's MOD GUI generator needs @openmixer/omx-dsp ${DSP_FLOOR} (its loadCurve): ${err instanceof Error ? err.message : err}. Install it; there is no generator without its curves.`, { cause: err });
+    throw new Error(`omx-panel's MOD GUI generator needs @openmixer/omx-dsp (its loadCurve): ${err instanceof Error ? err.message : err}. Install it; there is no generator without its curves.`, { cause: err });
   }
 })();
 /** The rate a static curve is computed at, and the grid it is sampled on. */

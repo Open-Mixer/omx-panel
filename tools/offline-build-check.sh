@@ -21,7 +21,7 @@ git archive --format=tar.gz --prefix="omx-panel-$version/" -o "$work/omx-panel-$
 case "$kind" in
   rpm)
     image=${IMAGE:-fedora:45}
-    install='dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm && dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm systemd-rpm-macros gcc cjson-devel "sqlite-devel >= 3.38.0" "omx-contract-devel >= 3.22.0" "libomx-domain-devel >= 3.22.0" "omx-dsp-devel >= 0.32.2"'
+    install='dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm && dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm systemd-rpm-macros gcc cjson-devel "sqlite-devel >= 3.38.0" omx-contract-devel libomx-domain-devel omx-dsp-devel'
     build='mkdir -p ~/rpmbuild/SOURCES && cp "$1" ~/rpmbuild/SOURCES/omx-panel-$2.tar.gz && tar -xzOf "$1" omx-panel-$2/packaging/omx-panel.spec >/tmp/omx-panel.spec && rpmbuild -bb --nocheck --nodeps /tmp/omx-panel.spec'
     ;;
   deb)
