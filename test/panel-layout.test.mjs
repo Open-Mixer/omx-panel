@@ -146,7 +146,14 @@ const effect = fixture('built-wrapped-synth');
 effect.plugin.features = ['audio-effect'];
 effect.instrument = undefined;
 check('arm: the same controls on an effect make a filter', panelLayout(effect).family, 'filter');
-const delay = panelLayout(fixture('authored-omx-delay'));
+// the example is omx-contract's (test/no-descriptor-copies.test.mjs): under C2 a unit is a PARAM_UNITS id, `none` for a
+// plain fraction, and an empty unit is no unit at all (omx-contract 3.22.0's descriptorUnit refuses it). omx-contract
+// 3.20.2's example, before C2, states '' and its feedback, tone and mix take no role: that is the installed package, not
+// this reader, and this check says so by name
+const delayExample = fixture('authored-omx-delay');
+check('the installed omx-contract states the example\'s units as PARAM_UNITS ids (C2: @openmixer/omx-contract >= 3.22.0)',
+  delayExample.controls.filter((c) => c.travel && c.travel.unit === '').map((c) => c.symbol), []);
+const delay = panelLayout(delayExample);
 check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', 'none'], ['tone', 0, 'tone', 'none'], ['mix', 0, 'mix', 'none']]]);
 
 // a CLAP control is keyed by its numeric id, p<id>: two parameters of one name are two controls (#27)
