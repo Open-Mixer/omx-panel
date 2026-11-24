@@ -92,7 +92,7 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
   assert.equal(lookup('v.paramDomainFile()', set), join(b, 'param/param.json'));
   assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-delay')`, set), join(a, '3/omx-plugins/plugins/omx-delay.json'));
   assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-comp')`, set), join(b, '3/omx-plugins/plugins/omx-comp.json'));
-  assert.deepEqual(lookup('[...v.standardUnits()]', set), [['dB', { id: 'dB', dimension: 'gain' }], ['Hz', { id: 'Hz', dimension: 'frequency' }]]);
+  assert.deepEqual(lookup('[...v.standardUnits()]', set), [['dB', { symbol: 'dB', dimension: 'gain' }], ['Hz', { symbol: 'Hz', dimension: 'frequency' }]]);
 });
 
 test('omx-panel vocabulary reads each source where the lookup puts it, and fails on one that is missing', () => {
@@ -116,7 +116,10 @@ test('the standard units are omx-contract\'s param domain: ids, symbols and dime
   const dir = paramDomain(contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } }), [['none', '', 'none'], ['dB', 'dB', 'gain'], ['percent', '%', 'none'], ['dBu', 'dBu', 'level']]);
   const set = { OMX_CONTRACT_PATH: dir, PKG_CONFIG: NO_PKG_CONFIG };
   assert.equal(lookup('v.paramDomainFile()', set), join(dir, 'param/param.json'));
-  assert.deepEqual(lookup(`['', 'dB', '%', 'dBu', 'furlong'].map((u) => v.unitIdOf(u) ?? null)`, set), ['none', 'dB', 'percent', 'dBu', null]);
+  assert.deepEqual(lookup(`['none', 'dB', 'percent', 'dBu', 'furlong'].map((u) => v.unitIdOf(u) ?? null)`, set), ['none', 'dB', 'percent', 'dBu', null]);
+  // C2: the descriptor's word is the id; a symbol is no word (`%`, `""`), and the symbol is what a face shows a person
+  assert.deepEqual(lookup(`['%', ''].map((u) => v.unitIdOf(u) ?? null)`, set), [null, null]);
+  assert.deepEqual(lookup(`['percent', 'none', 'dB', 'furlong'].map((u) => v.unitSymbolOf(u))`, set), ['%', '', 'dB', 'furlong']);
   assert.deepEqual(lookup(`v.unitsOfDimensions(['gain', 'level'])`, set), ['dB', 'dBu']);
   // a directory with no param domain has no units: the read refuses and names the fix
   const none = contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
