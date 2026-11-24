@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# The omx-panel sync pass is enabled by default where systemd exists (docs/descriptions-store.md section 14, 5);
+# nothing depends on it, and omx-panel-sync run by hand does the same work.
+enable omx-panel-sync.service

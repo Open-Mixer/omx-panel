@@ -50,8 +50,7 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	tools/installed-tools-check.sh $(CURDIR)/debian/omx-panel/usr/share/omx-panel
 endif
 
-# the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
-# omx-complement-sync) is the choice; so an upgrade has nothing of ours to stop either, and on a host that never had the
-# unit the stop only prints an error
+# the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5) and never started
+# by the package: it runs at boot and after each plugin-qualify sync; an upgrade has nothing of ours to stop
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start --no-stop-on-upgrade
+	dh_installsystemd --no-start --no-stop-on-upgrade

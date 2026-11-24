@@ -2,6 +2,7 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 # the build runs with --nodeps, without systemd-rpm-macros: the unit directory is then the one it defines
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
+%{!?_presetdir:%global _presetdir %{_prefix}/lib/systemd/system-preset}
 
 Name: omx-panel
 Version: 0.17.0
@@ -145,11 +146,23 @@ test -d node_modules || npm ci --no-audit --no-fund
 %make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir} MANDIR=%{_mandir}
+# the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5): the preset says so
+install -D -m 0644 systemd/80-omx-panel.preset %{buildroot}%{_presetdir}/80-omx-panel.preset
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 # the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules
 tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
+
+# the unit follows its preset on a first install (enabled), is disabled on erase, and an upgrade starts nothing
+%post
+%{?systemd_post:%systemd_post omx-panel-sync.service}
+
+%preun
+%{?systemd_preun:%systemd_preun omx-panel-sync.service}
+
+%postun
+%{?systemd_postun:%systemd_postun omx-panel-sync.service}
 
 %files
 %license LICENSE
@@ -157,15 +170,16 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync
+%{_bindir}/omx-panel-sync
 %{_mandir}/man1/omx-panel.1*
 %{_mandir}/man1/omx-modgui-sync.1*
 %{_mandir}/man1/omx-complement-sync.1*
-# installed, never enabled: no preset names them; `systemctl enable omx-modgui-sync` (omx-complement-sync) is the choice
-%{_unitdir}/omx-modgui-sync.service
-%{_unitdir}/omx-complement-sync.service
+%{_mandir}/man1/omx-panel-sync.1*
+# the one pass's unit, enabled by default by the preset; nothing depends on it (`systemctl disable omx-panel-sync` is the choice)
+%{_unitdir}/omx-panel-sync.service
+%{_presetdir}/80-omx-panel.preset
 %dir %{_unitdir}/plugin-qualify-sync.service.d/
-%{_unitdir}/plugin-qualify-sync.service.d/omx-modgui-sync.conf
-%{_unitdir}/plugin-qualify-sync.service.d/omx-complement-sync.conf
+%{_unitdir}/plugin-qualify-sync.service.d/omx-panel-sync.conf
 %dir %{_sysconfdir}/omx/
 %config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/

@@ -61,8 +61,10 @@ the CLAP search list is CLAP_PATH, then ~/.clap, then /usr/lib/clap
 .I /etc/omx/modgui-sync.conf
 KEY=value lines for the variables above, read by the unit
 .TP
-.I omx-modgui-sync.service
-runs the sync once; installed but not enabled (systemctl enable omx-modgui-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-modgui-sync.conf, queues it from ExecStartPost when the unit is enabled). If a scan finishes while a GUI run is still running, that start is a no-op until the next scan.
+.I omx-panel-sync.service
+runs this sync within the one pass,
+.BR omx-panel-sync (1);
+enabled by default where systemd exists, it runs at boot and each time plugin-qualify-sync finishes. If a scan finishes while a pass is still running, that start is a no-op until the next scan. Nothing depends on the unit: this command run by hand does the same work.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -74,4 +76,5 @@ the run could not start
 .B 2
 usage error
 .SH SEE ALSO
-.BR omx-panel (1)
+.BR omx-panel (1),
+.BR omx-panel-sync (1)

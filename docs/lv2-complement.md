@@ -138,16 +138,19 @@ on usage.
 ## Where it runs, and whether lilv sees it
 
 `omx-complement-sync` (`bin/`) is omx-modgui-sync's twin and runs beside it: the same shell shape calling omx-panel,
-the same `/etc/omx/modgui-sync.conf`, the same directories, the same opt-in unit (`omx-complement-sync.service`,
-installed and never enabled) queued by the same drop-in on `plugin-qualify-sync.service` after each scan, the same
-`--dry-run` and `--check`.
+the same `/etc/omx/modgui-sync.conf`, the same directories, the same `--dry-run` and `--check`. It runs by hand, or as
+a step of `omx-panel-sync`, the one pass (docs/descriptions-store.md section 6): the descriptions store's entries first,
+then this sync and omx-modgui-sync. The groups it writes are the store's: each plugin's entry is read by
+`omx-panel describe --plugin --store`, which derives and writes it when no layer holds it, and a key the store holds is
+never inferred here. With no store installed, or no base, it infers as before and says so once.
 
-What triggers a run, once the unit is enabled: plugin-qualify's package triggers (rpm `%transfiletriggerin` and
+A direct call does the whole work. `omx-panel-sync.service`, enabled by default where systemd exists, is a batch
+convenience over the pass, and nothing depends on it. What triggers a run of it: plugin-qualify's package triggers (rpm `%transfiletriggerin` and
 `%transfiletriggerpostun`, dpkg `interest-noawait`) on `/usr/lib/lv2`, `/usr/lib64/lv2` and `/usr/local/lib/lv2` fire
 once per package transaction that installs, upgrades or removes a file there, and start `plugin-qualify-sync.service`;
 its path unit does the same for a change in those folders (and the ones `qualify.conf` adds) outside a package
 manager; its timer runs it after boot. When that scan finishes, the drop-in
-(`plugin-qualify-sync.service.d/omx-complement-sync.conf`) queues `omx-complement-sync.service` from `ExecStartPost`,
+(`plugin-qualify-sync.service.d/omx-panel-sync.conf`) queues `omx-panel-sync.service` from `ExecStartPost`,
 so a removal or an upgrade is followed by the removal or the rewrite of our bundle within the scan's minute of quiet
 plus its run. Two limits: `ExecStartPost` runs only when the scan exits 0 (plugin-qualify-sync exits 0 whatever its
 verdicts and 2 when it cannot run, and then this waits for the next scan); and in a transaction without systemd (an
@@ -161,7 +164,7 @@ outside the LV2 path, and each bundle is moved in whole.
 lilv loads the bundles only from its own `LV2_PATH`. On Zynthian, `/usr/local/lib/lv2` is on it: `zynthian_envars*.sh`
 (zynthian-sys) export `LV2_PATH=/usr/lib/lv2:/usr/lib/<arch>/lv2:/usr/local/lib/lv2:...`, which zynthian-ui and the
 jalv it spawns per plugin inherit, and the mod-host and mod-ui units carry the same list. zynthian-sys gives
-omx-modgui-sync a drop-in that sets that `LV2_PATH`; `omx-complement-sync.service` needs the same drop-in there, so it
+omx-modgui-sync a drop-in that sets that `LV2_PATH`; `omx-panel-sync.service` needs the same drop-in there, so the pass
 reads the plugins Zynthian loads. `omx-complement-sync --check` says whether `MODGUI_DIR` is on the search list. A
 complemented plugin's MOD GUI from omx-modgui-sync still applies: that bundle declares no plugin, only GUI statements
 about the plugin URI, which lilv merges whatever bundle the plugin itself comes from.
