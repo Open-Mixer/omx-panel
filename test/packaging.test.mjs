@@ -28,8 +28,8 @@ test('the DEB reloads systemd after install, for the drop-ins on another package
   assert.equal(spawnSync('sh', ['-n', join(ROOT, 'debian/omx-panel.postinst')]).status, 0);
 });
 
-test('an upgrade does not stop the sync units: they are never started by the package (#74)', () => {
-  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /dh_installsystemd --no-enable --no-start --no-stop-on-upgrade/);
+test('an upgrade does not stop the sync unit: it is never started by the package (#74)', () => {
+  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /dh_installsystemd --no-start --no-stop-on-upgrade/);
 });
 
 // The spec and debian/control build against the same library versions: every floor the spec's BuildRequires states is
