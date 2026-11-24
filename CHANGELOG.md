@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- `omx_gesture_run` costs time in proportion to the script's length (#105): the events were read by indexing cJSON's
+  list from its head once per event, so a script of 40000 wheel events cost 22.4 s where 5000 cost 0.11 s. They are now
+  walked once: 0.26 s against 0.03 s, held by `renderer/test/gesture-c-cost.test.mjs` (eight times the events, at most
+  sixteen times the time).
+
 - The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
   `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
   `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.
