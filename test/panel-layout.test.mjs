@@ -154,7 +154,8 @@ const delayExample = fixture('authored-omx-delay');
 check('the installed omx-contract states the example\'s units as PARAM_UNITS ids (C2: @openmixer/omx-contract >= 3.22.0)',
   delayExample.controls.filter((c) => c.travel && c.travel.unit === '').map((c) => c.symbol), []);
 const delay = panelLayout(delayExample);
-check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', 'none'], ['tone', 0, 'tone', 'none'], ['mix', 0, 'mix', 'none']]]);
+// every control of the example states its meaning (omx-contract 3.22.0, meaning required), so pingpong takes its role too
+check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', 'none'], ['tone', 0, 'tone', 'none'], ['mix', 0, 'mix', 'none'], ['pingpong', 0, 'pingpong', 'none']]]);
 
 // a CLAP control is keyed by its numeric id, p<id>: two parameters of one name are two controls (#27)
 const dup = descriptor([{ ...travel('dB'), id: 3670762539, name: 'Filter mode' }, { ...travel('dB'), id: 1515688365, name: 'Filter mode' }]);
