@@ -150,15 +150,18 @@ export function pluginTriples(bundle, uri) {
 // ---------------------------------------------------------------------------------------------------------------
 // Planning: the verdict per plugin, the versions, and whether the bundle is written or refused.
 
+/** Every value the plugin states for predicate `p` in the files lilv reads for it, each once. */
+function statedValues(bundle, uri, p) {
+  const vs = new Set();
+  for (const name of ['manifest.ttl', ...(bundle.seeAlso.get(uri) ?? [])]) {
+    for (const t of /** @type {TtlFile} */ (bundle.files.get(name)).triples) if (t.s.t === 'iri' && t.s.v === uri && t.p.v === p) vs.add(t.o.t === 'lit' ? t.o.v : termKey(t.o));
+  }
+  return [...vs];
+}
+
 /** lilv's reading of a plugin's version: both values present, else 0.0 (lilv/src/world.c get_version). */
 function versionOf(bundle, uri) {
-  const values = (p) => {
-    const vs = new Set();
-    for (const name of ['manifest.ttl', ...(bundle.seeAlso.get(uri) ?? [])]) {
-      for (const t of /** @type {TtlFile} */ (bundle.files.get(name)).triples) if (t.s.t === 'iri' && t.s.v === uri && t.p.v === p) vs.add(t.o.t === 'lit' ? t.o.v : termKey(t.o));
-    }
-    return [...vs];
-  };
+  const values = (p) => statedValues(bundle, uri, p);
   const read = (field) => {
     const vs = values(`${LV2}${field}`);
     if (vs.length > 1) throw new Refusal('version-ambiguous', `${uri} states lv2:${field} ${vs.join(' and ')}`);
@@ -176,10 +179,15 @@ function versionOf(bundle, uri) {
   if (next.minor < installed.minor || (next.minor === installed.minor && next.micro <= installed.micro)) {
     throw new Refusal('version-not-newer', `${uri}: ${next.minor}.${next.micro} would not be newer than ${installed.minor}.${installed.micro}`);
   }
-  const binaries = values(`${LV2}binary`);
+  return { stated: { minor, micro }, installed, next, binary: binaryOf(bundle, uri) };
+}
+
+/** The plugin's one lv2:binary, as lilv reads it (an IRI); a Refusal when it states none or several. */
+export function binaryOf(bundle, uri) {
+  const binaries = statedValues(bundle, uri, `${LV2}binary`);
   if (binaries.length === 0) throw new Refusal('no-binary', `${uri} states no lv2:binary`);
   if (binaries.length > 1) throw new Refusal('binary-ambiguous', `${uri} states lv2:binary ${binaries.join(' and ')}`);
-  return { stated: { minor, micro }, installed, next, binary: binaries[0] };
+  return binaries[0];
 }
 
 /**
@@ -208,6 +216,21 @@ function withInstances(verdict, instances) {
 }
 
 /**
+ * The port-group verdict of one plugin of an installed bundle: the inference's, with the instance groups of its repeated
+ * groups. The one inference the complement writes and the descriptions store keeps (docs/descriptions-store.md 6).
+ * @param {InstalledBundle} bundle
+ * @param {string} uri
+ */
+export function verdictOf(bundle, uri) {
+  const triples = pluginTriples(bundle, uri);
+  const plugin = readPluginPorts(triples, uri);
+  // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
+  const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
+  const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
+  return withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances);
+}
+
+/**
  * @typedef {{ uri: string, verdict: any, version?: any }} PlannedPlugin
  * @typedef {{ bundle: InstalledBundle, plugins: PlannedPlugin[], write: boolean, refusal?: Refusal }} Plan
  */
@@ -220,14 +243,7 @@ function withInstances(verdict, instances) {
  * @returns {Plan}
  */
 export function planBundle(bundle, options = {}) {
-  const plugins = bundle.plugins.map((uri) => {
-    const triples = pluginTriples(bundle, uri);
-    const plugin = readPluginPorts(triples, uri);
-    // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
-    const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
-    const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
-    return { uri, verdict: withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances) };
-  });
+  const plugins = bundle.plugins.map((uri) => ({ uri, verdict: verdictOf(bundle, uri) }));
   const plan = { bundle, plugins, write: false };
   if (!plugins.some((p) => p.verdict.outcome === OUTCOME.grouped)) return plan;
   try {
