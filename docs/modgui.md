@@ -129,7 +129,8 @@ network, and the release check runs `node tools/look-pin.mjs --check <tokens.css
 (re-pin with `--write`, then `node tools/look.mjs`).
 
 The value of a control is shown in a scribble strip, `mod-role="input-control-value"` bound to the port: mod-ui writes the port's
-value into it and the template carries no value text; the unit (from the descriptor) is its `data-unit`. A selector's own value
+value into it and the template carries no value text; the unit is its `data-unit`, spelled for a person: the `x-symbol` of the
+descriptor's unit id in omx-contract's PARAM_UNITS (`percent` shows `%`, `none` shows nothing). A selector's own value
 element is bound the same way.
 
 The knob film strips of `vintage` and `3d` are generated from one drawing each: the vintage knob's is a scene in `tools/look.json` (`drawings`, written there from `schema/modgui-looks.json`, the only copy of that drawing), the 3d knob's `tools/look/knob-3d.svg`: 65

@@ -68,5 +68,5 @@ test('a contract directory with no omx-plugins answers the standard unit ids of 
     env: { ...process.env, OMX_CONTRACT_PATH: dir, PKG_CONFIG: '/nonexistent/pkg-config' },
   });
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(JSON.parse(r.stdout), ['dB', 'LUFS', null, { id: 'LUFS', dimension: 'loudness' }]);
+  assert.deepEqual(JSON.parse(r.stdout), ['dB', 'LUFS', null, { symbol: 'LUFS', dimension: 'loudness' }]);
 });

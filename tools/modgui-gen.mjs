@@ -38,7 +38,7 @@ import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
-import { installedDescriptorFile, unitIdOf } from './vocabulary.mjs';
+import { installedDescriptorFile, unitIdOf, unitSymbolOf } from './vocabulary.mjs';
 import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
@@ -89,7 +89,7 @@ export function travelOf(c) {
     const at = c.ids.indexOf(c.default);
     return { kind: 'integer', min: points[0].value, max: points[points.length - 1].value, def: at >= 0 ? c.values[at] : c.default, points };
   }
-  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default, unit: c.travel.unit };
+  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default, unit: unitSymbolOf(c.travel.unit) };
   return undefined;
 }
 
@@ -190,7 +190,7 @@ export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 /** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
  * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
  * three omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
-const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', 'dB-oct': 'db' });
+const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', dBPerOct: 'db' });
 function curveUnitOf(id) {
   const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
   if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);
@@ -398,7 +398,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: unitSymbolOf(c.travel?.unit), ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   sections.splice(0, sections.length, ...withRepeats(descriptor, declared, sections));
@@ -415,7 +415,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   try {
     const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
     const symbols = new Set(x.controls.map((c) => c.symbol));
-    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: m.unit, min: m.min, max: m.max, kind: m.kind }));
+    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: unitSymbolOf(m.unit), min: m.min, max: m.max, kind: m.kind }));
   } catch (err) {
     // a refusal of the layout carries its code and leaves no meter to draw; anything else (plugin-hostd's LV2 table not
     // installed) would write a MOD GUI that silently lacks its meters
