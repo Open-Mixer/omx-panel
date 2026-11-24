@@ -130,13 +130,14 @@ install: all
 	install -m 0755 $(B)/$(SONAME) $(DESTDIR)$(LIBDIR)/
 	ln -sf $(SONAME) $(DESTDIR)$(LIBDIR)/libomx-panel-render.so
 	install -m 0644 include/omx_panel_render.h include/omx_panel_gesture.h $(DESTDIR)$(INCLUDEDIR)/
-	install -m 0644 include/omx_panel_ui.h $(DESTDIR)$(INCLUDEDIR)/
-	install -m 0644 $(B)/omx-panel-ui.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0644 $(B)/omx-panel-render.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0755 $(B)/omx-panel-render $(DESTDIR)$(BINDIR)/
 ifeq ($(WINDOW),1)
+	# the ui library is installed whole or not at all: its header and pkg-config file go with it (its package is omx-panel#187)
 	install -m 0755 $(B)/$(UI_SONAME) $(DESTDIR)$(LIBDIR)/
 	ln -sf $(UI_SONAME) $(DESTDIR)$(LIBDIR)/libomx-panel-ui.so
+	install -m 0644 include/omx_panel_ui.h $(DESTDIR)$(INCLUDEDIR)/
+	install -m 0644 $(B)/omx-panel-ui.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	install -m 0644 $(B)/libomx-panel-window.a $(DESTDIR)$(LIBDIR)/
 	install -m 0644 include/omx_panel_window.h $(DESTDIR)$(INCLUDEDIR)/
 	install -m 0644 $(B)/omx-panel-window.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
