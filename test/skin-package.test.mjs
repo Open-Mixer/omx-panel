@@ -96,13 +96,22 @@ describe('the override file (§6.3)', () => {
       parseSkinOverride(file({ backdrop: 'art/../../etc/passwd' }), DESC.plugin),
     ].map((r) => (r.ok ? 'ok' : `${r.refusal.code}:${r.refusal.args?.['field']}`));
     assert.deepEqual(codes, [
-      'panel.skin.override-invalid:json',
-      'panel.skin.override-invalid:plugin',
-      'panel.skin.override-invalid:schema',
-      'panel.skin.override-invalid:view',
-      'panel.skin.override-invalid:backdrop',
+      'panel.skin.override-refused:json',
+      'panel.skin.override-refused:plugin',
+      'panel.skin.override-refused:schema',
+      'panel.skin.override-refused:view',
+      'panel.skin.override-refused:backdrop',
     ]);
     assert.equal(parseSkinOverride(file({}), DESC.plugin).ok, true);
+  });
+
+  it('gives override-refused a reason word, never a sentence, naming why (docs/skin-package.md)', () => {
+    const reasons = [
+      parseSkinOverride('{', DESC.plugin),
+      parseSkinOverride('[]', DESC.plugin),
+      parseSkinOverride(file({ schema: 2 }), DESC.plugin),
+    ].map((r) => (r.ok ? 'ok' : r.refusal.args?.['reason']));
+    assert.deepEqual(reasons, ['parse-error', 'not-object', 'schema']);
   });
 
   it('takes a modgui entry under modgui/ as the opt-in, and refuses one escaping it or beside a view (§6.7)', () => {
@@ -114,7 +123,7 @@ describe('the override file (§6.3)', () => {
       parseSkinOverride(file({ modgui: 'modgui/icon.html' }), DESC.plugin),
       parseSkinOverride(file({ modgui: { entry: 'modgui/icon.html' }, view: { entry: 'view/index.mjs', api: '1.0' } }), DESC.plugin),
     ].map((r) => (r.ok ? 'ok' : `${r.refusal.code}:${r.refusal.args?.['field']}`));
-    assert.deepEqual(codes, Array(4).fill('panel.skin.override-invalid:modgui'));
+    assert.deepEqual(codes, Array(4).fill('panel.skin.override-refused:modgui'));
   });
 
   it('passes exactly the allow-listed licences through the modgui gate (§6.6, §6.7)', () => {
@@ -131,7 +140,7 @@ describe('the override file (§6.3)', () => {
     if (ok.ok) assert.deepEqual(ok.override.source?.modgui, { html: 'modgui/icon.html', css: 'modgui/stylesheet.css' });
 
     const escaping = parseSkinOverride(file({ source: { kind: 'modgui', modgui: { html: '../x.html', css: 'modgui/stylesheet.css' } } }), DESC.plugin);
-    assert.equal(escaping.ok ? 'ok' : escaping.refusal.code, 'panel.skin.override-invalid');
+    assert.equal(escaping.ok ? 'ok' : escaping.refusal.code, 'panel.skin.override-refused');
 
     const outside = parseSkinOverride(file({ source: { kind: 'modgui', modgui: { html: 'art/icon.html', css: 'modgui/stylesheet.css' } } }), DESC.plugin);
     assert.equal(outside.ok, false);

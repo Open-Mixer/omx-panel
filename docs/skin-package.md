@@ -64,7 +64,15 @@ accepts a threshold in dBu or LUFS.
 
 Each refusal is a code with named arguments (`SKIN_REFUSAL_CODES`): `panel.skin.override-invalid` (the file does not parse
 or fails the schema, `args.field` the first field that broke it), `panel.skin.override-entry-dropped`, `panel.skin.api-mismatch`,
-`panel.skin.view-error`, `panel.skin.view-lint`, `panel.skin.modgui-licence`, and the importer's own ten, `MODGUI_*` (below).
+`panel.skin.view-error`, `panel.skin.view-lint`, `panel.skin.override-refused` (the file is absent, does not parse or fails
+the schema: `args.plugin`, `args.field` the first field that broke it, `args.reason` the word for why: `parse-error`,
+`not-object`, `schema` or, when the console finds no override file at all, `missing`), `panel.skin.entry-missing` (an entry a
+`view` or `modgui` override names is not in the package: `args.field` `view` or `modgui`, `args.entry` the entry it named),
+`panel.skin.modgui-licence`, and the importer's own ten, `MODGUI_*` (below). A code is never reworded: omx-panel raises
+`panel.skin.override-refused` where it raised `panel.skin.override-invalid`, and a missing entry is `panel.skin.entry-missing`,
+never `panel.skin.view-error`; the two older codes keep their sentences for a client that still reads them. Every argument
+is a fact the surface already has or a short word, never a sentence: a sentence lives only in `schema/codes.json` and the
+catalogs, so a client can translate it.
 
 The one sentence a person reads for each code, in English and Catalan, is in `schema/codes.json` (exported as
 `@openmixer/omx-panel/codes.json`), beside the codes of `describe`, the bar rule and the easy list: an omx-contract
