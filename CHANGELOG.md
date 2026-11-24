@@ -4,6 +4,14 @@
 
 ## Unreleased
 
+- The renderer wears the look's style whole (#123): under the vintage style a panel is the MOD GUI's vintage face, pixel
+  for pixel: the cream enclosure with its radius, the head plate, the screws, no section plates, the dark keys and
+  screens, the lamp and each text in the look's own ink, beside the vintage knob. Every value is `looks[style]` of
+  `look.json`, read by the face's rule (a token's first colour, a role in braces, `none` for a thing not drawn). A host
+  that passes its own look with a `style` must set every token the face wears, or the renderer refuses it by the
+  token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
+  move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
+
 - `describe` refuses an override family that is no word of `PANEL_FAMILIES` (#199, ruling Z1 of omx-contract#161):
   `panel.describe.family-unknown`, naming the plugin and the family, and the panel is `none`, as for a family the
   controls do not back. omx-contract's override schema takes any identifier as a family; the words are the panel

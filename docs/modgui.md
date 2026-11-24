@@ -95,8 +95,8 @@ role. There is no stand-in: a look without `--knob-pointer` or `--curve-stroke` 
 place. No surface spells a colour, and every token a surface reads is a role (`test/look-roles.test.mjs`). The
 package also exports the role file, as `@openmixer/omx-panel/look-roles.json`.
 
-The knob is still drawn flat (rim, body, pointer): the metal face, rim and relief the vintage style names are not
-drawn yet.
+The C renderer wears the look's style as this face does (docs/renderer.md "What it draws"): under the vintage style
+its panel is this face, pixel for pixel.
 
 ## The test
 

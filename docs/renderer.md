@@ -34,6 +34,18 @@ the role's name, with no other role drawn in its place. A knob's pointer is draw
 stroke in `--curve-stroke`, neither in `--accent`. The geometry and text sizes are
 `tools/look/geometry.json`, which `tools/modgui-gen.mjs` reads too. The renderer types no colour and no size.
 
+A look that names a style (`style`, one of its `looks`) is worn whole, as the MOD GUI's face wears it (#123): the enclosure
+(`--enclosure`, where `--body-bg` names it) with the body's radius, the head plate (`--head-bg`) inset by `--head-inset`,
+the head's rule and lamp (`--head-rule`, `--led-on-bg`), the screws in the foot's corners (`--screws`, `--screws-slot`), a
+plate under each section (`--section-bg`), the keys and the screens (`--key-bg`, `--key-pressed-bg`, `--screen-bg`), the
+scribble strip, the curve's line and each text's ink (`--t-brand`, `--t-label`, `--t-section`, `--t-control`, `--t-value`,
+`--t-key`, `--t-screen`, `--t-screen-dim`), and the knob the style names (`--knob`). A token is read by the face's rule: the
+first `#rrggbb` its text names, a colour role in braces read from the roles, `none` for a thing not drawn; a gradient is
+its first colour, as on the face. A style short of a token the face wears is refused by the token's name. The enclosure is
+the first of the style's list: a description names no plugin to choose another by. A look that names no style is worn as
+the roles give it. Under the vintage style the panel is the MOD GUI's vintage face, pixel for pixel
+(`renderer/test/vintage-face.test.mjs`); a fader is drawn flat in every style, as the face draws it.
+
 A meter fills along the foot of its frame to its reading. A display and an xy pad show a frame and their text
 for now; an xy pad gets its own drawing when a description carries what it needs (a pair of controls).
 
