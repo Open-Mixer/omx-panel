@@ -10,7 +10,7 @@
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
  * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
- * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "stems": {"<display>": [{"x", "y", "shade", "letter"}]}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
+ * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "stems": {"<display>": [{"x", "y", "shade", "letter"}]}, "meters": {"<symbol>": [{"value", "elapsed", "clip", "clear"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
  * "x y width height" in device px, or "hidden". --window (a build with the window, WINDOW=1) draws the panel in a window of its
@@ -147,7 +147,9 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
       ok = 0;
     }
   }
-  /* "meters": {"<symbol>": [{"value", "elapsed"}, ...]}, the readings a host gave a meter at its draw ticks, in order (one object is one tick) */
+  /* "meters": {"<symbol>": [{"value", "elapsed", "clip", "clear"}, ...]}, the readings a host gave a meter at its draw ticks, in order (one
+   * object is one tick): "clear" true clears the clip word first (the operator's gesture), then "clip" true is a clip the source saw since
+   * the last tick, then the value */
   cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "meters")) {
     int32_t mi = omx_panel_view_meter_find(v, it->string);
     cJSON *tick;
@@ -160,6 +162,14 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
     for (int k = 0; k < (list ? cJSON_GetArraySize(list) : 1); k++) {
       tick = list ? cJSON_GetArrayItem(list, k) : it;
       cJSON *val = cJSON_GetObjectItemCaseSensitive(tick, "value"), *el = cJSON_GetObjectItemCaseSensitive(tick, "elapsed");
+      cJSON *clip = cJSON_GetObjectItemCaseSensitive(tick, "clip"), *clear = cJSON_GetObjectItemCaseSensitive(tick, "clear");
+      if ((clip && !cJSON_IsBool(clip)) || (clear && !cJSON_IsBool(clear))) {
+        fprintf(stderr, "omx-panel-render: state's meter '%s' has a clip or a clear that is not true or false\n", it->string);
+        ok = 0;
+        continue;
+      }
+      if (cJSON_IsTrue(clear)) omx_panel_view_clear_clip(v, (uint32_t)mi);
+      if (clip) omx_panel_view_set_clip(v, (uint32_t)mi, cJSON_IsTrue(clip));
       if (!cJSON_IsNumber(val) || (el && !cJSON_IsNumber(el)) || !omx_panel_view_set_meter(v, (uint32_t)mi, val->valuedouble, el ? el->valuedouble : 0)) {
         fprintf(stderr, "omx-panel-render: state's meter '%s' has a reading that is not a finite value and a non-negative elapsed time\n", it->string);
         ok = 0;

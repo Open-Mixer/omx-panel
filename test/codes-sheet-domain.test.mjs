@@ -34,9 +34,13 @@ const GOLDEN = {
   'catalogs/it.json': 'd878a12812e110373249a0212cc7042101e9ce90909f59ffe5cd4fbc8ad75d6e',
   'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
+/** The panel's own words (PANEL_LABELS, panel.label.*) joined the sheet after the move, at domain 1.3.0 (omx-panel#13), and the
+ * sheet's doc line says so: the move's golden reads the codes it moved, so both are left out of it here. */
+const moved = (code) => !code.startsWith('panel.label.');
 const canonical = (f, j) => (f.startsWith('catalogs/')
-  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
-  : j);
+  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).filter(([k]) => moved(k)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
+  : { ...j, doc: GOLDEN_DOC, codes: Object.fromEntries(Object.entries(j.codes).filter(([, e]) => moved(e.code))) });
+const GOLDEN_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 

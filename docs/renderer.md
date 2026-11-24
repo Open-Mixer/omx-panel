@@ -183,13 +183,31 @@ at or above 0.32.2, checked by the build), the meter's range standing for the sc
 copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
 the frame stands, which is what the MOD GUI face draws.
 
+A meter whose description says `clip: true` has a clip word, drawn as a lamp at its frame's top right (`meterLamp`, 8 px square
+in `tools/look/geometry.json`, 6 px in from the right and 4 px down; the caption is kept clear of it): dark (the frame's body)
+until a clip, lit in the meter red while the word is. The word is omx-dsp's view law, `omx_meter_view_clip` and
+`omx_meter_view_clip_clear`: `omx_panel_view_set_clip(view, index, clip)` gives a draw tick's clip (whether the source saw one
+since the last tick), the word stays lit across ticks until `omx_panel_view_clear_clip(view, index)` (the operator's gesture, or
+a reset), and `omx_panel_view_meter_clip(view, index)` reads it. A meter whose description declares no clip word has no lamp
+and its word is never lit, whatever its source says. The tests hold the lamp to omx-dsp's clip vector tick by tick
+(`renderer/test/meter-clip.test.mjs`).
+
+A meter whose description says `held: false` (its plugin holds nothing between reads) says so in its caption, after the range:
+the description's word `words.unheld`. The band's title is `words.meters`. Both are the panel's own words (PANEL_LABELS,
+docs/panel-layout.md "Words"), served by the description with their keys: the renderer spells neither, and a description that
+draws one without serving it is refused by name.
+
 `renderer/test/meter-surfaces.mjs` draws one recorded stream (`test/fixtures/meters/meters.stream.json`, 80 ticks at about
 20 Hz) on three surfaces and measures each from its pixels: the renderer; the MOD GUI's own template and stylesheet in
 Chromium, each frame given a bar and a marker through omx-dsp's TypeScript twin (the MOD GUI has no live meter yet); and a Tk
 canvas through a Python copy of the law read against omx-dsp's vectors. Every bar end, marker and frame edge is held within
 1 px of the renderer's in the browser and 2 px in Tk (`xvfb-run -a node renderer/test/meter-surfaces.mjs`; CI's
-`meter-surfaces` job). The command's state takes
-`"meters": {"<symbol>": [{"value", "elapsed"}, ...]}`, one entry for each draw tick.
+`meter-surfaces` job). The stream's ticks carry clips and clears too: each surface lights its lamps by the clip word (the
+browser's lamp the MOD GUI template's own, its `omx-clip-lit` class set; Tk's through a Python copy read against omx-dsp's clip
+vector), and at every tick each meter's lamp must be lit or dark exactly as the renderer's, its four edges within the same 1 and
+2 px; the loudness meter, which has no clip word, reports clips and lights nothing on any surface. The command's state takes
+`"meters": {"<symbol>": [{"value", "elapsed", "clip", "clear"}, ...]}`, one entry for each draw tick: `clear` true clears the
+clip word first, then `clip` true is a clip since the last tick; a `clip` or `clear` that is not true or false is refused.
 
 ## Input
 

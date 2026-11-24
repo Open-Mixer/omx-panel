@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -935,6 +935,45 @@
             "description": "x the time in ms from 0 to the content's end, y the level in dB from the floor, -60, to 0 or the next 6 dB above a level",
             "x-code": 2,
             "x-text": "A time axis: time in ms from 0, level in dB from the floor."
+          }
+        ]
+      },
+      "PANEL_LABELS": {
+        "description": "The words a panel surface draws of its own, not the plugin's: each key (the word) with its English sentence (x-text); rendered into schema/codes.json and catalogs/<lang>.json beside the codes (tools/codes-render.mjs), and served in a description's `words` (docs/panel-layout.md, \"Words\") so the renderer, the MOD GUI and every other surface draw the same text and a translation finds it by its key.",
+        "x-since": "1.3.0",
+        "x-why": "The renderer drew \"Meters\", the skin package \"More\" and the layout \"Gain reduction\" as literals in their code (omx-panel#13): a drawn word with no key cannot be translated, and two surfaces spelled it twice. Codes then catalogs (omx-contract#2).",
+        "oneOf": [
+          {
+            "const": "panel.label.meters",
+            "title": "meters",
+            "description": "The title of the meters band, the band below the sections where the meters that are no control of a section stand.",
+            "x-code": 0,
+            "x-text": "Meters",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.more",
+            "title": "more",
+            "description": "The title of the last section a skin adds for the parameters its sections name nowhere (docs/skin-package.md, sections).",
+            "x-code": 1,
+            "x-text": "More",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.unheld",
+            "title": "unheld",
+            "description": "Said after the range in the caption of a meter whose plugin holds nothing between reads (held: false).",
+            "x-code": 2,
+            "x-text": "unheld",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.gain.reduction",
+            "title": "gainReduction",
+            "description": "The label of a dynamics family's gain-reduction bar, where the descriptor gives it none.",
+            "x-code": 3,
+            "x-text": "Gain reduction",
+            "x-args": []
           }
         ]
       }

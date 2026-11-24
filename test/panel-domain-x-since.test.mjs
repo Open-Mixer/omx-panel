@@ -16,6 +16,8 @@ const LATER = { ...Object.fromEntries(['PANEL_STORE_CODES', 'PANEL_DESCRIBE_CODE
 // the codes sheet (schema/codes.json) moved in at 1.2.0 (sorting pass row V3)
 LATER.PANEL_SKIN_CODES = '1.2.0';
 LATER.PANEL_MODGUI_CODES = '1.2.0';
+// the words a surface draws of its own came at 1.3.0 (omx-panel#13)
+LATER.PANEL_LABELS = '1.3.0';
 const semver = (v) => v.split('.').map(Number);
 const above = (a, b) => {
   const [x, y] = [semver(a), semver(b)];

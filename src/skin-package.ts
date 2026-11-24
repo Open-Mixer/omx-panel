@@ -131,7 +131,17 @@ export interface SkinDescription {
   readonly displays: readonly PanelDisplay[];
   /** The Easy controls by symbol, in order: the first pages of every surface (one-panel spec 7.14). */
   readonly easy?: readonly string[];
+  /** The words a surface draws of its own (the panel domain's PANEL_LABELS): each its key and its English sentence. */
+  readonly words?: PanelWords;
 }
+
+/** A word a surface draws of its own: its key (`panel.label.*`, the codes sheet's) and its English sentence. */
+export interface PanelWord {
+  readonly labelKey: string;
+  readonly label: string;
+}
+/** The panel's own words by their title in the panel domain's PANEL_LABELS (docs/panel-layout.md, "Words"). */
+export type PanelWords = Readonly<Record<string, PanelWord>>;
 
 /** Why D6 dropped a role entry (§3d): the rest of the description stands. */
 export type RoleDropReason = 'role-not-in-family' | 'role-repeats' | 'role-unit' | 'unknown-symbol';
@@ -482,8 +492,11 @@ export function applySkinOverride<D extends SkinDescription>(
     const named = new Set(controls.map((c) => c.symbol));
     const rest = description.controls.filter((c) => !named.has(c.symbol));
     if (rest.length > 0) {
+      // its title is the panel's own word, by its key (PANEL_LABELS more): the description serves it, no text is spelled here;
+      // a description without it titles the section by its key
       const key = 'more';
-      sections.push({ key, labelKey: '', label: 'More' });
+      const more = description.words?.more;
+      sections.push({ key, labelKey: more?.labelKey ?? '', label: more?.label ?? key });
       for (const c of rest) controls.push({ ...c, section: key });
     }
     // the bar groups follow the rebuilt sections: a skin's `bars` word wins, else the rule over each section's controls

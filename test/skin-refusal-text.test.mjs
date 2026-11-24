@@ -17,6 +17,7 @@ import { SKIN_REFUSAL_CODES } from '../dist/src/skin-package.js';
 import { DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
+import { PANEL_LABELS } from '../dist/tools/panel-description.mjs';
 import { gte } from './semver.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
@@ -27,8 +28,9 @@ const CATALOG_LANGS = readdirSync(new URL('../catalogs/', import.meta.url)).filt
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
 
-/** Every code the package puts in a refusal, read off the modules that emit them. */
-const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];
+/** Every code the package puts in a refusal, read off the modules that emit them, and the key of every word it serves a surface to
+ * draw of its own (a description's `words`, PANEL_LABELS). */
+const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code, ...Object.values(PANEL_LABELS).map((w) => w.labelKey)];
 
 /** The file's entries by their code word; an absent file reads as no entries, so every code below is red by name. */
 /** A shipped catalog; an absent one reads as empty, so every code is red by name. */

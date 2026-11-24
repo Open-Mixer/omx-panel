@@ -150,7 +150,7 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, selectorTop, &v->g, "geometry"); NUM(g, faderW, &v->g, "geometry"); NUM(g, faderCap, &v->g, "geometry");
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
-  NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
+  NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry"); NUM(g, meterLamp, &v->g, "geometry");
   NUM(g, scribbleW, &v->g, "geometry"); NUM(g, scribbleH, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
@@ -392,12 +392,32 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       }
       m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit_text ? unit_text : unit);
       m->min = mn->valuedouble, m->max = mx->valuedouble, m->gain_reduction = strcmp(kind, "gain-reduction") == 0;
+      /* the clip word and the hold are the description's facts (contract 7.9): a meter that does not say clip: true has no clip
+       * word and never lights one; one that does not say held: true is unheld */
+      m->clip = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "clip"));
+      m->held = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "held"));
       m->in_band = 1;
       for (size_t k = 0; k < v->ncontrols; k++)
         if (strcmp(v->controls[k].symbol, sym) == 0) m->in_band = 0;
       v->nband += (size_t)m->in_band;
     }
   }
+  /* the words a surface draws of its own (`words`, the panel domain's PANEL_LABELS, each { labelKey, label }): the meters band's
+   * title and an unheld meter's word. One the panel draws and the description does not serve is refused by name, never spelled
+   * here (omx-panel#13) */
+  cJSON *words = cJSON_GetObjectItemCaseSensitive(root, "words");
+  const char *w_meters = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(words, "meters"), "label"));
+  const char *w_unheld = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(words, "unheld"), "label"));
+  if (v->nband > 0 && !w_meters) {
+    fail(err, n, "description: the meters band is drawn and words.meters (PANEL_LABELS panel.label.meters) is not served%s%s", "", NULL);
+    goto bad;
+  }
+  for (size_t k = 0; k < v->nmeters; k++)
+    if (v->meters[k].in_band && !v->meters[k].held && !w_unheld) {
+      fail(err, n, "description: meter '%s' is unheld and words.unheld (PANEL_LABELS panel.label.unheld) is not served%s", v->meters[k].symbol, "");
+      goto bad;
+    }
+  v->word_meters = w_meters ? dup(w_meters) : NULL, v->word_unheld = w_unheld ? dup(w_unheld) : NULL;
   /* the displays: each on a section, its axis (a PANEL_DISPLAY_AXES word the description serves) the curve's axes, its basis the
    * caption. The axis is read, never inferred from the kind: a display without one, or with another word, is refused by name */
   cJSON *dis = cJSON_GetObjectItemCaseSensitive(root, "displays");
@@ -536,7 +556,7 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
     free(v->matrices[k].heads), free(v->matrices[k].row_label), free(v->matrices[k].cell);
   }
   free(v->matrices);
-  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
+  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name), free(v->word_meters), free(v->word_unheld);
   omx_font_free(v->font);
   free(v);
 }
@@ -565,6 +585,25 @@ bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t index, double value,
   m->marker = omx_meter_view_step(&m->view, m->fill, elapsed, OMX_METER_VIEW_FALL_DB_PER_SECOND, -(m->max - m->min));
   m->has = 1;
   return true;
+}
+
+/* The clip word is omx-dsp's view law (omx_meter_view_clip, omx_meter_view_clip_clear): a clip lights it and it stays lit until
+ * cleared. A meter whose description has no clip word is given none: what its source says never reaches the view. */
+bool omx_panel_view_set_clip(omx_panel_view_t *v, uint32_t index, bool clip) {
+  if (!v || index >= v->nmeters) return false;
+  meter *m = &v->meters[index];
+  if (m->clip) omx_meter_view_clip(&m->view, clip);
+  return true;
+}
+
+bool omx_panel_view_clear_clip(omx_panel_view_t *v, uint32_t index) {
+  if (!v || index >= v->nmeters) return false;
+  omx_meter_view_clip_clear(&v->meters[index].view);
+  return true;
+}
+
+bool omx_panel_view_meter_clip(const omx_panel_view_t *v, uint32_t index) {
+  return v && index < v->nmeters && v->meters[index].clip && v->meters[index].view.clip;
 }
 
 uint32_t omx_panel_view_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->ncontrols : 0; }
@@ -1110,13 +1149,22 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
 
 /* A meter of the band: the frame with its caption (the label and the range with its unit), the bar along the foot, and the
  * peak marker over it. Until a reading is given only the frame and the caption stand, as the MOD GUI draws it. */
-static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, const meter *m, double x, double y, double w, double h, double s,
-                       const palette *col) {
+static void draw_meter(const omx_draw *d, omx_font *font, const geometry *g, const textsizes *T, const meter *m, const char *unheld, double x, double y,
+                       double w, double h, double s, const palette *col) {
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
   d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
-  char cap[256];
-  snprintf(cap, sizeof cap, "%s  %g to %g %s", m->label, m->min, m->max, m->unit);
-  text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  /* the caption: the label, the range and its unit, and the panel's word for a meter whose plugin holds nothing between reads */
+  char cap[320];
+  snprintf(cap, sizeof cap, "%s  %g to %g %s%s%s", m->label, m->min, m->max, m->unit, m->held ? "" : "  ", m->held ? "" : unheld);
+  /* a meter with a clip word wears its lamp at the frame's top right, the caption kept clear of it: lit (the meter red) while the
+   * word is, dark (the frame's body) until a clip and after a clear */
+  double lamp = g->meterLamp * s;
+  text(d, font, cap, 0, w - 12 * s - (m->clip ? lamp + 4 * s : 0), x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  if (m->clip) {
+    double lx = x + w - 6 * s - lamp, ly = y + 4 * s;
+    d->round_rect(d->ctx, lx, ly, lamp, lamp, 2 * s, col->rim);
+    d->round_rect(d->ctx, lx + s, ly + s, lamp - 2 * s, lamp - 2 * s, s, m->view.clip ? col->meterRed : col->body);
+  }
   if (!m->has) return;
   double inner = w - 4 * s, f = m->fill, mk = m->marker;
   if (f > 0) d->round_rect(d->ctx, x + 2 * s, y + h - 6 * s, inner * f, 4 * s, 0, col->accent);
@@ -1206,11 +1254,11 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
   if (v->nband) {
     box b = L.meters;
     d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
-    text(d, font, "Meters", 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    text(d, font, v->word_meters, 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t k = 0; k < v->nmeters; k++) {
       if (!v->meters[k].in_band) continue;
-      draw_meter(d, font, T, &v->meters[k], (b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s,
+      draw_meter(d, font, g, T, &v->meters[k], v->word_unheld, (b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s,
                  (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
     }
   }

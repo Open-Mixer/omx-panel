@@ -239,7 +239,20 @@ runs): each meter is a meter control in the description's `meters` list, in the 
 
 A meter that is no control of a section is drawn by a surface in a band below the sections: the renderer as a bar and a
 peak marker over the description's range (`omx_panel_view_set_meter`), the MOD GUI as a static frame with the range and the
-unit in its caption and no live meter yet.
+unit in its caption and no live meter yet. A meter with `clip: true` wears a clip lamp at its frame's top right on every
+surface, lit by omx-dsp's clip word (`omx_meter_view_clip`, kept lit until cleared); one without never lights one. An unheld
+meter's caption ends with the panel's word `words.unheld` (docs/renderer.md, "Meters").
+
+### Words
+
+A layout and a description serve `words`, the words a surface draws of its own rather than the plugin's: the panel domain's
+`PANEL_LABELS` (`contract.d/panel/panel.json`, since 1.3.0), each as `{ labelKey, label }`, the key and its English sentence,
+by the word's title: `meters` (the meters band's title), `more` (the title of the last section a skin adds for the parameters
+its sections name nowhere), `unheld` (said in an unheld meter's caption) and `gainReduction` (a gain-reduction bar's label
+where the descriptor gives none). The keys and sentences are rendered into `schema/codes.json` and every
+`catalogs/<lang>.json` beside the codes (`tools/codes-render.mjs`), so a surface translates a word by its key as it does a
+code. No surface spells one (`test/panel-labels.test.mjs` reads their code); `describe` adds them when it serves, never from a
+stored body, and they stay out of the canonical form and the fingerprint.
 
 What a face serves keeps the extension's widget enum: `knob`, `fader` and `switch` as they are, a
 `selector` as `auto` (a CLAP selector needs `CLAP_PARAM_IS_ENUM`, which the faces do not set).

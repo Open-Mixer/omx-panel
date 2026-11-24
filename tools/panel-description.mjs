@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, noUnitId, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
+import { meaningOfRole, noUnitId, panelCodes, panelLabels, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -86,6 +86,9 @@ export const DISPLAY_SOURCES = Object.freeze(panelWords('PANEL_DISPLAY_SOURCES')
  * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
  * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
 export const DISPLAY_AXES = Object.freeze(panelWords('PANEL_DISPLAY_AXES'));
+/** The words a surface draws of its own, each a key of the panel domain's PANEL_LABELS with its English sentence (omx-panel#13):
+ * a layout serves them in `words`, so no surface spells "Meters", "More", "unheld" or "Gain reduction" in its code. */
+export const PANEL_LABELS = panelLabels();
 export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
@@ -453,7 +456,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
-    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key') ?? PANEL_LABELS.gainReduction.labelKey, label: label(PANEL_LABELS.gainReduction.label, 'gain reduction bar'), basis: 'modelled' });
   }
   // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
   const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
@@ -469,7 +472,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
   // The Easy face: a view of the panel, so it stays out of the canonical form and the fingerprint
   const easy = easyOf({ family, roles, controls }, { declared: panel?.easy ?? descriptor.easy, where });
-  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy, meters, meterRefusals };
+  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy, meters, meterRefusals, words: PANEL_LABELS };
 }
 
 /** The highest value a visibility mask has a bit for: the ABI's visible_mask is 64 bits. */

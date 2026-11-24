@@ -104,6 +104,18 @@ int32_t omx_panel_view_meter_find(const omx_panel_view_t *view, const char *symb
  * or elapsed time that is not finite (or is negative). */
 bool omx_panel_view_set_meter(omx_panel_view_t *view, uint32_t index, double value, double elapsed);
 
+/** A meter's clip at a draw tick: `clip` whether its source reported a clip since the last tick. The clip word is omx-dsp's view law
+ * (omx_meter_view_clip of <omxdsp/mix/omx_meter_view.h>): a clip lights it and it stays lit across ticks until
+ * omx_panel_view_clear_clip(). A meter whose description does not say `clip: true` has no clip word and never lights one, whatever
+ * its source says. A meter of the band with a clip word draws it as a lamp at its frame's top right. False for an index past the
+ * meters. */
+bool omx_panel_view_set_clip(omx_panel_view_t *view, uint32_t index, bool clip);
+/** Clear meter `index`'s clip word (omx_meter_view_clip_clear: the operator's gesture, or a reset). False for an index past the
+ * meters. */
+bool omx_panel_view_clear_clip(omx_panel_view_t *view, uint32_t index);
+/** Whether meter `index`'s clip word is lit; false for a meter without one, or an index past the meters. */
+bool omx_panel_view_meter_clip(const omx_panel_view_t *view, uint32_t index);
+
 /** A selector's reading: option `at` of `count`, and its label. */
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
 

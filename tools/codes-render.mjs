@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * codes-render.mjs — schema/codes.json (the refusal codes omx-panel emits, omx-contract's codes shape) and
- * catalogs/<lang>.json (their sentences in each language) rendered from the panel domain: PANEL_SKIN_CODES,
- * PANEL_MODGUI_CODES and PANEL_DESCRIBE_CODES of contract.d/panel/panel.json (const the code, title its key, x-text its
+ * codes-render.mjs — schema/codes.json (the refusal codes omx-panel emits and the words its surfaces draw of their own,
+ * omx-contract's codes shape) and catalogs/<lang>.json (their sentences in each language) rendered from the panel domain:
+ * PANEL_SKIN_CODES, PANEL_MODGUI_CODES, PANEL_DESCRIBE_CODES and PANEL_LABELS of contract.d/panel/panel.json (const the code, title its key, x-text its
  * English sentence, x-args its placeholders) and the domain's catalogs (sorting pass row V3). Neither file is written by
  * hand; the surfaces and the console read them as before.
  *
@@ -19,8 +19,8 @@ import { isMain } from '@openmixer/omx-contract/entry';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const CONTRACT_DIR = join(ROOT, 'contract.d');
 /** The items the sheet is made of, in the sheet's order. */
-export const SHEET_ITEMS = ['PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES', 'PANEL_DESCRIBE_CODES'];
-const SHEET_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
+export const SHEET_ITEMS = ['PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES', 'PANEL_DESCRIBE_CODES', 'PANEL_LABELS'];
+const SHEET_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, and the words its surfaces draw of their own (panel.label.*, by the key a description serves), each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
 const OWNER = 'omx-panel';
 
 const text = (v) => `${JSON.stringify(v, null, 2)}\n`;

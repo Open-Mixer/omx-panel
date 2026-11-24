@@ -35,7 +35,7 @@
 import { applySkinOverride } from '../src/skin-package.js';
 import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
-import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { DISPLAY_AXES, PANEL_LABELS, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
 import { panelCodes, unitSymbolOf } from './vocabulary.mjs';
@@ -353,7 +353,9 @@ function axisFault(d, i) {
 /** The skin, then the matrices over the sections as the skin left them, then the pages: the one tail of a description. */
 function finish(stored, { skin, perPage, remote }) {
   const refusals = [];
-  let description = stored.body;
+  // the words a surface draws of its own (PANEL_LABELS: the meters band's title, the word a meter that holds nothing between reads
+  // says, a skin's last section), each with its key: the panel domain's, never the stored body's, so an older entry serves them
+  let description = { ...stored.body, words: PANEL_LABELS };
   // each display's axis is a PANEL_DISPLAY_AXES word (a stored body may be a person's edit): one that is not refuses the entry by
   // name, and none is inferred from the kind
   const badAxis = description.displays.map((d, i) => axisFault(d, i)).find(Boolean);
@@ -453,7 +455,7 @@ function mergeLayout(layout, placed, keep, matrix, titled) {
 function textOnlyLayout(descriptor) {
   return {
     origin: descriptor.origin, family: 'none', sections: [{ key: 'controls', labelKey: 'section.controls', label: 'Controls' }],
-    controls: [], roles: [], unpublished: [], displays: [], defaults: [], ports: { inputs: [], outputs: [], sidechain: false, notes: false }, easy: [], meters: [], meterRefusals: [],
+    controls: [], roles: [], unpublished: [], displays: [], defaults: [], ports: { inputs: [], outputs: [], sidechain: false, notes: false }, easy: [], meters: [], meterRefusals: [], words: PANEL_LABELS,
   };
 }
 
