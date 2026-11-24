@@ -111,6 +111,8 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.21.0' 'omx-contract-data >= 3.21.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
+          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -143,6 +145,8 @@ jobs:
       - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
         run: |
           dnf install -y --setopt=install_weak_deps=False 'libomx-domain-devel >= 3.21.0' 'omx-contract-data >= 3.21.0'
+          # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
+          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
       - uses: actions/checkout@v4
       - name: The tree the golden of the rules version reads
         run: npm ci && make
@@ -166,6 +170,8 @@ jobs:
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.21.0' 'omx-contract-data >= 3.21.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
+          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
@@ -208,6 +214,8 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False 'omx-contract-devel >= 3.21.0' 'omx-contract-data >= 3.21.0' 'omx-dsp-devel >= 0.34.0' 'omx-dsp-contract >= 0.32.3'
+          # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
+          dnf install -y --setopt=install_weak_deps=False 'plugin-db-contract >= 0.5.0'
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
