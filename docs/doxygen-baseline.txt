@@ -1,0 +1,135 @@
+renderer/include/omx_panel_render.h: Compound omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member begin_ms (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member begin_ms (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member cancelled (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member coarse (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member control (variable) of struct omx_panel_change is not documented.
+renderer/include/omx_panel_render.h: Member control (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member def (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member description_json (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member encoder (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member end_ms (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member end_ms (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member ended (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member fine (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member fine (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member font (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member font_size (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member format (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member fraction (variable) of struct omx_panel_change is not documented.
+renderer/include/omx_panel_render.h: Member geometry_json (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member gesture (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member gestures_json (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member has_def (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member height (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member id (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member integer (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member key (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member kind (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member log (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member look_json (variable) of struct omx_panel_sources is not documented.
+renderer/include/omx_panel_render.h: Member max (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member min (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member n (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_event_kind (enumeration) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_event_kind_t (typedef) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_event_t (typedef) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_key (enumeration) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_key_t (typedef) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_pointer (enumeration) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_pointer_t (typedef) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_destroy(omx_panel_view_t *view) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_find(const omx_panel_view_t *view, const char *symbol) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_gesture(const omx_panel_view_t *view, uint32_t at, omx_panel_gesture_t *out, omx_panel_change_t *changes, size_t cap, size_t *nchanges) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_gesture_count(const omx_panel_view_t *view) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_meter_find(const omx_panel_view_t *view, const char *symbol) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_set_travel(omx_panel_view_t *view, uint32_t index, const omx_panel_travel_t *travel) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_t (typedef) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member omx_panel_view_visible_columns(const omx_panel_view_t *view, uint32_t width, double scale) (function) of file omx_panel_render.h is not documented.
+renderer/include/omx_panel_render.h: Member pixels (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member pointer (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member refusal (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member scale (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member selected (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member shift (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member shown_until_ms (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member shown_until_ms (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member step (variable) of struct omx_panel_travel is not documented.
+renderer/include/omx_panel_render.h: Member stride (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member t_ms (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member type (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member undo (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member value (variable) of struct omx_panel_change is not documented.
+renderer/include/omx_panel_render.h: Member width (variable) of struct omx_panel_buffer is not documented.
+renderer/include/omx_panel_render.h: Member word (variable) of struct omx_panel_answer is not documented.
+renderer/include/omx_panel_render.h: Member word (variable) of struct omx_panel_gesture is not documented.
+renderer/include/omx_panel_render.h: Member x (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: Member y (variable) of struct omx_panel_event is not documented.
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_control_rect are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_count are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_create are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_create_from_files are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_draw are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_input are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_meter_count are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_natural_size are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_reading are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_choice are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_curve are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_handle are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_hold are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_integer are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_marks are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_meter are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_paint are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_read_only are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_spectrum are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_stems are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_surface are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_timing are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_title are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_set_value are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_symbol are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_target_rect are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_tick are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_view_visible are not documented
+renderer/include/omx_panel_render.h: parameters of member omx_panel_word_name are not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_control_rect is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_count is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_create is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_create_from_files is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_draw is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_input is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_meter_count is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_reading is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_choice is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_curve is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_handle is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_hold is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_integer is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_marks is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_meter is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_paint is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_read_only is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_spectrum is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_stems is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_surface is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_timing is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_set_value is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_symbol is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_target_rect is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_tick is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_view_visible is not documented
+renderer/include/omx_panel_render.h: return type of member omx_panel_word_name is not documented
+renderer/include/omx_panel_window.h: Member omx_panel_window_destroy(omx_panel_window_t *window) (function) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: Member omx_panel_window_hide(omx_panel_window_t *window) (function) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: Member omx_panel_window_idle(omx_panel_window_t *window) (function) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: Member omx_panel_window_native(const omx_panel_window_t *window) (function) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: Member omx_panel_window_show(omx_panel_window_t *window) (function) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: Member omx_panel_window_t (typedef) of file omx_panel_window.h is not documented.
+renderer/include/omx_panel_window.h: parameters of member omx_panel_window_create are not documented
+renderer/include/omx_panel_window.h: parameters of member omx_panel_window_read are not documented
+renderer/include/omx_panel_window.h: parameters of member omx_panel_window_redraw are not documented
+renderer/include/omx_panel_window.h: parameters of member omx_panel_window_size are not documented
+renderer/include/omx_panel_window.h: return type of member omx_panel_window_create is not documented
+renderer/include/omx_panel_window.h: return type of member omx_panel_window_read is not documented

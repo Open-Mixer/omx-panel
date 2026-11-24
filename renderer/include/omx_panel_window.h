@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
- *
- * omx_panel_window.h — a panel view in a window: pugl opens it (embedded in a host's window, or on its own) and
+ */
+/**
+ * @file omx_panel_window.h
+ * @brief A panel view in a window: pugl opens it (embedded in a host's window, or on its own) and
  * NanoVG draws it on OpenGL, with the same layout and the same widget code as the CPU buffer (omx_panel_render.h).
  * Built only with the renderer's window option (docs/renderer.md); a build that never opens a window links none of it.
  *
