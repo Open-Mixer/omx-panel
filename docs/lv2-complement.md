@@ -75,13 +75,13 @@ For an installed bundle `<dir>/<name>.lv2` holding at least one plugin whose ver
   /usr/lib64/lv2/triple_para-swh.lv2
   writer <sha256 of lv2-complement.mjs, group-infer.mjs and turtle-read.mjs>
   source-sha256 <sha256 of the installed TTL files read, name and bytes>
-  plugin http://plugin.org.uk/swh-plugins/triplePara 0.0 0.1 grouped 5
+  plugin http://plugin.org.uk/swh-plugins/triplePara 0.0 0.1 grouped 5 <16 hex digits: the groups written>
   file manifest.ttl <sha256>
   file plugin.ttl <sha256>
   ```
 
-  The first three lines decide: a bundle whose marker names the same installed bundle, writer and content hash is up
-  to date and is not written again (a second run writes nothing, byte for byte the same tree). A changed installed
+  The first three lines and the plugin lines decide: a bundle whose marker names the same installed bundle, writer,
+  content hash and plugins with the same groups (the store's, docs/descriptions-store.md 6) is up to date and is not written again (a second run writes nothing, byte for byte the same tree). A changed installed
   file (an upgrade) or a changed rule rewrites it (`replaced …`, the line saying which changed). A directory of our
   name **without** the marker is never written. Deleting the bundle is the whole removal; lilv loads the installed
   bundle again.
