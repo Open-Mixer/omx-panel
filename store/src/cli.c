@@ -19,6 +19,7 @@
     "       omx-panel-store check\n" \
     "       omx-panel-store source --format lv2|clap --path P\n" \
     "       omx-panel-store places --production user|system\n" \
+    "       omx-panel-store rules                                   (OMX_PANEL_RULES_VERSION: the rules an entry is put with)\n" \
     "  places: [--scope user|system] [--base F] [--system F] [--user F] [--contract-dir D]\n" \
     "          (else OMX_PANEL_STORE_BASE, _SYSTEM, _USER, OMX_CONTRACT_PATH, then the installed places)\n" \
     "  exit: 0, 1 with the code on stderr, 2 on usage\n"
@@ -146,6 +147,12 @@ int main(int argc, char **argv) {
         if (!o.format || !o.path) return usage();
         if (omx_panel_store_source(o.format, o.path, hex)) { fprintf(stderr, "panel-store.unreadable %s: no source can be made of it as %s\n", o.path, o.format); return 1; }
         puts(hex);
+        return 0;
+    }
+    if (!strcmp(cmd, "rules")) {
+        /* the one place a derivation outside C reads the reader's rules version from (docs/descriptions-store.md 5) */
+        if (argc != 2) return usage();
+        printf("%d\n", OMX_PANEL_RULES_VERSION);
         return 0;
     }
     if (!strcmp(cmd, "places")) {

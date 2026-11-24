@@ -23,6 +23,8 @@ omx-panel-store \- read and write the descriptions store of panel descriptions
 .br
 .B omx-panel-store places
 .BI --production " user|system"
+.br
+.B omx-panel-store rules
 .SH DESCRIPTION
 The descriptions store holds a panel description per plugin in three files panel.sqlite: the base
 (/usr/share/omx/panel/panel.sqlite, read only), the system layer (/var/lib/omx/panel/panel.sqlite) and the user layer
@@ -45,6 +47,8 @@ opens every layer and prints ok or the refusal's code.
 prints the source hash of an installed plugin, and
 .B places
 the files of a scope.
+.B rules
+prints OMX_PANEL_RULES_VERSION, the rules version a derived entry is put with and the reader holds current.
 .PP
 The command is a door of libomx-panel-store.so.0, which holds every rule. The schema a layer is created with is
 compiled in; /usr/share/omx-panel-store/panel.sql, in the development package, is the same text.

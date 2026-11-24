@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import { describe, describeFromStored } from '../../dist/tools/describe.mjs';
 import { readPluginPorts } from '../../dist/tools/group-infer.mjs';
 import { pluginTriples, planBundle, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
-import { CMD, DatabaseSync, contractDir, entry, mkStore, panelVersion, ROOT, run, snapshot, tmp } from './helpers.mjs';
+import { CMD, DatabaseSync, contractDir, entry, mkStore, panelVersion, ROOT, RULES, run, snapshot, tmp } from './helpers.mjs';
 
 const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
 const LV2 = 'http://lv2plug.in/ns/lv2core#';
@@ -46,13 +46,13 @@ function bundle(lv2, name, fixture, uri) {
   return { dir, binary: join(dir, `${name}.so`), uri };
 }
 
-/** The descriptor a scan writes for an installed LV2 plugin, made from its ports: no control states a group. */
+/** The descriptor a scan writes for an installed LV2 plugin, made from its ports (its id the port symbol, as a scan's): no control states a group. */
 function descriptorOf(b) {
   const ports = readPluginPorts(pluginTriples(readInstalledBundle(b.dir), b.uri), b.uri).ports.filter((p) => p.control && p.input);
   return {
     plugin: { format: 'lv2', id: b.uri, uri: b.uri, name: b.uri.split('/').at(-1), vendor: 'swh' },
     origin: 'scanned',
-    controls: ports.map((p) => ({ symbol: p.symbol, name: p.name, kind: 'travel', travel: { min: p.min ?? 0, max: p.max ?? 1, default: p.min ?? 0, unit: '', scale: 'linear' } })),
+    controls: ports.map((p) => ({ id: p.symbol, name: p.name, kind: 'travel', travel: { min: p.min ?? 0, max: p.max ?? 1, default: p.min ?? 0, unit: '', scale: 'linear' } })),
   };
 }
 
@@ -156,7 +156,7 @@ test('an LV2 plugin with no pg:group is stored with the complement\'s groups and
   // the round trip: the stored entry serves what describe serves for the descriptor with those groups
   const grouped = descriptorOf(w.triple);
   const groupOf = new Map(want.groups.flatMap((g) => g.ports.map((p) => [p, g.name])));
-  for (const c of grouped.controls) if (groupOf.has(c.symbol)) c.group = [groupOf.get(c.symbol)];
+  for (const c of grouped.controls) if (groupOf.has(c.id)) c.group = [groupOf.get(c.id)];
   const stored = { plugin: TRIPLE, body: r.answer.body, controls: r.answer.controls, groups: r.answer.groups_json };
   for (const width of [{}, { perPage: 4 }]) assert.deepEqual(describeFromStored(stored, width).description, describe(grouped, width).description, JSON.stringify(width));
 });
@@ -188,4 +188,11 @@ test('the fixture world holds two plugins, so "only the named one" has another t
   const w = world(t);
   assert.equal(readdirSync(w.lv2).length, 2);
   assert.equal(readdirSync(w.scans).length, 2);
+});
+
+test('omx-panel-store rules prints the header\'s OMX_PANEL_RULES_VERSION, the rules a derived entry is put with', () => {
+  const r = run(['rules']);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stdout, `${RULES}\n`);
+  assert.equal(run(['rules', '--json']).status, 2, 'rules takes no flag');
 });
