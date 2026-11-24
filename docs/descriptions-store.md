@@ -443,6 +443,30 @@ Ruled with lane 3 (2026-11-24), the call's details:
 - The answer printed is always a `get` answer: after a `put` the command reads the key back and prints that, so a caller
   sees one form whichever layer answered and the round trip through the store is what it reads.
 
+Ruled with lane 4 (2026-11-24), the generators and the pass:
+
+- **The complement reads the store.** `omx-panel complement` (so `omx-complement-sync`) takes each LV2 plugin's verdict
+  from `omx-panel describe --plugin lv2:<uri> --store`: the entry a layer holds, or the one that call derives and writes
+  when none does. It writes the stored groups, never its own inference of a stored key. A stored group with `declared` 1
+  keeps the plugin's own node: the `pg:group` its member ports state.
+- **No store** is the store command not on `PATH`, or no base (`panel-store.absent`, as plugin-hostd reads it, 3.5): the
+  complement infers as before and says so once. A plugin the call finds no descriptor for has no entry to read: it is
+  inferred from its TTL as before and counted `no-entry`. Any other refusal of the store refuses that plugin's
+  complement by name (`store-refused`), never a silent inference.
+- **`omx-modgui-sync`** still draws from the descriptor in this lane: it infers no group. Its toolkit files from the
+  stored entry come with `gui-stage` (lanes 14 and 17).
+- **`omx-panel-sync`**, the one pass: each LV2 plugin on `LV2_PATH`, `omx-panel describe --plugin lv2:<uri> --store`
+  once; then the prune; then `omx-complement-sync` and `omx-modgui-sync`, each from `PATH`. Exit 0 when every step
+  did, 1 naming each step that did not. It never runs `systemctl`.
+- **The prune.** `omx-panel-store list` prints the keys of the layer of the effective uid (`sha256`, `format`, `uri`,
+  tab-separated, one per line). The pass removes from that layer each `lv2` key that is not installed now: no bundle on
+  `LV2_PATH` declares the URI, or its binary's SHA-256 is another. No other layer is opened for writing. CLAP keys are
+  not pruned until the pass enumerates CLAP plugins (it does not in this lane).
+- **One unit.** `omx-panel-sync.service` replaces `omx-modgui-sync.service` and `omx-complement-sync.service`, and one
+  drop-in `plugin-qualify-sync.service.d/omx-panel-sync.conf` replaces their two (no old name kept: development has
+  no compatibility machinery). It is enabled by default where systemd exists: the RPM's preset
+  `80-omx-panel.preset` and `%systemd_post`, the DEB's `dh_installsystemd` enabling it. Nothing depends on it.
+
 ### Generated files: shipped key-gated for known sets, generated locally otherwise
 
 Owner ruling (section 14, 11). A MOD GUI, an LV2 complement bundle and an LV2 desktop UI bundle are generated from the
