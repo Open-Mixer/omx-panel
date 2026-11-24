@@ -5,14 +5,15 @@
  * frequency or depth lies off the axes sits on the frame's edge); the MOD GUI face places its marks through curveGeometry
  * (tools/modgui-gen.mjs), which the PNG face and the template's SVG both read, so it must hold them by the same rule. The parity
  * tests elsewhere use in-range marks only; this one gives both faces the same curve and off-axis marks and holds their pixels equal.
- * The curve and the marks are given here; the two faces lay the fixture out alike only with omx-dsp's twin installed (the
- * parity tests' own rule), so the raster cases skip without it. The geometry case needs no twin.
+ * The curve and the marks are given here; the two faces lay the fixture out alike only with omx-dsp's twin installed, so
+ * the raster cases fail without it, naming it, as every test of a fixture that draws a curve does (harness.mjs requireTwin). The
+ * geometry case needs no twin.
  */
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { FIXTURES, ROOT, compare, decodePng, descriptionFile, render, resolved, scratch, skipWithoutTwin, stateFile } from './harness.mjs';
+import { FIXTURES, ROOT, compare, decodePng, descriptionFile, render, resolved, requireTwin, scratch, stateFile } from './harness.mjs';
 
 const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'eq-marks');
@@ -25,11 +26,12 @@ const IN = { freq: 1000, depthDb: 3, origin: 'hrp' }; // in range: where the axe
 
 /** Both faces of the EQ fixture with `marks` on a given curve: the MOD GUI's raster and the renderer's, from the same points and marks. */
 function faces(marks) {
+  requireTwin(fx);
   const dir = scratch();
   const p = resolved(fx);
   const curve = { points: X.map((x, i) => ({ x, y: Y[i] })), marks };
   const q = { ...p, sections: p.sections.map((s, si) => ({ ...s, displays: s.displays.map((d, di) => (si === 0 && di === 0 ? { ...d, curve } : d)) })) };
-  const mod = decodePng(modgui.renderFace({ ...modgui.layout(q), brand: q.brand, name: q.name ?? q.stem }, modgui.loadLook(), 1));
+  const mod = decodePng(modgui.renderFace({ ...modgui.layout(q), brand: q.brand, name: q.name ?? q.stem }, modgui.loadLook('console'), 1));
   const state = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
   const file = join(dir, 'held.state.json');
   writeFileSync(file, JSON.stringify({
@@ -40,21 +42,21 @@ function faces(marks) {
   return { mod, ren: render(descriptionFile(fx, dir), file) };
 }
 
-test('control: an in-range mark on the given curve is the same pixels in both faces', skipWithoutTwin(fx), () => {
+test('control: an in-range mark on the given curve is the same pixels in both faces', () => {
   const { mod, ren } = faces([IN]);
   const c = compare(mod, ren);
   assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
   assert.ok(c.exact, `the MOD GUI and the renderer agree where no mark is held (${c.off} pixels differ, worst ${c.worst})`);
 });
 
-test('a mark deeper than the axis (depth 12 on a +-6 dB plot) sits on the top edge in both faces: the same pixels', skipWithoutTwin(fx), () => {
+test('a mark deeper than the axis (depth 12 on a +-6 dB plot) sits on the top edge in both faces: the same pixels', () => {
   const { mod, ren } = faces([ABOVE]);
   const c = compare(mod, ren);
   assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
   assert.ok(c.exact, `the MOD GUI draws the held mark where the renderer does (${c.off} pixels differ, worst ${c.worst})`);
 });
 
-test('a mark past the frequency axis sits on the right edge in both faces: the same pixels', skipWithoutTwin(fx), () => {
+test('a mark past the frequency axis sits on the right edge in both faces: the same pixels', () => {
   const { mod, ren } = faces([RIGHT]);
   const c = compare(mod, ren);
   assert.ok(c.sameSize, `size ${ren.w}x${ren.h}, the face is ${mod.w}x${mod.h}`);
