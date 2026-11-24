@@ -148,8 +148,9 @@ make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCL
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
-# the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules
-tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
+# the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules,
+# and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
+tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_domain_dir}
 
 %files
 %license LICENSE

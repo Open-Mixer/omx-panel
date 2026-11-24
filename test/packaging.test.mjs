@@ -149,8 +149,10 @@ test('the installed tools resolve @openmixer/omx-contract: linked, required by a
   for (const dep of [main.match(/^Requires: omx-contract\b.*$/gm) ?? [], depends.split(/,\s*/).filter((d) => d.startsWith('omx-contract ('))].flat()) {
     assert.doesNotMatch(dep, /<|(?<!>)=\s*\d|Breaks|Conflicts/, `a floor only: ${dep}`);
   }
-  assert.match(spec, /^%check\n(?:.*\n)*?tools\/installed-tools-check\.sh %\{buildroot\}%\{_datadir\}\/omx-panel$/m);
-  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /^\ttools\/installed-tools-check\.sh \$\(CURDIR\)\/debian\/omx-panel\/usr\/share\/omx-panel$/m);
+  // a package build has no omx-panel-contract installed: the check reads the panel domain the same build staged, where
+  // %install put it (rpm) or debian/rules moved it for omx-panel-contract (deb); v0.16.0's deb build failed without it (#208)
+  assert.match(spec, /^%check\n(?:.*\n)*?tools\/installed-tools-check\.sh %\{buildroot\}%\{_datadir\}\/omx-panel %\{buildroot\}%\{omx_contract_domain_dir\}$/m);
+  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /^\ttools\/installed-tools-check\.sh \$\(CURDIR\)\/debian\/omx-panel\/usr\/share\/omx-panel \$\(CURDIR\)\/debian\/tmp\/usr\/share\/omx-contract\/contract\.d$/m);
   assert.match(readFileSync(join(ROOT, 'debian/tests/control'), 'utf8'), /^Test-Command: tools\/installed-tools-check\.sh \/usr\/share\/omx-panel$/m);
   assert.equal(spawnSync('bash', ['-n', join(ROOT, 'tools/installed-tools-check.sh')]).status, 0);
 });

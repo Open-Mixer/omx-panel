@@ -45,9 +45,10 @@ override_dh_auto_install:
 	rmdir -p --ignore-fail-on-non-empty debian/omx-panel/usr/include/omxdomain
 	rmdir -p --ignore-fail-on-non-empty debian/omx-panel/usr/share/omx-contract/contract.d
 	# the tools as the omx-panel package installs them load and run: their @openmixer/omx-contract resolves through the
-	# package's own node_modules (debian/tests/installed-tools runs the same check on an installed host)
+	# package's own node_modules (debian/tests/installed-tools runs the same check on an installed host); the panel domain
+	# they open at load is the one this build moved to debian/tmp for omx-panel-contract (none is installed here)
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	tools/installed-tools-check.sh $(CURDIR)/debian/omx-panel/usr/share/omx-panel
+	tools/installed-tools-check.sh $(CURDIR)/debian/omx-panel/usr/share/omx-panel $(CURDIR)/debian/tmp/usr/share/omx-contract/contract.d
 endif
 
 # the sync units are installed, never enabled or started by the package: `systemctl enable omx-modgui-sync` (and
