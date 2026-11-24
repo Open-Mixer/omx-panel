@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-#   tools/render-package-check.sh <omx-panel-render.rpm | libomx-panel-render0.deb>
+#   tools/render-package-check.sh <omx-panel-render.rpm | libomx-panel-render1.deb>
 #   tools/render-package-check.sh --self-test <the same package> <a package that is not it (omx-panel)>
 #
-# The renderer's library package carries libomx-panel-render.so.0 under the architecture's library directory, as a
-# shared object whose SONAME is libomx-panel-render.so.0 and which exports the C API a surface loads
+# The renderer's library package carries libomx-panel-render.so.1 under the architecture's library directory, as a
+# shared object whose SONAME is libomx-panel-render.so.1 and which exports the C API a surface loads
 # (omx_panel_view_create_from_files, omx_panel_view_draw): Zynthian's panel view loads exactly that name. Red when the
 # file is missing, is not that object, or exports none of it. --self-test also holds the check red on a package without it.
 set -euo pipefail
-SONAME=libomx-panel-render.so.0
+SONAME=libomx-panel-render.so.1
 SYMBOLS="omx_panel_view_create_from_files omx_panel_view_draw"
 
 check() {

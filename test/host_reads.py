@@ -6,7 +6,7 @@ Python: the gesture word names through the C library's omx_panel_word_name, in s
 compare document's format, slots and ring bound through `omx-panel compare describe`, the values tools/compare.mjs
 holds. Nothing of either is restated here: the words are read from gestures.json, the compare values from the module.
 
-  OMX_PANEL_RENDER_LIB  the shared library (default this tree's renderer/build/libomx-panel-render.so.0)
+  OMX_PANEL_RENDER_LIB  the shared library (default this tree's renderer/build/libomx-panel-render.so.1)
   OMX_PANEL             the command (default node bin/omx-panel.mjs of this tree)
 Set both to an installed package's to read that package.
 """
@@ -19,7 +19,7 @@ import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LIB = os.environ.get("OMX_PANEL_RENDER_LIB") or os.path.join(ROOT, "renderer", "build", "libomx-panel-render.so.0")
+LIB = os.environ.get("OMX_PANEL_RENDER_LIB") or os.path.join(ROOT, "renderer", "build", "libomx-panel-render.so.1")
 CMD = shlex.split(os.environ.get("OMX_PANEL") or "node %s" % shlex.quote(os.path.join(ROOT, "bin", "omx-panel.mjs")))
 
 
