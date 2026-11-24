@@ -38,8 +38,10 @@ test('(a) the param domain is installed where the tools read it (omx-contract >=
 });
 
 test('(a) a descriptor unit is read as its standard id; a unit the list lacks has none', () => {
-  assert.deepEqual(answers(['dB', '%', '', 'kHz', 'coef', 'st', 'cents', 'furlong']).map(([id]) => id),
+  assert.deepEqual(answers(['dB', 'percent', 'none', 'kHz', 'coef', 'st', 'cents', 'furlong']).map(([id]) => id),
     ['dB', 'percent', 'none', 'kHz', 'coef', 'st', 'cents', null]);
+  // C2 (plugin-hostd#215 D1/D2): a symbol is display, never a descriptor's word: `%`, `dB/oct` and `""` have no id
+  assert.deepEqual(answers(['%', 'dB/oct', '']).map(([id]) => id), [null, null, null]);
 });
 
 test('(a) every unit the role table names is a standard id', () => {
@@ -50,7 +52,7 @@ test('(a) every unit the role table names is a standard id', () => {
 });
 
 test('(a) a read-only control in a unit of the gain, level or loudness dimension is a level meter, any other a display', () => {
-  assert.deepEqual(answers(['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU', 'Hz', 'ms', '%']).map(([, w]) => w),
+  assert.deepEqual(answers(['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU', 'Hz', 'ms', 'percent']).map(([, w]) => w),
     ['meter', 'meter', 'meter', 'meter', 'meter', 'meter', 'display', 'display', 'display']);
 });
 
@@ -102,8 +104,8 @@ test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
 // org.openmixer.param-contract/1 encodes) holds its standard id. omx-panel reads omx-contract only: no code sheet, no
 // LV2 term, nothing of omx-clap.
 test('(a) a standard unit the param-contract extension encodes takes its role; one it does not encode takes none', () => {
-  assert.deepEqual(answers(['dB', '%', 'x', 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
-    ['dB', 'percent', null, 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB-s', 'dB-oct', 'none']);
+  assert.deepEqual(answers(['dB', 'percent', 'x', 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dBPerS', 'dBPerOct', 'none']).map(([id]) => id),
+    ['dB', 'percent', null, 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dBPerS', 'dBPerOct', 'none']);
 });
 
 test('(c) omx-contract\'s served set decides: a PARAM_UNITS_CLAP_ENCODED with no LUFS leaves LUFS unserved', (t) => {

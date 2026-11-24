@@ -18,7 +18,7 @@ const descriptor = (id, controls) => ({ origin: 'authored', plugin: { id, format
 
 const trim = descriptor('urn:test:trim', [travel('trimDb', 'Trim', 'dB', -24, 24, 0)]);
 const width = descriptor('urn:test:width', [
-  travel('widthPct', 'Width', '%', 0, 200, 100), toggle('bassMono', 'Bass Mono'), travel('bassMonoHz', 'Bass Mono Frequency', 'Hz', 20, 500, 120),
+  travel('widthPct', 'Width', 'percent', 0, 200, 100), toggle('bassMono', 'Bass Mono'), travel('bassMonoHz', 'Bass Mono Frequency', 'Hz', 20, 500, 120),
 ]);
 const panelOf = (roles, controls) => ({ family: 'utility', roles, sections: [{ key: 'u', label: 'Utility', controls }] });
 
@@ -46,8 +46,8 @@ test('a width control carries its width, bass-mono and bass-mono frequency roles
 
 test('a balancer carries its amount, range, speed and slope roles: dB/oct is served (omx-contract 3.21.0 codes dbPerOct)', () => {
   const balancer = descriptor('urn:test:balancer', [
-    travel('amountPct', 'Amount', '%', 0, 100, 0), travel('rangeDb', 'Range', 'dB', 1, 12, 3),
-    travel('speedDbPerS', 'Speed', 'dB', 0.1, 6, 0.5), travel('slopeDbOct', 'Slope', 'dB/oct', -6, 0, -3),
+    travel('amountPct', 'Amount', 'percent', 0, 100, 0), travel('rangeDb', 'Range', 'dB', 1, 12, 3),
+    travel('speedDbPerS', 'Speed', 'dB', 0.1, 6, 0.5), travel('slopeDbOct', 'Slope', 'dBPerOct', -6, 0, -3),
   ]);
   const panel = panelOf({ amount: 'amountPct', range: 'rangeDb', speed: 'speedDbPerS', slope: 'slopeDbOct' }, ['amountPct', 'rangeDb', 'speedDbPerS', 'slopeDbOct']);
   const { description, refusals } = describe(balancer, { panel });

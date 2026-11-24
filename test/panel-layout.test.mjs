@@ -77,7 +77,7 @@ lost.controls[0].travel.unit = 'unknown';
 const lostX = panelLayout(lost, { panel: levels });
 check('arm: an unknown unit takes no role, named', [rolesOf(lostX), lostX.unpublished], [[['ceiling', 0, 'p1', 'dBu']], [{ role: 'threshold', symbol: 'p0', why: 'the threshold role takes dB, dBFS, dBu, LUFS, not unknown' }]]);
 check('an unknown unit is a plain number: a knob with no token', [lostX.controls[0].standard, lostX.controls[0].unit, unitToken('unknown')], [{ widget: 'knob' }, 'unknown', undefined]);
-check('every unit the param-contract table serves has the standard id a role reads', [...standardUnits()].filter(([, u]) => servedUnit(u.id)).map(([symbol]) => symbol).filter((u) => typeof unitToken(u) !== 'string'), []);
+check('every unit the param-contract table serves has the standard id a role reads', [...standardUnits().keys()].filter((id) => servedUnit(id)).filter((u) => typeof unitToken(u) !== 'string'), []);
 
 // 3. roles from meanings, with no declared panel
 const comp = descriptor([travel('dB', { meaning: 'threshold' }), { kind: 'travel', meaning: 'ratio', travel: { min: 1, max: 20, unit: 'coef', default: 4, scale: 'log' } }, travel('dB', { meaning: 'makeup' })]);
@@ -88,7 +88,7 @@ const twiceX = panelLayout(twice);
 check('arm: a second threshold is not published, and names the first', [rolesOf(twiceX), twiceX.unpublished], [[['threshold', 0, 'p0', 'dB'], ['ratio', 0, 'p1', 'coef']], [{ role: 'threshold', symbol: 'p2', why: 'the threshold role is played by p0' }]]);
 const hz = (m) => ({ kind: 'travel', meaning: m, travel: { min: 20, max: 20000, unit: 'Hz', default: 1000, scale: 'log' } });
 const gain = { kind: 'travel', meaning: 'gain', travel: { min: -18, max: 18, unit: 'dB', default: 0, scale: 'linear' } };
-const q = { kind: 'travel', meaning: 'q', travel: { min: 0.1, max: 10, unit: '', default: 0.7, scale: 'log' } };
+const q = { kind: 'travel', meaning: 'q', travel: { min: 0.1, max: 10, unit: 'none', default: 0.7, scale: 'log' } };
 const eq = descriptor([hz('frequency'), gain, q, hz('frequency'), gain, q]);
 const eqX = panelLayout(eq);
 check('an indexed role takes every band, in order', [eqX.family, rolesOf(eqX).filter(([r]) => r === 'band_gain')], ['eq', [['band_gain', 0, 'p1', 'dB'], ['band_gain', 1, 'p4', 'dB']]]);
@@ -137,7 +137,7 @@ check('scanned LV2 compressor: the ports, side-chain among them', lv2.ports, {
 });
 const clap = panelLayout(fixture('scanned-clap-unknown'));
 check('scanned CLAP, nothing stated: family none, a nested group a dotted key', [clap.family, clap.sections.map((s) => [s.key, s.label])], ['none', [['oscillator', 'Oscillator'], ['filter.envelope', 'Filter / Envelope']]]);
-check('scanned CLAP, nothing stated: a selector and a plain-number knob', clap.controls.map((c) => [c.symbol, c.standard.widget, c.unit]), [['p3', 'selector', ''], ['p5', 'knob', 'unknown']]);
+check('scanned CLAP, nothing stated: a selector and a plain-number knob', clap.controls.map((c) => [c.symbol, c.standard.widget, c.unit]), [['p3', 'selector', 'none'], ['p5', 'knob', 'unknown']]);
 const synth = panelLayout(fixture('built-wrapped-synth'));
 check('built instrument: no effect family, the hidden control left out, notes in', [synth.family, synth.controls.map((c) => [c.sectionKey, c.symbol, c.standard.widget]), synth.ports.notes], [
   'none', [['filter', 'p10', 'knob'], ['filter', 'p11', 'knob'], ['envelope', 'p20', 'knob'], ['controls', 'p21', 'knob'], ['controls', 'p40', 'switch'], ['oscillator', 'p30', 'selector'], ['oscillator', 'p31', 'knob']], true,
@@ -146,8 +146,15 @@ const effect = fixture('built-wrapped-synth');
 effect.plugin.features = ['audio-effect'];
 effect.instrument = undefined;
 check('arm: the same controls on an effect make a filter', panelLayout(effect).family, 'filter');
-const delay = panelLayout(fixture('authored-omx-delay'));
-check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', ''], ['tone', 0, 'tone', ''], ['mix', 0, 'mix', '']]]);
+// the example is omx-contract's (test/no-descriptor-copies.test.mjs): under C2 a unit is a PARAM_UNITS id, `none` for a
+// plain fraction, and an empty unit is no unit at all (omx-contract 3.22.0's descriptorUnit refuses it). omx-contract
+// 3.20.2's example, before C2, states '' and its feedback, tone and mix take no role: that is the installed package, not
+// this reader, and this check says so by name
+const delayExample = fixture('authored-omx-delay');
+check('the installed omx-contract states the example\'s units as PARAM_UNITS ids (C2: @openmixer/omx-contract >= 3.22.0)',
+  delayExample.controls.filter((c) => c.travel && c.travel.unit === '').map((c) => c.symbol), []);
+const delay = panelLayout(delayExample);
+check('authored omx delay descriptor, with no panel: family delay, roles by meaning', [delay.family, rolesOf(delay)], ['delay', [['time', 0, 'fxDelayTime', 'ms'], ['feedback', 0, 'fxDelayFeedback', 'none'], ['tone', 0, 'tone', 'none'], ['mix', 0, 'mix', 'none']]]);
 
 // a CLAP control is keyed by its numeric id, p<id>: two parameters of one name are two controls (#27)
 const dup = descriptor([{ ...travel('dB'), id: 3670762539, name: 'Filter mode' }, { ...travel('dB'), id: 1515688365, name: 'Filter mode' }]);

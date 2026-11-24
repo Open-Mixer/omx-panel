@@ -43,7 +43,7 @@ test('a unit on a choice that is no slope changes nothing', () => {
 });
 
 test('a choice slope in dB/oct, the unit omx-dsp\'s kernels spell for a filter slope, reaches the twin as a slope', () => {
-  const rolled = poly({ roles, choiceUnits: { hs: 'dB/oct' } });
+  const rolled = poly({ roles, choiceUnits: { hs: 'dBPerOct' } });
   assert.notEqual(rolled, null, 'no curve: dB/oct is no slope unit of the twin (termMissing)');
-  assert.equal(rolled, poly({ roles, choiceUnits: { hs: 'dB' } }), 'dB/oct and dB are one slope');
+  assert.equal(rolled, poly({ roles, choiceUnits: { hs: 'dB' } }), 'dBPerOct and dB are one slope');
 });
