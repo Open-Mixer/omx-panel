@@ -220,7 +220,8 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   shipped descriptor and from a scan alike. An EQ with no high-pass and no low-pass keeps its bands in their order; one with
   only one of them has it at its end. **Every screen that shows more than one band shows a contiguous run of that order as
   the matrix**, aligned: the same control at the same place in every band. A screen that shows one band at a time (a page,
-  P1) walks the same order, and place `k` of every band's screen is the same parameter.
+  P1) walks the same order, and place `k` of every band's screen is the same parameter; a place past the page is a row of
+  the matrix across a run of bands, never a screen of one band's leftovers.
   Each column's controls are stacked vertically, every column in the same row order, a control a band lacks
   an empty cell, so row `r` is the same parameter in every column (the HPF's gain cell is empty and its `freq` sits on the
   band's `freq` row). A surface shows **as many columns as fit**, the one rule every language applies to the SERVED
@@ -312,12 +313,22 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
     at (the cell is empty: an edge with no Q; or the Easy pages took the control: a band's gain) is a **blank slot**, never
     closed up, so the Q of band 1 is not under the encoder that turns the gain of band 3; the blank places after an
     instance's last control are left off. The section's own parameters (the count, an EQ's master on) come before the
-    instances, in the description's order. An instance of at most `perPage` controls is one page of its own, never sharing it with the
-    instance before or after (a page ends early); a longer one is the only thing split, on pages of its own, as any group.
-    A page of one instance is named by its head's label (`Band 3`), a continuation `Band 3 2`. *Tests: omx-eq8, eight band
-    screens each opening with the band's on/off, over `describe --pages`; the Calf multiband compressor's four bands;
-    "P1: ..."; `test/eq-band-matrix.test.mjs`, the order and the places at 4, 5 and 8 slots, over shipped and scanned
-    descriptors. Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
+    instances, in the description's order. An instance is one page of its own, never sharing it with the instance before
+    or after (a page ends early), named by its head's label (`Band 3`). **An instance longer than the page follows the
+    aligned matrix (L7), never a continuation screen of its own:** from two slots up, its first `perPage` places are its
+    screen, and each place past them is a **row** of the matrix, cut after the instances: one screen per run of `perPage`
+    instances that have that cell, in the matrix's order, slot `j` the run's instance `j` (a cell the Easy pages took
+    blank in its slot), named by the row (`Bands: Type`, the next run `Bands: Type 2`). **No screen has zero visible
+    items**: a page whose every slot is blank (its controls on the Easy pages, hidden by the values, or empty cells) is not
+    cut. The counts at 4 slots: omx-eq8 (an instance five places: on, frequency, gain, Q, type; the edges three) is 2 Easy
+    + HPF + 8 bands + ceil(8 / 4) = 2 Type rows + LPF = **14**; the Calf multiband
+    compressor (six places: bypass, threshold, ratio, attack, release, makeup; band 1's first four on the Easy page) is
+    Easy + bands 2..4 + the Release and Makeup rows = **6**. At 5 and 8 slots no eq8 band is past the page (11 screens at
+    8). *Tests: `test/pages-instances.test.mjs`: omx-eq8, eight band screens each opening with the band's on/off, and the
+    Type rows; the Calf multiband compressor at 4 cut in full; no screen with zero visible items at 2, 3, 4, 5 and 8 over
+    the corpus, with a sabotage arm that puts back the empty `Band: Band 1` screen and reads red;
+    `test/eq-band-matrix.test.mjs`, the order and the places at 4, 5 and 8 slots, a row screen a contiguous run, over
+    shipped and scanned descriptors. Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
   - **P2, the lilv path** (the jalv engine, which reads each port's `pg:group`): lv2-complement writes **one `pg:group` per
     instance**, from the model, for a repeated group the plugin does not already declare instance by instance (source
     `indexed`; a plugin's own groups, source `declared`, are kept as they are). The instance's group node carries

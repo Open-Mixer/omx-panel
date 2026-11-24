@@ -95,6 +95,9 @@ jobs:
           git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/openmixer-dotgithub"
           git -c advice.detachedHead=false -C "$RUNNER_TEMP/openmixer-dotgithub" checkout -q openmixer-v1
       - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/openmixer-dotgithub"
+        env:
+          # the private-refs check reads this repository's visibility and topics from GitHub before it judges the tree
+          GH_TOKEN: ${{ github.token }}
       - name: The bump covers every change since the previous tag
         run: |
           prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)
