@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- `describe` refuses an override family that is no word of `PANEL_FAMILIES` (#199, ruling Z1 of omx-contract#161):
+  `panel.describe.family-unknown`, naming the plugin and the family, and the panel is `none`, as for a family the
+  controls do not back. omx-contract's override schema takes any identifier as a family; the words are the panel
+  domain's, read from it. The panel domain is 1.4.0.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the

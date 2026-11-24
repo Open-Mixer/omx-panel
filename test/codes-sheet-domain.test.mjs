@@ -39,6 +39,7 @@ const GOLDEN = {
 const ADDED = new Set([
   'panel.skin.override-refused', // omx-panel#14, domain 1.3.0: override-invalid's facts with the reason word
   'panel.skin.entry-missing', // omx-panel#14, domain 1.3.0: a view or modgui entry not in the package
+  'panel.describe.family-unknown', // omx-panel#199, domain 1.4.0: an override family that is no panel family
 ]);
 const canonical = (f, j) => (f.startsWith('catalogs/')
   ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).filter(([c]) => !ADDED.has(c)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
@@ -46,12 +47,12 @@ const canonical = (f, j) => (f.startsWith('catalogs/')
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 
-test('(a) the domain holds the 34 codes: 7 skin (#14\'s two last), 11 MOD GUI (the skin\'s MOD GUI licence last), 16 describe', () => {
+test('(a) the domain holds the 35 codes: 7 skin (#14\'s two last), 11 MOD GUI (the skin\'s MOD GUI licence last), 17 describe (#199\'s last)', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8')).components.schemas;
   assert.equal(s.PANEL_SKIN_CODES?.oneOf.length, 7);
-  assert.deepEqual(s.PANEL_SKIN_CODES.oneOf.slice(5).map((w) => w.const), [...ADDED]);
+  assert.deepEqual([...s.PANEL_SKIN_CODES.oneOf.slice(5), ...s.PANEL_DESCRIBE_CODES.oneOf.slice(16)].map((w) => w.const), [...ADDED]);
   assert.equal(s.PANEL_MODGUI_CODES?.oneOf.length, 11);
-  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 16);
+  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 17);
 });
 
 test('(a) the render from the domain is the sheet and the six catalogs\' messages before the move', async () => {

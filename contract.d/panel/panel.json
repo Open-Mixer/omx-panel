@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -594,6 +594,17 @@
             "x-args": [
               "plugin",
               "message"
+            ]
+          },
+          {
+            "const": "panel.describe.family-unknown",
+            "title": "panelFamilyUnknown",
+            "description": "the family an override names is not a panel family",
+            "x-code": 16,
+            "x-text": "The override for {plugin} names the panel family {family}, which is not one; the panel is made with no family.",
+            "x-args": [
+              "plugin",
+              "family"
             ]
           }
         ]
