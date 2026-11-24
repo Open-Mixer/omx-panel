@@ -206,6 +206,12 @@
       "by": "machine",
       "model": "draft-prose",
       "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
+    },
+    "panel.describe.family-unknown": {
+      "text": "La substitution pour {plugin} nomme la famille de panneaux {family}, qui n'en est pas une ; le panneau est fait sans famille.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
     }
   }
 }
