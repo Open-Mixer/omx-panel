@@ -17,6 +17,7 @@
     "       omx-panel-store put --sha256 H --format F --uri U       (the entry as JSON on stdin)\n" \
     "       omx-panel-store remove --sha256 H --format F --uri U\n" \
     "       omx-panel-store list                                    (the keys of the layer of the effective uid)\n" \
+    "       omx-panel-store build --out F --built-from C [--contract-dir D]   (the base, from [{sha256, format, uri, entry}] on stdin)\n" \
     "       omx-panel-store check\n" \
     "       omx-panel-store source --format lv2|clap --path P\n" \
     "       omx-panel-store places --production user|system\n" \
@@ -28,7 +29,7 @@
 static int usage(void) { fputs(USAGE, stderr); return 2; }
 
 typedef struct {
-    const char *sha256, *format, *uri, *source, *path, *scope, *base, *system, *user, *contract, *production;
+    const char *sha256, *format, *uri, *source, *path, *scope, *base, *system, *user, *contract, *production, *out, *built_from;
     int rules, json;
 } opts_t;
 
@@ -50,6 +51,8 @@ static int parse(int argc, char **argv, opts_t *o) {
         else if (!strcmp(a, "--user")) o->user = v;
         else if (!strcmp(a, "--contract-dir")) o->contract = v;
         else if (!strcmp(a, "--production")) o->production = v;
+        else if (!strcmp(a, "--out")) o->out = v;
+        else if (!strcmp(a, "--built-from")) o->built_from = v;
         else if (!strcmp(a, "--rules")) o->rules = atoi(v);
         else return -1;
     }
@@ -159,6 +162,15 @@ int main(int argc, char **argv) {
         if (argc != 2) return usage();
         printf("%d\n", OMX_PANEL_RULES_VERSION);
         return 0;
+    }
+    if (!strcmp(cmd, "build")) {
+        /* the base from the derived entries on stdin (docs/descriptions-store.md 6); the base builder reads no variable
+         * but the contract directory's, as every door of the command does */
+        if (!o.out || !o.built_from) return usage();
+        char *in = slurp_stdin();
+        int rc = omx_panel_store__build(o.out, o.built_from, or_env(o.contract, "OMX_CONTRACT_PATH"), in, &err);
+        free(in);
+        return rc ? fail(rc, &err) : 0;
     }
     if (!strcmp(cmd, "places")) {
         if (!o.production || (strcmp(o.production, "user") && strcmp(o.production, "system"))) return usage();

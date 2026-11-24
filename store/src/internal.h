@@ -20,4 +20,9 @@ int omx_panel_store__writer_place(char **path, int *layer, omx_panel_store_error
 int omx_panel_store__keys(omx_panel_store *w, void (*each)(const char *sha256, const char *format, const char *uri, void *ctx), void *ctx,
                           omx_panel_store_error *err);
 
+/* The base (docs/descriptions-store.md 6): `entries_json`, a JSON array of { sha256, format, uri, entry }, written in key
+ * order into a new file of layer 0 with `built_from`, page size 4096, VACUUMed, user_version last, renamed onto `out`
+ * when whole. Every entry is checked as a put checks it. 0, or a status. */
+int omx_panel_store__build(const char *out, const char *built_from, const char *contract_dir, const char *entries_json, omx_panel_store_error *err);
+
 #endif
