@@ -131,8 +131,8 @@ install-renderer:
 # The panel and gestures domains (docs/contract-domains.md), as they are, by omx-contract's one domain installer: the loader
 # reads $(CONTRACTDIR)/panel/panel.json and its catalogs/, and $(CONTRACTDIR)/gestures/gestures.json.
 install-contract:
-	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)"
-	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/gestures "$(DESTDIR)$(CONTRACTDIR)"
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/panel "$(DESTDIR)$(CONTRACTDIR)" omx-panel
+	sh "$(OMX_CONTRACT_INSTALLER)" --domain contract.d/gestures "$(DESTDIR)$(CONTRACTDIR)" omx-panel
 	# the panel domain's one codes header (omx-contract render), for C that tables the panel words by code (row V1)
 	install -Dm 0644 include/omxdomain/panel_codes.h "$(DESTDIR)$(INCLUDEDIR)/omxdomain/panel_codes.h"
 
