@@ -89,8 +89,8 @@ test('the origin words are the twin\'s', async () => {
 
 // the generator's refusal (tools/modgui-gen.mjs): a MOD GUI drawn without its curves would be a false green, so a tree without omx-dsp
 // does not load the generator. CI always has omx-dsp, so this arm makes it unresolvable for a child process and reads the child fail,
-// naming the package and its floor.
-test('with omx-dsp unresolvable, the generator refuses to load, naming @openmixer/omx-dsp and its floor', () => {
+// naming the package.
+test('with omx-dsp unresolvable, the generator refuses to load, naming @openmixer/omx-dsp', () => {
   const dir = mkdtempSync(join(tmpdir(), 'no-twin-'));
   try {
     const hook = join(dir, 'hook.mjs');
@@ -106,13 +106,12 @@ test('with omx-dsp unresolvable, the generator refuses to load, naming @openmixe
       try { execFileSync(process.execPath, ['--import', pathToFileURL(boot).href, '-e', `import(${JSON.stringify(pathToFileURL(gen).href)})`], { env, stdio: 'pipe' }); } catch (e) { stderr = String(e.stderr); throw e; }
     }, 'no omx-dsp: the generator must not load');
     assert.match(stderr, /@openmixer\/omx-dsp/);
-    assert.match(stderr, />=0\.33\.0/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('the dependency is declared as a plain dependency at the omx-dsp release of this pass, no ceiling', () => {
+test('the dependency is a plain dependency, with no version of its own', () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.equal(pkg.dependencies['@openmixer/omx-dsp'], '>=0.33.0');
+  assert.equal(pkg.dependencies['@openmixer/omx-dsp'], '*');
   assert.equal(pkg.peerDependencies?.['@openmixer/omx-dsp'], undefined, 'a plain dependency, not a peer');
   assert.equal(pkg.devDependencies?.['@openmixer/omx-dsp'], undefined, 'declared once');
 });

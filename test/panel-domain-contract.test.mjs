@@ -37,7 +37,7 @@ function run(argv, opts = {}) {
   return r;
 }
 
-test('the omx-contract CLI this suite runs is the omx-contract package's', () => {
+test('the omx-contract CLI this suite runs is the omx-contract package\'s', () => {
   const script = contractCli().find((a) => a.endsWith('.mjs'));
   assert.ok(script, `${contractCli().join(' ')} names no omx-contract.mjs: the version cannot be read`);
   const pkg = join(dirname(script), '..', 'package.json');

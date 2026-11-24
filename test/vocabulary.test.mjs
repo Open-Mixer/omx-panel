@@ -124,7 +124,7 @@ test('the standard units are omx-contract\'s param domain: ids, symbols and dime
   // a directory with no param domain has no units: the read refuses and names the fix
   const none = contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } });
   const r = command([], { OMX_CONTRACT_PATH: none, PKG_CONFIG: NO_PKG_CONFIG });
-  assert.match(r.stdout, /^FAIL param-units .*install omx-contract-data \(>= 3\.21\.0\)/m);
+  assert.match(r.stdout, /^FAIL param-units .*install omx-contract-data$/m);
 });
 
 test('a unit is served when omx-contract\'s PARAM_UNITS_CLAP_ENCODED holds its id, and nothing else serves it', () => {
@@ -136,7 +136,7 @@ test('a unit is served when omx-contract\'s PARAM_UNITS_CLAP_ENCODED holds its i
   // a param domain with no served set serves nothing: the read refuses and names the fix
   const none = paramDomain(contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR } }), units);
   const r = command([], { OMX_CONTRACT_PATH: none, PKG_CONFIG: NO_PKG_CONFIG });
-  assert.match(r.stdout, /^FAIL clap-encoded .*install omx-contract-data \(>= 3\.22\.0\)/m);
+  assert.match(r.stdout, /^FAIL clap-encoded .*install omx-contract-data$/m);
 });
 
 test('a package reached through a symlink is read like one installed in place', () => {
