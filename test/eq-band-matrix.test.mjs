@@ -76,7 +76,7 @@ for (const eq of EQS) {
   test(`${eq.name}: the matrix is aligned, a row is one parameter in every band`, () => {
     const m = matrixOf(eq.file);
     const nameOf = new Map(descriptorOf(eq.file).controls.map((c) => [served(c), c.name]));
-    assert.deepEqual(m.rows.map((r) => r.label), ['Frequency', 'Gain', 'Q', 'Type', 'On']);
+    assert.deepEqual(m.rows.map((r) => r.label), ['On', 'Frequency', 'Gain', 'Q', 'Type']);
     m.rows.forEach((row, r) => {
       // a band's control is called "Band <n> <parameter>": the parameter is the row's, in every band
       const words = m.cells[r].slice(1, -1).map((symbol, i) => (symbol === null ? null : nameOf.get(symbol).replace(`Band ${i + 1} `, '')));

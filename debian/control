@@ -16,7 +16,7 @@ Build-Depends: debhelper-compat (= 13),
                omx-contract (>= 3.22.0~),
                libomx-domain-dev (>= 3.22.0~),
                libomxdsp-dev (>= 0.34.0~),
-               omx-dsp-wasm (>= 0.34.0~)
+               omx-dsp-wasm (>= 0.34.1~)
 Standards-Version: 4.6.2
 Homepage: https://github.com/Open-Mixer/omx-panel
 Rules-Requires-Root: no
@@ -24,7 +24,7 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data (>= 3.22.0~), omx-dsp-wasm (>= 0.34.0~), omx-contract (>= 3.22.0~), omx-panel-contract (>= ${source:Version}), plugin-db-contract (>= 0.5.0~), ${misc:Depends}
+Depends: nodejs (>= 18), omx-contract-data (>= 3.22.0~), omx-dsp-wasm (>= 0.34.1~), omx-contract (>= 3.22.0~), omx-panel-contract (>= ${source:Version}), plugin-db-contract (>= 0.5.0~), ${misc:Depends}
 Recommends: plugin-hostd (>= 0.21.0~)
 # omx-modgui-sync lists the LV2 plugins with lilv; Debian bookworm has no python3-lilv (trixie and later do), so it is a suggestion
 Suggests: python3-lilv

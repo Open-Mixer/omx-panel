@@ -5,7 +5,7 @@
  * answers equal to it, renderer/test/gesture-c.test.mjs) and schema/gestures.json the declaration; the renderer keeps no timing or threshold of its own (it reads that file), so
  * every check here runs the renderer's `--input` over a fixture's description and holds what it answers to the reference module:
  *
- *   - the 7.5 fixtures' scripted gestures (test/fixtures/gestures/scripts.json), retargeted onto the renderer's own cells: the value
+ *   - the 7.5 fixtures' scripted gestures (fixtures/gestures/scripts.json), retargeted onto the renderer's own cells: the value
  *     within one declared step of the reference's in the control's own unit, reset and tap exact, the words and the counts equal;
  *   - the same gestures built from the renderer's geometry in fractions of the travel, against a hand-worked value;
  *   - the guards, each with its sabotage arm: a changed fine ratio, a read-only control, a second pointer on an owned control, the
@@ -20,7 +20,7 @@ import { test } from 'node:test';
 import { CLI, DATA, FIXTURES, ROOT, descriptionFile, scratch } from './harness.mjs';
 import { GESTURES, memberOf, normOf, runGesture, stepOf, withinStep } from '../../dist/tools/gestures.mjs';
 
-const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/gestures/scripts.json'), 'utf8')).scripts;
+const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'fixtures/gestures/scripts.json'), 'utf8')).scripts;
 const descriptorOf = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
 
 // ---- the fixtures: the three that take a gesture, and the 8-band graphic EQ's bar group, which has no descriptor of its own ----

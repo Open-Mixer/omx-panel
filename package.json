@@ -111,7 +111,13 @@
     "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
     "./look-roles.json": "./dist/schema/look-roles.json",
     "./look.json": "./dist/tools/look.json",
-    "./gestures/scripts.json": "./dist/test/fixtures/gestures/scripts.json",
+    "./gestures/scripts.json": "./dist/fixtures/gestures/scripts.json",
+    "./control-kind": {
+      "types": "./dist/tools/control-kind.d.mts",
+      "default": "./dist/tools/control-kind.mjs"
+    },
+    "./control-kind-vectors.json": "./dist/schema/control-kind-vectors.json",
+    "./control-kind-vectors.schema.json": "./dist/schema/control-kind-vectors.schema.json",
     "./package.json": "./package.json"
   },
   "files": [

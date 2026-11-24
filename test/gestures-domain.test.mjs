@@ -83,7 +83,7 @@ test('(b) the domain holds the words, the codes and the sheets, and renders the 
   assert.deepEqual(words.map((w) => w.const), GOLDEN.words);
   assert.deepEqual(words.map((w) => w.description), Object.values(GESTURES.words));
   const codes = doc.components.schemas.GESTURES_CODES.oneOf;
-  assert.deepEqual(codes.map((c) => c.const), GOLDEN.codes);
+  assert.deepEqual(codes.map((c) => c['x-name']), GOLDEN.codes);
   assert.deepEqual(codes.map((c) => c.description), Object.values(GESTURES.codes));
   const { renderGestures } = await import('../tools/gestures-render.mjs');
   assert.equal(renderGestures(doc), read('schema/gestures.json'));

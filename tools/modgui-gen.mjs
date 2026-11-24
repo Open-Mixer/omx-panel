@@ -187,12 +187,12 @@ export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', 
 /** A delay tap's leg as the letter above its stem: a tap that lands on both legs carries none. */
 export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
-/** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
- * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
- * three omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
-const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', dBPerOct: 'db' });
+/** omx-dsp's curve term units are the standard ids themselves (omx-dsp's CURVE_UNITS, DSP.words.units: the PARAM_UNITS id is
+ * the wire word, never a lower-case copy, omx-dsp#122): a role's standard id (tools/role-table.mjs) is sent as it is, but for
+ * a filter slope's dBPerOct, which the curve reads as the dB of a slope. An id the curve does not take is refused by name. */
+const DSP_UNIT_WORD = Object.freeze({ dBPerOct: 'dB' });
 function curveUnitOf(id) {
-  const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
+  const word = DSP_UNIT_WORD[id] ?? String(id);
   if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);
   return word;
 }
@@ -465,11 +465,12 @@ export function withRepeats(descriptor, declared, sections) {
     const homeSection = out[placed.home];
     // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
     const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
-    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // the controls the matrix places at the drawn heads, each named by its row, or by the row's `labels` where the cell is
+    // another parameter (an edge's slope, omx-panel#122; a head toggle by its head); an instance the
     // count leaves out is not on the face
     const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
       const sym = matrix.cells[li][h];
-      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.labels?.[h] ?? r.label }] : [];
     }));
     const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
     // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
@@ -482,7 +483,7 @@ export function withRepeats(descriptor, declared, sections) {
 }
 
 /**
- * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the first), every
  * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
  */
 function matrixCells(s, top) {

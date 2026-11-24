@@ -25,6 +25,7 @@
  *                                                rules found, for a diagnosis only.
  */
 
+import { controlKind } from './control-kind.mjs';
 import { DESIGNATION_MEANINGS, GROUP_OUTCOMES, GROUP_REASONS } from './group-words.mjs';
 
 /** The verdict's outcomes and reasons: the panel domain's PANEL_GROUP_OUTCOMES and PANEL_GROUP_REASONS, by title, as
@@ -717,13 +718,24 @@ export function readPluginPorts(triples, uri) {
     // the control's kind and travel, which docs/group-model.md matches across the instances of a repeated group
     if (port.control) {
       const points = all(k, `${LV2}scalePoint`).length;
-      port.kind = props.has(`${LV2}toggled`) ? 'toggle' : props.has(`${LV2}enumeration`) ? 'choice' : 'travel';
-      if (port.kind === 'choice') port.options = points;
       if (props.has(`${LV2}integer`)) port.integer = true;
       for (const [field, p] of [['min', 'minimum'], ['max', 'maximum']]) {
         const n = Number(val(`${LV2}${p}`)?.v);
         if (Number.isFinite(n)) port[field] = n;
       }
+      // the kind is the one rule's (docs/control-kind.md): an enumeration first, then lv2:toggled, then an lv2:integer of
+      // the two positions 0 and 1
+      const def = Number(val(`${LV2}default`)?.v);
+      port.kind = controlKind({
+        enumeration: props.has(`${LV2}enumeration`),
+        toggled: props.has(`${LV2}toggled`),
+        stepped: port.integer === true,
+        ...(props.has(`${PPROPS}logarithmic`) ? { scale: 'log' } : {}),
+        min: port.min,
+        max: port.max,
+        ...(Number.isFinite(def) ? { default: def } : {}),
+      }).kind;
+      if (port.kind === 'choice') port.options = points;
     }
     return port;
   });

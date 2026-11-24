@@ -85,6 +85,9 @@ const char *omx_panel_view_symbol(const omx_panel_view_t *view, uint32_t index);
 
 /** The head: the maker and the plugin's name, both UTF-8. NULL leaves one empty. */
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
+/** Whether the face has its head (the maker, the name, the accent rule and dot, `headH` tall): true, the default, or false,
+ * where the sections start at the top of the face (`pad`), so a one-control face is the control, its label and its value. */
+void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 
 /** A control's current reading: `fraction` its place along its travel (0 the minimum, 1 the
  * maximum, clamped), `text` what its plugin shows for the value (NULL for none). A switch is on from

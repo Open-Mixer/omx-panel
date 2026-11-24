@@ -32,14 +32,18 @@ test('omx-eq8: one section carries the matrix, HPF first, the bands, LPF last, i
   assert.deepEqual(m.heads.map((x) => x.label), ['HPF', ...Array.from({ length: 8 }, (_, i) => `Band ${i + 1}`), 'LPF']);
   assert.deepEqual(m.heads[0].on, { symbol: 'hpf_on', sense: 'on' });
   assert.deepEqual(m.heads[1].on, { symbol: 'b1_on', sense: 'on' });
-  assert.deepEqual(m.rows.map((r) => r.label), ['Frequency', 'Gain', 'Q', 'Type', 'On']);
+  assert.deepEqual(m.rows.map((r) => r.label), ['On', 'Frequency', 'Gain', 'Q', 'Type']);
   assert.deepEqual(Object.keys(m).sort(), ['cells', 'heads', 'orientation', 'rows', 'title']);
   const freq = m.rows.findIndex((r) => r.label === 'Frequency');
-  const onRow = m.cells.at(-1);
-  assert.deepEqual(m.rows.at(-1), { label: 'On', head: true });
+  const onRow = m.cells[0];
+  assert.deepEqual(m.rows[0], { label: 'On', head: true });
   assert.deepEqual(onRow, m.heads.map((h) => h.on?.symbol ?? null));
   const gainRow = m.cells[m.rows.findIndex((r) => r.label === 'Gain')];
   assert.deepEqual([gainRow[0], gainRow.at(-1)], ['hpf_slope', 'lpf_slope'], 'the edges\' slope is on the gain row');
+  // omx-panel#122: the slope's cells carry their own caption, the bands' gain cells none
+  const gain = m.rows.find((r) => r.label === 'Gain');
+  assert.deepEqual(gain.labels, ['Slope', ...Array(8).fill(null), 'Slope'], 'the edges\' slope cells are captioned Slope');
+  assert.ok(m.rows.filter((r) => r !== gain).every((r) => !('labels' in r)), 'a row whose cells are its own parameter carries no labels');
   assert.deepEqual(m.cells[freq], ['hpf_freq', ...Array.from({ length: 8 }, (_, i) => `b${i + 1}_freq`), 'lpf_freq']);
   assert.equal(m.count, undefined);
   // every cell is a control the description serves, in the section that carries the matrix; none is drawn twice
@@ -57,7 +61,7 @@ test('omx-strip: HPF first, LPF last, 32 EQ columns between; the count is eqBand
   assert.equal(m.heads[0].edge, 'hpf');
   assert.equal(m.heads.at(-1).edge, 'lpf');
   assert.equal(m.heads.filter((x) => x.edge === null).length, 32);
-  assert.deepEqual(m.rows.map((r) => r.label), ['Freq', 'Gain', 'Q', 'Type', 'On']);
+  assert.deepEqual(m.rows.map((r) => r.label), ['On', 'Freq', 'Gain', 'Q', 'Type']);
   assert.equal(m.cells.length, m.rows.length);
   assert.ok(m.cells.every((row) => row.length === 34));
   assert.deepEqual(m.count, { symbol: 'eqBands', default: 4 });
@@ -80,5 +84,5 @@ test('omx-delay: the Taps matrix carries Time under taps 2..4 with tap 1\'s cell
 test('omx-dyneq: the Band matrix keys type, freq, gain, q by their roles, and threshold and range as rows of their own', () => {
   const d = describeOf('omx-dyneq');
   const [s] = withMatrix(d);
-  assert.deepEqual(s.matrix.rows.map((r) => r.label), ['Freq', 'Gain', 'Q', 'Type', 'Dynamics', 'Threshold', 'Ratio', 'Range', 'Attack', 'Release', 'Listen', 'On']);
+  assert.deepEqual(s.matrix.rows.map((r) => r.label), ['On', 'Freq', 'Gain', 'Q', 'Type', 'Dynamics', 'Threshold', 'Ratio', 'Range', 'Attack', 'Release', 'Listen']);
 });

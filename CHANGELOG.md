@@ -4,6 +4,35 @@
 
 ## Unreleased
 
+- The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
+  `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
+  `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.
+  `GESTURE_CODE_WORDS` (tools/gestures.mjs) maps a name to its word and a `GestureError` carries it as `word`; the
+  reference and the C unit still answer the `GESTURE_*` name.
+
+- The served matrix opens with its head row (docs/group-model.md L3, ruled omx-panel#121): a band's name and on/off head
+  its column on the MOD GUI face and in the renderer, which refuses a head row that is not the first. A consumer that read
+  the head row as the last (the console's processing view, Zynthian's builder) reads `rows[0]`. A parameter row whose cell
+  holds another parameter carries `labels`, one per head (ruled omx-panel#122): an EQ edge's slope in the gain row is
+  captioned Slope on every surface, never Gain.
+
+- A face without a head (#94): `omx_panel_view_set_head(view, false)` (a new function of libomx-panel-render.so.0, a
+  minor addition; the command's state file says `"head": false`) draws no head, the sections start at `pad` and the face
+  is `sectionTop - pad` (36 px) shorter, so a host drawing one control per view gets the control, its label and its value.
+  Held to a golden image of a one-control description at 1x and 2x.
+
+- The kind of a scanned control is one rule, omx-panel's (`docs/control-kind.md`, #153): an enumeration is a choice,
+  else lv2:toggled is a toggle, else a stepped control of exactly the two positions 0 and 1 is a toggle, else a travel
+  with its scale. `tools/control-kind.mjs` (`@openmixer/omx-panel/control-kind`) is the rule and
+  `schema/control-kind-vectors.json` with its schema the 28 vectors every reader is held to (both exported by name).
+  The group inference's LV2 port reader and the group model over a descriptor apply it: an `lv2:integer` 0..1 port and
+  a stepped 0..1 travel with no step were travels there and are toggles.
+
+- The gesture parity scripts live in `fixtures/gestures/scripts.json`, the shipped fixtures, no longer under `test/`:
+  the export `@openmixer/omx-panel/gestures/scripts.json` keeps its name and resolves to
+  `dist/fixtures/gestures/scripts.json`, and a test refuses an export backed by a test path (#101). An installed reader
+  finds them at `<datadir>/omx-panel/fixtures/gestures/scripts.json`.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the
@@ -71,7 +100,7 @@
   screen for a band whose gain is an Easy control where the band no longer fits its width (omx-eq8 at 4 slots).
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
-- 0.17.0: C2, delivered with omx-contract 3.22.0 and floored at it (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.22.0. A descriptor's unit is a `PARAM_UNITS` id (`percent`, `none`, `dBPerOct`, `dBPerS`), never its display spelling: `tools/vocabulary.mjs` keys the standard units by id, `unitIdOf` accepts only an id, `unitSymbolOf` gives the `x-symbol` a person sees, and `noUnitId` (the id whose symbol is empty, read from the contract) is the unit of a toggle or a choice. The role table's slope and speed units are `dBPerOct` and `dBPerS`. A face shows the symbol: the MOD GUI scribble's `data-unit` and value text, the meter caption the renderer draws and describe's `unitText` (`percent` shows `%`); `none` counts as no stated unit, as `""` did. Also in 0.17.0, from chain 3: V23d P2, a unit is served when omx-contract's `PARAM_UNITS_CLAP_ENCODED` holds its id; the #170 consumers, `coef` is the plain multiplier in the role table. The npm range on `@openmixer/omx-contract` stays at the published 3.20.2 until 3.22.0 is on npm (Open-Mixer/plugin-hostd#215).
+- 0.17.0: C2 and chain 3's content, delivered with omx-contract 3.22.0 and omx-dsp 0.34.1 and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.22.0, omx-dsp-wasm >= 0.34.1. A descriptor's unit is a `PARAM_UNITS` id (`percent`, `none`, `dBPerOct`, `dBPerS`), never its display spelling: `tools/vocabulary.mjs` keys the standard units by id, `unitIdOf` accepts only an id, `unitSymbolOf` gives the `x-symbol` a person sees, and `noUnitId` (the id whose symbol is empty, read from the contract) is the unit of a toggle or a choice. The role table's slope and speed units are `dBPerOct` and `dBPerS`. A face shows the symbol: the MOD GUI scribble's `data-unit` and value text, the meter caption the renderer draws and describe's `unitText` (`percent` shows `%`); `none` counts as no stated unit, as `""` did. The MOD GUI generator sends omx-dsp's curve the standard unit ids themselves (`Hz`, `dB`, `percent`; a filter slope's `dBPerOct` as `dB`), the words omx-dsp 0.34.1's curve takes (omx-dsp#122), where it sent a lower-case copy 0.34.1 refuses. From chain 3: V23d P2, a unit is served when omx-contract's `PARAM_UNITS_CLAP_ENCODED` holds its id; the #170 consumers, `coef` is the plain multiplier in the role table. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm (Open-Mixer/plugin-hostd#215).
 
 - 0.16.0: the sorting pass (V1, V2, V3, V4, V22 and V23d), delivered with omx-contract 3.21.0, omx-dsp 0.34.0, plugin-db 0.5.0 and plugin-hostd 0.21.0, and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.21.0, omx-dsp-wasm and omx-dsp-devel >= 0.34.0, plugin-db-contract >= 0.5.0, plugin-hostd >= 0.21.0 (recommended). Units: dB/oct and dB/s are served, the vendor-block codes omx-contract 3.21.0's sheet gives dbPerOct and dbPerS (clap#163), beside dBTP and LU; the utility family gains the roles `speed` and `slope`, so omx-balancer's four controls all take a role. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm.
 

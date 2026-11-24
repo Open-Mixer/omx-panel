@@ -253,7 +253,9 @@ jobs:
 
   # The packages as a runtime install takes them: built from the checkout, installed in a clean container from the
   # channel with weak dependencies off, no -devel (-dev) package arrives and `omx-panel vocabulary` reads the installed
-  # contract data (tools/runtime-install-check.sh). The suite is the test job's, so the builds skip it.
+  # contract data (tools/runtime-install-check.sh). The build dependencies are what the spec and debian/control declare,
+  # installed from the channel by dnf builddep and apt-get build-dep and checked by rpmbuild and dpkg-buildpackage: a
+  # floor the channel does not serve is red here (#118). The suite is the test job's, so the builds skip it (nocheck).
   packages:
     name: build the RPM
     if: github.event_name == 'workflow_dispatch'
@@ -266,16 +268,15 @@ jobs:
           v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
           mkdir -p src
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
-      # --nodeps: the build itself needs node, npm, make and the renderer's C libraries; the contract packages %check
-      # reads are the test job's
+      # every BuildRequires of the spec, from the channel, and rpmbuild checks them (no --nodeps)
       - name: The RPM (fedora:45)
         run: |
           docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
             dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
-            dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm gcc cjson-devel \
-              "sqlite-devel >= 3.38.0" "omx-contract-devel >= 3.22.0" "libomx-domain-devel >= 3.22.0" "omx-dsp-devel >= 0.34.0"
+            dnf install -y -q --setopt=install_weak_deps=False rpm-build dnf5-plugins
+            dnf builddep -y -q --setopt=install_weak_deps=False packaging/omx-panel.spec
             mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
-            rpmbuild -bb --nocheck --nodeps packaging/omx-panel.spec
+            rpmbuild -bb --nocheck packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm out/'
@@ -294,7 +295,7 @@ jobs:
             grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
             if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
             req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
-            grep -q "^omx-dsp-wasm >= 0.34.0" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.34.0 in: $(tr "\n" " " <<< "$req")"; exit 1; }
+            grep -q "^omx-dsp-wasm >= 0.34.1" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm >= 0.34.1 in: $(tr "\n" " " <<< "$req")"; exit 1; }
             echo "PASS rpm: omx-dsp linked, not copied, required"'
       # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
       # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
@@ -337,10 +338,12 @@ jobs:
             apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
             curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
             apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
-            apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf \
-              libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
+            apt-get install -y -qq --no-install-recommends dpkg-dev build-essential
             mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
-            DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d
+            # every Build-Depends of debian/control (the nocheck profile: the suite is the test job'\''s), from the
+            # channel, and dpkg-buildpackage checks them (no -d)
+            apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
+            DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck
             cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
               /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /w/out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
@@ -366,7 +369,7 @@ jobs:
             grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
             if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
             dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
-            grep -q "omx-dsp-wasm (>= 0.34.0~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.34.0~) in: $dep"; exit 1; }
+            grep -q "omx-dsp-wasm (>= 0.34.1~)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm (>= 0.34.1~) in: $dep"; exit 1; }
             echo "PASS deb: omx-dsp linked, not copied, a dependency"'
       - uses: actions/upload-artifact@v4
         with:

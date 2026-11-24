@@ -29,7 +29,7 @@ BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
 BuildRequires: omx-contract >= 3.22.0
-BuildRequires: omx-dsp-wasm >= 0.34.0
+BuildRequires: omx-dsp-wasm >= 0.34.1
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
 Requires: omx-contract >= 3.22.0
@@ -62,7 +62,7 @@ Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
 Requires: plugin-db-contract >= 0.5.0
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.34.0
+Requires: omx-dsp-wasm >= 0.34.1
 Provides: bundled(nodejs-ajv)
 
 %description
