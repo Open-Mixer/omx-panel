@@ -195,6 +195,12 @@
       "model": "draft-prose",
       "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
     },
+    "panel.describe.family-unknown": {
+      "text": "La sustitución para {plugin} nombra la familia de paneles {family}, que no existe; el panel se hace sin familia.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
     "panel.gesture.read-only": {
       "text": "Un control de solo lectura no admite ningún gesto.",
       "by": "machine",

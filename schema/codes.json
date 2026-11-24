@@ -334,6 +334,16 @@
         "message"
       ]
     },
+    "panelFamilyUnknown": {
+      "code": "panel.describe.family-unknown",
+      "text": {
+        "en": "The override for {plugin} names the panel family {family}, which is not one; the panel is made with no family."
+      },
+      "args": [
+        "plugin",
+        "family"
+      ]
+    },
     "readOnly": {
       "code": "panel.gesture.read-only",
       "text": {

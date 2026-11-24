@@ -36,18 +36,21 @@ const GOLDEN = {
   'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
 // the panel's codes only: the gesture codes joined the sheet after the move (#106) and are held by their own test below
-const panelOnly = (codes) => Object.fromEntries(Object.entries(codes).filter(([k, v]) => !(v.code ?? k).startsWith('panel.gesture.')));
+// and without panel.describe.family-unknown, which the domain gained at 1.3.0 (#199), after the move
+const LATER = ['panel.describe.family-unknown'];
+const panelOnly = (codes) => Object.fromEntries(Object.entries(codes).filter(([k, v]) => !(v.code ?? k).startsWith('panel.gesture.') && !LATER.some((c) => (v.code ?? k).endsWith(c))));
 const canonical = (f, j) => (f.startsWith('catalogs/')
   ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(panelOnly(j.messages)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
   : { ...j, codes: panelOnly(j.codes) });
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 
-test('(a) the domain holds the 32 codes: 5 skin, 11 MOD GUI (the skin\'s MOD GUI licence last), 16 describe', () => {
+test('(a) the domain holds the 33 codes: 5 skin, 11 MOD GUI (the skin\'s MOD GUI licence last), 17 describe (16 moved, and family-unknown)', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8')).components.schemas;
   assert.equal(s.PANEL_SKIN_CODES?.oneOf.length, 5);
   assert.equal(s.PANEL_MODGUI_CODES?.oneOf.length, 11);
-  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 16);
+  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 17);
+  assert.equal(s.PANEL_DESCRIBE_CODES.oneOf.at(-1).const, LATER[0]);
 });
 
 test('(a) the render from the domain is the sheet and the six catalogs\' messages before the move', async () => {

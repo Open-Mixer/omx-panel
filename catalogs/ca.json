@@ -131,6 +131,12 @@
       "text": "S'ha refusat la llista Easy de {plugin} ({message}); la pàgina Easy pren la regla en lloc seu.",
       "by": "human"
     },
+    "panel.describe.family-unknown": {
+      "text": "La substitució per a {plugin} anomena la família de panell {family}, que no n'és cap; el panell es fa sense família.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
     "panel.gesture.read-only": {
       "text": "Un control de només lectura no admet cap gest.",
       "by": "machine",
