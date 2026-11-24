@@ -359,9 +359,9 @@ int  omx_panel_store_remove(omx_panel_store *w, const omx_panel_store_key *k, om
 
 - **Refusals, by name** (NEW `PANEL_STORE_CODES`, `x-c-codes`, in the `panel` domain, as `docs/behaviour-core.md`
   section 4 adds its codes): `panel-store.absent`, `.unreadable`, `.not-a-store`, `.schema-mismatch`, `.schema-other`,
-  `.domain-too-old`, `.word-unknown`, `.hot-journal`, `.busy`, `.entry-invalid` (a put whose JSON is not an entry of the
-  description schema or whose words are not in their items), and the loader's codes passed through, except that a domain
-  below the version a store was checked against (the loader's `contract.package.too-old`) is `panel-store.domain-too-old`.
+  `.word-unknown`, `.hot-journal`, `.busy`, `.entry-invalid` (a put whose JSON is not an entry of the
+  description schema or whose words are not in their items), and the loader's codes passed through. The version a
+  store records of a domain is what wrote it, never a floor.
   Each is the qualification store's code of the same name (its section 6), with `panel-store.` for the prefix.
   `PANEL_STORE_CODES` is the one item of the `panel` domain marked `x-c-codes`.
 - **Test and command only, exported.** `omx_panel_store_set_rules` (the reader's `OMX_PANEL_RULES_VERSION`, for a test of

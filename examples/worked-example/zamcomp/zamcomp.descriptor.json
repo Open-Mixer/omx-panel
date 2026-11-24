@@ -1,6 +1,5 @@
 {
   "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
-  "requires": {"omx-contract-schema": ">= 3.0.0"},
   "origin": "scanned",
   "plugin": {"id": "urn:zamaudio:ZamComp", "format": "lv2", "uri": "urn:zamaudio:ZamComp", "name": "ZamComp", "vendor": "Damien Zammit", "doc": "A powerful mono compressor strip. Adds real beef to a kick or snare drum with the right settings.", "features": ["audio-effect"]},
   "controls": [

@@ -132,7 +132,8 @@ class test_the_store_codes_are_the_domains(unittest.TestCase):
         return [w["const"] for w in sorted(words, key=lambda w: w["x-code"])]
 
     def library_words(self):
-        return [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+        words = [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+        return [w for w in words if w]  # a status whose code was retired (7) answers none
 
     def test_each_status_code_is_the_domain_word(self):
         self.assertEqual(self.library_words(), self.domain_words())

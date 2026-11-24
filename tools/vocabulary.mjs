@@ -162,7 +162,7 @@ export function paramDomainFile() {
 /** The standard units, PARAM_UNITS of omx-contract's param domain, keyed by id (each word's const): `Map<id, { symbol, dimension }>`. */
 export const standardUnits = once(() => {
   const file = paramDomainFile();
-  if (!file) throw new Error(`vocabulary: omx-contract's param domain (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.21.0)`);
+  if (!file) throw new Error(`vocabulary: omx-contract's param domain (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data`);
   const words = JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.PARAM_UNITS?.oneOf;
   if (!Array.isArray(words)) throw new Error(`vocabulary: ${file} declares no PARAM_UNITS`);
   return new Map(words.map((w) => [w.const, { symbol: w['x-symbol'], dimension: w['x-dimension'] }]));
@@ -191,7 +191,7 @@ export const CLAP_ENCODED_ITEM = 'PARAM_UNITS_CLAP_ENCODED';
 export const clapEncoded = once(() => {
   const file = paramDomainFile();
   const words = file ? JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.[CLAP_ENCODED_ITEM]?.oneOf : undefined;
-  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.22.0)`);
+  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data`);
   return new Set(words.map((w) => w.const));
 });
 

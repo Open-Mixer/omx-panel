@@ -34,7 +34,7 @@ function answers(units, env = {}) {
   return JSON.parse(r.stdout);
 }
 
-test('(a) the param domain is installed where the tools read it (omx-contract >= 3.21.0)', () => {
+test('(a) the param domain is installed where the tools read it', () => {
   assert.ok(paramDir(), `no param/param.json in ${contractDirs().join(':')}`);
 });
 

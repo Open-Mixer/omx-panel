@@ -267,12 +267,6 @@
       "model": "lane-draft",
       "source": "98debebefb977b5d4704404f644c39dceb85c024492032d1ac7c9bf67871e3b5"
     },
-    "PANEL_STORE_CODES.panel-store.domain-too-old": {
-      "text": "Um domínio instalado é mais antigo do que aquele com que o armazém foi verificado.",
-      "by": "machine",
-      "model": "lane-draft",
-      "source": "b6f217f98b6f7dd80da59171421bd6af7512a9dc882f8a4edd6b735d6a3e2f76"
-    },
     "PANEL_STORE_CODES.panel-store.word-unknown": {
       "text": "Uma palavra guardada não está em nenhum dos itens com que a coluna é verificada.",
       "by": "machine",

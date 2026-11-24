@@ -40,8 +40,11 @@ test('a put creates the layer of the effective uid from schema/panel.sql, and no
   assert.equal(db.prepare('PRAGMA journal_mode').get().journal_mode, 'delete');
   assert.equal(db.prepare('SELECT layer, built_from FROM store_info').get().layer, process.geteuid() === 0 ? 1 : 2);
   assert.equal(db.prepare('SELECT built_from FROM store_info').get().built_from, null);
-  assert.deepEqual(db.prepare('SELECT domain, version FROM store_domain ORDER BY domain').all().map((x) => ({ ...x })),
-    [{ domain: 'panel', version: panelVersion(p.contract) }, { domain: 'plugin-db', version: '1.0.0' }]);
+  // the panel's is this tree's; plugin-db's is the domain installed where the library was built, never a typed one
+  const recorded = db.prepare('SELECT domain, version FROM store_domain ORDER BY domain').all();
+  assert.deepEqual(recorded.map((x) => x.domain), ['panel', 'plugin-db']);
+  assert.equal(recorded[0].version, panelVersion(p.contract));
+  assert.match(recorded[1].version, /^\d+\.\d+\.\d+$/);
   assert.equal(db.prepare('SELECT count(*) AS n FROM word_check').get().n, 6);
   db.close();
   assert.equal(readFileSync(mine).subarray(0, 15).toString(), 'SQLite format 3');

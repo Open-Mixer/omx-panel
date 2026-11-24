@@ -375,13 +375,6 @@
             "x-text": "A store file is at another schema version than the reader's."
           },
           {
-            "const": "panel-store.domain-too-old",
-            "title": "domainTooOld",
-            "description": "an installed domain is older than the version a store was checked against",
-            "x-code": 5,
-            "x-text": "An installed domain is older than the one the store was checked against."
-          },
-          {
             "const": "panel-store.word-unknown",
             "title": "wordUnknown",
             "description": "a stored word is in none of the items its column is checked against",
