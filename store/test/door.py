@@ -6,6 +6,7 @@ the command on the same files: the entry, the refusals by code, the source. A fi
 panel domain with a plugin-db domain holding clap and lv2. Needs the built tree (make -C store)."""
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -20,7 +21,10 @@ import omx_panel_store as door  # noqa: E402
 
 CMD = os.path.join(BUILD, "omx-panel-store")
 SHA, SRC = "a" * 64, "1" * 64
-ENTRY = {"edited": 0, "made_by": "door test", "rules": 1, "source": SRC, "family": "eq", "fingerprint": "f" * 64,
+# the derivation's rules version the reader holds (the header's), so the fixture entry is current
+with open(os.path.join(ROOT, "store", "include", "omx-panel", "omx_panel_store.h"), encoding="utf-8") as f:
+    RULES = int(re.search(r"#define OMX_PANEL_RULES_VERSION (\d+)", f.read()).group(1))
+ENTRY = {"edited": 0, "made_by": "door test", "rules": RULES, "source": SRC, "family": "eq", "fingerprint": "f" * 64,
          "body": {"family": "eq"}, "groups": {"repeated": []}, "refused": None,
          "controls": [{"symbol": "g", "key": "g", "id": "g"}],
          "verdict": {"outcome": "grouped", "reason": None, "groups": [
@@ -67,7 +71,7 @@ class test_the_door_reads_through_the_library(unittest.TestCase):
             ("description", "refused", "panel", "PANEL_DESCRIBE_CODES"), ("port_group_verdict", "outcome", "panel", "PANEL_GROUP_OUTCOMES"),
             ("port_group_verdict", "reason", "panel", "PANEL_GROUP_REASONS"), ("port_group", "rule", "panel", "PANEL_GROUP_RULES")])
         db.execute("INSERT INTO plugin (sha256, format, uri) VALUES (?, 'lv2', ?)", (SHA, uri))
-        db.execute("INSERT INTO description VALUES (1, 0, 'base', 1, ?, 'eq', ?, ?, '{}', NULL)", (SRC, "f" * 64, body))
+        db.execute("INSERT INTO description VALUES (1, 0, 'base', ?, ?, 'eq', ?, ?, '{}', NULL)", (RULES, SRC, "f" * 64, body))
         db.commit()
         db.execute("PRAGMA user_version = 1")
         db.close()
@@ -115,6 +119,28 @@ class test_the_door_reads_through_the_library(unittest.TestCase):
         self.assertEqual(door.source("clap", p), cmd)
         with self.assertRaises(door.StoreError):
             door.source("vst3", p)
+
+
+class test_the_store_codes_are_the_domains(unittest.TestCase):
+    """Sorting pass row V2 (omx-panel#156): the refusal strings stay in C (store.c CODES: the domain-too-old answer must
+    be given when the domain cannot open), and every one is the panel domain's PANEL_STORE_CODES word of its code."""
+    ABSENT, ENTRY_INVALID = 2, 11  # omx_panel_store.h: OMX_PANEL_STORE_ABSENT .. OMX_PANEL_STORE_ENTRY_INVALID
+
+    def domain_words(self, path=os.path.join(ROOT, "contract.d", "panel", "panel.json")):
+        with open(path) as f:
+            words = json.load(f)["components"]["schemas"]["PANEL_STORE_CODES"]["oneOf"]
+        return [w["const"] for w in sorted(words, key=lambda w: w["x-code"])]
+
+    def library_words(self):
+        return [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+
+    def test_each_status_code_is_the_domain_word(self):
+        self.assertEqual(self.library_words(), self.domain_words())
+
+    def test_a_domain_word_the_library_does_not_answer_is_seen(self):
+        words = self.domain_words()
+        words[0] = "panel-store.sabotaged"
+        self.assertNotEqual(self.library_words(), words)
 
 
 if __name__ == "__main__":

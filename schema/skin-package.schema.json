@@ -10,7 +10,7 @@
       "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$"
     },
     "family": {
-      "description": "A panel family, tools/panel-description.mjs FAMILIES.",
+      "description": "A panel family: the panel domain's PANEL_FAMILIES (written by tools/skin-schema-words.mjs).",
       "enum": ["none", "gate", "dynamics", "limiter", "deesser", "eq", "filter", "drive", "modulation", "delay", "reverb", "pitch", "utility"]
     },
     "label": {

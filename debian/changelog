@@ -1,3 +1,48 @@
+omx-panel (0.16.1) unstable; urgency=medium
+
+  * Fix: the installed tools check in override_dh_auto_install reads the
+    panel domain this build moved to debian/tmp for omx-panel-contract. In
+    0.16.0 lv2-complement, modgui-gen and modgui-import refused to load
+    because no installed panel domain was there (#208). The guard against
+    plugin-hostd's LV2 table reads the files itself, so a build with no .git
+    runs it (#207). 0.16.0 built no package.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 24 Nov 2026 08:00:00 +0100
+
+omx-panel (0.16.0) unstable; urgency=medium
+
+  * Sorting pass: V1, V2, V3, V4, V22 and V23d.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 22 Nov 2026 12:30:00 +0100
+
+omx-panel (0.15.1) unstable; urgency=medium
+
+  * Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import
+    and the rest that decide run-not-imported with omx-contract's isMain)
+    resolve @openmixer/omx-contract: node_modules/@openmixer/omx-contract
+    links the omx-contract package's /usr/lib/omx-contract, and omx-panel
+    depends on omx-contract (>= 3.20.2~). In 0.15.0
+    `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with
+    ERR_MODULE_NOT_FOUND. The build and debian/tests run the installed tools.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 20 Nov 2026 19:00:00 +0100
+
+omx-panel (0.15.0) unstable; urgency=medium
+
+  * First release with Debian trixie arm64 packages (0.14.0 was rpm-only);
+    Fedora 45 only (Fedora 44 is dropped).
+  * New: the vintage knob drawn by the renderer from the look's scene (the C
+    raster paints the bytes the JS painter does), kept in a static-layer
+    cache; the panel domain at 1.1.0, whose x-since is the version of the
+    domain that added each item; the tools decide run-not-imported with
+    omx-contract's isMain, so a bin run through a symlink runs.
+  * New: the descriptions store core, packaged: libomx-panel-store0 carries
+    libomx-panel-store.so.0, libomx-panel-store-dev its .so link, header,
+    pkg-config file and the DDL (panel.sql), omx-panel-store the command.
+    Built against SQLite >= 3.38.0.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 19 Nov 2026 16:00:00 +0100
+
 omx-panel (0.14.0) unstable; urgency=medium
 
   * Built against omx-contract >= 3.20.0, omx-dsp >= 0.32.3, omx-dsp-wasm >=

@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # One gesture vocabulary
 
-Every surface moves a panel's controls with one set of gestures, declared once here and in `schema/gestures.json`; each
+Every surface moves a panel's controls with one set of gestures, declared once here and in the `gestures` domain (`contract.d/gestures/gestures.json`, the `GESTURES_*` items; `schema/gestures.json` is rendered from it by `node tools/gestures-render.mjs`, never edited by hand); each
 surface maps its own inputs onto it. The reference is one C implementation, `renderer/src/gesture.c` in the renderer's
 library (`omx_panel_gesture.h`, `docs/renderer.md` "The gesture unit"): given a control and a script of events with
 timestamps, it answers the value in the control's own unit and the begin and end of each gesture. `tools/gestures.mjs`

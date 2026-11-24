@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { compareVersions, packagingFloor, re } from './packaging-floors.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MAKE_FLAGS = ['PREFIX=/usr', 'BINDIR=/usr/bin', 'DATADIR=/usr/share', 'UNITDIR=/usr/lib/systemd/system', 'SYSCONFDIR=/etc'];
@@ -47,10 +48,12 @@ test('the package ships no file of @openmixer/omx-dsp: one link to /usr/share/om
 });
 
 test('the spec and debian/control depend on omx-dsp-wasm with the floor of the release that exports loadCurve', () => {
-  const floor = /"@openmixer\/omx-dsp":\s*">=([0-9.]+)"/.exec(readFileSync(join(ROOT, 'package.json'), 'utf8'))[1];
-  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
-  assert.match(spec, new RegExp(`^Requires: omx-dsp-wasm >= ${floor.replaceAll('.', '\\.')}$`, 'm'));
+  // the release that exports loadCurve: package.json's npm floor (it follows the npm publish); the packages' floor is the
+  // spec's (packaging-floors.mjs), at or above it, and debian/control states the same one
+  const loadCurve = /"@openmixer\/omx-dsp":\s*">=([0-9.]+)"/.exec(readFileSync(join(ROOT, 'package.json'), 'utf8'))[1];
+  const floor = packagingFloor('omx-dsp-wasm');
+  assert.ok(compareVersions(floor, loadCurve) >= 0, `the spec floors omx-dsp-wasm at ${floor}, below ${loadCurve}, the release that exports loadCurve`);
   const control = readFileSync(join(ROOT, 'debian/control'), 'utf8');
   const depends = /^Package: omx-panel\n(?:.*\n)*?Depends:(.*(?:\n[ \t].*)*)/m.exec(control)[1];
-  assert.match(depends, new RegExp(`omx-dsp-wasm \\(>= ${floor.replaceAll('.', '\\.')}~\\)`));
+  assert.match(depends, new RegExp(`omx-dsp-wasm \\(>= ${re(floor)}~\\)`));
 });

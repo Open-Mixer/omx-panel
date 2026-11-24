@@ -298,64 +298,64 @@
       "source": "4bf1960cce76c5a5c3932e6d9332c589dfb2c1a34ea9ed291010039ea050c47e"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.no-controls": {
-      "text": "El plugin no tiene controles.",
+      "text": "{plugin} no tiene ningún control que un panel pueda mostrar, por lo que no obtiene ningún panel ({message}).",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "6c3fb28b54a0770d088108ca7634225ab54a26662dedac0c72939539175b6a05"
+      "model": "draft-prose",
+      "source": "0d8937eb7e62f845a685c5968ea99e639e47ffff52ebc9c9baa99af247c60e78"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.family-not-backed": {
-      "text": "La familia no tiene un panel que el diseño respalde.",
+      "text": "Los controles de {plugin} no llevan lo que necesita esa familia de paneles ({message}); elige otra familia o ninguna.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "84a797d358c642db98d2622b7ff1db19a94876237b970eed2bd1027aef7d1571"
+      "model": "draft-prose",
+      "source": "3aef7b0ffe7bf5e75c878c47337b0274d4a32aed3acac3554013ab1eb340d19f"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.layout-invalid": {
-      "text": "El diseño que declara el plugin no es válido.",
+      "text": "El panel declarado para {plugin} no se puede diseñar ({message}); corrige su declaración de panel.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "8856d97753cfef5bf8c53e194faddf1b34273df076bafb354427a8926236a33b"
+      "model": "draft-prose",
+      "source": "d93b3b2b757014cf7f002210d32d8d714a14b18f5229a72ef1cf34e0ae16aa0a"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.override-unavailable": {
-      "text": "Se dio una capa de sustitución y nada puede aplicarla.",
+      "text": "Las capas de anulación {layers} para {plugin} no se aplicaron: este host no puede leer las anulaciones.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "630103e16b801026e91a54f907d8e600cfeb2d75c20b167b4d14f226f8156112"
+      "model": "draft-prose",
+      "source": "d51652ba74184827831d8ab26f283d4ae7cbb7fab2322bfee38f056ba373f3fa"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.override-refused": {
-      "text": "Se rechazó una capa de sustitución.",
+      "text": "La capa de anulación {layer} ({name}) para {plugin} fue rechazada: {message}. Las capas inferiores siguen aplicándose.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "61eab1a2953cad752cf488cad6523cf75052471687adaf78b4e749010790ed0a"
+      "model": "draft-prose",
+      "source": "fbfc148f4cd135c2b0fec5d21b81a28d32eb94e862094036e532a7697d7e0577"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.override-dropped": {
-      "text": "Se descartó una entrada de sustitución.",
+      "text": "En la capa de anulación {layer} ({name}) para {plugin}, la entrada para {control} fue descartada: {message}.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "483028fead367bda8858d64187d8536dc179eb1fb28f1f172651624b226a9d9e"
+      "model": "draft-prose",
+      "source": "982d684624425a47663cd4a09deb8a8fe452cf2374658778e113409a126ed045"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.role-dropped": {
-      "text": "Se descartó un rol.",
+      "text": "El rol {entry} en {symbol} de {plugin} no se muestra ({reason}); el control permanece en su página.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "26fde59e03217b916e96524e0748f1e28c9ed05f44d322bec9726f61503f708f"
+      "model": "draft-prose",
+      "source": "ad6c38efee765d69c30aa71caed9c0be73c03edbca33141f32c8bf212c50e368"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.skin-dropped": {
-      "text": "Se descartó un campo del skin.",
+      "text": "La entrada {field} de la apariencia {entry} para {plugin} fue descartada ({reason}); el resto de la apariencia sigue aplicándose.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "991a5b1f092421791226463ae80dbd93fa325e113981fd1fa865aeeb2acea596"
+      "model": "draft-prose",
+      "source": "42f8b6bde1ee7a02b5d2925be21c0a3d5106433647a75423b7a8ef24d441177d"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.meter-refused": {
-      "text": "Se rechazó un medidor.",
+      "text": "El medidor {symbol} de {plugin} fue omitido: {reason}.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "cb7f71d8761f9da6560c8cf0dfa828eb4a370fb7e5f9b54eaacaa447569726d6"
+      "model": "draft-prose",
+      "source": "a21a314334feea1060c5d7efd4abd090d3d2d552b109ce4d308d2c5d43107a67"
     },
     "PANEL_DESCRIBE_CODES.panel.describe.param-unserved": {
-      "text": "No se sirve un parámetro de otro rango.",
+      "text": "El parámetro {symbol} de {plugin} no se sirve: su rango {range} no es ni una ruta ni un texto.",
       "by": "machine",
-      "model": "lane-draft",
-      "source": "1130edfedc850846d11ab197b0a6ab797e84c53bb046f98ba846cbe95662157e"
+      "model": "draft-prose",
+      "source": "d12649c4da7d53ec2c5994f698d9e65f48cfbad01b07d9b765e61753dd69ee3e"
     },
     "PANEL_GROUP_OUTCOMES.nothing-to-do": {
       "text": "El plugin se deja como está.",
@@ -458,6 +458,156 @@
       "by": "machine",
       "model": "lane-draft",
       "source": "646fe87a13d99ad9cb920ad6cbbac76cd71a57abcb5830bd1aab05f2e3a09d3d"
+    },
+    "PANEL_SKIN_CODES.panel.skin.override-invalid": {
+      "text": "La anulación para {plugin} no es válida en {field}; corrige skin.json y vuelve a cargar el skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "eab6928c6a32766a7c0347a00fa5480523e70ef3c63965d2c4732e63d3eba787"
+    },
+    "PANEL_SKIN_CODES.panel.skin.override-entry-dropped": {
+      "text": "La entrada {entry} para {field} de {plugin} se descartó ({reason}); el resto de la anulación sigue aplicándose.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5c9604e417a4f6fc6cb686cd65b9b28e150eeee4dfe408b382068c7083fce028"
+    },
+    "PANEL_SKIN_CODES.panel.skin.api-mismatch": {
+      "text": "Este skin declara la API {declared}, que esta consola no admite (sirve {supported}); el skin no se carga.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "192aef3f6089c428a49377ad97ee3b1517d62321c94226a485a8d9e1b87f1b67"
+    },
+    "PANEL_SKIN_CODES.panel.skin.view-error": {
+      "text": "La vista del skin falló: {message}. Vuelve a cargarla o elimina el skin si sigue fallando.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0244e35396bf647ce54d605cc4e811ec2c76aacfc6a95956eb1233dfd81db8c3"
+    },
+    "PANEL_SKIN_CODES.panel.skin.view-lint": {
+      "text": "La vista {file} usa la palabra prohibida {word}; elimínala y vuelve a cargar el skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.not-found": {
+      "text": "No se encontró ninguna GUI MOD para importar en {file} ({detail}); no se escribió nada.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0ebebee5aaa3febf4f0a6a0009a2630bc7094e0dc4903d31fae0a81fba28d0d2"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.ttl-invalid": {
+      "text": "El {file} del paquete no se lee como TTL válido ({detail}); corrígelo e importa de nuevo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "2fbeedc1735931fbef746f2b6e3f0a4cfc50e70523d15b32a36a9dd0a2e22d8d"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.no-licence": {
+      "text": "{file} no indica ninguna licencia ({detail}); agrega una a su paquete antes de que se pueda importar su GUI MOD.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a28fe232511d5ceb27b3aec158b9b5c41779d29a07689bd50f596f10ff2d14b8"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.licence-unmapped": {
+      "text": "La licencia en {file} no es una a la que este importador mapee a un ID SPDX ({detail}); agrega el mapeo o cambia la licencia.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "99774d13cc82dcde8ff3bca50d0ccc70f122102927c7c0ad7ca67a1fc651900f"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.licence-refused": {
+      "text": "La licencia en {file} está fuera de la lista permitida ({detail}); la GUI MOD no se importa.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "72f4d619ae4cf2d2ad4ad258151b7e69fedb2719a13b7505c0f197a90e5a2879"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.unknown-property": {
+      "text": "{file} lleva una propiedad desconocida ({detail}); elimínala o corrígela antes de importar.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "d275c04d32649050d5fd0afeeb4d66f6bba9fa5ef6e95e2590a2899e4f7e90ea"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.port-unknown": {
+      "text": "{file} nombra un puerto que no es uno de los puertos propios del plugin ({detail}); corrige el símbolo e importa de nuevo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "b253a88c2c2a3b441ecfa71881cdddcf6ba0cce27008725bd42dfce12a1dce96"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.image-not-found": {
+      "text": "{file} nombra una imagen que no está en los recursos del paquete ({detail}); agrega el archivo o corrige la referencia.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "6fb2dad4fdcf08dc5658a25f1a638d67d28566d87d844d0a99c863956cfd329d"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.path-escape": {
+      "text": "{file} nombra una ruta que se resuelve fuera del paquete ({detail}); no se importa nada desde fuera del paquete.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "396fc32954b25c018cf0b4ef725969e109d25bf735c3ae0e78200a4e19138801"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.target-exists": {
+      "text": "{file} ya existe ({detail}); elimínalo primero para importar sobre él.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "31e251dbbfe2c7e17ce955a8168068f582971d6f617ac0fd5b880acaa34b0f09"
+    },
+    "PANEL_MODGUI_CODES.panel.skin.modgui-licence": {
+      "text": "El script MOD GUI para {plugin} se descarta: su licencia {licence} falta o no está permitida.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "772bcf9e050394d8a5c6be509cc9982f73fc8858726f20afecd344acba2284aa"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-too-few": {
+      "text": "Un grupo de barras de {plugin} tiene muy pocos controles para dibujarse como barras ({message}); se dibujan como perillas.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "611e560479557cab540b926ec2bea6c1ab8c4602c8819789d0490281deb1d1aa"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-not-travel": {
+      "text": "Un grupo de barras de {plugin} contiene un control que no puede ser una barra ({message}); corrige el grupo en la declaración del panel.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a705a879593c6960cff7d67d6961a77e952c2bebb9a5b1c48f316389bca4435a"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-facts-differ": {
+      "text": "Los controles de un grupo de barras de {plugin} difieren en rango, paso, unidad o escala ({message}); las barras deben compartirlos.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ce52a1720f0d9c17fe37e2b918f64d0f5e6dbb8e37644f5a898f7c31d1fd0076"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-labels-not-series": {
+      "text": "Las etiquetas de un grupo de barras de {plugin} no forman una serie ({message}); renómbralas o divide el grupo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "34b550c209a88a51af7b2f15267e472806464006a2a47a0538e0d9fe606b4112"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-unknown-control": {
+      "text": "Un grupo de barras de {plugin} nombra un control que el plugin no tiene ({message}); corrige el símbolo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "18b0555e220142971d8d75d0eca6c09ce7dbeefcc37d0107af58547b74626a6b"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.easy-refused": {
+      "text": "La lista Easy de {plugin} fue rechazada ({message}); la página Easy toma la regla en su lugar.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
+    },
+    "PANEL_DISPLAY_AXES.linear": {
+      "text": "Un eje lineal: un nivel en dB en un intervalo lineal.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "097771ce5282009b7b2da9af193c41fa13e9f790eec1403a377fc198e6395dfb"
+    },
+    "PANEL_DISPLAY_AXES.log-frequency": {
+      "text": "Un eje de frecuencia logarítmico: la frecuencia en Hz en escala logarítmica, el nivel en dB alrededor de 0.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84d71cb0c7ff5bf29c11e5c194d56996b5a27b65b656aea4f5fd4f8af6c9a8da"
+    },
+    "PANEL_DISPLAY_AXES.time": {
+      "text": "Un eje de tiempo: el tiempo en ms desde 0, el nivel en dB desde el suelo.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "46633ca72d9a1af20d0ea479e30cbe230a33da294832b58580df3aabae9b5d10"
     }
   }
 }

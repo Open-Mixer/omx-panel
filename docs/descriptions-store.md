@@ -139,7 +139,7 @@ are agreed with the description schema owner before lane 1 (section 13) merges; 
 
 What `describe` serves today (`tools/describe.mjs:283-309`): `family`, `fingerprint`, `easy`, `params`, `sections`
 (each with `bars`, or with the served `matrix` of a repeated group, `docs/group-model.md` "The served matrix"),
-`controls`, `meters`, `roles`, `displays` and `pages`. What the complement writes (`tools/lv2-complement.mjs:227-228`):
+`controls`, `meters`, `roles`, `displays` and `pages`. Each display carries its `axis`, a `PANEL_DISPLAY_AXES` word, in the body; `describeFromStored` refuses a body whose display has none or another word. What the complement writes (`tools/lv2-complement.mjs:227-228`):
 the verdict of `inferGroups` (`tools/group-infer.mjs:194`) with the group model's instance groups, each group a
 `symbol`, a `name`, a `displayPriority`, its `ports` by port symbol and the `rule` that made it.
 
@@ -223,6 +223,8 @@ CREATE TABLE port_group_member (
   over the stored groups and `governed`, then the pages; `describe` calls the SAME functions after its derivation, so
   the two are byte-equal by construction, and a corpus test holds it. `pages` is never stored: it depends on the surface's width. No client
   needs the plugin's descriptor: plugin-hostd and Zynthian have none for a third-party plugin.
+
+**Bodies stored before the axis (panel domain 1.2.0).** A body stored without `displays[].axis` is refused by `describeFromStored`, by name: the reader stays strict and never completes the axis, from the display's kind or from anything else, on read. What happens to the rows that exist at the upgrade: the base is built new by the release that adds the axis (3.5: never migrated), and a derived row of the system layer is stale (`rules` raised with the change, 3.6) and derived again. A person's EDITED row of the user layer (`edited` 1) is carried by the user-layer MIGRATION step of 3.5 (owner ruling: a person's edits are migrated across schema versions): it writes the axis into the row ONCE, at the upgrade. What it reads is exactly this: each display of the row's body keeps its `kind` word unchanged, and the step maps that word once by the same table `describe` uses (`AXIS_OF_KIND`, `tools/panel-description.mjs`: eq_response log-frequency, transfer_curve linear, gain_reduction_bar linear, meter linear, time_response time), writing the table's word into the display; the reader never does this on read and no default exists (a kind the table has no word for makes the whole row one the step cannot carry); an edit the step cannot carry is kept aside in the file beside the layer and NAMED, as 3.5 says, never dropped silently.
 
 ### 3.5 `user_version`
 
