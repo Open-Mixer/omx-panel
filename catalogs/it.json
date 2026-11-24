@@ -33,6 +33,18 @@
       "model": "draft-prose",
       "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84"
     },
+    "panel.skin.override-refused": {
+      "text": "L'override per {plugin} non è valido in {field} ({reason}); correggi skin.json e ricarica lo skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ffd3a9cc7df6fa8701f33dbbf8b5950becd7d1447348f3c4690d7b74f7fa398c"
+    },
+    "panel.skin.entry-missing": {
+      "text": "La voce {field} {entry} non è nel pacchetto; ricaricala, o rimuovi lo skin se continua a fallire.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e7003667e92f7c0e4370ca823589ad180b557ce4ab56aed32967b4b30b57da4c"
+    },
     "panel.modgui.not-found": {
       "text": "Nessun MOD GUI da importare è stato trovato in {file} ({detail}); nulla è stato scritto.",
       "by": "machine",

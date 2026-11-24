@@ -36,7 +36,7 @@ items `x-c-xmacro` too (sorting pass row V1): C code that tables them by code (t
 omx-clap-core's panel ABI) includes the one codes header, `include/omxdomain/panel_codes.h`, which `omx-contract render
 --target c --package panel --contract-dir contract.d` gives byte for byte; no other render exists.
 
-The refusal codes omx-panel emits are the domain's too (sorting pass row V3, domain 1.2.0): `PANEL_SKIN_CODES` (5),
+The refusal codes omx-panel emits are the domain's too (sorting pass row V3, domain 1.2.0; omx-panel#14's two codes at 1.3.0): `PANEL_SKIN_CODES` (7),
 `PANEL_MODGUI_CODES` (the importer's 10 and `panel.skin.modgui-licence`) and `PANEL_DESCRIBE_CODES` (16), each word's
 `title` its key, `x-text` its English sentence and `x-args` its placeholders (omx-contract >= 3.21.0 reads `x-args`), their
 translations in the domain's catalogs. `schema/codes.json` and `catalogs/<lang>.json`, which the surfaces, the console
