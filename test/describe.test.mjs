@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { candidatesOf, describe, DESCRIBE_CODES, familyRule } from '../dist/tools/describe.mjs';
+import { FAMILIES } from '../dist/tools/panel-description.mjs';
 import { AFFIX, EQ_WORDS, inferBands, shapesOf } from '../dist/tools/meaning-infer.mjs';
 
 const travel = (name, meaning, t = {}, extra = {}) => ({ name, kind: 'travel', ...(meaning ? { meaning } : {}), travel: { min: 0, max: 1, unit: 'unknown', scale: 'linear', default: 0, ...t }, ...extra });
@@ -85,6 +86,22 @@ test('a user override naming a family wins; one the controls do not back is refu
   assert.deepEqual(refusals.map((r) => r.code), [DESCRIBE_CODES.familyNotBacked]);
   const ok = describe(descriptor(dyn()), { overrides: [{}], applyOverride: (x) => ({ descriptor: x, family: 'dynamics', dropped: [], refused: [] }) });
   assert.equal(ok.description.family, 'dynamics');
+});
+test('an override family that is no PANEL_FAMILIES word is refused by name and the panel is none; each of the words is taken (#199)', () => {
+  // omx-contract's override schema takes any identifier as a family (ruling Z1, omx-contract#161): the words are checked here
+  const over = (family) => (x) => ({ descriptor: x, family, dropped: [], refused: [] });
+  const d = descriptor(dyn(), lv2('lv2:CompressorPlugin'));
+  const { description, refusals } = describe(d, { overrides: [{}], applyOverride: over('synth') });
+  assert.equal(description.family, 'none');
+  assert.deepEqual(refusals, [{ code: 'panel.describe.family-unknown', args: { plugin: 'urn:test:plugin', family: 'synth' } }]);
+  assert.equal(DESCRIBE_CODES.familyUnknown, 'panel.describe.family-unknown');
+  // a word in another case is not the word
+  assert.deepEqual(describe(d, { overrides: [{}], applyOverride: over('Dynamics') }).refusals.map((r) => [r.code, r.args.family]), [['panel.describe.family-unknown', 'Dynamics']]);
+  assert.equal(FAMILIES.length, 13);
+  for (const family of FAMILIES) {
+    const r = describe(d, { overrides: [{}], applyOverride: over(family) });
+    assert.ok(!r.refusals.some((x) => x.code === 'panel.describe.family-unknown'), `${family} is a word`);
+  }
 });
 test('layers with no applyOverride function are refused by code, the panel still made', () => {
   const { description, refusals } = describe(descriptor(dyn(), lv2('lv2:CompressorPlugin')), { overrides: [{}] });
