@@ -40,7 +40,7 @@
    "travel": {
     "min": -1,
     "max": 1,
-    "unit": "",
+    "unit": "none",
     "scale": "linear",
     "default": 0
    }
@@ -91,7 +91,7 @@
    "travel": {
     "min": -1,
     "max": 1,
-    "unit": "",
+    "unit": "none",
     "scale": "linear",
     "default": 0
    }
@@ -142,7 +142,7 @@
    "travel": {
     "min": -1,
     "max": 1,
-    "unit": "",
+    "unit": "none",
     "scale": "linear",
     "default": 0
    }
@@ -193,7 +193,7 @@
    "travel": {
     "min": -1,
     "max": 1,
-    "unit": "",
+    "unit": "none",
     "scale": "linear",
     "default": 0
    }

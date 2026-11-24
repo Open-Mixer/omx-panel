@@ -37,7 +37,7 @@ export const REASONS = {
 const FREQUENCY_UNIT = 'hz';
 
 /** A unit as a short token: LV2's units:hz and a descriptor's "Hz" are both `hz`. */
-const UNIT_TOKENS = { '%': 'pc', percent: 'pc', db: 'db', hz: 'hz', khz: 'khz', ms: 'ms', s: 's', oct: 'oct', coef: 'coef', '': '' };
+const UNIT_TOKENS = { '%': 'pc', percent: 'pc', db: 'db', hz: 'hz', khz: 'khz', ms: 'ms', s: 's', oct: 'oct', coef: 'coef', none: '', '': '' };
 export function unitToken(unit) {
   if (unit == null) return '';
   const tail = String(unit).replace(/^.*[#/]/, '').toLowerCase();
