@@ -100,7 +100,7 @@ typedef struct {
 } matrix;
 
 typedef struct {
-  char *symbol, *label, *unit;
+  char *symbol, *label, *unit; /* unit: the caption's spelling, the description's unitText (its x-symbol), else its unit */
   double min, max;
   int gain_reduction; /* the bar grows from the top of the range toward its foot */
   int in_band;        /* drawn in the meters band */

@@ -32,7 +32,7 @@ test('every role word of the table is that role for the group model and for the 
     for (const w of words) {
       assert.equal(model.roleOf([w], role === 'type' ? 'choice' : 'travel', ''), role, `group model: '${w}'`);
       if (role === 'slope') continue; // the band inference has no slope role
-      const c = { symbol: `x_${w}_1`, name: `Band 1 ${w}`, kind: role === 'type' ? 'choice' : 'travel', travel: { min: 0, max: 10, unit: '' }, ids: ['a', 'b'] };
+      const c = { symbol: `x_${w}_1`, name: `Band 1 ${w}`, kind: role === 'type' ? 'choice' : 'travel', travel: { min: 0, max: 10, unit: 'none' }, ids: ['a', 'b'] };
       assert.equal(infer.bandRoleOf(c), role, `band inference: '${w}'`);
     }
   }

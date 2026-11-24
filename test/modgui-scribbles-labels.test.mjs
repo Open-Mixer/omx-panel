@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { generateModgui, GEOMETRY } from '../tools/modgui-gen.mjs';
 
-const UNITS = [['dB', -60, 12], ['ms', 1, 500], ['Hz', 20, 20000], ['%', 0, 100], ['ratio', 1, 20]];
+const UNITS = [['dB', -60, 12], ['ms', 1, 500], ['Hz', 20, 20000], ['percent', 0, 100], ['ratio', 1, 20]];
 const controls = [
   ...UNITS.map(([unit, min, max], i) => ({ id: i, symbol: `u${i}`, name: `Unit ${unit} with a very long name ${i}`, kind: 'travel', travel: { min, max, step: 0, unit, default: min, scale: 'linear' }, group: ['G'] })),
   { id: 9, symbol: 'sw', name: 'Switch', kind: 'toggle', default: false, group: ['G'] },
@@ -26,6 +26,11 @@ test('the unit is written once: the stylesheet adds none to a scribble, for ever
   assert.doesNotMatch(css(), /omx-scribble::after/, 'the stylesheet writes the unit after mod-ui\'s own');
   assert.doesNotMatch(css(), /attr\(data-unit\)/);
   for (const [unit] of UNITS) assert.doesNotMatch(template().match(/<div class="omx-scribble"[^>]*><\/div>/g).join(''), new RegExp(`>${unit}<`));
+});
+
+test('C2: a scribble shows the unit as a person reads it, the x-symbol of the descriptor\'s id (percent is %)', () => {
+  const unitOf = (sym) => template().match(new RegExp(`<div class="omx-scribble"[^>]*mod-port-symbol="${sym}" data-unit="([^"]*)"`))?.[1];
+  assert.deepEqual(UNITS.map((_, i) => unitOf(`u${i}`)), ['dB', 'ms', 'Hz', '%', 'ratio']);
 });
 
 test('a toggled port\'s scribble reads ON or OFF, set by the script', () => {
