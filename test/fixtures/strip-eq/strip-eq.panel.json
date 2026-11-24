@@ -58,10 +58,6 @@
   "lpf_slope": "lpfSlope",
   "lpf_on": "lpfOn"
  },
- "choiceUnits": {
-  "hpfSlope": "dB/oct",
-  "lpfSlope": "dB/oct"
- },
  "sections": [
   {
    "key": "filter",

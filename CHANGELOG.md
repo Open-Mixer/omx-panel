@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- A choice's unit is the descriptor's (#68): `panelLayout` reads omx-contract's descriptor `choiceUnits` (a choice control's
+  name to its unit), so the served description, the MOD GUI's curve and every host read the one unit the plugin declares.
+  The panel block's `choiceUnits` is retired: `schema/panel.schema.json` drops its `$defs.choiceUnits`, and `panelLayout`
+  refuses a `choiceUnits` option by name. A plugin that declared its slope's unit in its panel block declares it in its
+  descriptor.
+
 - The map table of `docs/modgui.md` ("The map: the console's vintage, element by element") is printed from
   `tools/look/console-map.json` by `tools/console-map-render.mjs` (#69), between two marker comments; `--check`,
   `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not what the map gives. The first

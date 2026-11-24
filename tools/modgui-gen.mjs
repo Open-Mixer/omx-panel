@@ -343,10 +343,10 @@ export function shapeDeclared(declared, tier, where) {
     kept = kept.map((s) => ({ ...s, controls: s.controls.filter((c) => (tiers[c] ?? 'advanced') === 'easy' || (dropped.add(c), false)) })).filter((s) => s.controls.length > 0);
   }
   const without = (o) => (o === undefined ? undefined : Object.fromEntries(Object.entries(o).filter(([k]) => !dropped.has(k))));
-  const { tiers: _t, choiceUnits: _u, ...rest } = declared;
+  const { tiers: _t, ...rest } = declared;
   const panel = { ...rest, sections: kept, ...(declared.visibleWhen ? { visibleWhen: without(declared.visibleWhen) } : {}), ...(declared.widgets ? { widgets: without(declared.widgets) } : {}) };
   const layoutPanel = { ...rest, sections: declared.sections.map(({ edges: _e, ...s }) => s) };
-  return { panel, layoutPanel, bands, choiceUnits: declared.choiceUnits ?? {} };
+  return { panel, layoutPanel, bands };
 }
 
 /** The panel of a descriptor, resolved: each section with its controls, each control its descriptor control's
@@ -357,7 +357,6 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
   const shaped = declared ? shapeDeclared(declared, tier, `modgui-gen: '${stem}'`) : null;
   declared = shaped?.layoutPanel;
-  const choiceUnits = shaped?.choiceUnits ?? {};
   let panel;
   try {
     panel = panelOf(descriptor, shaped?.panel, wantEasyFirst);
@@ -406,14 +405,14 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
   if (sections.some((sec) => sec.displays.length > 0)) {
-    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     for (const sec of sections) for (const dsp of sec.displays) dsp.curve = staticCurve(descriptor, x, dsp);
   }
   // the meters of the panel description (contract 7.9) that are no control of a section: a static frame with the description's
   // range, in a band below the sections (a live MOD GUI meter waits for its own spec). A foreign meter that is a control stays one.
   let meters = [];
   try {
-    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     const symbols = new Set(x.controls.map((c) => c.symbol));
     meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: m.unit, min: m.min, max: m.max, kind: m.kind }));
   } catch (err) {

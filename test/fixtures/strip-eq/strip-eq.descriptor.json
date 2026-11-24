@@ -1009,6 +1009,10 @@
  "latency": {
   "reports": true
  },
+ "choiceUnits": {
+  "HPF Slope": "dB/oct",
+  "LPF Slope": "dB/oct"
+ },
  "extensions": {
   "clap": {
    "clap_plugin_descriptor.features": [
