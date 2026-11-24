@@ -115,9 +115,10 @@ the switch:
 - a choice is a stepped number over its values' span. It carries one label per integer of the span only when every value is an
   integer (a sparse one, FFT sizes 128..16384, labels each integer between, up to a 16-bit span); a choice whose values lie
   between integers (0, 0.5, 1) is served unlabelled, its default rounded to an integer inside the ends;
-- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `panel.describe.no-controls`, `panel.describe.family-not-backed`, `panel.describe.layout-invalid`, a bar group's
+- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `panel.describe.no-controls`, `panel.describe.family-not-backed`, `panel.describe.family-unknown`, `panel.describe.layout-invalid`, a bar group's
 `PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `panel.describe.role-dropped`, `panel.describe.skin-dropped`. The description is `null` only where no panel can be
-made (no control, an invalid layout); a family the controls do not back is `none` with its refusal.
+made (no control, an invalid layout); a family the controls do not back is `none` with its refusal, and so is a family
+an override names that is no word of `PANEL_FAMILIES` (`panel.describe.family-unknown`, naming the plugin and the word).
 
 ### The family of a plugin that declares no panel
 

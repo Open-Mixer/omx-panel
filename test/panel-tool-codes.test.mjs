@@ -23,7 +23,7 @@ const D = 'panel.describe.';
 
 test('(a) the describe codes the tools raise are the golden ones', () => {
   assert.deepEqual({ ...DESCRIBE_CODES }, {
-    noControls: `${D}no-controls`, familyNotBacked: `${D}family-not-backed`, layoutInvalid: `${D}layout-invalid`,
+    noControls: `${D}no-controls`, familyNotBacked: `${D}family-not-backed`, familyUnknown: `${D}family-unknown`, layoutInvalid: `${D}layout-invalid`,
     overrideUnavailable: `${D}override-unavailable`, overrideRefused: `${D}override-refused`, overrideDropped: `${D}override-dropped`,
     roleDropped: `${D}role-dropped`, skinDropped: `${D}skin-dropped`, meterRefused: `${D}meter-refused`, paramUnserved: `${D}param-unserved`,
   });

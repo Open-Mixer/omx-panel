@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- `describe` refuses an override family that is no word of `PANEL_FAMILIES` (#199, ruling Z1 of omx-contract#161):
+  `panel.describe.family-unknown`, naming the plugin and the family, and the panel is `none`, as for a family the
+  controls do not back. omx-contract's override schema takes any identifier as a family; the words are the panel
+  domain's, read from it. The panel domain is 1.3.0.
+
 - The rules the JavaScript tools and the C renderer both apply are listed in docs/renderer.md ("The rules both languages
   apply", #76), each held by a vector both suites read: the visible columns, now with the drawn heads at a set count
   (`visible-columns.json` gains `count` entries), and the visibility rule (`test/fixtures/rules/visible-when.json`, new).
