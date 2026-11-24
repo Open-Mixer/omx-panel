@@ -389,8 +389,8 @@ store has:
 
 **The command** `omx-panel-store`: `get --sha256 .. --format .. --uri .. --json` (the entry and its layer), `put
 --sha256 .. --format .. --uri ..` (the entry as JSON on stdin, into the layer of the effective uid), `remove`, `check`
-(opens every layer, prints `ok` or the code), `build --in <dir> --out <file> --built-from <commit>` (the base, section
-6), `rules` (prints `OMX_PANEL_RULES_VERSION`, the one place a derivation outside C reads it from, so the `rules` an
+(opens every layer, prints `ok` or the code), `build --out <file> --built-from <commit>` (the base from the derived
+entries on stdin, section 6), `rules` (prints `OMX_PANEL_RULES_VERSION`, the one place a derivation outside C reads it from, so the `rules` an
 entry is put with is the reader's), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of
 a key no layer holds prints `null` and exits 0.
 
@@ -536,6 +536,24 @@ plugin its bundle's TTL), running the same derivation per input. It follows the 
 row-identical everywhere and byte-identical with the same SQLite; `built_from` from git or a substituted `BUILT_FROM`
 file, refused as `built-from-unknown` when neither. The package `omx-panel-descriptions` is noarch: a key carries its
 binary's hash, so one file serves every architecture. Its inputs (the reference sets' descriptors and TTL) live with the base package's build in omx-panel (section 14, 2).
+
+Ruled with lane 5 (2026-11-24), the builder and the package:
+
+- **Two halves, as for every write.** The derivation is omx-panel's JavaScript and the writer is C, so
+  `omx-panel base --in <dir> --out <file>` derives each input's entry (the same `describeStored`, verdict and codec as
+  `describe --plugin --store`) and hands them to `omx-panel-store build --out <file> --built-from <commit>`, which takes
+  them as a JSON array on stdin (`[{ sha256, format, uri, entry }]`) and writes the base: a new file, `page_size` 4096,
+  `journal_mode` `DELETE`, the entries in key order (`sha256`, `format`, `uri`), `VACUUM`, `user_version` last, written
+  beside `<file>` and renamed only when complete. Every word is checked as a put checks it.
+- **An input** is a directory under `base/inputs/`: `key.json` (`{ sha256, format, uri }`, the key of the reference
+  set's binary), `descriptor.json`, and for an LV2 plugin `bundle/` (its manifest and TTL: the groups are the
+  complement's verdict over it and the source its hash). Inputs are read in byte order of their names.
+- **`built_from`** is `base/BUILT_FROM` when it holds 40 hex digits (`$Format:%H$`, substituted by `git archive` through
+  `export-subst`), else `git rev-parse HEAD` of the inputs' tree, else the build is refused `built-from-unknown`.
+- **This lane ships `base/inputs/` empty.** An empty base is a base: the store opens, and the generators and plugin-hostd
+  read it. The reference sets' inputs arrive with their sets (lanes 15 and 16).
+- **The package** `omx-panel-descriptions` (RPM `BuildArch: noarch`, DEB `Architecture: all`) holds
+  `/usr/share/omx/panel/panel.sqlite` and nothing else; `omx-panel-store` recommends it.
 
 ### No unit is needed
 
