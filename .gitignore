@@ -6,3 +6,4 @@ dist/
 .git-push-failures.log
 store/build/
 __pycache__/
+base/build/
