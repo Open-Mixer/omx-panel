@@ -138,6 +138,13 @@ with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so t
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
 `vintage` clears 4.5:1 on every pair.
 
+**Ruled 2026-11-24 (#70): one home for the shared resources and for the shots.** The resources every bundle wears (the
+pinned serif in `tools/fonts/` with its licence, the look's script and stylesheet parts in `tools/look/`) have one home, this
+repository's `tools/`; each generated bundle carries a copy made from it at generation time, because a MOD GUI bundle is
+self-contained (MOD-UI serves a bundle's files from its own `modgui:resourcesDirectory`, and a bundle is copied to a device on
+its own). A font update or a look change is one change here and a regeneration. The MOD GUI screenshots have one home,
+`docs/shots/` here (its README says how each was taken); omx-plugins links to them and keeps no copy of its own.
+
 ## The map: the console's vintage, element by element
 
 The owner's rule: any vintage look goes into mod-ui, so the `vintage` look draws each console element in the console's own

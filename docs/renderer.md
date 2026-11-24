@@ -371,6 +371,14 @@ as RPM and DEB, for both architectures. The library itself needs only cJSON, omx
 meter view header and libm. All of these licences can be combined with this repository's GPL-3.0-or-later. The font, Inter, is
 under the SIL Open Font Licence, as the MOD GUI already ships it (`tools/fonts/Inter-LICENSE.txt`).
 
+**Ruled 2026-11-24 (#185, #186, #187).** pugl and NanoVG are channel layers with floors, never `pinned-rpms`: each is
+published by the channel from Open-Mixer/.github's packaging (`packaging/pugl`, `packaging/nanovg`), built inside-out before
+omx-panel (openmixer-ops `library-chain.txt` gains the two rows ahead of omx-panel's), and read here by floor, `pugl-devel >=
+0.5.9^20261102` and `nanovg-devel >= 0^20260219`, the versions those specs build. The `renderer-window` job installs them from
+the channel the day the channel serves them, and its `pinned-rpms` step goes. `libomx-panel-ui` is a binary package of
+omx-panel's own spec (`libomx-panel-ui` and `libomx-panel-ui-devel`, header `omx_panel_ui.h`), BuildRequires on those two
+floors, its own floor the plugin adapters declare; it is packaged with the library it ships (PR #184).
+
 ## Building and testing
 
 ```
