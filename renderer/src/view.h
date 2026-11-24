@@ -112,7 +112,7 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH, screw, screwInset;
 } geometry;
 
 typedef struct {
@@ -121,7 +121,17 @@ typedef struct {
 
 typedef struct {
   omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
+  /* what the look's style (looks[style] of look.json) sets over the roles, as the MOD GUI face wears it (tools/modgui-gen.mjs
+   * faceColours): the enclosure, the head plate, the head's rule and lamp, the screens, a pressed key, the screws, and each text's ink */
+  omx_rgb enclosure, head, rule, lamp, screen, pressed, screws, screwSlot, tBrand, tLabel, tSection, tControl, tValue, tKey, tScreen, tScreenDim;
 } palette;
+
+/* The plates of the look's style: which are drawn (a token that says `none` draws nothing), the body's corner radius (below 0: the
+ * geometry's) and the head plate's inset from the body's top and sides. */
+typedef struct {
+  int head, rule, sections, screws;
+  double radius, insetTop, insetSide;
+} plates;
 
 struct omx_panel_view {
   char **sections, **section_keys;
@@ -139,6 +149,7 @@ struct omx_panel_view {
   geometry g;
   textsizes t;
   palette col;
+  plates plates;
   omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
