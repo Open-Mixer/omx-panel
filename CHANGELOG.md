@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- `omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <file>] [--remote <file>] [--pages [--per-page
+  N]]` (#220): describe's output cut from a descriptions-store entry, for a client that is not Node.js (Zynthian's
+  engine). The answer `omx-panel-store get --json` prints is read by `storedOf` and cut by `describeFromStored`: a
+  derived entry prints byte for byte what `describe --descriptor` prints, an edited one prints the edit. It reads no
+  descriptor, and `--layout` beside it is a usage error: an entry holds no layout, so the drawn view stays derived. A
+  refused entry prints its code and exits 1.
+
 - The descriptions store's base is built and packaged (#168, descriptions store lane 5): `omx-panel base --in
   base/inputs --out <file>` derives each input and `omx-panel-store build` writes the file reproducibly (key order,
   page size 4096, VACUUM, user_version last, renamed when whole; byte-identical across builds with the same SQLite).

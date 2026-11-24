@@ -28,6 +28,20 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .br
 .B omx-panel
 .B describe
+.B \-\-stored
+.I answer.json
+.B \-\-format
+.BR lv2 | clap
+.RB [ \-\-skin
+.IR file ]
+.RB [ \-\-remote
+.IR file ]
+.RB [ \-\-pages
+.RB [ \-\-per\-page
+.IR N ]]
+.br
+.B omx-panel
+.B describe
 .B \-\-plugin
 .I target
 .RB [ \-\-descriptor
@@ -54,6 +68,26 @@ slots (eight when left out) by the one cut every surface uses, the skin applied 
 file's declared pages, as given, replacing the derived ones; with
 .B \-\-layout
 the layout the description was derived from, the family's displays included, which is what the panel renderer draws.
+.PP
+.B omx-panel describe \-\-stored
+.I answer.json
+prints the same output cut from a descriptions-store entry instead of a descriptor:
+.I answer.json
+is what
+.B omx-panel-store get \-\-json
+printed for a key of the
+.B \-\-format
+given, and the skin, the remote pages and the pages are applied to it as above, so a derived entry prints what
+.B describe \-\-descriptor
+prints and an edited one prints the edit. It reads no descriptor:
+.BR \-\-descriptor ,
+.BR \-\-panel ,
+.BR \-\-ns ,
+.B \-\-plugin
+and
+.B \-\-layout
+beside it are usage errors (an entry holds no layout, so a drawn view is still derived from the descriptor). A refused
+entry prints its code and its sentence and exits 1.
 .PP
 .B omx-panel describe \-\-plugin
 .I target
