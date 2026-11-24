@@ -99,6 +99,26 @@ test('the npm package exports the gesture parity scripts by name', () => {
   assert.ok(Array.isArray(JSON.parse(readFileSync(at, 'utf8')).scripts), 'the exported file holds no scripts');
 });
 
+// The console's server is a Node.js client of the descriptions store (docs/descriptions-store.md section 5, "The doors";
+// section 9): it reads an entry with `omx-panel-store get --json` and cuts it with describeFromStored (`./describe`). The
+// answer becomes what describeFromStored reads through storedOf, the one codec (tools/store-entry.mjs), so the package
+// exports it by name and a client never keeps a copy of the codec.
+test('the npm package exports the store codec by name, so a Node.js client reads an entry with the one storedOf', async () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  assert.deepEqual(pkg.exports['./store-entry'], { types: './dist/tools/store-entry.d.mts', default: './dist/tools/store-entry.mjs' }, "package.json exports no './store-entry'");
+  for (const f of Object.values(pkg.exports['./store-entry'])) assert.ok(existsSync(join(ROOT, f)), `${f} is not in the built package`);
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: ROOT, encoding: 'utf8' });
+  assert.equal(packed.status, 0, packed.stderr);
+  const files = JSON.parse(packed.stdout)[0].files.map((f) => f.path);
+  for (const f of ['dist/tools/store-entry.mjs', 'dist/tools/store-entry.d.mts']) assert.ok(files.includes(f), `the packed file list has no ${f}`);
+  // resolved through the exports map, as a consumer imports it: the codec itself, not a second one
+  const at = createRequire(join(ROOT, 'package.json')).resolve(`${pkg.name}/store-entry`);
+  assert.equal(at, join(ROOT, 'dist/tools/store-entry.mjs'));
+  const { storedOf } = await import(at);
+  const answer = { body: { family: 'none' }, groups_json: [], controls: [{ symbol: 'gain', key: 'gain', id: '7', group_key: null, governed: 0 }] };
+  assert.deepEqual(storedOf(answer, 'clap', 'p').controls, [{ ordinal: 0, symbol: 'gain', key: 'gain', id: 7, group_key: null, governed: 0 }]);
+});
+
 // tools/look.json is the one public source of the vintage tokens (docs/modgui.md "The look"): the package carries it
 // where its readers take it from. The build copies it into dist/ (tools/copy-data.mjs), npm packs dist/, the package
 // exports it by name, and `make install` copies dist/ whole to /usr/share/omx-panel, where the renderer's data

@@ -13,6 +13,10 @@
  *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut;
  *                                                        with --layout the derived layout it was made from, what the renderer
  *                                                        draws (no skin: a skin reorders the description, not the layout)
+ *   describe --stored <answer.json> --format <lv2|clap> [--skin <skin.json>] [--remote <file>] [--pages [--per-page N]]
+ *                                                        the same output cut from a descriptions-store entry: the answer
+ *                                                        omx-panel-store get --json printed, read by storedOf and cut by
+ *                                                        describeFromStored; no descriptor, no layout (an entry holds none)
  *   describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store
  *                                                        tools/describe-plugin.mjs: one plugin's entry in the descriptions
  *                                                        store, printed as the store's get answers it; derived, with the LV2
@@ -57,6 +61,7 @@ const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
+  + '       omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <skin.json>] [--remote <file>] [--pages [--per-page N]]\n'
   + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
   + '       omx-panel sync [--lv2-path <list>]   (the store half of omx-panel-sync)\n'
   + '       omx-panel base --in <inputs> --out <file>   (the descriptions store\'s base)\n'
@@ -171,6 +176,7 @@ async function describeCommand(argv) {
     const k = argv.indexOf(flag);
     return k >= 0 ? argv[k + 1] : undefined;
   };
+  if (argv.includes('--stored')) return describeStoredCommand(argv, opt);
   if (argv.includes('--plugin')) return describePluginCommand(argv, opt);
   const file = opt('--descriptor');
   if (!file) {
@@ -178,12 +184,7 @@ async function describeCommand(argv) {
     process.exit(2);
   }
   const { describe } = await import(join(TOOLS, 'describe.mjs'));
-  const raw = opt('--per-page');
-  const perPage = raw === undefined ? undefined : /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
-  if (perPage !== undefined && !(Number.isInteger(perPage) && perPage >= 1)) {
-    process.stderr.write(`omx-panel: --per-page must be a whole number of at least 1, not ${raw}\n`);
-    process.exit(2);
-  }
+  const perPage = perPageOf(opt('--per-page'));
   const wantLayout = argv.includes('--layout');
   if (wantLayout && (argv.includes('--pages') || opt('--skin'))) {
     process.stderr.write(USAGE);
@@ -198,19 +199,74 @@ async function describeCommand(argv) {
       remote: opt('--remote') ? json(opt('--remote')) : undefined,
       ns: opt('--ns'), where: file, perPage,
     });
-    if (argv.includes('--pages')) {
-      if (!out.description) {
-        for (const r of out.refusals) process.stderr.write(`omx-panel: ${said(r.code, r.args)}\n`);
-        process.exit(1);
-      }
-      process.stdout.write(`${JSON.stringify(out.description.pages, null, 2)}\n`);
-    } else if (wantLayout) {
-      if (!out.description) {
-        for (const r of out.refusals) process.stderr.write(`omx-panel: ${said(r.code, r.args)}\n`);
-        process.exit(1);
-      }
+    if (wantLayout) {
+      if (!out.description) refused(out.refusals);
       process.stdout.write(`${JSON.stringify(out.layout, (_k, v) => (typeof v === 'bigint' ? v.toString(16) : v), 2)}\n`);
-    } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    } else printDescribed(out, argv.includes('--pages'));
+  } catch (err) {
+    process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+/** `--per-page`'s value, a whole number of at least 1 (undefined when left out); anything else is a usage error. */
+function perPageOf(raw) {
+  const perPage = raw === undefined ? undefined : /^[0-9]+$/.test(raw) ? Number(raw) : NaN;
+  if (perPage !== undefined && !(Number.isInteger(perPage) && perPage >= 1)) {
+    process.stderr.write(`omx-panel: --per-page must be a whole number of at least 1, not ${raw}\n`);
+    process.exit(2);
+  }
+  return perPage;
+}
+
+/** Each refusal as its code and its en sentence, then exit 1: there is no description to print. */
+function refused(refusals) {
+  for (const r of refusals) process.stderr.write(`omx-panel: ${said(r.code, r.args)}\n`);
+  process.exit(1);
+}
+
+/** describe's output, one tail for a descriptor and a stored entry: `{ description, refusals }`, or with `pages` the pages alone. */
+function printDescribed(out, pages) {
+  if (!pages) return process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+  if (!out.description) refused(out.refusals);
+  process.stdout.write(`${JSON.stringify(out.description.pages, null, 2)}\n`);
+}
+
+/**
+ * The description cut from a descriptions-store entry (docs/descriptions-store.md section 11, zynthian-ui; #220), for a
+ * client that is not node: `<answer.json>` is what `omx-panel-store get --json` printed for a key of `--format`, read by
+ * `storedOf` and cut by `describeFromStored`, so the output is `describe`'s for the same inputs. It reads the answer, the
+ * skin and the remote pages and nothing else: a descriptor, a panel, a namespace or a plugin beside it is a usage error,
+ * and so is `--layout` (an entry holds no layout, so the drawn view stays derived). A refused entry prints its code and
+ * exits 1; the plugin its sentence names is the answer's file, since the answer carries no key.
+ */
+async function describeStoredCommand(argv, opt) {
+  const valued = new Set(['--stored', '--format', '--skin', '--remote', '--per-page']);
+  const value = (i) => argv[i] !== undefined && !argv[i].startsWith('--') && valued.has(argv[i - 1]);
+  const ok = argv.every((a, i) => a === '--pages' || (valued.has(a) && value(i + 1)) || value(i));
+  const format = opt('--format');
+  if (!ok || !['lv2', 'clap'].includes(format)) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const perPage = perPageOf(opt('--per-page'));
+  const file = opt('--stored');
+  const { describeFromStored } = await import(join(TOOLS, 'describe.mjs'));
+  const { storedOf } = await import(join(TOOLS, 'store-entry.mjs'));
+  try {
+    const json = (f) => JSON.parse(readFileSync(f, 'utf8'));
+    const answer = json(file);
+    const stored = storedOf(answer, format, file);
+    if (!stored) {
+      if (typeof answer?.refused !== 'string') throw new Error(`${file} is not an omx-panel-store get --json answer: no body and no refused code`);
+      refused([{ code: answer.refused, args: { plugin: file, message: 'the stored entry is a refusal' } }]);
+    }
+    const out = describeFromStored(stored, {
+      skin: opt('--skin') ? json(opt('--skin')) : undefined,
+      remote: opt('--remote') ? json(opt('--remote')) : undefined,
+      perPage,
+    });
+    printDescribed(out, argv.includes('--pages'));
   } catch (err) {
     process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
     process.exit(1);

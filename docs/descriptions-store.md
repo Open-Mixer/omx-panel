@@ -743,6 +743,18 @@ The plugin-hostd engine reads entries through `omx_panel_store.py` by `descripti
 `omx-panel describe --descriptor` per plugin (`zyngine/zynthian_engine_plugin_hostd.py:1092-1142`, `:1157-1200`,
 branch `openmixer`); the Tk drawing is zynthian-ui#93's. The pages and the skin come from `describeFromStored` over the stored entry (section 14, 1 and 8).
 
+The door for a client that is not Node.js is `omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <file>]
+[--remote <file>] [--pages [--per-page N]]` (omx-panel#220, the call zynthian-ui#99 makes). `<answer.json>` is the answer
+`omx-panel-store get --json` prints, read by `storedOf` and cut by `describeFromStored`: the output is `describe`'s, `{
+description, refusals }`, or the pages alone with `--pages`. It reads no descriptor and no other file, so `--descriptor`,
+`--panel`, `--ns` and `--plugin` beside it are usage errors (exit 2). A refused entry (`body` null) prints its `refused`
+code and its sentence and exits 1, as a refused derivation does; the plugin a sentence names is the answer's file, since
+the answer carries no key.
+
+The drawn view stays derived: `describe --stored --layout` is a usage error. An entry holds no layout and
+`describeFromStored` serves none, and a stored description drawn over a derived layout would draw two answers for one
+plugin. A stored layout is a schema change (section 14, 9), not a flag.
+
 ### The console
 
 The server reads the stored description by plugin-hostd's key, serves it, and keeps no derivation for a plugin the
