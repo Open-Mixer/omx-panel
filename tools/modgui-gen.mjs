@@ -187,12 +187,12 @@ export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', 
 /** A delay tap's leg as the letter above its stem: a tap that lands on both legs carries none. */
 export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
-/** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
- * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
- * three omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
-const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', dBPerOct: 'db' });
+/** omx-dsp's curve term units are the standard ids themselves (omx-dsp's CURVE_UNITS, DSP.words.units: the PARAM_UNITS id is
+ * the wire word, never a lower-case copy, omx-dsp#122): a role's standard id (tools/role-table.mjs) is sent as it is, but for
+ * a filter slope's dBPerOct, which the curve reads as the dB of a slope. An id the curve does not take is refused by name. */
+const DSP_UNIT_WORD = Object.freeze({ dBPerOct: 'dB' });
 function curveUnitOf(id) {
-  const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
+  const word = DSP_UNIT_WORD[id] ?? String(id);
   if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);
   return word;
 }

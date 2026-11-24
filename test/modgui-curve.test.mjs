@@ -28,7 +28,7 @@ test('a compressor\'s static curve is the twin\'s transfer curve at the come-up 
   const sec = resolvePanel(d, { panel, stem: 'x' }).sections[0];
   const want = curve.curvePoints({
     kind: 'transfer_curve', family: 'dynamics', ...STATIC_CURVE,
-    terms: [['threshold', 'dB', -18], ['ratio', 'ratio', 4]].map(([role, unit, value]) => ({ role, value, unit: unit === 'dB' ? 'db' : unit })),
+    terms: [['threshold', 'dB', -18], ['ratio', 'ratio', 4]].map(([role, unit, value]) => ({ role, value, unit })),
   });
   assert.equal(sec.displays[0].curve.points.length, want.points.length);
   assert.deepEqual(sec.displays[0].curve.points, want.points);
