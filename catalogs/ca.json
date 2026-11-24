@@ -23,6 +23,14 @@
       "text": "La vista {file} utilitza la paraula no permesa {word}; suprimiu-la i torneu a carregar l'aparença.",
       "by": "human"
     },
+    "panel.skin.override-refused": {
+      "text": "La personalització de {plugin} no és vàlida a {field} ({reason}); corregiu skin.json i torneu a carregar l'aparença.",
+      "by": "human"
+    },
+    "panel.skin.entry-missing": {
+      "text": "L'entrada {field} {entry} no és al paquet; torneu-la a carregar, o suprimiu l'aparença si continua fallant.",
+      "by": "human"
+    },
     "panel.modgui.not-found": {
       "text": "No s'ha trobat cap MOD GUI per importar a {file} ({detail}); no s'ha escrit res.",
       "by": "human"

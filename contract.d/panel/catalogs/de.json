@@ -489,6 +489,18 @@
       "model": "draft-prose",
       "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84"
     },
+    "PANEL_SKIN_CODES.panel.skin.override-refused": {
+      "text": "Die Überschreibung für {plugin} ist bei {field} ungültig ({reason}); korrigieren Sie skin.json und laden Sie das Skin neu.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ffd3a9cc7df6fa8701f33dbbf8b5950becd7d1447348f3c4690d7b74f7fa398c"
+    },
+    "PANEL_SKIN_CODES.panel.skin.entry-missing": {
+      "text": "Der Eintrag {field} {entry} ist nicht im Paket; laden Sie es neu, oder entfernen Sie das Skin, wenn der Fehler weiterhin auftritt.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e7003667e92f7c0e4370ca823589ad180b557ce4ab56aed32967b4b30b57da4c"
+    },
     "PANEL_MODGUI_CODES.panel.modgui.not-found": {
       "text": "Es wurde keine MOD GUI zum Importieren in {file} ({detail}) gefunden; nichts wurde geschrieben.",
       "by": "machine",
