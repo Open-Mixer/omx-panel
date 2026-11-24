@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.16.0
+Version: 0.16.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -293,6 +293,12 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.1-1
+- Fix: %check runs from the release tarball, which has no .git: the guard
+  against plugin-hostd's LV2 table reads the files itself (#207). The installed
+  tools check reads the panel domain this build staged for omx-panel-contract
+  (#208). 0.16.0 built no package.
+
 * Sun Nov 22 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.0-1
 - Sorting pass: V1, V2, V3, V4, V22 and V23d.
 

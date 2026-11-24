@@ -1,3 +1,14 @@
+omx-panel (0.16.1) unstable; urgency=medium
+
+  * Fix: the installed tools check in override_dh_auto_install reads the
+    panel domain this build moved to debian/tmp for omx-panel-contract. In
+    0.16.0 lv2-complement, modgui-gen and modgui-import refused to load
+    because no installed panel domain was there (#208). The guard against
+    plugin-hostd's LV2 table reads the files itself, so a build with no .git
+    runs it (#207). 0.16.0 built no package.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 24 Nov 2026 08:00:00 +0100
+
 omx-panel (0.16.0) unstable; urgency=medium
 
   * Sorting pass: V1, V2, V3, V4, V22 and V23d.
