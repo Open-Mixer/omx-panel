@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/panel",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -744,11 +744,10 @@
             "const": "panel.skin.override-invalid",
             "title": "skinOverrideInvalid",
             "x-code": 0,
-            "x-text": "The override for {plugin} is invalid at {field} ({reason}); fix skin.json and reload the skin.",
+            "x-text": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin.",
             "x-args": [
               "plugin",
-              "field",
-              "reason"
+              "field"
             ]
           },
           {
@@ -777,10 +776,9 @@
             "const": "panel.skin.view-error",
             "title": "skinViewError",
             "x-code": 3,
-            "x-text": "The {field} entry {entry} is not in the package; reload it, or remove the skin if it keeps failing.",
+            "x-text": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing.",
             "x-args": [
-              "field",
-              "entry"
+              "message"
             ]
           },
           {
@@ -791,6 +789,27 @@
             "x-args": [
               "word",
               "file"
+            ]
+          },
+          {
+            "const": "panel.skin.override-refused",
+            "title": "skinOverrideRefused",
+            "x-code": 5,
+            "x-text": "The override for {plugin} is invalid at {field} ({reason}); fix skin.json and reload the skin.",
+            "x-args": [
+              "plugin",
+              "field",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.skin.entry-missing",
+            "title": "skinEntryMissing",
+            "x-code": 6,
+            "x-text": "The {field} entry {entry} is not in the package; reload it, or remove the skin if it keeps failing.",
+            "x-args": [
+              "field",
+              "entry"
             ]
           }
         ]

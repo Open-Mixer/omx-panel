@@ -460,10 +460,10 @@
       "source": "646fe87a13d99ad9cb920ad6cbbac76cd71a57abcb5830bd1aab05f2e3a09d3d"
     },
     "PANEL_SKIN_CODES.panel.skin.override-invalid": {
-      "text": "A sobreposição para {plugin} é inválida em {field} ({reason}); corrija skin.json e recarregue o skin.",
+      "text": "A sobreposição para {plugin} é inválida em {field}; corrija skin.json e recarregue o skin.",
       "by": "machine",
       "model": "draft-prose",
-      "source": "ffd3a9cc7df6fa8701f33dbbf8b5950becd7d1447348f3c4690d7b74f7fa398c"
+      "source": "eab6928c6a32766a7c0347a00fa5480523e70ef3c63965d2c4732e63d3eba787"
     },
     "PANEL_SKIN_CODES.panel.skin.override-entry-dropped": {
       "text": "A entrada {entry} de {field} para {plugin} foi descartada ({reason}); o restante da sobreposição ainda se aplica.",
@@ -478,16 +478,28 @@
       "source": "192aef3f6089c428a49377ad97ee3b1517d62321c94226a485a8d9e1b87f1b67"
     },
     "PANEL_SKIN_CODES.panel.skin.view-error": {
-      "text": "A entrada {field} {entry} não está no pacote; recarregue-a, ou remova o skin se continuar falhando.",
+      "text": "A visualização do skin falhou: {message}. Recarregue-o ou remova o skin se continuar falhando.",
       "by": "machine",
       "model": "draft-prose",
-      "source": "e7003667e92f7c0e4370ca823589ad180b557ce4ab56aed32967b4b30b57da4c"
+      "source": "0244e35396bf647ce54d605cc4e811ec2c76aacfc6a95956eb1233dfd81db8c3"
     },
     "PANEL_SKIN_CODES.panel.skin.view-lint": {
       "text": "A visualização {file} usa a palavra proibida {word}; remova-a e recarregue o skin.",
       "by": "machine",
       "model": "draft-prose",
       "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84"
+    },
+    "PANEL_SKIN_CODES.panel.skin.override-refused": {
+      "text": "A sobreposição para {plugin} é inválida em {field} ({reason}); corrija skin.json e recarregue o skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ffd3a9cc7df6fa8701f33dbbf8b5950becd7d1447348f3c4690d7b74f7fa398c"
+    },
+    "PANEL_SKIN_CODES.panel.skin.entry-missing": {
+      "text": "A entrada {field} {entry} não está no pacote; recarregue-a, ou remova o skin se continuar falhando.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e7003667e92f7c0e4370ca823589ad180b557ce4ab56aed32967b4b30b57da4c"
     },
     "PANEL_MODGUI_CODES.panel.modgui.not-found": {
       "text": "Nenhum MOD GUI para importar foi encontrado em {file} ({detail}); nada foi escrito.",
