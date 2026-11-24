@@ -28,11 +28,11 @@ BuildRequires: omx-contract-data >= 3.22.0
 BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.21.0
-BuildRequires: omx-dsp-wasm >= 0.34.0
+BuildRequires: omx-contract >= 3.22.0
+BuildRequires: omx-dsp-wasm >= 0.34.1
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
-Requires: omx-contract >= 3.21.0
+Requires: omx-contract >= 3.22.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
@@ -48,8 +48,8 @@ BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
 # %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
-BuildRequires: omx-contract-devel >= 3.21.0
-BuildRequires: libomx-domain-devel >= 3.21.0
+BuildRequires: omx-contract-devel >= 3.22.0
+BuildRequires: libomx-domain-devel >= 3.22.0
 BuildRequires: pkgconfig(omxdsp) >= 0.34.0
 # the descriptions store (store/Makefile): SQLite at its floor (STRICT, json_valid), cJSON and libomx-domain above
 BuildRequires: sqlite-devel >= 3.38.0
@@ -62,7 +62,7 @@ Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
 Requires: plugin-db-contract >= 0.5.0
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.34.0
+Requires: omx-dsp-wasm >= 0.34.1
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -125,7 +125,7 @@ Summary: Header, link, pkg-config file and schema of the descriptions store
 Requires: omx-panel-store%{?_isa} = %{version}-%{release}
 Requires: sqlite-devel >= 3.38.0
 Requires: pkgconfig(libcjson)
-Requires: libomx-domain-devel >= 3.21.0
+Requires: libomx-domain-devel >= 3.22.0
 
 %description -n omx-panel-store-devel
 The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
