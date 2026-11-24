@@ -25,6 +25,7 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_set_choice;
     omx_panel_view_set_curve;
     omx_panel_view_set_handle;
+    omx_panel_view_set_head;
     omx_panel_view_set_hold;
     omx_panel_view_set_integer;
     omx_panel_view_set_marks;

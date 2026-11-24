@@ -4,7 +4,8 @@
  * The served matrix (docs/group-model.md, "The served matrix: one function, served once, read everywhere"): the group
  * model's servedMatrix is the one place the shape is made; `omx-panel describe` and `describe --layout` carry it on one
  * merged section titled by it, for every grouped plugin; the MOD GUI face draws THAT matrix, never one of its own; the
- * head row is always last and a caption has a row of its own; a count a visibleWhen rule governs is not served; and the
+ * head row is always first (L3, ruled omx-panel#121) and a caption has a row of its own; a cell whose parameter is not its
+ * row's carries its own caption in the row's `labels` (omx-panel#122); a count a visibleWhen rule governs is not served; and the
  * visible-column rule answers the cross-language vector (test/fixtures/group-model/visible-columns.json).
  */
 import assert from 'node:assert/strict';
@@ -52,9 +53,9 @@ for (const [name, file] of Object.entries(GROUPED)) {
     const s = l.sections[at[0]];
     const m = s.matrix;
     assert.equal(s.label, m.title, 'the section is titled by the served title');
-    assert.deepEqual(m.rows.at(-1).head, true, 'the head row is the last');
+    assert.deepEqual(m.rows[0].head, true, 'the head row is the first');
     assert.equal(m.rows.filter((r) => r.head).length, 1);
-    assert.deepEqual(m.cells.at(-1), m.heads.map((h) => h.on?.symbol ?? null), 'the head row\'s cells are the heads\' on/off');
+    assert.deepEqual(m.cells[0], m.heads.map((h) => h.on?.symbol ?? null), 'the head row\'s cells are the heads\' on/off');
     for (const sym of [...m.cells.flat().filter(Boolean), ...(m.count ? [m.count.symbol] : [])]) {
       const c = l.controls.find((x) => x.symbol === sym);
       assert.ok(c, `${sym} is a control of the layout`);
@@ -84,30 +85,30 @@ for (const name of ['omx-eq8', 'omx-strip', 'omx-delay', 'mbc']) {
   });
 }
 
-test('a head with no on/off has its caption in a row of its own, the last: omx-delay\'s taps never overprint the Gain row', () => {
+test('a head with no on/off has its caption in a row of its own, the first: omx-delay\'s taps never overprint the Gain row', () => {
   const file = GROUPED['omx-delay'];
   const m = served(file);
-  assert.deepEqual(m.rows.at(-1), { label: '', head: true });
-  assert.deepEqual(m.cells.at(-1), [null, null, null, null]);
+  assert.deepEqual(m.rows[0], { label: '', head: true });
+  assert.deepEqual(m.cells[0], [null, null, null, null]);
   const face = layout(resolvePanel(json(file), { stem: 'x' })).sections.find((s) => s.matrix);
   const gridYs = new Set(face.controls.filter((k) => m.cells.flat().includes(k.symbol)).map((k) => k.y));
   assert.ok(face.captions.length > 0);
   for (const cap of face.captions) assert.ok(!gridYs.has(cap.y), `caption '${cap.text}' at y ${cap.y} overprints a row of controls`);
-  assert.ok(face.captions.every((cap) => cap.y > Math.max(...gridYs)), 'the caption row is the last');
+  assert.ok(face.captions.every((cap) => cap.y < Math.min(...gridYs)), 'the caption row is the first');
 });
 
 /** An EQ whose declared panel governs each band by visibleWhen on its count (the visible-when strip). */
 function governedStrip() {
   const controls = [
     { symbol: 'eqOn', name: 'EQ', kind: 'toggle', default: true },
-    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: 8, step: 1, default: 4, unit: '', scale: 'linear' } },
+    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: 8, step: 1, default: 4, unit: 'none', scale: 'linear' } },
   ];
   const fields = ['Freq', 'Gain', 'Q', 'Type', 'On'];
   for (let n = 1; n <= 8; n++) {
     controls.push(
       { symbol: `b${n}Freq`, name: `${n} Freq`, kind: 'travel', travel: { min: 20, max: 20000, default: 1000, unit: 'Hz', scale: 'log' } },
       { symbol: `b${n}Gain`, name: `${n} Gain`, kind: 'travel', travel: { min: -18, max: 18, default: 0, unit: 'dB', scale: 'linear' } },
-      { symbol: `b${n}Q`, name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: '', scale: 'log' } },
+      { symbol: `b${n}Q`, name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: 'none', scale: 'log' } },
       { symbol: `b${n}Type`, name: `${n} Type`, kind: 'choice', ids: ['bell', 'shelf'], values: [0, 1], default: 'bell' },
       { symbol: `b${n}On`, name: `${n} On`, kind: 'toggle', default: true },
     );
@@ -140,7 +141,7 @@ test('visibleColumns and selectedColumn take the served matrix and never throw o
     assert.doesNotThrow(() => model.visibleColumns(m, { width: 500, column: GEOMETRY.cellW }), file);
     const sel = model.selectedColumn(m, 1);
     assert.equal(sel.cells.length, m.rows.length, file);
-    assert.equal(sel.cells.at(-1), sel.on?.symbol ?? null, `${file}: the head row is the column's last cell`);
+    assert.equal(sel.cells[0], sel.on?.symbol ?? null, `${file}: the head row is the column's first cell`);
   }
   const eq8 = served(GROUPED['omx-eq8']);
   assert.equal(model.selectedColumn(eq8, 0).edge, 'hpf');

@@ -11,8 +11,10 @@
   byte for byte, in the omx look (the colour roles of `schema/look-roles.json` at their defaults, the vintage tokens of `tools/look.json`) ([modgui.md](modgui.md)).
 - The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
   `/usr/local/lib/lv2` (`~/.lv2` for a user), one bundle per plugin, never touching a bundle that is not its own.
-  The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each
-  `plugin-qualify-sync` (a drop-in on that unit queues it when a scan finishes, only if enabled). `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
+  It runs by hand, or as a step of `omx-panel-sync`, the one pass that first stores each plugin's description in the
+  descriptions store ([descriptions-store.md](descriptions-store.md)); `omx-panel-sync.service`, enabled by default where
+  systemd exists, is a batch convenience that runs the pass after each `plugin-qualify-sync` (a drop-in on that unit
+  queues it when a scan finishes), and nothing depends on it. `omx-modgui-sync --check` says whether MOD-UI reads the folder. A plugin that cannot get a GUI never
   fails the run; `omx-modgui-sync(1)` has the directories, the exit status and the summary.
 - The group inference: `tools/group-infer.mjs` finds the port groups an LV2 plugin lacks from what it states (its own
   partial groups, designations, name and symbol prefixes, units, index runs, its MOD GUI), or says it cannot with
@@ -20,7 +22,8 @@
 - The group model: `tools/group-model.mjs` says which groups are one group repeated (bands, voices), as instances low to
   high holding the same parameters, or names why it cannot; the console, the Zynthian builder and the MOD GUI draw a
   repeated group as one aligned matrix, an EQ always horizontal ([group-model.md](group-model.md)).
-- The complement: `omx-complement-sync` (`omx-panel complement`) carries those groups to lilv, for jalv on the Zynthian
+- The complement: `omx-complement-sync` (`omx-panel complement`) carries the groups the descriptions store holds (inferred
+  once, by `omx-panel describe --plugin --store`) to lilv, for jalv on the Zynthian
   touchscreen: for an installed bundle with a plugin to group it writes, beside omx-modgui-sync's GUIs, a bundle that
   restates the installed TTL, adds the groups and raises `lv2:microVersion` by one, so lilv loads it in place of the
   installed one. The installed files are never touched; a marker makes a second run write nothing, a run removes the

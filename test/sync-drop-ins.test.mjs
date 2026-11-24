@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-// The drop-ins omx-panel ships for plugin-qualify-sync.service (systemd/plugin-qualify-sync.service.d/) queue an opt-in
-// unit after each good sync. Each ExecStartPost command, run under a systemctl that answers as the machine would:
-// with its unit disabled (the package's default) it exits 0 and starts nothing, so a good sync never reports a failed
+// The drop-in omx-panel ships for plugin-qualify-sync.service (systemd/plugin-qualify-sync.service.d/) queues the one
+// pass's unit after each good sync, when it is enabled (the default where systemd exists; an administrator may disable it). Each ExecStartPost command, run under a systemctl that answers as the machine would:
+// with its unit disabled it exits 0 and starts nothing, so a good sync never reports a failed
 // post step (plugin-qualify#56: "ExecStartPost exits 1" after every sync on a Raspberry Pi 5); with it enabled it
 // queues the unit with --no-block and exits 0.
 import assert from 'node:assert/strict';
@@ -36,8 +36,8 @@ function run(script, enabled) {
 
 const dropIns = readdirSync(DIR).filter((f) => f.endsWith('.conf')).sort();
 
-test('the drop-ins are there to hold: one per opt-in unit omx-panel ships', () => {
-  assert.deepEqual(dropIns, ['omx-complement-sync.conf', 'omx-modgui-sync.conf']);
+test('the drop-in is there to hold: one, for the one pass\'s unit', () => {
+  assert.deepEqual(dropIns, ['omx-panel-sync.conf']);
 });
 
 for (const f of dropIns) {

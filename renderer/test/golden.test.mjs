@@ -29,14 +29,16 @@ const READINGS = { gr: { fraction: 0.4, text: '8 dB' }, outlevel: { fraction: 0.
 for (const fx of FIXTURES) {
   for (const [sizeName, size] of SIZES) {
     // a fixture with a committed MOD GUI screenshot has its natural size held by parity.test.mjs, exact against the screenshot and the face
-    if (sizeName === 'natural' && fx.screenshot) continue;
+    // (the served omx-delay too: parity.test.mjs holds it exact against the same face)
+    if (sizeName === 'natural' && (fx.screenshot || FIXTURES.find((f) => f.name === fx.goldenOf)?.screenshot)) continue;
     for (const scale of SCALES) {
-      const file = join(GOLDEN, `${fx.name}-${sizeName}@${scale}x.png`);
+      // a fixture drawn as another is (`goldenOf`: the served omx-delay) is held to that one's images
+      const file = join(GOLDEN, `${fx.goldenOf ?? fx.name}-${sizeName}@${scale}x.png`);
       test(`${fx.name}, ${sizeName}, ${scale}x: the golden image`, () => {
         const dir = scratch();
         const readings = Object.fromEntries(Object.entries(READINGS).filter(([sym]) => fx.descriptor.includes('zamcomp') && sym));
         const drawn = render(descriptionFile(fx, dir), stateFile(fx, dir, readings), { scale, ...(size ? { size: size.map((n) => n * scale) } : {}) });
-        if (UPDATE || !existsSync(file)) {
+        if ((UPDATE && !fx.goldenOf) || !existsSync(file)) {
           assert.ok(UPDATE, `no golden image ${file}: write it with OMX_PANEL_RENDER_UPDATE=1`);
           mkdirSync(GOLDEN, { recursive: true });
           writeFileSync(file, encodePng(drawn));

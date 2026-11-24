@@ -25,7 +25,7 @@ try {
   const curve = await loadCurve(await readFile(join(dir, 'wasm/omx-dsp.wasm')));
   const { points } = curve.curvePoints({
     kind: 'transfer_curve', family: 'dynamics', sampleRate: 48000, points: 128,
-    terms: [{ role: 'threshold', value: -18, unit: 'db' }, { role: 'ratio', value: 4, unit: 'ratio' }],
+    terms: [{ role: 'threshold', value: -18, unit: 'dB' }, { role: 'ratio', value: 4, unit: 'ratio' }],
   });
   const top = points.at(-1);
   if (!(Math.abs(top.x) < 1e-6 && Math.abs(top.y + 13.5) < 1e-6)) fail(`${link} answers (${top.x}, ${top.y}) at the top, not (0, -13.5)`);

@@ -94,9 +94,12 @@ test('make install-contract installs the domain as it is, by omx-contract\'s dom
   for (const c of readdirSync(join(DOMAIN, 'catalogs'))) {
     assert.equal(readFileSync(join(installed, 'catalogs', c), 'utf8'), readFileSync(join(DOMAIN, 'catalogs', c), 'utf8'), c);
   }
-  // the gestures domain is installed beside it, byte for byte (docs/contract-domains.md)
-  assert.deepEqual(readdirSync(join(dest, 'contract.d/gestures')), ['gestures.json']);
+  // the gestures domain is installed beside it, byte for byte, its catalogs with it (docs/contract-domains.md)
+  assert.deepEqual(readdirSync(join(dest, 'contract.d/gestures')).sort(), ['catalogs', 'gestures.json']);
   assert.equal(readFileSync(join(dest, 'contract.d/gestures/gestures.json'), 'utf8'), readFileSync(join(ROOT, 'contract.d/gestures/gestures.json'), 'utf8'));
+  for (const c of readdirSync(join(ROOT, 'contract.d/gestures/catalogs'))) {
+    assert.equal(readFileSync(join(dest, 'contract.d/gestures/catalogs', c), 'utf8'), readFileSync(join(ROOT, 'contract.d/gestures/catalogs', c), 'utf8'), c);
+  }
   const words = doc.components.schemas.PANEL_PLACEMENTS.oneOf.map((e) => e.const);
   const o = run([...command('OMX_DOMAIN_CLI', 'omx-domain'), 'panel', doc.info.version, 'PANEL_PLACEMENTS'], {
     env: { ...process.env, OMX_CONTRACT_PATH: join(dest, 'contract.d') },

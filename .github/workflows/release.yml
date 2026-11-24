@@ -83,10 +83,10 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.21.0' 'plugin-db-contract >= 0.5.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.22.0' 'plugin-db-contract >= 0.5.0'
           # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
           # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.21.0' 'omx-contract-devel >= 3.21.0' 'libomx-domain-devel >= 3.21.0'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.22.0' 'omx-contract-devel >= 3.22.0' 'libomx-domain-devel >= 3.22.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -138,7 +138,7 @@ jobs:
       package-name: omx-panel
       # omx-panel, the renderer's shared library with its development files, the descriptions store (its library and
       # command, and its development files) and the panel domain (each installed by the install checks)
-      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-contract
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-descriptions omx-panel-contract
       publish: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
@@ -155,7 +155,7 @@ jobs:
       same-pass: ${{ inputs.same_pass || needs.samepass.outputs.list }}
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-descriptions omx-panel-contract
       publish: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

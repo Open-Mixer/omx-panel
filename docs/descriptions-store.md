@@ -389,9 +389,10 @@ store has:
 
 **The command** `omx-panel-store`: `get --sha256 .. --format .. --uri .. --json` (the entry and its layer), `put
 --sha256 .. --format .. --uri ..` (the entry as JSON on stdin, into the layer of the effective uid), `remove`, `check`
-(opens every layer, prints `ok` or the code), `build --in <dir> --out <file> --built-from <commit>` (the base, section
-6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of a key no layer holds prints
-`null` and exits 0.
+(opens every layer, prints `ok` or the code), `build --out <file> --built-from <commit>` (the base from the derived
+entries on stdin, section 6), `rules` (prints `OMX_PANEL_RULES_VERSION`, the one place a derivation outside C reads it from, so the `rules` an
+entry is put with is the reader's), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of
+a key no layer holds prints `null` and exits 0.
 
 ## 6. Producers
 
@@ -422,6 +423,49 @@ store first and prints the entry it finds, writing nothing. Else it takes the de
 `bin/omx-modgui-sync:16-19`), infers the LV2 groups as `tools/lv2-complement.mjs:227-228` does, derives the description
 over them (section 3.4), writes the entry through `omx-panel-store put` and prints it. `--sha256` is the binary's hash
 when the caller has it; else the command hashes the binary by the same rule. One plugin, never a scan.
+
+Ruled with lane 3 (2026-11-24), the call's details:
+
+- `--plugin` is only ever given with `--store`; without it the call is a usage error (exit 2), never a derivation that
+  quietly writes nothing.
+- An LV2 target's bundle is the first on `LV2_PATH` (else plugin-hostd's list, `/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2`)
+  whose manifest declares the URI; its binary is the bundle's `lv2:binary` for it, its `source` the bundle
+  (`omx-panel-store source --format lv2 --path <bundle>`). A CLAP target's binary is its path, its `source` the descriptor.
+- The groups are `tools/lv2-complement.mjs`'s verdict for that one plugin (`verdictOf`, the function `planBundle` runs per
+  plugin), so the complement and the store hold one inference. An inference rule is stored as its `PANEL_GROUP_RULES`
+  word (rule 1 `own` to rule 6 `modgui`, a repeated instance's group `instance`); `declared` is 1 for `own` only.
+- ONE codec between `describeStored` and the store, `tools/store-entry.mjs`: `entryOf` makes the JSON `put` takes, and
+  `storedOf` turns a `get` answer back into what `describeFromStored` reads. The `groups` column holds the repeated
+  groups as `describeStored` gives them (an array). A control's `id` column is text: a CLAP parameter id (a `uint32`) is
+  stored as its decimal digits and `storedOf` reads it back as a number for a `clap` key; an LV2 id is its symbol.
+- A refused derivation is stored with `family` `none` and `fingerprint` 64 zeros: no layout was made, and the columns
+  are `NOT NULL`.
+- The answer printed is always a `get` answer: after a `put` the command reads the key back and prints that, so a caller
+  sees one form whichever layer answered and the round trip through the store is what it reads.
+
+Ruled with lane 4 (2026-11-24), the generators and the pass:
+
+- **The complement reads the store.** `omx-panel complement` (so `omx-complement-sync`) takes each LV2 plugin's verdict
+  from `omx-panel describe --plugin lv2:<uri> --store`: the entry a layer holds, or the one that call derives and writes
+  when none does. It writes the stored groups, never its own inference of a stored key. A stored group with `declared` 1
+  keeps the plugin's own node: the `pg:group` its member ports state.
+- **No store** is the store command not on `PATH`, or no base (`panel-store.absent`, as plugin-hostd reads it, 3.5): the
+  complement infers as before and says so once. A plugin the call finds no descriptor for has no entry to read: it is
+  inferred from its TTL as before and counted `no-entry`. Any other refusal of the store refuses that plugin's
+  complement by name (`store-refused`), never a silent inference.
+- **`omx-modgui-sync`** still draws from the descriptor in this lane: it infers no group. Its toolkit files from the
+  stored entry come with `gui-stage` (lanes 14 and 17).
+- **`omx-panel-sync`**, the one pass: each LV2 plugin on `LV2_PATH`, `omx-panel describe --plugin lv2:<uri> --store`
+  once; then the prune; then `omx-complement-sync` and `omx-modgui-sync`, each from `PATH`. Exit 0 when every step
+  did, 1 naming each step that did not. It never runs `systemctl`.
+- **The prune.** `omx-panel-store list` prints the keys of the layer of the effective uid (`sha256`, `format`, `uri`,
+  tab-separated, one per line). The pass removes from that layer each `lv2` key that is not installed now: no bundle on
+  `LV2_PATH` declares the URI, or its binary's SHA-256 is another. No other layer is opened for writing. CLAP keys are
+  not pruned until the pass enumerates CLAP plugins (it does not in this lane).
+- **One unit.** `omx-panel-sync.service` replaces `omx-modgui-sync.service` and `omx-complement-sync.service`, and one
+  drop-in `plugin-qualify-sync.service.d/omx-panel-sync.conf` replaces their two (no old name kept: development has
+  no compatibility machinery). It is enabled by default where systemd exists: the RPM's preset
+  `80-omx-panel.preset` and `%systemd_post`, the DEB's `dh_installsystemd` enabling it. Nothing depends on it.
 
 ### Generated files: shipped key-gated for known sets, generated locally otherwise
 
@@ -492,6 +536,24 @@ plugin its bundle's TTL), running the same derivation per input. It follows the 
 row-identical everywhere and byte-identical with the same SQLite; `built_from` from git or a substituted `BUILT_FROM`
 file, refused as `built-from-unknown` when neither. The package `omx-panel-descriptions` is noarch: a key carries its
 binary's hash, so one file serves every architecture. Its inputs (the reference sets' descriptors and TTL) live with the base package's build in omx-panel (section 14, 2).
+
+Ruled with lane 5 (2026-11-24), the builder and the package:
+
+- **Two halves, as for every write.** The derivation is omx-panel's JavaScript and the writer is C, so
+  `omx-panel base --in <dir> --out <file>` derives each input's entry (the same `describeStored`, verdict and codec as
+  `describe --plugin --store`) and hands them to `omx-panel-store build --out <file> --built-from <commit>`, which takes
+  them as a JSON array on stdin (`[{ sha256, format, uri, entry }]`) and writes the base: a new file, `page_size` 4096,
+  `journal_mode` `DELETE`, the entries in key order (`sha256`, `format`, `uri`), `VACUUM`, `user_version` last, written
+  beside `<file>` and renamed only when complete. Every word is checked as a put checks it.
+- **An input** is a directory under `base/inputs/`: `key.json` (`{ sha256, format, uri }`, the key of the reference
+  set's binary), `descriptor.json`, and for an LV2 plugin `bundle/` (its manifest and TTL: the groups are the
+  complement's verdict over it and the source its hash). Inputs are read in byte order of their names.
+- **`built_from`** is `base/BUILT_FROM` when it holds 40 hex digits (`$Format:%H$`, substituted by `git archive` through
+  `export-subst`), else `git rev-parse HEAD` of the inputs' tree, else the build is refused `built-from-unknown`.
+- **This lane ships `base/inputs/` empty.** An empty base is a base: the store opens, and the generators and plugin-hostd
+  read it. The reference sets' inputs arrive with their sets (lanes 15 and 16).
+- **The package** `omx-panel-descriptions` (RPM `BuildArch: noarch`, DEB `Architecture: all`) holds
+  `/usr/share/omx/panel/panel.sqlite` and nothing else; `omx-panel-store` recommends it.
 
 ### No unit is needed
 

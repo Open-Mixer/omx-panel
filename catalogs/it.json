@@ -212,6 +212,66 @@
       "by": "machine",
       "model": "lane-draft",
       "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
+    "panel.gesture.read-only": {
+      "text": "Un controllo di sola lettura non accetta alcun gesto.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f97c076b01b3e90f20c1ec5d801c09c5fc5c5c9acf9ad7d91420b01821f14fe9"
+    },
+    "panel.gesture.control-owned": {
+      "text": "Il controllo appartiene al puntatore, o alla presa del passo a passo, che lo tiene; una pressione successiva viene rifiutata.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8081b8e79f7e0724effcb17723a5ba8f5f25c5de4f441f8f1571d9eda6b300ea"
+    },
+    "panel.gesture.no-default": {
+      "text": "Un ripristino su un controllo che non dichiara alcun valore predefinito.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "643188a4251b0a035b579bd6fdbde9437c498d2f3a8e9734c3fd27e5749c3079"
+    },
+    "panel.gesture.not-in-table": {
+      "text": "Il widget non ha questo ingresso nella tabella.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ff909491d49fc442e3b9aacc4a6b6638e73e7bbacad395699cfabe27ead753f4"
+    },
+    "panel.gesture.hold-short": {
+      "text": "Un controllo contrassegnato come tenuta è stato rilasciato prima della tenuta di sicurezza.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "89e31ee4a7ef5c9ebf188b0c1d2a3e272cc774a87d0df2ddf16c0f8b0c58933a"
+    },
+    "panel.gesture.hold-below-floor": {
+      "text": "Una tenuta di sicurezza più breve del minimo dichiarato.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "59fae1e49f35a53db18a09e1f750b5daab598068584479b585c8d9427c051f45"
+    },
+    "panel.gesture.no-target": {
+      "text": "Un passo senza barra né membro di maniglia che lo riceva.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "958f360c78fe4b2688e793363e86efbc616bcbf4b33a5c469af9b0f4b4e35b82"
+    },
+    "panel.gesture.paint-required-on-touch": {
+      "text": "Dipingere è obbligatorio al tocco e non si può disattivare.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "7ae1671808b774711614d8240a75c859930aa8fd8a43e651f03b9d482f37499e"
+    },
+    "panel.gesture.bad-setting": {
+      "text": "Una temporizzazione sconosciuta, o una non maggiore di zero.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "226df5d144430e5f7a390e0d9e45a24020541fc6f247a74149e1ad7277f750ea"
+    },
+    "panel.gesture.bad-input": {
+      "text": "Un ingresso che nessuno dei due riferimenti sa leggere: un controllo la cui corsa non ha estremi, un estremo non superiore all'altro, una corsa logaritmica da zero, un passo negativo, una lunghezza disegnata non maggiore di zero o un bersaglio senza dimensione; un evento senza tempo o senza nessuno dei sei tipi, una pressione senza posizione, identificativo o tipo di puntatore, un numero di scatti che non è un numero.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "87eb2d1171ef7282ab045ab52ec2fd6406682d516c4ea9cb5d86a015f52623cf"
     }
   }
 }

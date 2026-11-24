@@ -38,7 +38,7 @@ import { inferBands } from './meaning-infer.mjs';
 import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
-import { panelCodes } from './vocabulary.mjs';
+import { panelCodes, unitSymbolOf } from './vocabulary.mjs';
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's: the panel domain's PANEL_DESCRIBE_CODES. */
 const CODE = panelCodes('PANEL_DESCRIBE_CODES');
@@ -160,7 +160,7 @@ export function servedParamOf(c, { factor = false } = {}) {
     return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min, max, default: Math.min(max, Math.max(min, Math.round(fallback))), ...(enumLabels ? { enumLabels } : {}) };
   }
   const t = c.travel;
-  const stated = t.unit && t.unit !== 'unknown';
+  const stated = t.unit && t.unit !== 'unknown' && t.unit !== 'none';
   const token = factor && !stated ? 'coef' : unitToken(t.unit);
   const stepped = t.scale === 'stepped' || (t.step ?? 0) >= 1;
   // log over a floor at or below zero is served linear (contract.override.scale-floor)
@@ -169,7 +169,7 @@ export function servedParamOf(c, { factor = false } = {}) {
   const at = typeof t.default === 'number' && t.default >= t.min && t.default <= t.max ? t.default : t.min;
   return {
     kind: 'number', symbol, name, unit: token ?? 'none',
-    ...(token === undefined && t.unit && t.unit !== 'unknown' ? { unitText: t.unit } : {}),
+    ...(token === undefined && stated ? { unitText: unitSymbolOf(t.unit) } : {}),
     scale, step: stepped ? Math.max(1, t.step ?? 1) : 0, min: t.min, max: t.max,
     default: stepped ? Math.min(t.max, Math.max(t.min, Math.round(at))) : at,
   };
@@ -297,7 +297,8 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: [...layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })), ...textControls],
     // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
-    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
+    // unitText is the unit as a person reads it, its x-symbol: the caption a renderer draws (the unit stays the id)
+    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, unitText: unitSymbolOf(m.unit), min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };

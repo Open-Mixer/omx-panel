@@ -74,3 +74,38 @@ test('the sabotage arm: a spec without the CLI build dependency is red', () => {
   const control = read('debian/control').replace(`omx-dsp-wasm (>= ${WASM_FLOOR}~)`, '');
   assert.equal(buildDepends(control).some((d) => d.startsWith('omx-dsp-wasm')), false);
 });
+
+// omx-panel#118: ci.yml's package jobs prove the build dependencies: the RPM job installs them with `dnf builddep` on the
+// spec and lets rpmbuild check them (no --nodeps); the DEB job installs them with `apt-get build-dep` on the source and
+// lets dpkg-buildpackage check them (no -d). A floor the channel does not serve is red there, never built around.
+/** The text of one ci.yml job (from its key to the next job key), its comment lines left out. */
+function ciJob(ci, key) {
+  const m = ci.match(new RegExp(`^  ${key}:\\n([\\s\\S]*?)(?=^  [\\w-]+:\\n|(?![\\s\\S]))`, 'm'));
+  return m ? m[1].split('\n').filter((l) => !/^\s*#/.test(l)).join('\n') : '';
+}
+/** What makes a package job skip its build dependencies, by name. */
+function skipsBuildDeps(ci) {
+  const out = [];
+  const rpm = ciJob(ci, 'packages');
+  const deb = ciJob(ci, 'packages-deb');
+  if (!rpm || !deb) out.push('ci.yml has no packages or packages-deb job');
+  if (/rpmbuild[^\n]*--nodeps/.test(rpm)) out.push('packages: rpmbuild --nodeps');
+  if (!/dnf builddep[^\n]*packaging\/omx-panel\.spec/.test(rpm)) out.push('packages: no dnf builddep on the spec');
+  if (/dpkg-buildpackage[^\n]*\s-d(\s|$)/.test(deb)) out.push('packages-deb: dpkg-buildpackage -d');
+  if (!/apt-get[^\n]*build-dep/.test(deb)) out.push('packages-deb: no apt-get build-dep');
+  return out;
+}
+
+test('ci.yml\'s package jobs resolve and check the build dependencies (#118)', () => {
+  assert.deepEqual(skipsBuildDeps(read('.github/workflows/ci.yml')), []);
+});
+
+test('the sabotage arm: a package job built with --nodeps or -d is red (#118)', () => {
+  const ci = read('.github/workflows/ci.yml');
+  const rpm = ci.replace(/rpmbuild -bb /, 'rpmbuild -bb --nodeps ');
+  assert.notEqual(rpm, ci, 'the plant did not land');
+  assert.ok(skipsBuildDeps(rpm).includes('packages: rpmbuild --nodeps'));
+  const deb = ci.replace(/dpkg-buildpackage -b /, 'dpkg-buildpackage -d -b ');
+  assert.notEqual(deb, ci, 'the plant did not land');
+  assert.ok(skipsBuildDeps(deb).includes('packages-deb: dpkg-buildpackage -d'));
+});

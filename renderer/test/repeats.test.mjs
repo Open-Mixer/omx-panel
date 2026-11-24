@@ -124,7 +124,7 @@ test('a matrix that names a control that is not there is refused, naming it', ()
 });
 
 test('a matrix that places a control twice is refused, naming it', () => {
-  const r = refused((d) => { const mx = matrixOf(d); mx.cells[0][1] = mx.cells[0][0]; });
+  const r = refused((d) => { const mx = matrixOf(d); mx.cells[1][1] = mx.cells[1][0]; });
   assert.notEqual(r.status, 0);
   assert.match(r.err, /b1_thresh.*twice/);
 });
@@ -153,26 +153,26 @@ test('rows align across the columns: the HPF and LPF share the band freq row, th
   assert.ok(y('b1_freq') < y('b1_gain') && y('b1_gain') < y('b1_q') && y('b1_q') < y('b1_type'), 'freq, gain, q, type');
 });
 
-test("'On' is drawn once, as the last row of its column, and the head row is the heads' on/off, never a second control", () => {
+test("'On' is drawn once, as the first row of its column, and the head row is the heads' on/off, never a second control", () => {
   const { doc, cells } = drawn(EQ8);
   const mx = matrixOf(doc);
   assert.equal(mx.rows.filter((r) => r.head).length, 1);
-  assert.ok(mx.rows.at(-1).head, 'the head row is last');
-  assert.deepEqual(mx.cells.at(-1), mx.heads.map((h) => h.on?.symbol ?? null));
+  assert.ok(mx.rows[0].head, 'the head row is first');
+  assert.deepEqual(mx.cells[0], mx.heads.map((h) => h.on?.symbol ?? null));
   assert.equal(doc.controls.filter((k) => k.symbol === 'b3_on').length, 1);
   for (const [i, h] of mx.heads.entries()) {
-    const lowest = Math.max(...mx.cells.flatMap((l) => (l[i] ? [cells.get(l[i])[1]] : [])));
-    assert.equal(cells.get(h.on.symbol)[1], lowest, `${h.label}: On is the column's last row`);
+    const highest = Math.min(...mx.cells.flatMap((l) => (l[i] ? [cells.get(l[i])[1]] : [])));
+    assert.equal(cells.get(h.on.symbol)[1], highest, `${h.label}: On is the column's first row`);
   }
   const ys = mx.heads.map((h) => cells.get(h.on.symbol)[1]);
   assert.equal(new Set(ys).size, 1);
 });
 
 test("a head row that differs from the heads' on/off is refused; so are two head rows", () => {
-  let r = refused((d) => { const mx = matrixOf(d); mx.cells.at(-1)[0] = mx.cells.at(-1)[1]; });
+  let r = refused((d) => { const mx = matrixOf(d); mx.cells[0][0] = mx.cells[0][1]; });
   assert.notEqual(r.status, 0);
   assert.match(r.err, /head row/);
-  r = refused((d) => { const mx = matrixOf(d); mx.rows[0].head = true; });
+  r = refused((d) => { const mx = matrixOf(d); mx.rows[1].head = true; });
   assert.notEqual(r.status, 0);
   assert.match(r.err, /head row/);
 });
@@ -211,27 +211,27 @@ test('a head whose on/off is not a { symbol, sense } object is refused: a bare s
   assert.match(r.err, /not a \{ symbol, sense \} object/);
 });
 
-test('a head row that is not the last row is refused', () => {
-  const r = refused((d) => { const mx = matrixOf(d); mx.rows.unshift(mx.rows.pop()); mx.cells.unshift(mx.cells.pop()); });
+test('a head row that is not the first row is refused (L3, omx-panel#121)', () => {
+  const r = refused((d) => { const mx = matrixOf(d); mx.rows.push(mx.rows.shift()); mx.cells.push(mx.cells.shift()); });
   assert.notEqual(r.status, 0);
   assert.match(r.err, /head row/);
 });
 
-test('a matrix with no head row is refused: the served matrix always ends with one', () => {
-  const r = refused((d) => { const mx = matrixOf(d); mx.rows.pop(); mx.cells.pop(); mx.heads.forEach((h) => { h.on = null; }); });
+test('a matrix with no head row is refused: the served matrix always opens with one', () => {
+  const r = refused((d) => { const mx = matrixOf(d); mx.rows.shift(); mx.cells.shift(); mx.heads.forEach((h) => { h.on = null; }); });
   assert.notEqual(r.status, 0);
   assert.match(r.err, /head row/);
 });
 
-test('heads with no on/off: their captions have a row of their own, the last, and no row of controls is moved (four delay taps)', () => {
+test('heads with no on/off: their captions have a row of their own, the first, and no row of controls is moved (four delay taps)', () => {
   const { doc, cells } = drawn(TAPS);
   const mx = matrixOf(doc);
-  assert.deepEqual(mx.rows.at(-1), { label: '', head: true });
+  assert.deepEqual(mx.rows[0], { label: '', head: true });
   const face = modgui.layout(resolved(TAPS)).sections.find((s) => s.matrix);
   const captions = face.captions.map((cap) => face.y + cap.y);
   const rows = [...cells.entries()].filter(([sym, r]) => r && mx.cells.flat().includes(sym)).map(([, r]) => r[1]);
   assert.ok(captions.length > 0, 'the face draws the captions');
-  for (const y of captions) assert.ok(y > Math.max(...rows), `a caption at y ${y} is not below every row of controls`);
+  for (const y of captions) assert.ok(y < Math.min(...rows), `a caption at y ${y} is not above every row of controls`);
   // the renderer draws the section as tall as the face's: the caption's row is in it (parity holds every pixel of it)
   const r = rects(descriptionFile(TAPS, scratch()));
   assert.ok(r.length > 0);

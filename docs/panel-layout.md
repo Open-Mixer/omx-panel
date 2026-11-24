@@ -25,13 +25,12 @@ with labelled values a `choice`, every other parameter a `travel` with the decla
 ## Units
 
 A control's unit is the descriptor's `travel.unit`, read as its standard id (omx-contract's PARAM_UNITS, its param
-domain: `%` is `percent`, `dB/oct` is `dB-oct`; sorting pass P1, M4). A role checks the id against the units the
-param-contract extension serves (`tools/vocabulary.mjs`, `servedUnit`): the unit's LV2 term is plugin-db's F1 word for
-the id, or the id names a unit of the extension's vendor block (`dBu`, `ratio`); it is served when the extension's unit table,
-`OMX_PARAM_CONTRACT_UNITS` (omx-contract's sheet, `3/omx-contract/param-contract.json` in the contract directory, omx-contract-data from 3.6.0), gives the token a value. So a unit that table or that block knows (`LUFS`, `dBu`
-among them) is checked like any other. A unit with no token there, `unknown` included, takes no role and
-is drawn as a plain number. Nothing here types a unit: the reader reads the installed table
-(plugin-db's F1 mapping of the LV2 units, its `lv2` domain) and the installed unit sheet (`param-contract.json` in omx-contract's directory), and refuses by name when either is missing.
+domain: `%` is `percent`, `dB/oct` is `dBPerOct`; sorting pass P1, M4). A role checks the id against the units the
+param-contract extension serves (`tools/vocabulary.mjs`, `servedUnit`): omx-contract's `PARAM_UNITS_CLAP_ENCODED`, of
+the same param domain, the ids `org.openmixer.param-contract/1` encodes (omx-contract-data from 3.22.0; sorting pass
+V23d, P2). So a unit that set holds (`LUFS`, `dBu`, `dBPerOct` among them) is checked like any other. A unit it does not
+hold, `unknown` included, takes no role and is drawn as a plain number. Nothing here types a unit, and nothing reads a
+code sheet or omx-clap: the reader reads the installed param domain, and refuses by name when the set is missing.
 
 The level roles (`threshold`, `ceiling`) take `dB`, `dBFS`, `dBu` and `LUFS`.
 
@@ -214,7 +213,10 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 
 `describe` reads the descriptor's `meters` word (omx-contract, the first descriptor word for what a plugin publishes while it
 runs): each meter is a meter control in the description's `meters` list, in the descriptor's order, with
-`{ kind, measurement, unit, min, max, channels, symbol, held, clip }`.
+`{ kind, measurement, unit, unitText, min, max, channels, symbol, held, clip }`.
+
+- `unit` is the PARAM_UNITS id. `unitText` is that id's `x-symbol`, the unit as a person reads it: a renderer's caption
+  shows it (`percent` is shown as `%`), never the id.
 
 - `kind` is `level` or `gain-reduction`; a level's `measurement` is `peak`, `true-peak`, `lufs-m`, `lufs-s`, `lufs-i` or
   `lra` (units dBFS, dBTP, LUFS, LU), a gain reduction's is `gain-reduction` (dB). `rms`, `vu` and `ppm` are not words.

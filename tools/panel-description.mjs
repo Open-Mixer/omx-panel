@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
+import { meaningOfRole, noUnitId, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -233,7 +233,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
-  const unitOf = (c) => c.travel?.unit ?? choiceUnits[keyOf(c)] ?? '';
+  const unitOf = (c) => c.travel?.unit ?? choiceUnits[keyOf(c)] ?? noUnitId();
   const key = (k, what) => {
     if (!KEY.test(k) || k.length > KEY_MAX) throw new Error(`${where}: ${what} '${k}' is not a key of ${PANEL_ID} ([a-z][a-z0-9_]*, dotted, at most ${KEY_MAX} bytes)`);
     return k;
@@ -308,11 +308,11 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    // a filter slope names its unit's id (dB/oct is dB-oct) whether or not the extension serves it, as main read it as the dB of a slope
+    // a filter slope names its unit's id (dB/oct is dBPerOct) whether or not the extension serves it, as main read it as the dB of a slope
     const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
-    else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
+    else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit && unit !== noUnitId() ? unit : 'no unit'}` });
     // a declared role over a control whose descriptor states another meaning (#43): the words disagree, and the role is named, not bound
     else if (declared && plays && statesMeaning(c) && c.meaning !== plays) unpublished.push({ role, symbol: sym, why: `the descriptor says it means ${c.meaning}, not ${plays}, the ${role} role's` });
     else {

@@ -10,6 +10,9 @@
  *   debian/control   libomx-panel-store0    libomx-panel-store.so.0 (Multi-Arch: same: no command beside it)
  *                    libomx-panel-store-dev the .so link, the header, the pkg-config file, panel.sql
  *                    omx-panel-store        /usr/bin/omx-panel-store and its page (Multi-Arch: foreign)
+ *   both             omx-panel-descriptions the base, /usr/share/omx/panel/panel.sqlite, noarch (Architecture: all),
+ *                                          built by make base and installed by make install-base (section 6, lane 5);
+ *                                          omx-panel-store recommends it
  *
  * Each is read from the packaging as written: the spec's %package and %files, debian/control's stanzas and each
  * package's debian/<name>.install, the build and install steps of the spec and debian/rules, the Makefile target they
@@ -31,12 +34,14 @@ const SPEC_FILES = {
   'omx-panel-store': ['%{_libdir}/libomx-panel-store.so.0', '%{_bindir}/omx-panel-store', '%{_mandir}/man1/omx-panel-store.1*'],
   'omx-panel-store-devel': ['%{_libdir}/libomx-panel-store.so', '%{_includedir}/omx-panel/omx_panel_store.h',
     '%{_libdir}/pkgconfig/omx-panel-store.pc', '%{_datadir}/omx-panel-store/panel.sql'],
+  'omx-panel-descriptions': ['%{_datadir}/omx/panel/panel.sqlite'],
 };
 const DEB_FILES = {
   'libomx-panel-store0': ['usr/lib/*/libomx-panel-store.so.0'],
   'libomx-panel-store-dev': ['usr/lib/*/libomx-panel-store.so', 'usr/include/omx-panel/omx_panel_store.h',
     'usr/lib/*/pkgconfig/omx-panel-store.pc', 'usr/share/omx-panel-store/panel.sql'],
   'omx-panel-store': ['usr/bin/omx-panel-store', 'usr/share/man/man1/omx-panel-store.1'],
+  'omx-panel-descriptions': ['usr/share/omx/panel/panel.sqlite'],
 };
 // store/Makefile's install: each file the packages carry, from the build or the tree
 const STORE_INSTALLS = ['$(B)/$(SONAME)', 'libomx-panel-store.so', 'include/omx-panel/omx_panel_store.h', '$(B)/omx-panel-store.pc',
@@ -122,6 +127,17 @@ export function storePackagingErrors(root) {
   for (const f of STORE_INSTALLS) if (!storeInstall.includes(f)) errors.push(`store/Makefile: install does not install ${f}`);
   if (!existsSync(join(root, 'man/omx-panel-store.1'))) errors.push('man/omx-panel-store.1: absent');
 
+  // the base (lane 5): noarch, built and installed by its make targets, recommended by the store's command
+  if (!(specSection(spec, '%package -n omx-panel-descriptions') ?? []).includes('BuildArch: noarch')) errors.push('spec: omx-panel-descriptions is not BuildArch: noarch');
+  if (!(specSection(spec, '%package -n omx-panel-store') ?? []).includes('Recommends: omx-panel-descriptions')) errors.push('spec: omx-panel-store does not recommend omx-panel-descriptions');
+  if (!(specSection(spec, '%build') ?? []).some((l) => /^make base\b/.test(l))) errors.push('spec: %build does not run make base');
+  if (!(specSection(spec, '%install') ?? []).some((l) => /^make install-base\b/.test(l))) errors.push('spec: %install does not run make install-base');
+  if (st['omx-panel-descriptions'] && !/^Architecture: all$/m.test(st['omx-panel-descriptions'])) errors.push('debian/control: omx-panel-descriptions is not Architecture: all');
+  if (st['omx-panel-store'] && !/^Recommends:.*\bomx-panel-descriptions\b/m.test(st['omx-panel-store'])) errors.push('debian/control: omx-panel-store does not recommend omx-panel-descriptions');
+  if (!/\$\(MAKE\) base\b/.test(target(rules, 'override_dh_auto_build') ?? '')) errors.push('debian/rules: the build does not run make base');
+  if (!/\$\(MAKE\) install-base DESTDIR=\$\(CURDIR\)\/debian\/tmp\b/.test(target(rules, 'override_dh_auto_install') ?? '')) errors.push('debian/rules: the install does not run make install-base into debian/tmp');
+  if (!target(read('Makefile'), 'base') || !target(read('Makefile'), 'install-base')) errors.push('Makefile: no base or install-base target');
+
   // the release publishes each package; the CI build copies each out for the package check
   const release = read('.github/workflows/release.yml');
   const names = (re) => (re.exec(release)?.[1] ?? '').split(/\s+/);
@@ -187,4 +203,11 @@ test('sabotage: panel.sql dropped from store/Makefile install, or a package from
     ['store/Makefile: install does not install ../schema/panel.sql']);
   assert.deepEqual(sabotaged((d) => rewrite(d, '.github/workflows/release.yml', (s) => s.replace(' libomx-panel-store-dev', ''))),
     ['release.yml: the DEB binary-names lack libomx-panel-store-dev']);
+});
+
+test('sabotage: the base package made arch-dependent, or no longer recommended, is red', () => {
+  assert.deepEqual(sabotaged((d) => rewrite(d, 'debian/control', (s) => s.replace(/(^Package: omx-panel-descriptions\n(?:.*\n)*?)Architecture: all/m, '$1Architecture: any'))),
+    ['debian/control: omx-panel-descriptions is not Architecture: all']);
+  assert.deepEqual(sabotaged((d) => rewrite(d, 'packaging/omx-panel.spec', (s) => s.replace('Recommends: omx-panel-descriptions\n', ''))),
+    ['spec: omx-panel-store does not recommend omx-panel-descriptions']);
 });

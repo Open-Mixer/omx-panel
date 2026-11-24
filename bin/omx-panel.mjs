@@ -13,6 +13,17 @@
  *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut;
  *                                                        with --layout the derived layout it was made from, what the renderer
  *                                                        draws (no skin: a skin reorders the description, not the layout)
+ *   describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store
+ *                                                        tools/describe-plugin.mjs: one plugin's entry in the descriptions
+ *                                                        store, printed as the store's get answers it; derived, with the LV2
+ *                                                        groups the complement infers, and written to the layer of the
+ *                                                        effective uid only when no layer holds it
+ *   sync [--lv2-path <list>]                             tools/panel-sync.mjs: the store half of omx-panel-sync, one pass:
+ *                                                        each installed LV2 plugin's entry once, then the layer of the
+ *                                                        effective uid pruned of plugins no longer installed
+ *   base --in <inputs> --out <file>                      tools/base-build.mjs: the descriptions store's base from the inputs
+ *                                                        directory (key.json, descriptor.json, an LV2 bundle/ each),
+ *                                                        written by omx-panel-store build
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
@@ -24,8 +35,9 @@
  *   look [--check]                                       tools/look.mjs: tools/look.json from the colour roles
  *   copies <tree> | --self-test                          tools/copies-check.mjs: no tracked file copies what omx-panel renders or ships
  *   vocabulary [<package>/<name>]...                     where each installed source is read from, read: the contract
- *                                                        directories, the meanings, the LV2 unit table, the param-contract
- *                                                        unit table and each descriptor named; exit 1 when one is missing
+ *                                                        directories, the meanings, the standard units, the units the
+ *                                                        param-contract extension serves and each descriptor named; exit 1
+ *                                                        when one is missing
  *   descriptors --installed                              each installed plugin descriptor file, one path per line
  */
 import { spawnSync } from 'node:child_process';
@@ -45,6 +57,9 @@ const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
+  + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
+  + '       omx-panel sync [--lv2-path <list>]   (the store half of omx-panel-sync)\n'
+  + '       omx-panel base --in <inputs> --out <file>   (the descriptions store\'s base)\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
@@ -156,6 +171,7 @@ async function describeCommand(argv) {
     const k = argv.indexOf(flag);
     return k >= 0 ? argv[k + 1] : undefined;
   };
+  if (argv.includes('--plugin')) return describePluginCommand(argv, opt);
   const file = opt('--descriptor');
   if (!file) {
     process.stderr.write(USAGE);
@@ -197,6 +213,64 @@ async function describeCommand(argv) {
     } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
   } catch (err) {
     process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+/**
+ * One plugin's entry in the descriptions store (docs/descriptions-store.md 6): `--plugin <target> --store`, with
+ * `--descriptor` and `--sha256` and nothing else. Without `--store` it is a usage error: never a derivation that writes nothing.
+ */
+async function describePluginCommand(argv, opt) {
+  const allowed = new Set(['--plugin', '--descriptor', '--sha256']);
+  const ok = argv.includes('--store') && argv.every((a, i) => a === '--store' || (allowed.has(a) && argv[i + 1] !== undefined) || allowed.has(argv[i - 1]));
+  if (!ok || !opt('--plugin')) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { describePlugin, PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  try {
+    const answer = describePlugin({ target: opt('--plugin'), descriptor: opt('--descriptor'), sha256: opt('--sha256') });
+    process.stdout.write(answer.endsWith('\n') ? answer : `${answer}\n`);
+  } catch (err) {
+    if (!(err instanceof PluginRefusal)) throw err;
+    process.stderr.write(`omx-panel: ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+/** The store half of the one pass (docs/descriptions-store.md 6): exit 0, or 1 when the store refused a plugin or a prune. */
+async function syncCommand(argv) {
+  const k = argv.indexOf('--lv2-path');
+  if (argv.length !== (k >= 0 ? 2 : 0) || (k >= 0 && argv[k + 1] === undefined)) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { pass } = await import(join(TOOLS, 'panel-sync.mjs'));
+  const { LV2_DEFAULT_PATH } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  const r = pass({ lv2Path: k >= 0 ? argv[k + 1] : process.env.LV2_PATH || LV2_DEFAULT_PATH, log: (line) => process.stdout.write(`omx-panel sync: ${line}\n`) });
+  if (r.store) process.stdout.write(`omx-panel sync: ${r.described} stored or up to date, ${r.noDescriptor} with no descriptor, ${r.pruned} pruned, ${r.failed} failed\n`);
+  process.exit(r.failed ? 1 : 0);
+}
+
+/** The descriptions store's base (docs/descriptions-store.md 6): exit 0, 1 with the refusal, 2 on usage. */
+async function baseCommand(argv) {
+  const opt = (flag) => {
+    const k = argv.indexOf(flag);
+    return k >= 0 ? argv[k + 1] : undefined;
+  };
+  if (argv.length !== 4 || !opt('--in') || !opt('--out')) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { buildBase } = await import(join(TOOLS, 'base-build.mjs'));
+  const { PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  try {
+    const r = buildBase({ inDir: opt('--in'), out: opt('--out') });
+    process.stdout.write(`omx-panel base: ${r.entries} entries into ${opt('--out')}, built from ${r.builtFrom}\n`);
+  } catch (err) {
+    if (!(err instanceof PluginRefusal)) throw err;
+    process.stderr.write(`omx-panel: ${err.message}\n`);
     process.exit(1);
   }
 }
@@ -246,7 +320,7 @@ async function vocabulary(refs) {
   line('meanings', () => `${v.meanings().length} from ${v.contractSchemaFile()}`);
   line('role-meanings', () => `${v.roleMeanings().size} roles from ${process.env.OMX_ROLE_MEANINGS || 'the contract directories'}`);
   line('param-units', () => `${v.standardUnits().size} units from ${v.paramDomainFile()}`);
-  line('param-contract', () => `${v.paramUnits().size} units from ${v.paramUnitsFile()}`);
+  line('clap-encoded', () => `${v.clapEncoded().size} units from ${v.paramDomainFile()}`);
   for (const ref of refs) {
     line(`descriptor ${ref}`, () => {
       const file = v.installedDescriptorFile(ref);
@@ -272,6 +346,8 @@ if (command === 'validate') validate(args);
 else if (command === 'layout') await layout(args);
 else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
+else if (command === 'sync') await syncCommand(args);
+else if (command === 'base') await baseCommand(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');

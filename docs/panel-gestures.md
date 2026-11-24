@@ -8,7 +8,7 @@ library (`omx_panel_gesture.h`, `docs/renderer.md` "The gesture unit"): given a 
 timestamps, it answers the value in the control's own unit and the begin and end of each gesture. `tools/gestures.mjs`
 answers the same until it becomes the loader of that unit's WebAssembly build, and the two are held equal on the shipped
 scripts. Every surface is checked against it, and the parity fixtures carry scripted gestures
-(`test/fixtures/gestures/scripts.json`). A panel
+(`fixtures/gestures/scripts.json`). A panel
 description gains nothing: the table is keyed by the standard widget, and by a bar and a curve handle bound by their roles.
 
 The console's own gesture table is the law this conforms to. It adds two things to it: painting across a bar group, and the timings declared here.
@@ -71,7 +71,15 @@ layered on it there, and none is used.
 `GESTURE_READ_ONLY`, `GESTURE_CONTROL_OWNED`, `GESTURE_NO_DEFAULT`, `GESTURE_NOT_IN_TABLE`, `GESTURE_HOLD_SHORT`,
 `GESTURE_HOLD_BELOW_FLOOR`, `GESTURE_NO_TARGET`, `GESTURE_PAINT_REQUIRED_ON_TOUCH`, `GESTURE_BAD_SETTING` and
 `GESTURE_BAD_INPUT` (input neither reference can read, refused in the same words by the C unit and by `tools/gestures.mjs`).
-The codes are not yet in the shape of `schema/codes.json`; that is tracked in issue #106.
+Each code also has a code word in the shape of `schema/codes.json`, `panel.gesture.<kebab>` (`GESTURE_READ_ONLY` is
+`panel.gesture.read-only`, `GESTURE_PAINT_REQUIRED_ON_TOUCH` `panel.gesture.paint-required-on-touch`): the gestures
+domain declares the pair once (`GESTURES_CODES`, in omx-contract's codes shape: `const` the code word, `x-name` the
+`GESTURE_*` name the C unit and the reference answer), and `tools/codes-render.mjs` renders each into the one sheet, `schema/codes.json`, and its
+sentence in every language into `catalogs/<lang>.json` (from `contract.d/gestures/catalogs/<lang>.json`), as the panel's
+own codes are. A surface shows a refusal's text by its code word; the `GESTURE_*` name stays what the units answer.
+**RULED (owner, via the coordinator, 2026-11-24, omx-panel#106):** "YES — panel.gesture.<kebab> code words mapped to the
+existing GESTURE_* names." Gate: `test/codes-sheet-domain.test.mjs` (every gesture code is in the sheet under its word,
+the word the kebab of its name, and in every catalog) and `tools/catalogs-gate.sh`.
 
 ## The timings
 
@@ -119,7 +127,7 @@ none of its numbers. Its scripts are the fixtures' (`renderer/test/input.test.mj
 ## The parity check
 
 On each surface the value of a scripted gesture is within one declared step of the reference in the control's own unit
-(`withinStep`), and a reset or a tap is exact. The scripts are in `test/fixtures/gestures/scripts.json`, one set per fixture
+(`withinStep`), and a reset or a tap is exact. The scripts are in `fixtures/gestures/scripts.json`, one set per fixture
 of the parity check: an omx-eq band (drag, fine, reset, step, second), an omx-comp threshold, an 8-band bar group (a sweep,
 a tap, a reset) and setBfree's drawbars (a sweep, a tap, a double-tap). The expected values are worked from the declared
 travel, not taken from the module.

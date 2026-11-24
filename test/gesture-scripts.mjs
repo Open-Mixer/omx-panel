@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas
 /*
- * The shipped scripted gestures (test/fixtures/gestures/scripts.json, exported as @openmixer/omx-panel/gestures/scripts.json)
+ * The shipped scripted gestures (fixtures/gestures/scripts.json, exported as @openmixer/omx-panel/gestures/scripts.json)
  * and the control each script runs against, built from its fixture descriptor's own travels and the surface geometry the script
  * file gives. Shared by the JavaScript reference's test (test/gestures.test.mjs) and the C reference's
  * (renderer/test/gesture-c.test.mjs), so both run the very same controls.
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { memberOf } from '../dist/tools/gestures.mjs';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-export const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'test/fixtures/gestures/scripts.json'), 'utf8')).scripts;
+export const SCRIPTS = JSON.parse(readFileSync(join(ROOT, 'fixtures/gestures/scripts.json'), 'utf8')).scripts;
 const descriptor = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
 const travelOf = (dsc, symbol) => dsc.controls.find((c) => c.symbol === symbol).travel;
 

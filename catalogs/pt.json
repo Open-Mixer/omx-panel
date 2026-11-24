@@ -212,6 +212,66 @@
       "by": "machine",
       "model": "lane-draft",
       "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
+    "panel.gesture.read-only": {
+      "text": "Um controlo só de leitura não aceita nenhum gesto.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f97c076b01b3e90f20c1ec5d801c09c5fc5c5c9acf9ad7d91420b01821f14fe9"
+    },
+    "panel.gesture.control-owned": {
+      "text": "O controlo pertence ao ponteiro, ou à reserva do passo a passo, que o detém; um toque posterior é recusado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8081b8e79f7e0724effcb17723a5ba8f5f25c5de4f441f8f1571d9eda6b300ea"
+    },
+    "panel.gesture.no-default": {
+      "text": "Uma reposição num controlo que não declara nenhum valor predefinido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "643188a4251b0a035b579bd6fdbde9437c498d2f3a8e9734c3fd27e5749c3079"
+    },
+    "panel.gesture.not-in-table": {
+      "text": "O widget não tem essa entrada na tabela.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ff909491d49fc442e3b9aacc4a6b6638e73e7bbacad395699cfabe27ead753f4"
+    },
+    "panel.gesture.hold-short": {
+      "text": "Um controlo marcado com retenção foi largado antes da retenção de segurança.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "89e31ee4a7ef5c9ebf188b0c1d2a3e272cc774a87d0df2ddf16c0f8b0c58933a"
+    },
+    "panel.gesture.hold-below-floor": {
+      "text": "Uma retenção de segurança mais curta do que o mínimo declarado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "59fae1e49f35a53db18a09e1f750b5daab598068584479b585c8d9427c051f45"
+    },
+    "panel.gesture.no-target": {
+      "text": "Um passo sem barra nem membro de pega que o receba.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "958f360c78fe4b2688e793363e86efbc616bcbf4b33a5c469af9b0f4b4e35b82"
+    },
+    "panel.gesture.paint-required-on-touch": {
+      "text": "Pintar é obrigatório no toque e não pode ser desativado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "7ae1671808b774711614d8240a75c859930aa8fd8a43e651f03b9d482f37499e"
+    },
+    "panel.gesture.bad-setting": {
+      "text": "Uma temporização desconhecida, ou uma que não é maior do que zero.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "226df5d144430e5f7a390e0d9e45a24020541fc6f247a74149e1ad7277f750ea"
+    },
+    "panel.gesture.bad-input": {
+      "text": "Uma entrada que nenhuma das duas referências consegue ler: um controlo cujo percurso não tem extremos, um extremo que não está acima do outro, um percurso logarítmico a partir de zero, um passo negativo, um comprimento desenhado não maior do que zero ou um alvo sem tamanho; um evento sem tempo ou sem nenhum dos seis tipos, um toque sem posição, identificador ou tipo de ponteiro, um número de entalhes que não é um número.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "87eb2d1171ef7282ab045ab52ec2fd6406682d516c4ea9cb5d86a015f52623cf"
     }
   }
 }

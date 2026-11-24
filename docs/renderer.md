@@ -45,15 +45,16 @@ the group model's served matrix (`servedMatrix`, "The served matrix") exactly as
 `{ orientation, title, heads, rows, cells, count? }`. The renderer READS it and recomputes nothing: no group, no row order, no
 head row, no caption place, no transposition. `heads` are the instances and edges in drawing order, each `{ label, on, edge }`
 (`on` its on/off control as `{ symbol, sense }`, nothing else, or null; `edge` the EQ filter's name for a high-pass, shelf or
-low-pass, else null); `rows` are the parameters in the owner's order (freq, gain with the high-pass's and low-pass's slope on
-that row, q, type, the rest), then the head row, always the last, `{ label: 'On' | '', head: true }`; `cells[row][head]` is a
+low-pass, else null); `rows` are the head row, always the first, `{ label: 'On' | '', head: true }`, then the parameters in the owner's
+order (freq, gain with the high-pass's and low-pass's slope on that row, q, type, the rest), a row whose cell holds a
+parameter other than the row's carrying `labels` (one per head, null where the row's label holds); `cells[row][head]` is a
 control's symbol or null. The section is titled by `title`. It draws, in the section's box: the curve rows, then the section's
 other controls (those no cell names) flowed in rows of `rowControls` as any section's, then the matrix. In `columns` each head
 is a column, left to right, and each row a row; in `rows` each head is a row and each row a column. Every cell, the head row's
-among them, is placed as a cell: the control of that row at that head, named by the row's label (a head-row control by its
-head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
+among them, is placed as a cell: the control of that row at that head, named by the row's label, or by the row's `labels` entry for that head where
+it has one (a head-row control by its head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
 row of its own (a matrix whose heads have no on/off, omx-delay's taps, has a caption row, and no caption overprints a row of
-controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the last, or a head
+controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the first, or a head
 whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
 as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
 does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
@@ -75,7 +76,7 @@ message, as `bars` is. A section with no `matrix`, and a description with none, 
 The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multiband compressor) from `omx-panel describe
 --layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
 tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
-and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
+and LPF last, the count's close-up, the head row first) need no twin and run everywhere.
 
 The layout reads the role vocabulary ([panel-layout.md](panel-layout.md), "Meanings and roles"): with none, no role plays a
 meaning, omx-eq8 derives no curve, and its goldens would be drawn without one. So the renderer's tests read the vocabulary as
@@ -126,6 +127,7 @@ const char *omx_panel_word_name(omx_panel_word_t word);
 uint32_t omx_panel_view_count(const omx_panel_view_t *view);
 int32_t omx_panel_view_find(const omx_panel_view_t *view, const char *symbol);
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
+void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count,
                                const char *text);
@@ -161,6 +163,12 @@ The buffer names its pixel format: RGBA or BGRA, each with its colours premultip
 what a compositor blends) or straight. The panel is drawn with straight alpha and premultiplied at the end,
 each channel times its alpha rounded to the nearest. A PNG holds straight alpha, so the command asks for
 straight when it writes one: the conversion is at the edge, never inside the drawing.
+
+A face has its head (the maker, the plugin's name, the accent rule and dot, `headH` of the geometry tall) unless the host
+calls `omx_panel_view_set_head(view, false)`: then there is none, the sections start at `pad` from the top and the face is
+`sectionTop - pad` shorter, so a host drawing one control per view (Zynthian's stock controller under the vintage look,
+Open-Mixer/zynthian-ui#70) gets the control, its label and its value and no empty head (#94). The command's state file
+says the same with `"head": false`. *Test: `renderer/test/headless.test.mjs`, held to a golden image.*
 
 `omx_panel_view_control_rect` gives a control's cell in a buffer of a given size and scale: what a pointer
 event will be hit-tested against.
@@ -228,7 +236,7 @@ gesture drew.
 
 `omx-panel-render --input <script.json>` runs a script of events through a view and prints what the renderer answered
 (the header of `renderer/src/cli.c` has the script's words). `renderer/test/input.test.mjs` runs the scripted gestures
-of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
+of the 7.5 fixtures (`fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
 
@@ -249,7 +257,7 @@ script of events, replays it through a fresh engine and answers as JSON what `ru
 `renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
 unit's WebAssembly build.
 
-`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`fixtures/gestures/scripts.json`, the package's
 `./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
 `tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
 its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.

@@ -27,6 +27,16 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .RB "| " \-\-layout ]
 .br
 .B omx-panel
+.B describe
+.B \-\-plugin
+.I target
+.RB [ \-\-descriptor
+.IR file ]
+.RB [ \-\-sha256
+.IR hex ]
+.B \-\-store
+.br
+.B omx-panel
 .B vocabulary
 .RI [ package / name ]...
 .br
@@ -45,6 +55,26 @@ file's declared pages, as given, replacing the derived ones; with
 .B \-\-layout
 the layout the description was derived from, the family's displays included, which is what the panel renderer draws.
 .PP
+.B omx-panel describe \-\-plugin
+.I target
+.B \-\-store
+prints one plugin's entry in the descriptions store, as
+.B omx-panel-store get
+answers it.
+.I target
+is
+.BI lv2: uri
+or
+.BI clap: path # id\fR.
+The store is asked first, by the binary's SHA-256 (or
+.BR \-\-sha256 )
+and the plugin's source as installed; an entry any layer holds is printed and nothing is written. Otherwise the
+descriptor (the one given, else the installed declaration, else the newest in DESCRIPTOR_DIRS, else one
+.B plugin-hostd-probe describe
+makes) is described with the port groups the LV2 complement infers for that plugin, and the entry is written to the
+layer of the effective uid (the system layer as root, the user layer otherwise) and printed. One plugin, never a scan.
+LV2_PATH is the LV2 search list (else /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2).
+.PP
 .B omx-panel validate
 reads each skin given, a
 .I skin.json
@@ -52,7 +82,7 @@ file or a directory holding one, and checks it against the skin package schema s
 .PP
 .B omx-panel vocabulary
 reads each installed source a panel is laid out by and prints one line for each, where it was read from:
-the contract directories, omx-contract's meanings, plugin-hostd's LV2 unit table, the param-contract unit table,
+the contract directories, omx-contract's meanings, its standard units and the units the param-contract extension serves,
 and the descriptor of each
 .IR package / name
 given. A line starts with

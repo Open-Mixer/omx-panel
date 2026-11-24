@@ -322,6 +322,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
           goto bad;
         }
         m->row_label[r] = dup(lab);
+        /* a cell holding a parameter other than the row's is named by the row's `labels` (omx-panel#122) */
+        cJSON *labels = cJSON_GetObjectItemCaseSensitive(row, "labels");
         size_t k = 0;
         int is_head = cJSON_IsTrue(head);
         if (is_head) {
@@ -343,16 +345,17 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
             }
           }
           if (!cJSON_IsNull(c)) {
-            PLACE(sym, is_head ? m->heads[k].label : lab, m->cell[r * m->nheads + k]);
+            const char *own = cJSON_GetStringValue(cJSON_GetArrayItem(labels, (int)k));
+            PLACE(sym, is_head ? m->heads[k].label : own ? own : lab, m->cell[r * m->nheads + k]);
             if (is_head) m->heads[k].on = m->cell[r * m->nheads + k];
           }
           k++;
         }
       }
       #undef PLACE
-      /* the served matrix always ends with its head row (docs/group-model.md L3) */
-      if (m->head_row < 0 || m->head_row != (int)m->nrows - 1) {
-        fail(err, n, "description: a matrix's head row is missing or is not its last row%s%s", NULL, NULL);
+      /* the served matrix always opens with its head row (docs/group-model.md L3, omx-panel#121) */
+      if (m->head_row != 0) {
+        fail(err, n, "description: a matrix's head row is missing or is not its first row%s%s", NULL, NULL);
         goto bad;
       }
       if (cnt && !cJSON_IsNull(cnt)) {
@@ -382,13 +385,15 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
       const char *label = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "label"));
       const char *unit = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unit"));
+      /* the caption shows the unit as a person reads it, its x-symbol (percent is %): describe's unitText, the id when absent */
+      const char *unit_text = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unitText"));
       const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
       cJSON *mn = cJSON_GetObjectItemCaseSensitive(it, "min"), *mx = cJSON_GetObjectItemCaseSensitive(it, "max");
       if (!sym || !label || !unit || !kind || !cJSON_IsNumber(mn) || !cJSON_IsNumber(mx) || !(mx->valuedouble > mn->valuedouble)) {
         fail(err, n, "description: meter '%s' lacks a label, a unit, a kind or a range%s", sym ? sym : "?", NULL);
         goto bad;
       }
-      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit);
+      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit_text ? unit_text : unit);
       m->min = mn->valuedouble, m->max = mx->valuedouble, m->gain_reduction = strcmp(kind, "gain-reduction") == 0;
       m->in_band = 1;
       for (size_t k = 0; k < v->ncontrols; k++)
@@ -587,6 +592,10 @@ void omx_panel_view_set_title(omx_panel_view_t *v, const char *brand, const char
   if (!v) return;
   free(v->brand), free(v->name);
   v->brand = dup(brand), v->name = dup(name);
+}
+
+void omx_panel_view_set_head(omx_panel_view_t *v, bool shown) {
+  if (v) v->headless = !shown;
 }
 
 bool omx_panel_view_set_value(omx_panel_view_t *v, uint32_t i, double fraction, const char *text) {
@@ -800,7 +809,9 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
   if (across_most > most) most = across_most; /* a matrix is never wrapped */
-  double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
+  /* the sections start below the head, or at the top of a face without one */
+  double top0 = v->headless ? g->pad : g->sectionTop;
+  double section_w = most * g->cellW + 2 * g->sectionPad, y = top0;
   double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
     if (!L.drawn[s]) continue;
@@ -841,7 +852,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     last = top + h;
   }
   L.w = section_w + 2 * g->pad;
-  L.h = last >= 0 ? last + g->pad : g->sectionTop + g->pad;
+  L.h = last >= 0 ? last + g->pad : top0 + g->pad;
   return L;
 }
 
@@ -1131,11 +1142,13 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
 
   d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
   d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
-  d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
-  d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
-  double head_w = (L.w - 2 * g->pad - 24) * s;
-  text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
-  text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  if (!v->headless) {
+    d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
+    d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
+    double head_w = (L.w - 2 * g->pad - 24) * s;
+    text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
+    text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  }
   for (size_t si = 0; si < v->nsections; si++) {
     if (!L.drawn[si]) continue;
     box sec = L.sections[si];

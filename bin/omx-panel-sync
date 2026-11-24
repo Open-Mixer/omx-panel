@@ -1,0 +1,51 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+#******************************************************************************
+# The one sync pass (docs/descriptions-store.md section 6): each installed LV2
+# plugin's description and port groups stored once, the layer this user writes
+# pruned of plugins no longer installed, then the generators from the store.
+#
+#   omx-panel-sync
+#
+# 1. `omx-panel sync`: each LV2 plugin on LV2_PATH gets its entry in the
+#    descriptions store (read, else derived and written to the layer of the
+#    effective uid: the system layer as root, the user layer otherwise), and that
+#    layer loses the entries of plugins no longer installed. No other layer is
+#    written.
+# 2. omx-complement-sync, then omx-modgui-sync, each as run alone, each reading
+#    the store the first step filled.
+#
+# It never runs systemctl: a direct call does the whole work, and
+# omx-panel-sync.service is a batch convenience over it. Exit 0 when every step
+# did; 1 naming each step that did not.
+#
+# Where it looks and writes: the generators' variables (the environment, or the
+# unit's EnvironmentFile=/etc/omx/modgui-sync.conf): LV2_PATH, MODGUI_DIR,
+# STATE_DIR, DESCRIPTOR_DIRS. LV2_PATH unset is MODGUI_DIR first, then
+# plugin-hostd's list, as omx-complement-sync reads it.
+#******************************************************************************
+
+if [ "$#" -ne 0 ]; then
+	echo "Usage: omx-panel-sync" >&2
+	exit 2
+fi
+if [ "$(id -u)" = 0 ]; then
+	default_modgui=/usr/local/lib/lv2
+else
+	default_modgui=$HOME/.lv2
+fi
+MODGUI_DIR=${MODGUI_DIR:-$default_modgui}
+LV2_PATH=${LV2_PATH:-$MODGUI_DIR:/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2}
+export MODGUI_DIR LV2_PATH
+
+failed=()
+omx-panel sync --lv2-path "$LV2_PATH" || failed+=("omx-panel sync")
+omx-complement-sync || failed+=(omx-complement-sync)
+omx-modgui-sync || failed+=(omx-modgui-sync)
+
+if [ "${#failed[@]}" -gt 0 ]; then
+	echo "omx-panel-sync: failed: ${failed[*]}" >&2
+	exit 1
+fi
+exit 0

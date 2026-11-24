@@ -15,11 +15,17 @@ For each installed LV2 bundle on the LV2 search list holding a plugin whose port
 .B omx-panel complement
 infers with confidence, writes a bundle named omx-complement-<bundle>.lv2 in MODGUI_DIR. It restates every TTL file lilv reads for the installed bundle, statement for statement, keeps lv2:binary pointing at the installed library, raises each plugin's lv2:microVersion by one (lv2:minorVersion unchanged), and adds the group nodes (lv2:symbol, lv2:name, lv2:displayPriority) and pg:group on each grouped port. lilv then loads it in place of the installed bundle. Every other file of the installed bundle is linked in, so a plugin that reads its own files finds them.
 .PP
+The groups are the descriptions store's (omx-panel-store): each plugin's entry is read by
+.BR "omx-panel describe \-\-plugin \-\-store" ,
+which derives and writes it first when no layer holds it, and the groups it holds are written, never an inference of a
+key the store holds. With no store (omx-panel-store not installed, or no base) the groups are inferred, as the run says
+once; a plugin with no descriptor to derive an entry from is inferred from its TTL and counted.
+.PP
 The installed bundle is never touched. Deleting the written bundle is the whole removal: lilv loads the installed one again.
 .PP
 Nothing is written for a bundle none of whose plugins needs groups: a plugin that carries its own, fits one screen of four, or has no confident grouping is left exactly as it is.
 .PP
-A bundle whose marker file .omx-complement-sync names the same installed bundle, the same content hash and the same writer is left as it is; one whose installed files or rules changed is written again. A bundle of that name without the marker is never written.
+A bundle whose marker file .omx-complement-sync names the same installed bundle, the same content hash, the same writer and the same groups is left as it is; one whose installed files, rules or stored groups changed is written again. A bundle of that name without the marker is never written.
 .PP
 A bundle of ours no longer wanted is removed, one line naming it and why: its installed bundle is gone (the package was removed) or no longer on the search list, changed into one that is refused or declares no plugin, or none of its plugins comes out grouped on the current rules. lilv then loads the installed bundle again. Only a directory named omx-complement-*.lv2 holding the marker is ever removed; a directory without the marker, of another name, or a symbolic link is left alone.
 .PP
@@ -49,8 +55,10 @@ the work files, omx-modgui-sync's (default /var/lib/omx/modgui-sync; $XDG_DATA_H
 .I /etc/omx/modgui-sync.conf
 KEY=value lines for the variables above, read by the unit, shared with omx-modgui-sync
 .TP
-.I omx-complement-sync.service
-runs the sync once; installed but not enabled (systemctl enable omx-complement-sync). Enabled, it runs at boot and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-complement-sync.conf, queues it from ExecStartPost when the unit is enabled); plugin-qualify's package triggers start that scan once per package transaction in the standard LV2 folders, so an install, upgrade or removal is followed by this run.
+.I omx-panel-sync.service
+runs this sync within the one pass,
+.BR omx-panel-sync (1);
+enabled by default where systemd exists, it runs at boot and each time plugin-qualify-sync finishes; plugin-qualify's package triggers start that scan once per package transaction in the standard LV2 folders, so an install, upgrade or removal is followed by this run. Nothing depends on the unit: this command run by hand does the same work.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -66,4 +74,5 @@ usage error
 --check only: at least one bundle of ours is stale (a sync removes it) or out of date (a sync writes it again), each named on its own line
 .SH SEE ALSO
 .BR omx-modgui-sync (1),
+.BR omx-panel-sync (1),
 .BR omx-panel (1)

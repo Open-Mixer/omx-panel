@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+[Unit]
+Description=The omx-panel sync pass: descriptions stored, port groups and MOD GUIs from the store
+# After plugin-qualify's sync, which writes the descriptors this reads
+After=local-fs.target plugin-qualify-sync.service
+ConditionPathExists=/usr/bin/omx-panel-sync
+
+[Service]
+# A batch convenience over a direct call: omx-panel-sync does the whole work run by hand, and nothing depends on this
+# unit (docs/descriptions-store.md section 10). Enabled by default where systemd exists (80-omx-panel.preset; the DEB
+# enables it), it runs at boot and each time plugin-qualify-sync finishes (plugin-qualify-sync.service.d/omx-panel-sync.conf
+# queues it from ExecStartPost), so a plugin installed, upgraded or removed is followed by its entry, groups and GUI.
+# `systemctl disable omx-panel-sync` turns it off. The directories are set in /etc/omx/modgui-sync.conf.
+Type=oneshot
+EnvironmentFile=-/etc/omx/modgui-sync.conf
+ExecStart=/usr/bin/omx-panel-sync
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=100%
+MemoryMax=1G
+TasksMax=64
+RestrictRealtime=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -96,11 +96,11 @@ typedef struct {
   int *cell;
   int count_ctl;        /* the control that says how many instances run, -1 for none */
   int64_t count;        /* its value: the description's default until the host gives one */
-  int head_row;         /* the head row, always the last: its cells are the heads' on/off, a null cell the head's caption */
+  int head_row;         /* the head row, always the first: its cells are the heads' on/off, a null cell the head's caption */
 } matrix;
 
 typedef struct {
-  char *symbol, *label, *unit;
+  char *symbol, *label, *unit; /* unit: the caption's spelling, the description's unitText (its x-symbol), else its unit */
   double min, max;
   int gain_reduction; /* the bar grows from the top of the range toward its foot */
   int in_band;        /* drawn in the meters band */
@@ -135,6 +135,7 @@ struct omx_panel_view {
   matrix *matrices;
   size_t nmatrices;
   char *brand, *name;
+  bool headless; /* omx_panel_view_set_head(view, false): no head, the sections start at `pad` */
   int row_controls;
   geometry g;
   textsizes t;

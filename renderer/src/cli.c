@@ -9,7 +9,7 @@
  *                    [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]
  *
  * The size is the panel's natural size times the scale unless --width and --height give one. The
- * state is the host's side: {"brand", "name", "values": {"<symbol>": {"fraction", "text"} |
+ * state is the host's side: {"brand", "name", "head" (false: no head, omx_panel_view_set_head), "values": {"<symbol>": {"fraction", "text"} |
  * {"at", "count", "text"}}, "integers": {"<symbol>": n}, "curves": {"<display>": {"x": [...], "y": [...]}}, "stems": {"<display>": [{"x", "y", "shade", "letter"}]}, "meters": {"<symbol>": [{"value", "elapsed"}]}}, the integers the governing values a visibility rule reads, the curves the points of each display. --raw writes the buffer's bytes as they are (rows of width * 4, premultiplied
  * unless --alpha straight); --png an RGBA PNG (straight alpha, as PNG holds it), its image data in stored
  * (uncompressed) deflate blocks, so it needs no zlib; --rects one line per control, its cell as
@@ -125,6 +125,8 @@ static int apply_state(omx_panel_view_t *v, const char *path) {
   if (!cJSON_IsObject(root)) { fprintf(stderr, "omx-panel-render: %s is not a JSON object\n", path); cJSON_Delete(root); return 0; }
   omx_panel_view_set_title(v, cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "brand")),
                            cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(root, "name")));
+  /* "head": false draws the face without its head (omx_panel_view_set_head) */
+  if (cJSON_IsFalse(cJSON_GetObjectItemCaseSensitive(root, "head"))) omx_panel_view_set_head(v, false);
   cJSON *it;
   int ok = 1;
   cJSON_ArrayForEach(it, cJSON_GetObjectItemCaseSensitive(root, "values")) {

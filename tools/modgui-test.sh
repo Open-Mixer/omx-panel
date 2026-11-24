@@ -107,6 +107,7 @@ done <"$TMP/declared"
 node --input-type=module -e '
 const { readFileSync } = await import("node:fs");
 const { panelLayout } = await import(process.argv[1]);
+const { unitSymbolOf } = await import(process.argv[1].replace(/panel-description\.mjs$/, "vocabulary.mjs"));
 const d = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const panel = process.argv[3] ? JSON.parse(readFileSync(process.argv[3], "utf8")) : null;
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -115,7 +116,7 @@ let x;
 // not installed, a panel the layout rejects) fails the check, with its reason
 try { x = panelLayout(d, panel ? { panel, derive: true } : { derive: true }); } catch (err) { if (err.code) process.exit(0); console.error(err.message); process.exit(1); }
 const controls = new Set(x.controls.map((c) => c.symbol));
-for (const m of x.meters) if (!controls.has(m.symbol)) console.log(`data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}"`);
+for (const m of x.meters) if (!controls.has(m.symbol)) console.log(`data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(unitSymbolOf(m.unit))}"`);
 ' "$ROOT/tools/panel-description.mjs" "$DESC" "${PANEL:-}" >"$TMP/meters" 2>"$TMP/meters.err" || fail "read the meters of $DESC ($(tr '\n' ' ' <"$TMP/meters.err" | sed 's/ *$//'))"
 while IFS= read -r row; do
   n=$((n + 1))

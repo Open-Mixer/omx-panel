@@ -129,7 +129,8 @@ network, and the release check runs `node tools/look-pin.mjs --check <tokens.css
 (re-pin with `--write`, then `node tools/look.mjs`).
 
 The value of a control is shown in a scribble strip, `mod-role="input-control-value"` bound to the port: mod-ui writes the port's
-value into it and the template carries no value text; the unit (from the descriptor) is its `data-unit`. A selector's own value
+value into it and the template carries no value text; the unit is its `data-unit`, spelled for a person: the `x-symbol` of the
+descriptor's unit id in omx-contract's PARAM_UNITS (`percent` shows `%`, `none` shows nothing). A selector's own value
 element is bound the same way.
 
 The knob film strips of `vintage` and `3d` are generated from one drawing each: the vintage knob's is a scene in `tools/look.json` (`drawings`, written there from `schema/modgui-looks.json`, the only copy of that drawing), the 3d knob's `tools/look/knob-3d.svg`: 65
@@ -251,5 +252,5 @@ as its first band and its low-pass as its last, `[HPF] [Band 1..N] [LPF]`, each 
 controls. Only the drawing moves: the audio order is the plugin's, and an `Order` control the plugin declares (set advanced) shows
 it. The section's curve carries the filters' roll-off when the panel's `roles` bind `hpf_freq`/`hpf_slope` and `lpf_freq`/`lpf_slope`
 (omx-dsp's twin draws them in the response).
-A slope that is a choice (12 or 24) has no unit in a descriptor: the panel declares it, `choiceUnits` (symbol to unit, `dB/oct` or `dB` for a slope), the
+A slope that is a choice (12 or 24) has no unit in a descriptor: the panel declares it, `choiceUnits` (symbol to unit id, `dBPerOct` or `dB` for a slope), the
 panel description's own extras shape, and the MOD GUI passes it to the twin, so the choice is a valid slope term (`test/modgui-choice-units.test.mjs`).

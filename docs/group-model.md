@@ -184,14 +184,21 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   high-pass and a high shelf left of the low-pass. Each column stacks its parameters in the owner's order: `freq`,
   then `gain` (one aligned row: the gain of a bell or shelf band and the slope of the high-pass and low-pass, an edge's
   `slope` taking the `gain` row when the bands hold no slope row of their own; a band that holds both keeps `gain`, then
-  `slope`), `q`, `type`, then the rest in the first instance's order, and last the column's on/off (L3). *Tests: omx-eq8, omx-eq16, omx-eq32, x42 fil4, LSP
+  `slope`), `q`, `type`, then the rest in the first instance's order, the column's label and on/off heading it (L3). The
+  edge's slope in the `gain` row is captioned as what it is: that row carries `labels`, the slope's own row label at the
+  edge's place ("The served matrix"). *Tests: omx-eq8, omx-eq16, omx-eq32, x42 fil4, LSP
   para-equalizer, omx-strip; "L2: an EQ of more rows than bands is still columns".*
 - **L3, the head.** Each column (each row, transposed) carries its label and its on/off (`on`) as its head, which is its
-  state, not a parameter row of `matrixOf`. The served matrix (below) ends its `rows` with ONE head row, `{ label: 'On',
+  state, not a parameter row of `matrixOf`. The served matrix (below) opens its `rows` with ONE head row, `{ label: 'On',
   head: true }` when any head has an on/off, else `{ label: '', head: true }`: its cells are the heads' `on` symbols (the
   same controls as `heads[].on`, drawn once, there, each named by its head's label), and a head with no on/off (omx-delay's
   taps, the LSP para-equalizer's bands) has its **caption**, its label, drawn in its own cell of that row. The head row is
-  always the last and always a row of its own: a caption never overprints a parameter's row. *Tests: the corpus' `heads`;
+  always the first and always a row of its own: a caption never overprints a parameter's row. A band's name and on/off
+  head its column, as a console's channel strip carries its name and its on at the top.
+  **RULED (owner, via the coordinator, 2026-11-24, omx-panel#121):** "AMEND L3 — head row first." The head row was the
+  last; it is now the first, in the served matrix and on every surface that draws it (modgui-gen, the C renderer, the
+  console, Zynthian). Gate: `test/group-model-served.test.mjs` (the served head row is `rows[0]`) and the renderer, which
+  refuses a description whose head row is not the first. *Tests: the corpus' `heads`;
   `test/group-model-served.test.mjs`.*
 - **L4, any other repeat takes the orientation that fits.** `columns` when there are at least as many instances as
   rows, else `rows` (one row per instance, the parameters across). *Test: the Calf multiband compressor (4 bands, 8
@@ -231,7 +238,7 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   instance with none), in `rows` the served `rows` (the head row among them: it is a column there). Never one band per
   screen while more fit; a surface that cannot show them all scrolls whole columns. An encoder surface (Zynthian) shows the
   whole matrix and its encoders edit the **selected column**: `selectedColumn(served, n, { count })` is the drawn head `n`
-  clamped to them (one knob picks `n`), its cells in row order (the head row last), an empty cell leaving its encoder idle.
+  clamped to them (one knob picks `n`), its cells in row order (the head row first), an empty cell leaving its encoder idle.
   Both take the served matrix and never throw on it. **The C renderer applies the same rule** (`omx_panel_view_visible_columns`),
   and one test vector, `test/fixtures/group-model/visible-columns.json` (a served matrix, a width, a column, a count, the
   answer), is read by the JS tests and by the renderer's, so the two cannot drift. *Tests: "L7: ..."; the vector.*
@@ -264,15 +271,21 @@ the on/off or places a caption: each reads the served matrix and maps its symbol
 ```
 { orientation: 'columns' | 'rows', title,
   heads: [{ label, on: { symbol, sense } | null, edge: 'hpf' | 'lowshelf' | 'highshelf' | 'lpf' | null }],
-  rows:  [{ label }, ..., { label: 'On' | '', head: true }],
+  rows:  [{ label: 'On' | '', head: true }, { label, labels? }, ...],
   cells: [[symbol | null per head] per row],
   count?: { symbol, default } }
 ```
 
 - `heads` are the instances and the edges along one axis, every instance (a count closes them up only where it is drawn,
-  L6); `rows` the parameters in the owner's order (L2), then the head row, always last (L3); `cells[row][head]` a symbol as
+  L6); `rows` the head row, always first (L3), then the parameters in the owner's order (L2); `cells[row][head]` a symbol as
   `symbolOf` gives it (the served symbol in a description; the layout's own in `--layout`), or null; `orientation` says
   only whether the heads are laid out as columns or as rows.
+- `labels`, on a parameter row, only where a cell holds a parameter other than the row's: one entry per head, the cell's
+  own caption, or null where the row's `label` names it. An EQ edge's slope in the `gain` row (L2) is served so,
+  `{ label: 'Gain', labels: [null, ..., 'Slope'] }`, and every surface names that cell `Slope`, never `Gain`.
+  **RULED (owner, via the coordinator, 2026-11-24, omx-panel#122):** "YES — the served matrix carries its own caption
+  where a cell's parameter differs from its row's." Gate: `test/group-model-served.test.mjs` (the edge's slope cell is
+  captioned) and the consumers' tests (the MOD GUI face and the renderer name the cell by `labels`).
 - `title` is the group's label (the declared group's: omx-eq8's `Bands`), else the label of the section that holds it: the
   section that carries the matrix is titled by it, in the description, in `--layout` and on the MOD GUI face alike.
 - `count: { symbol, default }` when the group has a count (S10) that no `visibleWhen` rule already governs: the surface
@@ -296,7 +309,7 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
 
 - **modgui-gen** (`tools/modgui-gen.mjs` `withRepeats`): places the group (`placeMatrix`), takes `servedMatrix(g)` and draws
   it as given: the heads `drawnHeads` keeps at the count's come-up value (L6), each cell at its row and column, the head row
-  last, a head's caption in its head-row cell, the section titled `title`, its own parameters flowed above the matrix, the
+  first, a cell named by its row's `labels` where it carries one, a head's caption in its head-row cell, the section titled `title`, its own parameters flowed above the matrix, the
   count drawn as a selector. A group some of whose controls are not drawn (an Easy section took them), or whose instance
   section holds anything else beside the group, is drawn as before. *Test: `test/modgui-group-model.test.mjs`.*
 - **the panel renderer** (`renderer/`), held pixel-equal to the MOD GUI face by `renderer/test/parity.test.mjs`: it reads
