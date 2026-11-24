@@ -8,15 +8,16 @@
  * schemas, the look, the modgui terms, the test script, the fixture bundles), and the commands keep their execute bit. `npm run build`
  * runs it after tsc.
  */
-import { chmodSync, copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
 /** The tree's own checks, which the package does not carry. */
-const NOT_SHIPPED = ['tools/copy-data.mjs'];
+const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/skin-schema-words.mjs', 'tools/codes-render.mjs'];
 /** Every .mjs module the package carries, as the tree holds it. */
 export const MODULES = ['bin', 'lib', 'tools'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`)).filter((f) => !NOT_SHIPPED.includes(f));
 /** The shipped fixture bundles (tools/fixtures.mjs), every file under fixtures/. */
@@ -32,32 +33,45 @@ const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/
 const SHAPES = readdirSync(join(ROOT, 'shapes')).filter((f) => f.endsWith('.schema.json')).sort().map((f) => `shapes/${f}`);
 /** The TypeScript render of each shape, committed under test/golden/ts/shapes and published as dist/ts/shapes/<name>.d.ts, where package.json's `./shapes/*` points. */
 export const SHAPE_TYPES = readdirSync(join(ROOT, 'test/golden/ts/shapes')).filter((f) => f.endsWith('.d.ts')).sort();
+/** The panel domain, which the tools read their panel words from (tools/vocabulary.mjs panelWords): dist/ is a tree. */
+const PANEL_DOMAIN = ['contract.d/panel/panel.json', ...readdirSync(join(ROOT, 'contract.d/panel/catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `contract.d/panel/catalogs/${f}`)];
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, ...SHAPES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, ...PANEL_DOMAIN, ...SHAPES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/look/console-vintage.json', 'tools/look/knob-3d.svg', 'tools/look/fader-vintage.svg', 'schema/modgui-looks.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Gelasio.woff2', 'tools/fonts/Gelasio-OFL.txt', 'tools/look/font-gelasio.json', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/gesture-words.mjs', 'tools/modgui-test.sh'];
 
-// A shipped module that starts with a shebang is a command: it ships executable and its declaration carries no
-// shebang, or the release's lintian --fail-on warning refuses the DEB (script-not-executable; 0.13.6's
-// tools/gesture-words.mjs). Listing it is the one way it ships.
-const unlisted = MODULES.filter((f) => readFileSync(join(ROOT, f), 'utf8').startsWith('#!') && !COMMANDS.includes(f));
-if (unlisted.length > 0) {
-  console.error(`copy-data: ${unlisted.join(', ')} start with a shebang and are not in COMMANDS: list each, or drop its shebang`);
-  process.exit(1);
+/** Copy the modules and the data into `dist` (the build's second half): nothing happens on import, the command line calls this. */
+export function copyData(dist = DIST) {
+  // A shipped module that starts with a shebang is a command: it ships executable and its declaration carries no
+  // shebang, or the release's lintian --fail-on warning refuses the DEB (script-not-executable; 0.13.6's
+  // tools/gesture-words.mjs). Listing it is the one way it ships.
+  const unlisted = MODULES.filter((f) => readFileSync(join(ROOT, f), 'utf8').startsWith('#!') && !COMMANDS.includes(f));
+  if (unlisted.length > 0) throw new Error(`copy-data: ${unlisted.join(', ')} start with a shebang and are not in COMMANDS: list each, or drop its shebang`);
+  for (const f of [...MODULES, ...DATA]) {
+    mkdirSync(dirname(join(dist, f)), { recursive: true });
+    copyFileSync(join(ROOT, f), join(dist, f));
+  }
+  // the shapes' TypeScript renders, where package.json's `./shapes/*` points
+  for (const f of SHAPE_TYPES) {
+    mkdirSync(join(dist, 'ts/shapes'), { recursive: true });
+    copyFileSync(join(ROOT, 'test/golden/ts/shapes', f), join(dist, 'ts/shapes', f));
+  }
+  for (const f of COMMANDS) chmodSync(join(dist, f), 0o755);
+  // tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
+  for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
+    const d = join(dist, f.replace(/\.mjs$/, '.d.mts'));
+    if (!existsSync(d)) continue;
+    const text = readFileSync(d, 'utf8');
+    if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
+  }
 }
-for (const f of [...MODULES, ...DATA]) {
-  mkdirSync(dirname(join(DIST, f)), { recursive: true });
-  copyFileSync(join(ROOT, f), join(DIST, f));
+
+if (isMain(import.meta.url)) {
+  try {
+    copyData();
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  console.log(`copy-data: ${MODULES.length} modules, ${DATA.length} data files and ${SHAPE_TYPES.length} shape types into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);
 }
-for (const f of SHAPE_TYPES) {
-  mkdirSync(join(DIST, 'ts/shapes'), { recursive: true });
-  copyFileSync(join(ROOT, 'test/golden/ts/shapes', f), join(DIST, 'ts/shapes', f));
-}
-for (const f of COMMANDS) chmodSync(join(DIST, f), 0o755);
-// tsc copies a command's shebang into its declaration; a declaration never runs, so it carries none.
-for (const f of COMMANDS.filter((c) => c.endsWith('.mjs'))) {
-  const d = join(DIST, f.replace(/\.mjs$/, '.d.mts'));
-  const text = readFileSync(d, 'utf8');
-  if (text.startsWith('#!')) writeFileSync(d, text.slice(text.indexOf('\n') + 1));
-}
-console.log(`copy-data: ${MODULES.length} modules, ${DATA.length} data files and ${SHAPE_TYPES.length} shape types into dist/ as the tree holds them, ${COMMANDS.length} commands executable`);

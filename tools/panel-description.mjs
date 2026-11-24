@@ -23,23 +23,25 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken } from './vocabulary.mjs';
+import { meaningOfRole, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
-/** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch'];
+/** The extension's families, by enum value: the panel domain's PANEL_FAMILIES (contract.d/panel). */
+export const FAMILIES = Object.freeze(panelWords('PANEL_FAMILIES'));
 
-/** The widgets a face serves, by enum value. */
-export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
+/** The widgets a face serves, by enum value: PANEL_WIDGETS. */
+export const WIDGETS = Object.freeze(panelWords('PANEL_WIDGETS'));
 
-/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each. */
-export const STANDARD_WIDGETS = ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'];
+/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each: PANEL_STANDARD_WIDGETS. */
+export const STANDARD_WIDGETS = Object.freeze(panelWords('PANEL_STANDARD_WIDGETS'));
 /** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
  * `ppm` are not words. */
 export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
-/** The units a read-only travel is a level meter in. */
-const LEVEL_UNITS = ['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU'];
+/** The dimensions a read-only travel is a level meter in (omx-contract's PARAM_UNIT_DIMENSIONS, M4): its unit is one of
+ * their standard units (dB, dBFS, dBTP, dBu, LUFS, LU). */
+const LEVEL_DIMENSIONS = ['gain', 'level', 'loudness'];
+const isLevelUnit = (unit) => unitsOfDimensions(LEVEL_DIMENSIONS).includes(unit);
 /** The units a level meter's clip word can be in: a digital clip, never a modelled one (contract §7.9). */
 const CLIP_UNITS = ['dBFS', 'dBTP'];
 /** A word that names the state of an analogue input stage (phantom power, a pad, a head amp): a meter is a measurement,
@@ -66,7 +68,7 @@ export function widgetOf(c, declared) {
   if (declared !== undefined) return { widget: DECLARED_WIDGET[declared] ?? declared };
   if (c.readonly) {
     const unit = c.travel?.unit;
-    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
+    return isLevelUnit(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
   }
   if (c.kind === 'toggle') return { widget: 'switch' };
   if (c.kind === 'trigger') return { widget: 'switch', momentary: true };
@@ -77,12 +79,17 @@ export function widgetOf(c, declared) {
 /** The widget a face serves for a standard widget. */
 export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 
-/** The display kinds and sources, by enum value. */
-export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
-export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The display kinds and sources, by enum value: PANEL_DISPLAY_KINDS, PANEL_DISPLAY_SOURCES. */
+export const DISPLAY_KINDS = Object.freeze(panelWords('PANEL_DISPLAY_KINDS'));
+export const DISPLAY_SOURCES = Object.freeze(panelWords('PANEL_DISPLAY_SOURCES'));
+/** The axes a display is drawn on (the panel domain's PANEL_DISPLAY_AXES, in its code order), and the one the layout gives each kind:
+ * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
+ * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
+export const DISPLAY_AXES = Object.freeze(panelWords('PANEL_DISPLAY_AXES'));
+export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
-export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
+export const PLACEMENTS = Object.freeze(panelWords('PANEL_PLACEMENTS'));
 
 /** A section `graph` -> the display the extension names for it; a graph word with none here is
  * refused by name when the panel is described (a declaration error, never a silent drop). */
@@ -98,10 +105,13 @@ export const basisOf = (descriptor, section) => (section.basis === 'exact' && de
 /** The displays a host computes from a family's roles in closed form. */
 const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
-/** A descriptor unit -> the token a role checks it against: the param-contract extension's own table,
- * so a unit it serves is a unit a role can take. A unit it has no token for (`unknown` among them) is
- * a plain number and takes no role. */
-export const unitToken = (unit) => servedToken(unit);
+/** A descriptor unit -> the standard id a role checks it against (omx-contract's PARAM_UNITS, P1), when the
+ * param-contract extension serves it (as on main). A unit it does not serve, or one the list has no id for (`unknown`
+ * among them), is a plain number and takes no role. */
+export const unitToken = (unit) => {
+  const id = unitIdOf(unit);
+  return id !== undefined && servedUnit(id) ? id : undefined;
+};
 
 /** Each family's roles and the units each accepts, and the roles that repeat by index: tools/role-table.mjs's, the
  * one table, data a browser loads as it is. */
@@ -175,12 +185,12 @@ const keyOfText = (s) => {
 /** A descriptor with no control to lay out (none stated, or every one hidden): there is no panel to make, and the
  * layout says so by code instead of answering an empty one. */
 export class NoControls extends Error {
-  code = 'panel.describe.no-controls';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelNoControls;
 }
 
 /** A declared family none of whose meanings the controls carry: a transient designer is no compressor (#138). */
 export class FamilyNotBacked extends Error {
-  code = 'panel.describe.family-not-backed';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelFamilyNotBacked;
 }
 
 /** A section's declared `bars: true` that fails a check of the bar rule, by the check's code (tools/bars.mjs). */
@@ -298,7 +308,8 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = rest.token ?? unitToken(unit);
+    // a filter slope names its unit's id (dB/oct is dB-oct) whether or not the extension serves it, as main read it as the dB of a slope
+    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
@@ -375,7 +386,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     if (!CLOSED_FORMS[family]?.includes(kind)) throw new Error(`${where}: section '${s.key}' draws ${s.graph}, and the ${family} family has no ${kind} a host computes`);
     // `exact` only when an authored descriptor declares it (the one-panel spec §5.3); any other curve is modelled
     const basis = basisOf(descriptor, s);
-    return [{ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
+    return [{ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(s.label, `section '${s.key}'`), basis }];
   });
   // a derived panel (derive: true): a family whose closed form is known draws it on the section holding its first required role, once
   // every required role is mapped (the one-panel spec §3.1)
@@ -384,7 +395,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const section = controls.find((c) => c.symbol === first.symbol)?.section;
     if (section !== undefined) {
       const kind = CLOSED_FORMS[family][0];
-      displays.push({ kind, section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
+      displays.push({ kind, axis: AXIS_OF_KIND[kind], section, sectionKey: sections[section].key, source: 'family', meters: [null, null], curve: null, floor: null, labelKey: labelKey(`display.${kind}`, 'display label key'), label: label(listed[section].label, `section '${listed[section].key}'`), basis: 'modelled' });
     }
   }
 
@@ -425,7 +436,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
   const have = new Set(meters.map((m) => m.symbol));
   for (const c of all) {
-    if (!c.readonly || have.has(keyOf(c)) || !LEVEL_UNITS.includes(c.travel?.unit)) continue;
+    if (!c.readonly || have.has(keyOf(c)) || !isLevelUnit(c.travel?.unit)) continue;
     const named = [c.meaning, keyOf(c), c.name].filter((t) => typeof t === 'string').find(namesAnalogueState);
     if (named !== undefined) { refuseMeter(keyOf(c), `a meter is a measurement; '${named}' names an analogue input state`); continue; }
     meters.push({ declared: false, symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });
@@ -442,7 +453,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
-    displays.push({ kind: 'gain_reduction_bar', section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
   }
   // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
   const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
@@ -528,6 +539,12 @@ export const GROUP = Symbol('group');
 /** The label of the repeated-group instance a control belongs to (`Band 3`), for the page cut: a symbol, so no serialisation sees it. */
 export const INSTANCE = Symbol('instance');
 
+/** The place of a repeated-group instance's slot (0 its on/off where the heads have one, then one a matrix row), for the page cut: a symbol. */
+export const PLACE = Symbol('place');
+
+/** The label of the matrix row a repeated-group instance's slot is (`Type`), for the page cut: a symbol. */
+export const ROW = Symbol('row');
+
 /** The name of the Easy controls' page and of a MOD GUI's first section. */
 export const EASY_PAGE = 'Easy';
 
@@ -548,8 +565,15 @@ export const PAGE_SIZE = 8;
  *    on one, never mixed with its neighbour. A derived page holds a control once. A control with no group is its own.
  *    A section of several pages names each page by the controls it holds, "Band: Freq - Q".
  *
+ * An instance of a repeated group (`INSTANCE`, its slots' places `PLACE` and rows `ROW`) is a page of its own. From two
+ * encoders up, an instance longer than the page has its first `perPage` places as its screen, and each place past them is a
+ * row of the aligned matrix: after the instances, one screen per run of `perPage` instances that have that cell, slot `j`
+ * the run's instance `j`, named by the row (`Type`, a second run `Type 2`). A cut never splits an instance onto a
+ * continuation of its own.
+ *
  * A control hidden by `values` (symbol -> current value; a governing control left out reads its come-up value) keeps its
- * slot, blank: the slots do not move with the governing values. Below two encoders a group is plain controls (one a page).
+ * slot, blank: the slots do not move with the governing values. No screen has zero visible items: a page whose every slot
+ * is blank (hidden, taken by the Easy pages, or an empty cell) is not cut. Below two encoders a group is plain controls (one a page).
  */
 export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const size = perPage ?? PAGE_SIZE;
@@ -563,6 +587,8 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     return out;
   };
   const easy = (x.easy ?? []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
+  // no screen has zero visible items: a page of blank slots alone is not cut
+  const shown = (pages) => pages.filter((p) => p.ids.some((id) => id !== null));
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
@@ -575,15 +601,25 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: k === 0 ? name : `${name} ${k / size + 1}`, ids: pad(r.ids.slice(k, k + size)) });
       return pages;
     });
-    return [...easyPages, ...declared];
+    return shown([...easyPages, ...declared]);
   }
-  return [...easyPages, ...x.sections.flatMap((s, section) => {
+  return shown([...easyPages, ...x.sections.flatMap((s, section) => {
     // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
     // after it stay where every other instance has them, and the blanks an instance would end on are left off
     const taken = (c) => c.param === null || easy.includes(c.symbol);
-    const cs = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
-      .map((c) => (taken(c) ? { ...c, param: null } : c))
+    const mine = x.controls.filter((c) => c.section === section && (c[INSTANCE] !== undefined || !taken(c)))
+      .map((c) => (taken(c) ? { ...c, param: null } : c));
+    // the places past a page are the aligned matrix's rows, cut after the instances (from two encoders up)
+    const past = (c) => size >= 2 && c[INSTANCE] !== undefined && c[PLACE] >= size;
+    const cs = mine.filter((c) => !past(c))
       .filter((c, i, all) => c.param !== null || all.slice(i + 1).some((d) => d[GROUP] === c[GROUP] && d.param !== null));
+    const rowPages = [];
+    const beyond = mine.filter(past);
+    for (const k of [...new Set(beyond.map((c) => c[PLACE]))].sort((a, b) => a - b)) {
+      // the instances that have this cell, in the matrix's order; a cell the Easy pages took keeps its slot, blank
+      const row = beyond.filter((c) => c[PLACE] === k && c.symbol !== null);
+      for (let r = 0; r < row.length; r += size) rowPages.push({ row: row[0][ROW], run: r / size, controls: row.slice(r, r + size) });
+    }
     const pages = [];
     let page = [];
     const flush = () => {
@@ -606,7 +642,7 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       if (run.length > size || alone) flush();
     }
     flush();
-    // a page of one repeated-group instance is named by it (`Band 3`, a continuation `Band 3 2`)
+    // a page of one repeated-group instance is named by it (`Band 3`; below two encoders a continuation `Band 3 2`)
     const seen = new Map();
     return pages.map((p, k) => {
       const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
@@ -616,9 +652,9 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
         seen.set(instance, n);
         return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
       }
-      return { section, sectionName: s.label, pageName: pages.length === 1 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
-    });
-  })];
+      return { section, sectionName: s.label, pageName: pages.length === 1 && rowPages.length === 0 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
+    }).concat(rowPages.map(({ row, run, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${run === 0 ? row : `${row} ${run + 1}`}`, ids: pad(controls.map((c) => c.param)) })));
+  })]);
 }
 
 /** The shortest decimal that round-trips to the same binary64, -0 written 0. */

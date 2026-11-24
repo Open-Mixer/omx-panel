@@ -71,6 +71,15 @@ function bandsOnPages(pages, descriptor) {
 
 const upTo = (n) => Array.from({ length: n }, (_, k) => k + 1);
 
+/** The cut at `values` as the slots of the cut that shows every band, the controls `values` hide blank, a page left with no
+ * shown slot not cut (no screen has zero visible items). */
+function blankedAt(x, values) {
+  const hidden = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
+  return pagesOf(x, { values: { eqBands: 32 } })
+    .map((p) => ({ ...p, ids: p.ids.map((id) => (hidden.has(id) ? null : id)) }))
+    .filter((p) => p.ids.some((id) => id !== null));
+}
+
 /** The check every cut is held to: the pages hold bands 1..`count`, whole, and no other. */
 function pagesShowBands(pages, descriptor, count) {
   assert.deepEqual(bandsOnPages(pages, descriptor), upTo(count));
@@ -119,15 +128,16 @@ test('eqBands 4 (its come-up value): bands 1..4 shown, and no page of eight hold
     // the switch, the count and four bands: 22 controls
     assert.equal(pages.flatMap((p) => p.ids).filter((id) => id !== null).length, 22);
   }
-  // hidden bands keep their slots, blank: the cut does not change with the values
-  assert.equal(pagesOf(x).length, pagesOf(x, { values: { eqBands: 32 } }).length);
+  // hidden bands keep their slots, blank: the slots do not move with the values; a page left with no shown slot is not cut
+  assert.deepEqual(pagesOf(x), blankedAt(x, {}));
+  assert.ok(pagesOf(x).length < pagesOf(x, { values: { eqBands: 32 } }).length, 'the come-up value leaves pages with no shown slot, which the cut leaves out');
 });
 
 test('eqBands 9: bands 1..9 shown; the cut follows the value, not the come-up one', () => {
   const d = strip(4);
   const x = panelLayout(d, { panel: declared() });
   for (const perPage of [undefined, 8]) pagesShowBands(pagesOf(x, { perPage, values: { eqBands: 9 } }), d, 9);
-  assert.equal(pagesOf(x, { values: { eqBands: 9 } }).length, pagesOf(x).length);
+  assert.deepEqual(pagesOf(x, { values: { eqBands: 9 } }), blankedAt(x, { eqBands: 9 }), 'the slots stay where every band shows them');
   pagesShowBands(pagesOf(x, { values: { eqBands: 32 } }), d, 32);
   // the same at come-up: a strip that comes up with nine bands
   const d9 = strip(9);
@@ -137,17 +147,15 @@ test('eqBands 9: bands 1..9 shown; the cut follows the value, not the come-up on
   pagesShowBands(pagesOf(json, { values: { eqBands: 9 } }), d, 9);
 });
 
-test('a section the values empty keeps its page, every slot blank', () => {
+test('a section the values empty has no page: no screen has zero visible items', () => {
   const d = strip(1);
   const panel = declared();
   panel.sections = [{ key: 'head', label: 'Head', controls: ['eqOn', 'eqBands'] }, ...upTo(BANDS).map((n) => ({ key: `band_${n}`, label: `Band ${n}`, controls: bandSymbols(n) }))];
   const all = pagesOf(panelLayout(d, { panel }), { perPage: 8, values: { eqBands: 3 } });
   // the Easy page leads (the one cut, spec 7.14); the sections' pages follow
   assert.equal(all[0].pageName, 'Easy');
-  const pages = all.slice(1).filter((p) => p.pageName !== 'Head');
-  assert.equal(pages.length, 32);
-  assert.deepEqual(pages.slice(0, 3).map((p) => p.pageName), ['Band 1', 'Band 2', 'Band 3']);
-  assert.ok(pages.slice(3).every((p) => p.ids.every((id) => id === null)));
+  assert.deepEqual(all.slice(1).filter((p) => p.pageName !== 'Head').map((p) => p.pageName), ['Band 1', 'Band 2', 'Band 3']);
+  assert.ok(all.every((p) => p.ids.some((id) => id !== null)), 'every page shows a control');
 });
 
 test('the MOD GUI hides what the come-up values hide, and its script follows the governing port', () => {
@@ -170,7 +178,7 @@ test('the MOD GUI hides what the come-up values hide, and its script follows the
     const attr = (a) => tag.match(new RegExp(`${a}="([^"]*)"`))?.[1] ?? null;
     return { symbol: attr('data-symbol'), getAttribute: attr, style: { display: /display:none/.test(tag) ? 'none' : '' } };
   });
-  const icon = { find: (sel) => ({ each: (f) => nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]).forEach((k) => f.call(k)) }) };
+  const icon = { find: (sel) => ({ each: (f) => (/data-visible-port/.test(sel) ? nodes.filter((k) => k.getAttribute('data-visible-port') === sel.match(/"([^"]+)"/)[1]) : []).forEach((k) => f.call(k)) }) };
   const shownBands = () => upTo(BANDS).filter((n) => nodes.find((k) => k.symbol === sym(n, 'Freq')).style.display === '');
   fn({ type: 'start', icon, ports: [{ symbol: 'eqBands', value: 4 }, { symbol: 'eqOn', value: 1 }] });
   assert.deepEqual(shownBands(), upTo(4));

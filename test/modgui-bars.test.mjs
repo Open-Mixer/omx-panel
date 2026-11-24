@@ -26,7 +26,7 @@ test('nine drawbars are a row of faders: widget fader, the footage the label, th
   assert.equal(html.match(/omx-bar"/g).length, 9);
   assert.ok(html.includes('<span class="omx-control-title">5 1/3\'</span>'));
   assert.equal(html.match(/mod-role="input-control-port"/g).length, 9);
-  assert.ok(files.has('modgui/knobs/omx-fader.png'));
+  assert.ok(files.has('modgui/knobs/omx-fader-vintage.png'));
   assert.equal((files.get('modgui.ttl').toString().match(/lv2:symbol "db/g) ?? []).length, 9);
 });
 test('arm: a declared bars: false leaves the integer travels as selectors, and the screenshot changes', () => {

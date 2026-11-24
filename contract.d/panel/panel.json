@@ -1,0 +1,943 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/contract/panel",
+  "info": {
+    "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
+    "version": "1.2.0",
+    "x-owner": "omx-panel",
+    "x-stability": "experimental"
+  },
+  "components": {
+    "schemas": {
+      "PANEL_FAMILIES": {
+        "description": "The panel families of a plugin (omx-panel docs/panel-layout.md): the kind of processor its panel is laid out for. The words and their order are the contract; omx-panel's tools/panel-description.mjs FAMILIES and the skin package schema read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "Panel families and widgets are declarations, so they live here (vocabulary-owner rule, FreeMixer/omx-contract#157).",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "none",
+            "title": "none",
+            "description": "a plugin with no family: its panel is laid out from its groups and roles",
+            "x-code": 0,
+            "x-text": "A plugin with no family: its panel is laid out from its groups and its roles."
+          },
+          {
+            "const": "gate",
+            "title": "gate",
+            "description": "a gate or expander",
+            "x-code": 1,
+            "x-text": "A gate's or an expander's panel family."
+          },
+          {
+            "const": "dynamics",
+            "title": "dynamics",
+            "description": "a compressor",
+            "x-code": 2,
+            "x-text": "A compressor's panel family."
+          },
+          {
+            "const": "limiter",
+            "title": "limiter",
+            "description": "a limiter",
+            "x-code": 3,
+            "x-text": "A limiter's panel family."
+          },
+          {
+            "const": "deesser",
+            "title": "deesser",
+            "description": "a de-esser",
+            "x-code": 4,
+            "x-text": "A de-esser's panel family."
+          },
+          {
+            "const": "eq",
+            "title": "eq",
+            "description": "an equaliser, parametric or graphic",
+            "x-code": 5,
+            "x-text": "An equaliser's panel family, parametric or graphic."
+          },
+          {
+            "const": "filter",
+            "title": "filter",
+            "description": "a filter",
+            "x-code": 6,
+            "x-text": "A filter's panel family."
+          },
+          {
+            "const": "drive",
+            "title": "drive",
+            "description": "a saturator or distortion",
+            "x-code": 7,
+            "x-text": "A saturator's or a distortion's panel family."
+          },
+          {
+            "const": "modulation",
+            "title": "modulation",
+            "description": "a chorus, flanger, phaser or tremolo",
+            "x-code": 8,
+            "x-text": "A chorus's, a flanger's, a phaser's or a tremolo's panel family."
+          },
+          {
+            "const": "delay",
+            "title": "delay",
+            "description": "a delay",
+            "x-code": 9,
+            "x-text": "A delay's panel family."
+          },
+          {
+            "const": "reverb",
+            "title": "reverb",
+            "description": "a reverb",
+            "x-code": 10,
+            "x-text": "A reverb's panel family."
+          },
+          {
+            "const": "pitch",
+            "title": "pitch",
+            "description": "a pitch shifter",
+            "x-code": 11,
+            "x-text": "A pitch shifter's panel family."
+          },
+          {
+            "const": "utility",
+            "title": "utility",
+            "description": "a gain trim, a stereo width control or another utility that shapes a signal without a processor's character",
+            "x-code": 12,
+            "x-text": "A utility's panel family: a trim, a width control, a balancer or a clipper."
+          }
+        ]
+      },
+      "PANEL_STANDARD_WIDGETS": {
+        "description": "The standard widgets a panel picks from a descriptor and a representation (a skin) draws, in the order omx-panel's tools/panel-description.mjs STANDARD_WIDGETS lists them.",
+        "x-since": "1.0.0",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "knob",
+            "title": "knob",
+            "description": "a travel",
+            "x-code": 0,
+            "x-text": "A travel, drawn as a knob."
+          },
+          {
+            "const": "fader",
+            "title": "fader",
+            "description": "a travel drawn long",
+            "x-code": 1,
+            "x-text": "A travel drawn long, as a fader."
+          },
+          {
+            "const": "switch",
+            "title": "switch",
+            "description": "a toggle",
+            "x-code": 2,
+            "x-text": "A toggle, drawn as a switch."
+          },
+          {
+            "const": "selector",
+            "title": "selector",
+            "description": "an integer travel or labelled values",
+            "x-code": 3,
+            "x-text": "An integer travel or labelled values, drawn as a selector."
+          },
+          {
+            "const": "meter",
+            "title": "meter",
+            "description": "a readout",
+            "x-code": 4,
+            "x-text": "A readout, drawn as a meter."
+          },
+          {
+            "const": "curve",
+            "title": "curve",
+            "description": "a response or transfer curve",
+            "x-code": 5,
+            "x-text": "A response or transfer curve, drawn as a graph."
+          },
+          {
+            "const": "xy",
+            "title": "xy",
+            "description": "two controls drawn as one point",
+            "x-code": 6,
+            "x-text": "Two controls drawn together as one point on a plane."
+          },
+          {
+            "const": "display",
+            "title": "display",
+            "description": "a value shown as text",
+            "x-code": 7,
+            "x-text": "A value shown as text."
+          }
+        ]
+      },
+      "PANEL_WIDGETS": {
+        "description": "The widgets a declared panel may name for a control, and the extension serves (org.openmixer.panel-description/1): auto leaves the choice to the panel layout. The four others are the shared widgets of omx-panel's schema/panel.schema.json.",
+        "x-since": "1.0.0",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "auto",
+            "title": "auto",
+            "description": "left out of a panel declaration: the layout picks the widget from the control",
+            "x-code": 0,
+            "x-text": "Left out of a panel declaration: the layout picks the widget from the control."
+          },
+          {
+            "const": "knob",
+            "title": "knob",
+            "description": "a rotary control",
+            "x-code": 1,
+            "x-text": "A rotary control."
+          },
+          {
+            "const": "fader",
+            "title": "fader",
+            "description": "a linear control",
+            "x-code": 2,
+            "x-text": "A linear control."
+          },
+          {
+            "const": "switch",
+            "title": "switch",
+            "description": "a two-state control",
+            "x-code": 3,
+            "x-text": "A two-state control."
+          },
+          {
+            "const": "selector",
+            "title": "selector",
+            "description": "a control that picks one of a few values",
+            "x-code": 4,
+            "x-text": "A control that picks one of a few values."
+          }
+        ]
+      },
+      "PANEL_DISPLAY_KINDS": {
+        "description": "The displays a declared panel may carry, and the extension serves (org.openmixer.panel-description/1), in the order of their codes: a panel description names a display by its place here. omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core restated these words by hand beside the families and widgets; a display kind is a declaration, so it lives here (vocabulary-owner rule).",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "gain_reduction_bar",
+            "title": "gainReductionBar",
+            "description": "a bar of the gain a dynamics processor takes off",
+            "x-code": 0,
+            "x-text": "A bar showing the gain reduction."
+          },
+          {
+            "const": "transfer_curve",
+            "title": "transferCurve",
+            "description": "a dynamics processor's output level against its input level",
+            "x-code": 1,
+            "x-text": "The dynamics transfer curve: output level against input level."
+          },
+          {
+            "const": "eq_response",
+            "title": "eqResponse",
+            "description": "an equaliser's frequency response",
+            "x-code": 2,
+            "x-text": "The equaliser's frequency response."
+          },
+          {
+            "const": "meter",
+            "title": "meter",
+            "description": "a level meter",
+            "x-code": 3,
+            "x-text": "A level meter."
+          },
+          {
+            "const": "time_response",
+            "title": "timeResponse",
+            "description": "a response over time: a delay's train of taps or a reverb's decay envelope",
+            "x-code": 4,
+            "x-text": "The response over time: a delay's taps or a reverb's decay."
+          }
+        ]
+      },
+      "PANEL_DISPLAY_SOURCES": {
+        "description": "Where a panel description's display takes its data from, in the order of their codes (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core and omx-plugins restated these words by hand beside the families, widgets and display kinds; a display source is a declaration, so it lives here (vocabulary-owner rule).",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "family",
+            "title": "family",
+            "description": "the data the panel family itself implies",
+            "x-code": 0,
+            "x-text": "The data the panel family implies."
+          },
+          {
+            "const": "meters",
+            "title": "meters",
+            "description": "the plugin's meter readouts",
+            "x-code": 1,
+            "x-text": "The plugin's meter readouts."
+          },
+          {
+            "const": "gain_adjustment",
+            "title": "gainAdjustment",
+            "description": "the gain the processor applies",
+            "x-code": 2,
+            "x-text": "The gain the processor applies."
+          },
+          {
+            "const": "curve",
+            "title": "curve",
+            "description": "a curve the plugin declares",
+            "x-code": 3,
+            "x-text": "A curve the plugin declares."
+          }
+        ]
+      },
+      "PANEL_PLACEMENTS": {
+        "description": "Where an instance sits, in the order of their codes: the clap.track-info/1 flags read as one value (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
+        "x-since": "1.0.0",
+        "x-why": "omx-clap-core and omx-plugins restated these words by hand; a placement is a declaration, so it lives here (vocabulary-owner rule).",
+        "x-c-codes": true,
+        "x-c-xmacro": true,
+        "oneOf": [
+          {
+            "const": "insert",
+            "title": "insert",
+            "description": "an instance on a track's insert chain",
+            "x-code": 0,
+            "x-text": "An instance on an insert chain."
+          },
+          {
+            "const": "return",
+            "title": "return",
+            "description": "an instance on a return track",
+            "x-code": 1,
+            "x-text": "An instance on a return track."
+          },
+          {
+            "const": "bus",
+            "title": "bus",
+            "description": "an instance on a bus",
+            "x-code": 2,
+            "x-text": "An instance on a bus."
+          },
+          {
+            "const": "master",
+            "title": "master",
+            "description": "an instance on the master",
+            "x-code": 3,
+            "x-text": "An instance on the master."
+          }
+        ]
+      },
+      "PANEL_STORE_CODES": {
+        "description": "The refusals of the descriptions store's reader and writer (omx-panel docs/descriptions-store.md, section 5): each is the qualification store's code of the same name, with panel-store. for its prefix. The loader's own codes are passed through, not repeated here.",
+        "x-since": "1.1.0",
+        "x-c-codes": true,
+        "oneOf": [
+          {
+            "const": "panel-store.absent",
+            "title": "absent",
+            "description": "the base file does not exist",
+            "x-code": 0,
+            "x-text": "The base store file does not exist."
+          },
+          {
+            "const": "panel-store.unreadable",
+            "title": "unreadable",
+            "description": "a layer exists and SQLite cannot open or read it",
+            "x-code": 1,
+            "x-text": "A store file exists and cannot be read."
+          },
+          {
+            "const": "panel-store.not-a-store",
+            "title": "notAStore",
+            "description": "a file at version 0, with no store_info row, or of another layer than the place it was opened as",
+            "x-code": 2,
+            "x-text": "The file is not a store of the layer it was opened as."
+          },
+          {
+            "const": "panel-store.schema-mismatch",
+            "title": "schemaMismatch",
+            "description": "the opened files are at different schema versions",
+            "x-code": 3,
+            "x-text": "The store files are at different schema versions."
+          },
+          {
+            "const": "panel-store.schema-other",
+            "title": "schemaOther",
+            "description": "a file is at a schema version other than the reader's",
+            "x-code": 4,
+            "x-text": "A store file is at another schema version than the reader's."
+          },
+          {
+            "const": "panel-store.domain-too-old",
+            "title": "domainTooOld",
+            "description": "an installed domain is older than the version a store was checked against",
+            "x-code": 5,
+            "x-text": "An installed domain is older than the one the store was checked against."
+          },
+          {
+            "const": "panel-store.word-unknown",
+            "title": "wordUnknown",
+            "description": "a stored word is in none of the items its column is checked against",
+            "x-code": 6,
+            "x-text": "A stored word is in none of the items its column is checked against."
+          },
+          {
+            "const": "panel-store.hot-journal",
+            "title": "hotJournal",
+            "description": "a layer has a hot journal: its writer stopped inside a transaction",
+            "x-code": 7,
+            "x-text": "A layer has a hot journal: its writer stopped inside a transaction."
+          },
+          {
+            "const": "panel-store.busy",
+            "title": "busy",
+            "description": "a layer stayed locked past the busy timeout",
+            "x-code": 8,
+            "x-text": "A layer stayed locked past the timeout."
+          },
+          {
+            "const": "panel-store.entry-invalid",
+            "title": "entryInvalid",
+            "description": "a put whose JSON is not an entry of the description schema, or whose words are not in their items",
+            "x-code": 9,
+            "x-text": "The entry is not an entry of the description schema, or holds a word its item lacks."
+          }
+        ]
+      },
+      "PANEL_DESCRIBE_CODES": {
+        "description": "The refusals describe states for a plugin (omx-panel tools/describe.mjs DESCRIBE_CODES): a stored entry with no description names the one that refused it.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "panel.describe.no-controls",
+            "title": "panelNoControls",
+            "description": "the plugin has no controls",
+            "x-code": 0,
+            "x-text": "{plugin} has no control a panel can show, so it gets no panel ({message}).",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.family-not-backed",
+            "title": "panelFamilyNotBacked",
+            "description": "the family has no panel backing",
+            "x-code": 1,
+            "x-text": "{plugin}'s controls do not carry what that panel family needs ({message}); choose another family or none.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.layout-invalid",
+            "title": "panelLayoutInvalid",
+            "description": "the layout the plugin states is invalid",
+            "x-code": 2,
+            "x-text": "The panel declared for {plugin} cannot be laid out ({message}); fix its panel declaration.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.override-unavailable",
+            "title": "panelOverrideUnavailable",
+            "description": "an override layer was given and no applier",
+            "x-code": 3,
+            "x-text": "The {layers} override layers for {plugin} were not applied: this host cannot read overrides.",
+            "x-args": [
+              "plugin",
+              "layers"
+            ]
+          },
+          {
+            "const": "panel.describe.override-refused",
+            "title": "panelOverrideRefused",
+            "description": "an override layer was refused",
+            "x-code": 4,
+            "x-text": "The override layer {layer} ({name}) for {plugin} was refused: {message}. The layers below it still apply.",
+            "x-args": [
+              "plugin",
+              "layer",
+              "name",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.override-dropped",
+            "title": "panelOverrideDropped",
+            "description": "an override entry was dropped",
+            "x-code": 5,
+            "x-text": "In override layer {layer} ({name}) for {plugin}, the entry for {control} was dropped: {message}.",
+            "x-args": [
+              "plugin",
+              "layer",
+              "control",
+              "name",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.role-dropped",
+            "title": "panelRoleDropped",
+            "description": "a role was dropped",
+            "x-code": 6,
+            "x-text": "The role {entry} on {symbol} of {plugin} is not shown ({reason}); the control stays on its page.",
+            "x-args": [
+              "plugin",
+              "entry",
+              "symbol",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.describe.skin-dropped",
+            "title": "panelSkinDropped",
+            "description": "a skin field was dropped",
+            "x-code": 7,
+            "x-text": "The skin's {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the skin still applies.",
+            "x-args": [
+              "plugin",
+              "field",
+              "entry",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.describe.meter-refused",
+            "title": "panelMeterRefused",
+            "description": "a meter was refused",
+            "x-code": 8,
+            "x-text": "The meter {symbol} of {plugin} was left out: {reason}.",
+            "x-args": [
+              "plugin",
+              "symbol",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.describe.param-unserved",
+            "title": "panelParamUnserved",
+            "description": "a path or text parameter of another range is not served",
+            "x-code": 9,
+            "x-text": "The parameter {symbol} of {plugin} is not served: its range {range} is neither a path nor a text.",
+            "x-args": [
+              "plugin",
+              "symbol",
+              "range"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-too-few",
+            "title": "panelBarsTooFew",
+            "x-code": 10,
+            "x-text": "A bar group of {plugin} has too few controls to draw as bars ({message}); they are drawn as knobs.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-not-travel",
+            "title": "panelBarsNotTravel",
+            "x-code": 11,
+            "x-text": "A bar group of {plugin} holds a control that cannot be a bar ({message}); fix the group in the panel declaration.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-facts-differ",
+            "title": "panelBarsFactsDiffer",
+            "x-code": 12,
+            "x-text": "The controls of a bar group of {plugin} differ in range, step, unit or scale ({message}); bars must share them.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-labels-not-series",
+            "title": "panelBarsLabelsNotSeries",
+            "x-code": 13,
+            "x-text": "The labels of a bar group of {plugin} do not form one series ({message}); rename them or split the group.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.bars-unknown-control",
+            "title": "panelBarsUnknownControl",
+            "x-code": 14,
+            "x-text": "A bar group of {plugin} names a control the plugin does not have ({message}); fix the symbol.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          },
+          {
+            "const": "panel.describe.easy-refused",
+            "title": "panelEasyRefused",
+            "x-code": 15,
+            "x-text": "The Easy list of {plugin} was refused ({message}); the Easy page takes the rule instead.",
+            "x-args": [
+              "plugin",
+              "message"
+            ]
+          }
+        ]
+      },
+      "PANEL_GROUP_OUTCOMES": {
+        "description": "The verdict of the port-group inference (omx-panel docs/group-inference.md): what the rules decided for a plugin.",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "nothing-to-do",
+            "title": "nothingToDo",
+            "description": "the plugin is left exactly as it is",
+            "x-code": 0,
+            "x-text": "The plugin is left as it is."
+          },
+          {
+            "const": "grouped",
+            "title": "grouped",
+            "description": "every control was placed in a group",
+            "x-code": 1,
+            "x-text": "Every control was placed in a group."
+          },
+          {
+            "const": "no-confident-grouping",
+            "title": "noConfidentGrouping",
+            "description": "the rules found no grouping they trust",
+            "x-code": 2,
+            "x-text": "The rules found no grouping they trust."
+          }
+        ]
+      },
+      "PANEL_GROUP_REASONS": {
+        "description": "Why the port-group inference left a plugin as it is (omx-panel docs/group-inference.md).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "no-controls",
+            "title": "noControls",
+            "description": "the plugin has no placeable controls",
+            "x-code": 0,
+            "x-text": "The plugin has no controls to place."
+          },
+          {
+            "const": "own-groups-complete",
+            "title": "ownGroupsComplete",
+            "description": "the plugin's own groups already place every control",
+            "x-code": 1,
+            "x-text": "The plugin's own groups already place every control."
+          },
+          {
+            "const": "fits-one-screen",
+            "title": "fitsOneScreen",
+            "description": "the controls fit one screen",
+            "x-code": 2,
+            "x-text": "The controls fit one screen."
+          },
+          {
+            "const": "unplaced-controls",
+            "title": "unplacedControls",
+            "description": "a control was placed by no rule",
+            "x-code": 3,
+            "x-text": "A control was placed by no rule."
+          },
+          {
+            "const": "too-few-groups",
+            "title": "tooFewGroups",
+            "description": "the rules made fewer groups than the minimum",
+            "x-code": 4,
+            "x-text": "The rules made too few groups."
+          },
+          {
+            "const": "too-many-groups",
+            "title": "tooManyGroups",
+            "description": "the rules made more groups than the maximum",
+            "x-code": 5,
+            "x-text": "The rules made too many groups."
+          },
+          {
+            "const": "mostly-by-index",
+            "title": "mostlyByIndex",
+            "description": "most controls were placed only by a run of port indexes",
+            "x-code": 6,
+            "x-text": "Most controls were placed only by a run of port indexes."
+          }
+        ]
+      },
+      "PANEL_GROUP_RULES": {
+        "description": "The rule that made a port group (omx-panel docs/group-inference.md, in the order the rules run; instance for a group of a repeated instance).",
+        "x-since": "1.1.0",
+        "oneOf": [
+          {
+            "const": "own",
+            "title": "own",
+            "description": "the plugin's own pg:group assignment",
+            "x-code": 0,
+            "x-text": "The plugin's own group."
+          },
+          {
+            "const": "designation",
+            "title": "designation",
+            "description": "an lv2:designation of the parameters vocabulary",
+            "x-code": 1,
+            "x-text": "A designation of the parameters vocabulary."
+          },
+          {
+            "const": "name",
+            "title": "name",
+            "description": "a shared name or symbol prefix, or a shared trailing number",
+            "x-code": 2,
+            "x-text": "A shared name or symbol prefix, or number."
+          },
+          {
+            "const": "unit",
+            "title": "unit",
+            "description": "a shared units:unit",
+            "x-code": 3,
+            "x-text": "A shared unit."
+          },
+          {
+            "const": "index",
+            "title": "index",
+            "description": "a contiguous run of lv2:index",
+            "x-code": 4,
+            "x-text": "A run of port indexes."
+          },
+          {
+            "const": "modgui",
+            "title": "modgui",
+            "description": "the plugin's own MOD GUI layout",
+            "x-code": 5,
+            "x-text": "The plugin's own MOD GUI layout."
+          },
+          {
+            "const": "instance",
+            "title": "instance",
+            "description": "a group of one instance of a repeated group",
+            "x-code": 6,
+            "x-text": "A group of one instance of a repeated group."
+          }
+        ]
+      },
+      "PANEL_SKIN_CODES": {
+        "description": "The refusals of a skin package (omx-panel docs/skin-package.md): what the skin host and omx-panel's validator say when a skin's override, API or view is refused, each with its English sentence and the placeholders it fills; the surfaces read schema/codes.json and catalogs/<lang>.json, rendered from here (tools/codes-render.mjs).",
+        "x-since": "1.2.0",
+        "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
+        "oneOf": [
+          {
+            "const": "panel.skin.override-invalid",
+            "title": "skinOverrideInvalid",
+            "x-code": 0,
+            "x-text": "The override for {plugin} is invalid at {field}; fix skin.json and reload the skin.",
+            "x-args": [
+              "plugin",
+              "field"
+            ]
+          },
+          {
+            "const": "panel.skin.override-entry-dropped",
+            "title": "skinOverrideEntryDropped",
+            "x-code": 1,
+            "x-text": "The {field} entry {entry} for {plugin} was dropped ({reason}); the rest of the override still applies.",
+            "x-args": [
+              "plugin",
+              "field",
+              "entry",
+              "reason"
+            ]
+          },
+          {
+            "const": "panel.skin.api-mismatch",
+            "title": "skinApiMismatch",
+            "x-code": 2,
+            "x-text": "This skin declares API {declared}, which this console does not support (it serves {supported}); the skin is not loaded.",
+            "x-args": [
+              "declared",
+              "supported"
+            ]
+          },
+          {
+            "const": "panel.skin.view-error",
+            "title": "skinViewError",
+            "x-code": 3,
+            "x-text": "The skin's view failed: {message}. Reload it, or remove the skin if it keeps failing.",
+            "x-args": [
+              "message"
+            ]
+          },
+          {
+            "const": "panel.skin.view-lint",
+            "title": "skinViewLint",
+            "x-code": 4,
+            "x-text": "The view {file} uses the disallowed word {word}; remove it and reload the skin.",
+            "x-args": [
+              "word",
+              "file"
+            ]
+          }
+        ]
+      },
+      "PANEL_MODGUI_CODES": {
+        "description": "The refusals of the MOD GUI importer (omx-panel docs/modgui-import.md) and of a skin's MOD GUI script licence (panel.skin.modgui-licence), each with its English sentence and the placeholders it fills; rendered into schema/codes.json and catalogs/<lang>.json (tools/codes-render.mjs).",
+        "x-since": "1.2.0",
+        "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
+        "oneOf": [
+          {
+            "const": "panel.modgui.not-found",
+            "title": "modguiNotFound",
+            "x-code": 0,
+            "x-text": "No MOD GUI to import was found in {file} ({detail}); nothing was written.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.ttl-invalid",
+            "title": "modguiTtlInvalid",
+            "x-code": 1,
+            "x-text": "The bundle's {file} does not read as valid TTL ({detail}); fix it and import again.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.no-licence",
+            "title": "modguiNoLicence",
+            "x-code": 2,
+            "x-text": "{file} states no licence ({detail}); add one to its bundle before its MOD GUI can be imported.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.licence-unmapped",
+            "title": "modguiLicenceUnmapped",
+            "x-code": 3,
+            "x-text": "The licence in {file} is not one this importer maps to an SPDX id ({detail}); add the mapping or change the licence.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.licence-refused",
+            "title": "modguiLicenceRefused",
+            "x-code": 4,
+            "x-text": "The licence in {file} is outside the allowed list ({detail}); the MOD GUI is not imported.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.unknown-property",
+            "title": "modguiUnknownProperty",
+            "x-code": 5,
+            "x-text": "{file} carries an unknown property ({detail}); remove it or correct it before importing.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.port-unknown",
+            "title": "modguiPortUnknown",
+            "x-code": 6,
+            "x-text": "{file} names a port that is not one of the plugin's own ports ({detail}); fix the symbol and import again.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.image-not-found",
+            "title": "modguiImageNotFound",
+            "x-code": 7,
+            "x-text": "{file} names an image that is not in the bundle's resources ({detail}); add the file or fix the reference.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.path-escape",
+            "title": "modguiPathEscape",
+            "x-code": 8,
+            "x-text": "{file} names a path that resolves outside the bundle ({detail}); nothing is imported from outside the bundle.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.modgui.target-exists",
+            "title": "modguiTargetExists",
+            "x-code": 9,
+            "x-text": "{file} already exists ({detail}); remove it first to import over it.",
+            "x-args": [
+              "file",
+              "detail"
+            ]
+          },
+          {
+            "const": "panel.skin.modgui-licence",
+            "title": "skinModguiLicence",
+            "x-code": 10,
+            "x-text": "The MOD GUI script for {plugin} is dropped: its licence {licence} is missing or not allowed.",
+            "x-args": [
+              "plugin",
+              "licence"
+            ]
+          }
+        ]
+      },
+      "PANEL_DISPLAY_AXES": {
+        "description": "The axis a panel description's display is drawn on (omx-panel docs/panel-layout.md \"Displays and their axis\"), in the order of their codes: describe serves it on every display as data, so no surface picks an axis by the display kind's name. omx-panel's tools/panel-description.mjs DISPLAY_AXES reads them, and the renderer reads the word.",
+        "x-since": "1.2.0",
+        "x-why": "The C renderer chose the log frequency axis by the display kind's name and a second client would have copied it; layout data comes via the description (owner ruling), so the axis is a word of the panel vocabulary.",
+        "oneOf": [
+          {
+            "const": "linear",
+            "title": "linear",
+            "description": "x and y on linear spans: a transfer curve's input and output dB on one span with the unity line, a bar's fill a linear fraction of its range",
+            "x-code": 0,
+            "x-text": "A linear axis: a level in dB on a linear span."
+          },
+          {
+            "const": "log-frequency",
+            "title": "logFrequency",
+            "description": "x the frequency in Hz on a log axis, y the dB symmetric about 0 to the next 6 dB",
+            "x-code": 1,
+            "x-text": "A log frequency axis: frequency in Hz on a log scale, level in dB about 0."
+          },
+          {
+            "const": "time",
+            "title": "time",
+            "description": "x the time in ms from 0 to the content's end, y the level in dB from the floor, -60, to 0 or the next 6 dB above a level",
+            "x-code": 2,
+            "x-text": "A time axis: time in ms from 0, level in dB from the floor."
+          }
+        ]
+      }
+    }
+  }
+}

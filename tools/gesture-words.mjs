@@ -5,22 +5,25 @@
  * gesture-words.mjs — renderer/src/gesture_words.h, the gesture word names of schema/gestures.json in their declared
  * order, the table omx_panel_word_name (the C library) and the omx-panel-render command answer from (#23). The enum
  * omx_panel_word_t of renderer/include/omx_panel_render.h names the same words, OMX_PANEL_WORD_<WORD>, in the same order
- * after OMX_PANEL_WORD_NONE: --check holds both to gestures.json.
+ * after OMX_PANEL_WORD_NONE: --check holds both to the words the gestures domain declares (GESTURES_WORDS of
+ * contract.d/gestures/gestures.json, which schema/gestures.json is rendered from).
  *
  *   node tools/gesture-words.mjs           write the header
- *   node tools/gesture-words.mjs --check   exit 1 when the header or the enum is not what gestures.json gives
+ *   node tools/gesture-words.mjs --check   exit 1 when the header or the enum is not what the domain gives
+ *   node tools/gesture-words.mjs [--check] --contract-dir <dir>   read <dir>/gestures/gestures.json instead of the tree's
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
+import { CONTRACT_DIR, GesturesDomainError, declarationIn } from './gestures-render.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const GESTURES = join(ROOT, 'schema', 'gestures.json');
 export const WORDS_HEADER = join(ROOT, 'renderer', 'src', 'gesture_words.h');
 const API_HEADER = join(ROOT, 'renderer', 'include', 'omx_panel_render.h');
 
-/** The declared words, in their order. */
-export const declaredWords = (doc = JSON.parse(readFileSync(GESTURES, 'utf8'))) => Object.keys(doc.words);
+/** The declared words, in their order: GESTURES_WORDS of the gestures domain in `dir`. */
+export const declaredWords = (dir = CONTRACT_DIR) => Object.keys(declarationIn(dir).words);
 
 /** gesture_words.h's text. */
 export function emitWordsHeader(words) {
@@ -46,18 +49,24 @@ export function enumWords(text = readFileSync(API_HEADER, 'utf8')) {
   return body ? [...body[1].matchAll(/\bOMX_PANEL_WORD_([A-Z0-9_]+)/g)].map((m) => m[1]) : [];
 }
 
-/** Every problem of the header and the enum against gestures.json. */
+/** Every problem of the header and the enum against the gestures domain. */
 export function problems(words, header, enumNames) {
   const out = [];
-  if (header !== emitWordsHeader(words)) out.push('renderer/src/gesture_words.h is not what gestures.json gives: run node tools/gesture-words.mjs');
+  if (header !== emitWordsHeader(words)) out.push('renderer/src/gesture_words.h is not what the gestures domain gives: run node tools/gesture-words.mjs');
   const want = ['NONE', ...words.map((w) => w.toUpperCase())];
   if (enumNames.join(' ') !== want.join(' '))
-    out.push(`omx_panel_word_t names ${enumNames.join(' ')}; gestures.json gives ${want.join(' ')}, in that order`);
+    out.push(`omx_panel_word_t names ${enumNames.join(' ')}; the gestures domain gives ${want.join(' ')}, in that order (GESTURES_WORDS: ${words.join(' ')})`);
   return out;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const words = declaredWords();
+if (isMain(import.meta.url)) {
+  const at = process.argv.indexOf('--contract-dir');
+  let words;
+  try { words = declaredWords(at >= 0 ? process.argv[at + 1] : CONTRACT_DIR); } catch (e) {
+    if (!(e instanceof GesturesDomainError)) throw e;
+    console.error(`gesture-words: ${e.message}`);
+    process.exit(1);
+  }
   if (process.argv.includes('--check')) {
     let header = '';
     try { header = readFileSync(WORDS_HEADER, 'utf8'); } catch { /* absent: a problem below */ }
@@ -69,7 +78,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     if (sabotage.some((p) => p.length === 0)) { console.error('gesture-words --check: a planted fault was not refused'); process.exit(1); }
     for (const p of bad) console.error(`gesture-words: ${p}`);
     if (bad.length) process.exit(1);
-    console.log(`gesture-words: ${words.length} words, the header and omx_panel_word_t as gestures.json gives them (2 planted faults refused)`);
+    console.log(`gesture-words: ${words.length} words, the header and omx_panel_word_t as the gestures domain gives them (2 planted faults refused)`);
   } else {
     writeFileSync(WORDS_HEADER, emitWordsHeader(words));
     console.log(`gesture-words: wrote renderer/src/gesture_words.h (${words.length} words)`);

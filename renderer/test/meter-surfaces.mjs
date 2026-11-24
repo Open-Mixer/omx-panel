@@ -17,7 +17,7 @@
  *
  *   node renderer/test/meter-surfaces.mjs [--browser <chromium>] [--no-tk] [--json <file>] [--sabotage browser-fall|tk-fall]
  *
- * Needs the built tree and renderer (make renderer), playwright-core and @openmixer/omx-dsp (>= 0.32.2 < 0.33) importable, a
+ * Needs the built tree and renderer (make renderer), playwright-core and @openmixer/omx-dsp (>= 0.32.2) importable, a
  * Chromium, python3 with tkinter and Pillow, and an X display for Tk (xvfb-run).
  */
 import { execFileSync } from 'node:child_process';
@@ -36,7 +36,7 @@ const dsp = await import('@openmixer/omx-dsp');
 const dspVersion = JSON.parse(readFileSync(join(ROOT, 'node_modules', '@openmixer', 'omx-dsp', 'package.json'), 'utf8')).version;
 const fx = FIXTURES.find((f) => f.name === 'meters');
 const g = modgui.GEOMETRY;
-const look = modgui.loadLook().tokens;
+const look = modgui.loadLook('console').tokens;
 const rgb = (t) => [1, 3, 5].map((i) => parseInt(look[t].slice(i, i + 2), 16));
 const p = modgui.resolvePanel(JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8')), { panel: JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')), stem: fx.stem });
 const lay = modgui.layout(p);
@@ -147,7 +147,7 @@ async function browserLeg(executablePath) {
   const { chromium } = await import('playwright-core');
   const strip = (s) => s.replace(/\{\{\{c?ns\}\}\}/g, '').replace(/\{\{#([^}]+)\}\}[\s\S]*?\{\{\/\1\}\}/g, '').replace(/\{\{[^}]*\}\}/g, '');
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:${look['--surface']}}
-${strip(modgui.emitStylesheet(p, modgui.loadLook(), 'meter-surfaces'))}</style></head><body>${strip(modgui.emitTemplate(p, lay, 'meter-surfaces'))}</body></html>`;
+${strip(modgui.emitStylesheet(p, modgui.loadLook('console'), 'meter-surfaces'))}</style></head><body>${strip(modgui.emitTemplate(p, lay, 'meter-surfaces', 'console'))}</body></html>`;
   const browser = await chromium.launch({ executablePath, args: ['--no-sandbox', '--force-device-scale-factor=1', '--font-render-hinting=none'] });
   const page = await browser.newPage({ viewport: { width: lay.w + 40, height: lay.h + 40 }, deviceScaleFactor: 1 });
   await page.setContent(html);

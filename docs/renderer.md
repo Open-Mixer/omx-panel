@@ -8,10 +8,11 @@ One C library draws a plugin's panel from its panel description, the document `o
 - a plugin window in a DAW (CLAP `clap.gui`) or in omx-clap-host;
 - a host-embedded inline view, at whatever size the host gives;
 - a plain CPU pixel buffer (RGBA or BGRA, a width, a height, a stride and a scale): what a host that
-  embeds a plugin's view hands the plugin to draw into, and what an out-of-process worker sends to the
-  web console so it can show the same view.
+  embeds a plugin's view hands the plugin to draw into.
 
-Each of these draws the same description with the same layout and widget code. The source is in `renderer/`.
+Each of these draws the same description with the same layout and widget code. The renderer is omx-panel's own
+toolkit, for a plugin's own GUI; the web console draws its panels with its own (Nuxt UI) and shows none of its pixels.
+The source is in `renderer/`.
 
 ## What it draws
 
@@ -84,9 +85,11 @@ declares no role FAILS, naming `$OMX_ROLE_MEANINGS`, before it draws anything.
 
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
-(`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
-`eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
-and output on one span and the unity line. A `time_response` (a delay's tap train, a reverb's decay envelope: the processing-view spec, amendment 2026-09-16h) is drawn on a
+(`omx_panel_view_set_curve`). The renderer computes no point and picks no axis: the axis is the display's `axis` word, read from the
+description (`PANEL_DISPLAY_AXES`, [panel-layout.md](panel-layout.md) "Displays and their axis"), and a display with none, or with
+another word, refuses the description by name. The host's points are copied, ascending in x, and scaled to the frame, an
+`eq_response` (`log-frequency`) on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` (`linear`) on linear dB with input
+and output on one span and the unity line. A `time_response` (`time`) (a delay's tap train, a reverb's decay envelope: the processing-view spec, amendment 2026-09-16h) is drawn on a
 time axis in ms from 0 to the content's end and a level window from the floor, -60 dB, to 0 (raised to the next 6 dB when a level
 exceeds 0), with the 0 dB line as the reference: its envelope is the display's curve (x in ms, y in dB) and its stems are
 `omx_panel_view_set_stems`, one per tap from the floor to its level, dimmed by its shade and with its leg letter above; each array is
@@ -176,7 +179,7 @@ sections: a frame captioned with the label, the range and its unit, a bar along 
 level from the foot, a gain reduction from 0 dB), the marker holds the peak (the deepest reduction) and falls by `elapsed`
 seconds at omx-dsp's rate (`fallDbPerSecond` of its `data/primitives/meter.json`, 18 dB/s), the same at any draw rate and on
 silence. The marker is omx-dsp's own view law, `omx_meter_view_step` of `<omxdsp/mix/omx_meter_view.h>` (header-only, omx-dsp-devel
-at or above 0.32.2 and below 0.33, checked by the build), the meter's range standing for the scale; no number of the law is
+at or above 0.32.2, checked by the build), the meter's range standing for the scale; no number of the law is
 copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
 the frame stands, which is what the MOD GUI face draws.
 
@@ -228,6 +231,40 @@ gesture drew.
 of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
+
+### The gesture unit
+
+The arithmetic of every gesture is one C unit, `renderer/src/gesture.c`, built into `libomx-panel-render`: drag past 10 px
+(dead travel), fine at 0.3, step (declared, else 1%; coarse is 5), second (a handle's Q), reset to the declared default,
+more and select (never a value), toggle on release inside, painting across a bar group (columns jumped over are
+interpolated, one gesture id per sweep), ownership and the claim, the safety hold. `input.c` keeps only the renderer's
+mapping: which of the view's controls form a target, where each sits on the surface, and what a gesture changed in the
+controls; it hands the engine (`src/gesture.h`, internal) the targets and the event on every call.
+
+The same unit has a JSON door, `renderer/include/omx_panel_gesture.h`, three calls and no struct across them:
+`omx_gesture_open(gestures_json, settings_json)`, `omx_gesture_run(ctx, control_json, events_json, answer, cap)` and
+`omx_gesture_close(ctx)`. A run takes one control (the member the JavaScript reference's `runGesture` takes) and a
+script of events, replays it through a fresh engine and answers as JSON what `runGesture` answers. The ABI of the three is
+`renderer/abi/omx_panel_gesture.abi`, held to the header, the export map and the built library by
+`renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
+unit's WebAssembly build.
+
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
+`tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
+its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
+`renderer/test/gesture-c-sabotage.test.mjs` breaks 51 rules in a copy of the source and watches each go red.
+
+Where the two references differ (each a finding of the first run, none reached by a shipped script; the first disappears when the JS loads this unit as wasm):
+
+- A logarithmic travel's value agrees to a relative 1e-11, not bit for bit: `log` and `exp` are the platform's in C and V8's in
+  JavaScript, and `exp(log(x))` doubles the last digit's difference. The shipped log-frequency scripts are exact.
+- An integer travel rounds as JavaScript's `Math.round` does, exactly (`round()` then a negative half back up, and -0); the first C port used
+  `round()`, which rounds a negative half away from zero, a behaviour fix with its test and arms.
+- A wheel's or detent's notch count is a double in both (a fraction counts, 1e300 runs to the end), not an int32.
+- Input neither reference can read is refused `GESTURE_BAD_INPUT` by both, in the same words (`tools/gestures.mjs` gained `validateInput` for it).
+- A reset with no bar selected is refused `GESTURE_NO_DEFAULT` in both, in the same words (`null declares no default`); the refused gesture's id is spent in both.
+- (A JS bug, for the wasm lane to retire with the JS: the reference throws on a move of the finger left of a pinch after the other lifted; the unit ignores that move.)
 
 Still to come: redrawing only what changed.
 
@@ -295,7 +332,7 @@ is a desktop to prove it on), and redrawing only what changed.
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |
-| omx-dsp's meter view (>= 0.32.2, < 0.33) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
+| omx-dsp's meter view (>= 0.32.2) | the meter's marker, header-only | `omx-dsp-devel` | `libomxdsp-dev` | GPL-3.0-or-later |
 | libm | | glibc | libc6 | |
 | pugl (window) | the window and its events | `pugl-devel` | `libpugl-dev` | ISC |
 | NanoVG (window) | drawing in the window | `nanovg-devel` | `libnanovg-dev` | Zlib |

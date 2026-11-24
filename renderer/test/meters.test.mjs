@@ -4,7 +4,7 @@
  * A meter of the description is drawn as a bar and a marker over the description's range (contract 7.9, omx-dsp#301): the bar by
  * the value (a level from the foot of the range, a gain reduction from 0 dB), the marker holding the peak (the deepest
  * reduction) and falling by elapsed time at omx-dsp's rate, whatever the draw tick's rate, silence included. The marker is omx-dsp's
- * own omx_meter_view_step (omx-dsp-devel >= 0.32.2 < 0.33): its rate is held to omx-dsp's data/primitives/meter.json and every
+ * own omx_meter_view_step (omx-dsp-devel >= 0.32.2): its rate is held to omx-dsp's data/primitives/meter.json and every
  * drawn tick to omx-dsp's golden fall vectors. Each rule has its arm in the sabotage the commit message names.
  */
 import assert from 'node:assert/strict';
@@ -13,11 +13,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { FIXTURES, RENDERER, descriptionFile, render, scratch, stateFile } from './harness.mjs';
+import { gte } from '../../test/semver.mjs';
 
 const modgui = await import(join(RENDERER, '..', 'dist', 'tools', 'modgui-gen.mjs'));
 const fx = FIXTURES.find((f) => f.name === 'meters');
 const g = modgui.GEOMETRY;
-const look = modgui.loadLook().tokens;
+const look = modgui.loadLook('console').tokens;
 const hex = (t) => [1, 3, 5].map((i) => parseInt(look[t].slice(i, i + 2), 16));
 const ACCENT = hex('--accent'), INK = hex('--ink');
 const p = modgui.resolvePanel(JSON.parse(readFileSync(join(RENDERER, '..', fx.descriptor), 'utf8')), { panel: JSON.parse(readFileSync(join(RENDERER, '..', fx.panel), 'utf8')), stem: fx.stem });
@@ -37,9 +38,16 @@ function lawFall() {
   assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
   assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
   const built = readFileSync(join(RENDERER, 'build', 'omxdsp-version'), 'utf8').trim();
-  assert.match(built, /^0\.32\.([2-9]|\d{2,})$/, `built against omx-dsp ${built}: the floor 0.32.2 and the ceiling 0.33`);
+  assert.ok(atOrAboveFloor(built), `built against omx-dsp ${built}: the floor 0.32.2`);
   return fall;
 }
+/** The built omx-dsp is at or above the renderer's floor (renderer/Makefile OMXDSP_FLOOR): no ceiling, a later major passes. */
+const atOrAboveFloor = (v) => gte(v, '0.32.2');
+test('a built omx-dsp at or above the floor passes: a later major is not refused', () => {
+  assert.ok(atOrAboveFloor('1.0.0'), 'omx-dsp 1.0.0 is above the floor 0.32.2');
+  assert.ok(atOrAboveFloor('0.32.2'), 'the floor itself passes');
+  assert.ok(!atOrAboveFloor('0.32.1'), 'below the floor is refused');
+});
 /** omx-dsp's golden vectors of the view law (vectors/meter-view.json, installed as pkg-config omxdsp's meterviewvectors). */
 const VECTORS = JSON.parse(readFileSync(pc('meterviewvectors'), 'utf8'));
 

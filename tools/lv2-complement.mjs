@@ -36,9 +36,10 @@ import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rea
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { inferGroups, readModguiLayout, readPluginPorts } from './group-infer.mjs';
+import { inferGroups, readModguiLayout, readPluginPorts, OUTCOME } from './group-infer.mjs';
 import { controlsOfLv2, inferGroupModel, instanceGroups } from './group-model.mjs';
 import { parseTurtle } from './turtle-read.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 const RDFS = 'http://www.w3.org/2000/01/rdf-schema#';
@@ -190,9 +191,9 @@ function versionOf(bundle, uri) {
  * @param {{ symbol: string, name: string, ports: string[] }[]} instances
  */
 function withInstances(verdict, instances) {
-  if (instances.length === 0 || (verdict.outcome !== 'grouped' && verdict.outcome !== 'no-confident-grouping')) return verdict;
+  if (instances.length === 0 || (verdict.outcome !== OUTCOME.grouped && verdict.outcome !== OUTCOME.noConfidentGrouping)) return verdict;
   const taken = new Set(instances.flatMap((g) => g.ports));
-  const base = (verdict.outcome === 'grouped' ? verdict.groups : []).map((g) => ({ ...g, ports: g.ports.filter((p) => !taken.has(p)) })).filter((g) => g.ports.length > 0);
+  const base = (verdict.outcome === OUTCOME.grouped ? verdict.groups : []).map((g) => ({ ...g, ports: g.ports.filter((p) => !taken.has(p)) })).filter((g) => g.ports.length > 0);
   const symbols = new Set(base.map((g) => g.symbol));
   const named = instances.map((g) => {
     let symbol = g.symbol;
@@ -203,7 +204,7 @@ function withInstances(verdict, instances) {
   const stated = base.some((g) => g.rule === 1);
   let next = stated ? Math.min(...base.map((g) => g.displayPriority)) - 1 : base.length + named.length;
   const kept = stated ? base : base.map((g) => ({ ...g, displayPriority: next-- }));
-  return { outcome: 'grouped', groups: [...kept, ...named.map((g) => ({ ...g, displayPriority: next--, rule: 0 }))], placedBy: verdict.placedBy ?? {} };
+  return { outcome: OUTCOME.grouped, groups: [...kept, ...named.map((g) => ({ ...g, displayPriority: next--, rule: 0 }))], placedBy: verdict.placedBy ?? {} };
 }
 
 /**
@@ -228,7 +229,7 @@ export function planBundle(bundle, options = {}) {
     return { uri, verdict: withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances) };
   });
   const plan = { bundle, plugins, write: false };
-  if (!plugins.some((p) => p.verdict.outcome === 'grouped')) return plan;
+  if (!plugins.some((p) => p.verdict.outcome === OUTCOME.grouped)) return plan;
   try {
     if (bundle.dynamic) throw new Refusal('dynamic-manifest', `${bundle.dir} has a dynamic manifest`);
     for (const p of plugins) {
@@ -354,7 +355,7 @@ export function renderBundle(plan, target) {
     const s = { t: 'iri', v: p.uri };
     manifest.push({ s, p: { t: 'iri', v: `${LV2}minorVersion` }, o: int(p.version.next.minor) });
     manifest.push({ s, p: { t: 'iri', v: `${LV2}microVersion` }, o: int(p.version.next.micro) });
-    if (p.verdict.outcome === 'grouped') addGroups(bundle, p, out, stated, nodes);
+    if (p.verdict.outcome === OUTCOME.grouped) addGroups(bundle, p, out, stated, nodes);
   }
   const texts = new Map();
   let fileIndex = 0;
@@ -461,7 +462,7 @@ export function markerText(plan, writer = writerId()) {
   const v = (x) => `${x.minor}.${x.micro}`;
   const lines = [plan.bundle.dir, `writer ${writer}`, `source-sha256 ${plan.bundle.hash}`];
   for (const p of plan.plugins) {
-    const what = p.verdict.outcome === 'grouped' ? `grouped ${p.verdict.groups.length}` : `restated ${p.verdict.outcome}`;
+    const what = p.verdict.outcome === OUTCOME.grouped ? `grouped ${p.verdict.groups.length}` : `restated ${p.verdict.outcome}`;
     lines.push(`plugin ${p.uri} ${v(p.version.installed)} ${v(p.version.next)} ${what}`);
   }
   for (const f of [...plan.bundle.files.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) lines.push(`file ${f.name} ${sha256(f.bytes)}`);
@@ -633,10 +634,10 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       counts.plugins++;
       if (verbose) {
         const v = p.verdict;
-        log(`plugin ${p.uri}: ${v.outcome}${v.outcome === 'grouped' ? ` ${v.groups.map((g) => `${g.symbol}(${g.ports.length})`).join(' ')}` : ` ${v.reason}${v.detail ? ` (${v.detail})` : ''}`}`);
+        log(`plugin ${p.uri}: ${v.outcome}${v.outcome === OUTCOME.grouped ? ` ${v.groups.map((g) => `${g.symbol}(${g.ports.length})`).join(' ')}` : ` ${v.reason}${v.detail ? ` (${v.detail})` : ''}`}`);
       }
-      if (p.verdict.outcome === 'grouped') counts.grouped++;
-      else if (p.verdict.outcome === 'nothing-to-do') counts.nothingToDo++;
+      if (p.verdict.outcome === OUTCOME.grouped) counts.grouped++;
+      else if (p.verdict.outcome === OUTCOME.nothingToDo) counts.nothingToDo++;
       else counts.noConfident++;
     }
     if (plan.refusal) {
@@ -648,7 +649,7 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
       continue;
     }
     const target = join(outDir, nameOf.get(dir));
-    const grouped = plan.plugins.filter((p) => p.verdict.outcome === 'grouped').map((p) => p.uri);
+    const grouped = plan.plugins.filter((p) => p.verdict.outcome === OUTCOME.grouped).map((p) => p.uri);
     const ours = isOurs(target);
     if (existsSync(target) && !ours) {
       counts.notOurs++;
@@ -788,4 +789,4 @@ function main(argv) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

@@ -41,5 +41,17 @@
     "handle": { "drag": "drag", "dragFine": "fine", "arrow": "step", "arrowCoarse": "step", "wheel": "second", "arrowSecond": "second", "encoder3": "second", "pinch": "second", "doubleTap": "reset", "backspace": "reset", "tap": "select", "longPress": "more" }
   },
   "paint": { "touch": "required", "mouse": "optional" },
+  "codes": {
+    "GESTURE_READ_ONLY": "A read-only control takes no gesture.",
+    "GESTURE_CONTROL_OWNED": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused.",
+    "GESTURE_NO_DEFAULT": "A reset on a control that declares no default.",
+    "GESTURE_NOT_IN_TABLE": "The widget has no such input in the table.",
+    "GESTURE_HOLD_SHORT": "A control marked hold was released before the safety hold.",
+    "GESTURE_HOLD_BELOW_FLOOR": "A safety hold shorter than the declared floor.",
+    "GESTURE_NO_TARGET": "A step with no bar or handle member to take it.",
+    "GESTURE_PAINT_REQUIRED_ON_TOUCH": "Painting is required on touch and cannot be turned off.",
+    "GESTURE_BAD_SETTING": "An unknown timing, or one not above zero.",
+    "GESTURE_BAD_INPUT": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number."
+  },
   "exceptions": []
 }
