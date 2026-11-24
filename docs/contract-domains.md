@@ -1,0 +1,50 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
+# The domains omx-panel owns
+
+omx-panel owns the words a panel is described in. They are declared here and installed into the contract directory by
+DOMAIN, not by package (omx-contract `docs/contract-dir.md`, "Domains"): `<contractdir>/<domain>/<domain>.json`, one
+JSON Schema 2020-12 document with `$id`, `info{title,version,x-owner}` and `components.schemas`. omx-panel is the
+domain's `x-owner` today; a domain that changes owner keeps its path and its consumers' references.
+
+Why: a change of a panel word is omx-panel's release alone. omx-contract holds the document kind, the loader check and the
+renderers, no panel word, so it is never released for one and no chain of consumers is walked for it. A consumer
+(omx-plugins, omx-clap-core) depends on the domain and floors omx-panel, the package that ships it, never omx-contract.
+
+## One space per domain
+
+| Domain | Document | Package | State |
+|---|---|---|---|
+| `panel` | `contract.d/panel/panel.json`: families, widgets, display kinds, display sources, placements | `omx-panel-contract` | shipped here |
+| `gestures` | `contract.d/gestures/gestures.json`: the gesture words, timings, thresholds, table, paint rule and refusal codes (`GESTURES_*`); `schema/gestures.json` and `renderer/src/gesture_words.h` are rendered from it (`node tools/gestures-render.mjs`, `node tools/gesture-words.mjs`) | `omx-panel-contract` | shipped here; the scripted fixtures (`test/fixtures/gestures/`) are a follow-up |
+| `look` | look roles and tokens (today `schema/look-roles.json`, `tools/look.json`) | | follow-up |
+
+Each domain has its own document and its own version line, so a consumer reads only the domain it uses and a change
+in one domain touches no other domain's consumers. A consumer reads the words at start-up through omx-contract's
+loader (`libomx-domain` in C; Ajv 2020 with `@openmixer/omx-contract/domain-schema` in TypeScript), never a rendered
+copy (omx-contract `docs/consumer-move.md`). A domain gets a codes header only for the words C code switches on.
+
+## The panel domain
+
+Its words and codes are those omx-contract main held in `data/panel.json` at b2e9bba (the last commit before they left; no release carried them) (`PANEL_FAMILIES`, `PANEL_WIDGETS`,
+`PANEL_STANDARD_WIDGETS`, `PANEL_DISPLAY_KINDS`, `PANEL_DISPLAY_SOURCES`, `PANEL_PLACEMENTS`); a word is a `oneOf` entry
+`{ const, title, description, x-code, x-text }`, its code its place in the order. The document states
+`info.x-stability` (`experimental`) and is in omx-contract's one formatting (`omx-contract fmt --check`). A consumer
+opens it through the loader, `omx_domain_open("panel", "1.0.0", ...)` in C, `openDomainAt` in JavaScript (the tools,
+`tools/vocabulary.mjs` `panelWords`). The six word items and `PANEL_STORE_CODES` are marked `x-c-codes`, the six word
+items `x-c-xmacro` too (sorting pass row V1): C code that tables them by code (the renderer's standard widgets,
+omx-clap-core's panel ABI) includes the one codes header, `include/omxdomain/panel_codes.h`, which `omx-contract render
+--target c --package panel --contract-dir contract.d` gives byte for byte; no other render exists.
+
+The refusal codes omx-panel emits are the domain's too (sorting pass row V3, domain 1.2.0): `PANEL_SKIN_CODES` (5),
+`PANEL_MODGUI_CODES` (the importer's 10 and `panel.skin.modgui-licence`) and `PANEL_DESCRIBE_CODES` (16), each word's
+`title` its key, `x-text` its English sentence and `x-args` its placeholders (omx-contract >= 3.21.0 reads `x-args`), their
+translations in the domain's catalogs. `schema/codes.json` and `catalogs/<lang>.json`, which the surfaces, the console
+(`@openmixer/omx-panel/codes.json`, `./catalogs/*.json`) and `tools/catalogs-gate.sh` read, are rendered from them by
+`tools/codes-render.mjs` (`make codes` checks them byte for byte); neither is written by hand.
+
+The translations of the words are `contract.d/panel/catalogs/<lang>.json` (six languages, one entry per word, moved from omx-contract's catalogs with nothing dropped). The family word is validated by `schema/skin-package.schema.json` `$defs.family` (a plain string in omx-contract's override schema), held equal to the domain's `PANEL_FAMILIES` by `test/panel-domain.test.mjs`. `make install` (its `install-contract` step)
+installs the domain as it is with omx-contract's domain installer (`install-contract-dir.sh --domain`) at
+`$(CONTRACTDIR)/panel/`, and the `omx-panel-contract` package ships it alone (noarch; a program that reads the panel
+words requires it). `test/panel-domain-contract.test.mjs` holds the document, the formatting, the one codes header,
+the installed tree as the loader opens it, and the package.

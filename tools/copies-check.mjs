@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FIXTURES_DIR } from './fixtures.mjs';
-import { loadLook, renderFaderFilm, renderFilm } from './modgui-gen.mjs';
+import { loadLook, LOOKS, renderFaderFilm, renderFilm } from './modgui-gen.mjs';
 
 const HERE = fileURLToPath(import.meta.url);
 const PACKAGE_NAME = '@openmixer/omx-panel';
@@ -30,10 +30,13 @@ const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 /** What omx-panel renders or ships, by digest: each a name a reader can follow, and its path in omx-panel's tree. */
 export function canonicalFiles() {
-  const tokens = loadLook().tokens;
   const out = new Map();
-  out.set(sha(renderFilm(tokens)), { name: 'the knob film strip (omx-panel modgui --films-only)', path: null });
-  out.set(sha(renderFaderFilm(tokens)), { name: 'the fader film strip (omx-panel modgui --films-only)', path: null });
+  // every look's strips: a tree tracks none of them, whichever look it was built in
+  for (const name of LOOKS) {
+    const look = loadLook(name);
+    out.set(sha(renderFilm(look)), { name: `the knob film strip, ${name} look (omx-panel modgui --films-only)`, path: null });
+    out.set(sha(renderFaderFilm(look)), { name: `the fader film strip, ${name} look (omx-panel modgui --films-only)`, path: null });
+  }
   for (const e of readdirSync(FIXTURES_DIR, { recursive: true, withFileTypes: true })) {
     if (!e.isFile()) continue;
     const at = join(e.parentPath, e.name);
@@ -107,7 +110,7 @@ function selfTest() {
   arm('a clean tree passes', r.status === 0);
   const knob = join(tree, 'plugin.lv2/modgui/knobs/omx-knob.png');
   mkdirSync(dirname(knob), { recursive: true });
-  writeFileSync(knob, renderFilm(loadLook().tokens));
+  writeFileSync(knob, renderFilm(loadLook()));
   git('add', '.');
   r = run();
   arm('a committed knob film strip fails, named', r.status === 1 && r.stderr.includes('plugin.lv2/modgui/knobs/omx-knob.png'));

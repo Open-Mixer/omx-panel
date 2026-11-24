@@ -74,6 +74,15 @@ omx-contract descriptor (`group` is the path; a declared `panel`'s sections, whe
 uri)` an LV2 plugin (its `pg:group`'s name is the path; the kind from `lv2:toggled` / `lv2:enumeration`, the range from
 `lv2:minimum` / `lv2:maximum`).
 
+**A descriptor of any origin is read**, the one a scan wrote as the one a plugin's package ships: the model is what a
+plugin's parameters are, never which file named them. A control's `symbol` here is the key the layout names it by
+(`keyOf`): its symbol, else an LV2 control's id (its port symbol), else a CLAP parameter's id as `p<id>`. A scan states no
+`symbol`, and a host draws from a scan: a scanned plugin has the groups, the matrix and the pages its shipped descriptor
+has. Two things a CLAP scan does not state are read from what it does: the instance number of a parameter keyed by its id comes from its **name**
+("Band 3 Gain"; the digits of `p13` number nothing), and a whole-number travel of the two points 0 and 1 is a **toggle** (a
+band's "On", an edge's "On": S6 makes it the head). *Tests: `test/eq-band-matrix.test.mjs`, omx-eq8 as its LV2 and its
+CLAP scan and omx-eq16 as its LV2 scan, beside the two descriptors omx-plugins ships.*
+
 ## The sources, in order of trust
 
 Each rule names the test that proves it (`test/group-model.test.mjs`).
@@ -201,8 +210,19 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   hidden by the rule. *Tests: "L6: ..."
   (library); modgui-gen's omx-strip and omx-delay faces.*
 
-- **L7, the owner's drawing rule for an EQ, every surface.** An EQ is one matrix: a column per band, left to right, HPF
-  first and LPF last; each column's controls stacked vertically, every column in the same row order, a control a band lacks
+- **L7, the owner's drawing rule for an EQ, every surface.** An EQ is ONE aligned band matrix, and **the high-pass is its
+  first band and the low-pass its last**, with the parametric bands between them in their number order (a low shelf after
+  the high-pass, a high shelf before the low-pass): one band per column, or per row where that is what fits the screen.
+  This is the order of the drawing only: **the audio order is untouched**, no parameter, port index or id moves, and the
+  plugin filters in the order it always did. The order comes from what the parameters are (S9: the edge a control's name
+  opens with, the instance number of a band), never from a list of plugins nor from the order the plugin declares its
+  parameters in, so omx-eq8, which declares HPF, LPF, Band 1 .. Band 8, is drawn HPF, Band 1 .. Band 8, LPF from its
+  shipped descriptor and from a scan alike. An EQ with no high-pass and no low-pass keeps its bands in their order; one with
+  only one of them has it at its end. **Every screen that shows more than one band shows a contiguous run of that order as
+  the matrix**, aligned: the same control at the same place in every band. A screen that shows one band at a time (a page,
+  P1) walks the same order, and place `k` of every band's screen is the same parameter; a place past the page is a row of
+  the matrix across a run of bands, never a screen of one band's leftovers.
+  Each column's controls are stacked vertically, every column in the same row order, a control a band lacks
   an empty cell, so row `r` is the same parameter in every column (the HPF's gain cell is empty and its `freq` sits on the
   band's `freq` row). A surface shows **as many columns as fit**, the one rule every language applies to the SERVED
   matrix: `visibleColumns(served, { width, column, count })` is `min(across, max(1, floor(width / column)))`, where
@@ -287,13 +307,28 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
   instance is one screen where it fits:
   - **P1, the page cut** (the plugin-hostd engine, `omx-panel describe --pages --per-page N`): `pagesOf` takes the controls
     of a section that carries a `matrix` by instance, each head of the served matrix (the EQ's HPF and LPF edges included) one
-    group. An instance's controls run in the head's order, **its on/off first**, then its rows from the top down, a cell
-    that is empty no slot. The section's own parameters (the count, an EQ's master on) come before the instances, in the
-    description's order. An instance of at most `perPage` controls is one page of its own, never sharing it with the
-    instance before or after (a page ends early); a longer one is the only thing split, on pages of its own, as any group.
-    A page of one instance is named by its head's label (`Band 3`), a continuation `Band 3 2`. *Tests: omx-eq8, eight band
-    screens each opening with the band's on/off, over `describe --pages`; the Calf multiband compressor's four bands;
-    "P1: ...". Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
+    group, **in the matrix's order: HPF first, the bands in their number order, LPF last** (L7). An instance's controls run
+    in the head's order, **its on/off first**, then its rows from the top down, and **every instance keeps the same
+    places**: slot `k` of an instance's screen is the same parameter in every instance. A place an instance has no control
+    at (the cell is empty: an edge with no Q; or the Easy pages took the control: a band's gain) is a **blank slot**, never
+    closed up, so the Q of band 1 is not under the encoder that turns the gain of band 3; the blank places after an
+    instance's last control are left off. The section's own parameters (the count, an EQ's master on) come before the
+    instances, in the description's order. An instance is one page of its own, never sharing it with the instance before
+    or after (a page ends early), named by its head's label (`Band 3`). **An instance longer than the page follows the
+    aligned matrix (L7), never a continuation screen of its own:** from two slots up, its first `perPage` places are its
+    screen, and each place past them is a **row** of the matrix, cut after the instances: one screen per run of `perPage`
+    instances that have that cell, in the matrix's order, slot `j` the run's instance `j` (a cell the Easy pages took
+    blank in its slot), named by the row (`Bands: Type`, the next run `Bands: Type 2`). **No screen has zero visible
+    items**: a page whose every slot is blank (its controls on the Easy pages, hidden by the values, or empty cells) is not
+    cut. The counts at 4 slots: omx-eq8 (an instance five places: on, frequency, gain, Q, type; the edges three) is 2 Easy
+    + HPF + 8 bands + ceil(8 / 4) = 2 Type rows + LPF = **14**; the Calf multiband
+    compressor (six places: bypass, threshold, ratio, attack, release, makeup; band 1's first four on the Easy page) is
+    Easy + bands 2..4 + the Release and Makeup rows = **6**. At 5 and 8 slots no eq8 band is past the page (11 screens at
+    8). *Tests: `test/pages-instances.test.mjs`: omx-eq8, eight band screens each opening with the band's on/off, and the
+    Type rows; the Calf multiband compressor at 4 cut in full; no screen with zero visible items at 2, 3, 4, 5 and 8 over
+    the corpus, with a sabotage arm that puts back the empty `Band: Band 1` screen and reads red;
+    `test/eq-band-matrix.test.mjs`, the order and the places at 4, 5 and 8 slots, a row screen a contiguous run, over
+    shipped and scanned descriptors. Sabotage: the cut by `perPage` regardless of groups (the matrix ignored) fails both.*
   - **P2, the lilv path** (the jalv engine, which reads each port's `pg:group`): lv2-complement writes **one `pg:group` per
     instance**, from the model, for a repeated group the plugin does not already declare instance by instance (source
     `indexed`; a plugin's own groups, source `declared`, are kept as they are). The instance's group node carries

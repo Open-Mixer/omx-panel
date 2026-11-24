@@ -6,23 +6,27 @@
 #ifndef OMX_PANEL_VIEW_H
 #define OMX_PANEL_VIEW_H
 
-#include <omxcontract/omx_vocabulary.h>
+#include <omxdomain/panel_codes.h>
 #include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
 
-typedef enum { W_KNOB, W_FADER, W_SWITCH, W_SELECTOR, W_METER, W_CURVE, W_XY, W_DISPLAY } widget;
+/* The standard widgets, omx-panel's panel domain (PANEL_STANDARD_WIDGETS, rendered into omxdomain/panel_codes.h): a
+ * widget it adds is drawn here before the count below lets this file build. A widget's code is its domain code. */
+typedef enum {
+#define W_OF(code, WORD) W_##WORD = code,
+  OMX_PANEL_STANDARD_WIDGETS(W_OF)
+#undef W_OF
+} widget;
 
-/* The standard widgets by omx-contract's names (PANEL_STANDARD_WIDGETS): a widget it adds is drawn
- * here before the count below lets this file build. */
+/* a widget's word is its X-macro name, compared without case (view.c): the standard widget words are one lowercase word */
 static const struct { const char *name; widget w; } WIDGET_NAMES[] = {
-    {OMX_PANEL_STANDARD_WIDGETS_KNOB, W_KNOB},       {OMX_PANEL_STANDARD_WIDGETS_FADER, W_FADER},
-    {OMX_PANEL_STANDARD_WIDGETS_SWITCH, W_SWITCH},   {OMX_PANEL_STANDARD_WIDGETS_SELECTOR, W_SELECTOR},
-    {OMX_PANEL_STANDARD_WIDGETS_METER, W_METER},     {OMX_PANEL_STANDARD_WIDGETS_CURVE, W_CURVE},
-    {OMX_PANEL_STANDARD_WIDGETS_XY, W_XY},           {OMX_PANEL_STANDARD_WIDGETS_DISPLAY, W_DISPLAY},
+#define W_NAME(code, WORD) {#WORD, W_##WORD},
+    OMX_PANEL_STANDARD_WIDGETS(W_NAME)
+#undef W_NAME
 };
 _Static_assert(sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES == OMX_PANEL_STANDARD_WIDGETS_COUNT,
-               "every standard widget of omx-contract is drawn");
+               "every standard widget of the panel domain is drawn");
 
 typedef struct {
   char *symbol, *label;
@@ -38,6 +42,9 @@ typedef struct {
   int64_t value;
   /* the bar group (the section's `bars`): the bar's label, NULL for a control in no bar. A bar is drawn as a fader, labelled by the bar. */
   char *bar;
+  /* a repeated group's matrix (the section's `matrix`): `placed` when the matrix names the control, `cut` while the matrix's
+   * count closes its instance up (view.c apply_counts) */
+  int placed, cut;
   /* the travel the host gave (input.c): the control's own unit; none given is 0..1, linear, no default */
   struct { double min, max, def, step; int given, has_def, log, integer; } travel;
   int read_only, hold;
@@ -50,9 +57,10 @@ typedef struct {
 /* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
 typedef struct {
   int section;
-  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
-  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
-  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
+  /* the display's axis, the description's `axis` word (PANEL_DISPLAY_AXES), never its kind's name: */
+  int log_x;     /* log-frequency: x in Hz on a log axis; linear: x on a linear span (a transfer curve's input dB) */
+  int symmetric; /* log-frequency: y in dB about 0; linear: y on x's span (a transfer curve's output dB) */
+  int time_x;    /* time: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;
@@ -74,6 +82,23 @@ typedef struct {
 
 /* One meter of the description's `meters` (contract 7.9): its range is the description's, its reading the host's. A meter whose
  * symbol is a control of a section is that control's reading and is not drawn again; the others stand in a band of their own. */
+/* A section's `matrix` (docs/renderer.md): the group model's matrixOf as the description carries it, read and never re-derived.
+ * `cell` is nrows x nheads control indices, -1 for an empty cell; `on` a head's on/off control, -1 for none. */
+typedef struct {
+  char *label;
+  int on, edge;
+} mhead;
+typedef struct {
+  int section, columns; /* columns: a head is a column; else a head is a row */
+  size_t nheads, nrows;
+  mhead *heads;
+  char **row_label;
+  int *cell;
+  int count_ctl;        /* the control that says how many instances run, -1 for none */
+  int64_t count;        /* its value: the description's default until the host gives one */
+  int head_row;         /* the head row, always the last: its cells are the heads' on/off, a null cell the head's caption */
+} matrix;
+
 typedef struct {
   char *symbol, *label, *unit;
   double min, max;
@@ -87,15 +112,15 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
 } geometry;
 
 typedef struct {
-  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, valueBase;
+  double brand, brandBase, title, titleBase, small, sectionBase, nameBase, nameBaseStrip, valueBase, readingBase;
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, meterGreen, meterAmber, meterRed;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
 } palette;
 
 struct omx_panel_view {
@@ -107,11 +132,14 @@ struct omx_panel_view {
   size_t ndisplays;
   meter *meters;
   size_t nmeters, nband;
+  matrix *matrices;
+  size_t nmatrices;
   char *brand, *name;
   int row_controls;
   geometry g;
   textsizes t;
   palette col;
+  omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */

@@ -17,6 +17,7 @@ import { SKIN_REFUSAL_CODES } from '../dist/src/skin-package.js';
 import { DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
+import { gte } from './semver.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
 const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.meta.url);
@@ -25,12 +26,6 @@ const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.m
 const CATALOG_LANGS = readdirSync(new URL('../catalogs/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
-const gte = (a, b) => {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) { if (pa[i] !== pb[i]) return pa[i] > pb[i]; }
-  return true;
-};
 
 /** Every code the package puts in a refusal, read off the modules that emit them. */
 const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];
@@ -47,9 +42,11 @@ function declared() {
   return new Map(Object.values(doc.codes ?? {}).map((e) => [e.code, e]));
 }
 
-test('omx-contract is at least the schema version this declaration is written against', () => {
+test('the installed omx-contract package is at least the floor this declaration is written against', () => {
+  // The package version, not x-omx-schema-version: a patch release (3.19.1) keeps the schema version at 3.19.0.
+  const installed = JSON.parse(readFileSync(new URL('../node_modules/@openmixer/omx-contract/package.json', import.meta.url), 'utf8')).version;
   assert.ok(gte(floor, '3.11.0'), `the floor is ${floor}; text and args on codes are 3.11.0`);
-  assert.ok(gte(schema['x-omx-schema-version'], floor), `schema is ${schema['x-omx-schema-version']}, need >= ${floor}`);
+  assert.ok(gte(installed, floor), `omx-contract is ${installed}, need >= ${floor}`);
 });
 
 /** One entry: the code word, its source sentence and its args (omx-contract#90: the source only, no other language). */
@@ -89,17 +86,7 @@ for (const code of EMITTED) {
     assert.ok(entry, `${code} has no entry in schema/codes.json`);
     for (const name of placeholders(entry.text.en)) assert.ok(entry.args.includes(name), `${code}: {${name}} is not in args`);
   });
-
-  for (const lang of CATALOG_LANGS) {
-    test(`${code} has a ${lang} sentence in catalogs/${lang}.json naming only its args`, () => {
-      const entry = declared().get(code);
-      // an entry is the sentence, or {text, by[, model, source]} with its provenance (omx-contract 3.16.0)
-      const said = catalog(lang).messages?.[code];
-      const sentence = typeof said === 'string' ? said : said?.text;
-      assert.ok(typeof sentence === 'string' && sentence !== '', `${code} has no ${lang} sentence`);
-      for (const name of placeholders(sentence)) assert.ok(entry?.args.includes(name), `${code} (${lang}): {${name}} is not in args`);
-    });
-  }
+  // the languages' sentences (present, naming only the code's args) are omx-contract's `translate --check`, the CI job `catalogs` (tools/catalogs-gate.sh)
 }
 
 test('the codes file declares no code the package does not emit', () => {

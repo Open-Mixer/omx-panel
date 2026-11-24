@@ -11,11 +11,13 @@
 
 /** @typedef {'none' | 'gate' | 'dynamics' | 'limiter' | 'deesser' | 'eq' | 'filter' | 'drive' | 'modulation' | 'delay' | 'reverb' | 'pitch'} PanelFamily */
 
-const T = ['ms', 's'], LVL = ['db', 'dbfs', 'dbu', 'lufs'], DB = ['db'], FREQ = ['hz', 'khz'], PLAIN = ['none', 'pc', 'coef'], RATIO = ['ratio', 'coef'], CHOICE = ['none'];
-const WET = { mix: ['pc', 'coef', 'none'], output: DB };
+// the standard unit ids (omx-contract's PARAM_UNITS, sorting pass M4): a role's units are named by id, never by a
+// format's token; test/units-standard.test.mjs holds every id to the installed list
+const T = ['ms', 's'], LVL = ['dB', 'dBFS', 'dBu', 'LUFS'], DB = ['dB'], FREQ = ['Hz', 'kHz'], PLAIN = ['none', 'percent', 'x'], RATIO = ['ratio', 'x'], CHOICE = ['none'];
+const WET = { mix: ['percent', 'x', 'none'], output: DB };
 
 /**
- * Each family's roles and the unit tokens each accepts (the param-contract extension's tokens).
+ * Each family's roles and the standard unit ids each accepts (omx-contract's PARAM_UNITS).
  * @type {Readonly<Record<PanelFamily, Readonly<Record<string, readonly string[]>>>>}
  */
 export const ROLES = {
@@ -24,13 +26,17 @@ export const ROLES = {
   dynamics: { threshold: LVL, ratio: RATIO, attack: T, release: T, knee: DB, makeup: DB, lookahead: ['ms'], ...WET },
   limiter: { ceiling: LVL, release: T, lookahead: ['ms'], threshold: LVL, ...WET },
   deesser: { frequency: FREQ, threshold: LVL, range: DB, width: ['oct'], ratio: RATIO, attack: T, release: T, knee: DB, mode: CHOICE, listen: CHOICE, ...WET },
-  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['db', 'coef'], band_q: ['none', 'coef', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'db'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'db'], lpf_on: CHOICE, output: DB },
+  eq: { band_type: CHOICE, band_freq: FREQ, band_gain: ['dB', 'x', 'coef'], band_q: ['none', 'x', 'oct'], band_on: CHOICE, hpf_freq: FREQ, hpf_slope: ['none', 'dB', 'dB-oct'], hpf_on: CHOICE, lpf_freq: FREQ, lpf_slope: ['none', 'dB', 'dB-oct'], lpf_on: CHOICE, output: DB },
   filter: { cutoff: FREQ, resonance: PLAIN, filter_type: CHOICE, ...WET },
   drive: { drive: DB, tone: PLAIN, model: CHOICE, ...WET },
-  modulation: { rate: ['hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
+  modulation: { rate: ['Hz', 'bpm'], depth: [...PLAIN, 'oct'], feedback: PLAIN, voices: CHOICE, spread: PLAIN, shape: CHOICE, ...WET },
   delay: { time: T, feedback: PLAIN, tone: PLAIN, sync: CHOICE, division: CHOICE, pingpong: CHOICE, ...WET },
   reverb: { size: PLAIN, decay: T, algorithm: CHOICE, predelay: ['ms'], damping: PLAIN, width: PLAIN, low_cut: FREQ, high_cut: FREQ, ...WET },
-  pitch: { shift: ['semitone12TET', 'cent'], fine: ['cent'], ...WET },
+  pitch: { shift: ['st', 'cents'], fine: ['cents'], ...WET },
+  // omx-plugins' trim (gain), width (width, pseudo-stereo, bass mono), balancer (amount, range) and clipper (drive, ceiling,
+  // softness, speed, slope): one role per control they declare whose unit a token serves. The balancer's speed is declared in
+  // dB or dB/s, its slope in dB/oct (omx-contract 3.21.0's sheet codes dbPerS and dbPerOct).
+  utility: { gain: DB, width: PLAIN, pseudo: CHOICE, pseudo_time: ['ms'], bass_mono: CHOICE, bass_mono_freq: FREQ, amount: PLAIN, range: DB, drive: DB, ceiling: LVL, softness: PLAIN, speed: ['dB', 'dB-s'], slope: ['dB-oct'] },
 };
 
 /**
@@ -57,6 +63,7 @@ export const REQUIRED_ROLES = {
   delay: [['time'], ['feedback']],
   reverb: [['size', 'decay'], ['mix']],
   pitch: [['shift']],
+  utility: [['gain', 'width', 'amount', 'drive']],
 };
 
 /** The dynamics family's roles, the words of a dynamics control (`threshold`, `ratio`, `attack`, `release`): from REQUIRED_ROLES, never typed twice. */

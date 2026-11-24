@@ -13,6 +13,7 @@
  *
  * `bars` is a view of the panel, like `easy`: it stays out of the canonical form and the fingerprint.
  */
+import { codeOf } from './sheet-codes.mjs';
 
 export const MIN_BARS = 4;
 export const MAX_BARS = 16;
@@ -21,13 +22,14 @@ export const MAX_BARS = 16;
 export const FOOTAGES = ['16\'', '5 1/3\'', '8\'', '4\'', '2 2/3\'', '2\'', '1 3/5\'', '1 1/3\'', '1\''];
 
 /** The refusal codes of a declared `bars: true`, each naming the check it failed. */
-export const BARS_CODES = {
-  few: 'panel.describe.bars-too-few',
-  kind: 'panel.describe.bars-not-travel',
-  facts: 'panel.describe.bars-facts-differ',
-  series: 'panel.describe.bars-labels-not-series',
-  unknown: 'panel.describe.bars-unknown-control',
-};
+const CODE = codeOf;
+export const BARS_CODES = Object.freeze({
+  few: CODE('panelBarsTooFew'),
+  kind: CODE('panelBarsNotTravel'),
+  facts: CODE('panelBarsFactsDiffer'),
+  series: CODE('panelBarsLabelsNotSeries'),
+  unknown: CODE('panelBarsUnknownControl'),
+});
 
 /** A bar-able control: a visible, writable travel. */
 const barable = (c) => c.kind === 'travel' && c.travel && !c.hidden && !c.readonly;

@@ -6,6 +6,7 @@
  * fills what is left. It takes the layout's family, roles and controls, and has no Node import, so a browser loads it too.
  */
 import { DYNAMICS_ROLES } from './role-table.mjs';
+import { codeOf } from './sheet-codes.mjs';
 
 /** The most controls a declared list names: what one surface page holds. */
 export const EASY_DECLARED_MAX = 8;
@@ -14,11 +15,17 @@ export const EASY_RULE_MAX = 6;
 /** The order fills up to this many when the roles gave fewer. */
 export const EASY_FILL = 4;
 
+/** The named dynamics roles, each checked to be one of the shared list: a reorder of that list moves nothing here. */
+export function pick(names, roles = DYNAMICS_ROLES) {
+  for (const n of names) if (!roles.includes(n)) throw new Error(`easy: '${n}' is no dynamics role`);
+  return names;
+}
+
 /** Each family's roles for the Easy face, in order: what is first matters most, a screen of four shows those. */
 export const EASY_ROLES = Object.freeze({
   none: [],
   gate: ['threshold', 'range', 'attack', 'release'],
-  dynamics: [...DYNAMICS_ROLES.slice(0, 2), 'makeup', 'mix', ...DYNAMICS_ROLES.slice(2)],
+  dynamics: [...pick(['threshold', 'ratio']), 'makeup', 'mix', ...pick(['attack', 'release'])],
   limiter: ['ceiling', 'threshold', 'release', 'output'],
   deesser: ['frequency', 'threshold', 'range', 'mix'],
   eq: ['band_gain', 'output'],
@@ -28,10 +35,11 @@ export const EASY_ROLES = Object.freeze({
   delay: ['time', 'feedback', 'tone', 'mix'],
   reverb: ['size', 'decay', 'damping', 'mix'],
   pitch: ['shift', 'fine', 'mix'],
+  utility: ['gain', 'width', 'amount', 'drive', 'ceiling', 'range'],
 });
 
 export class EasyRefused extends Error {
-  code = 'panel.describe.easy-refused';
+  code = codeOf('panelEasyRefused');
 }
 
 /** A layout control a face can set: no reading, no trigger, no bypass (the header draws it). */

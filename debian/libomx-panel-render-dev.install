@@ -2,4 +2,5 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 usr/lib/*/libomx-panel-render.so
 usr/include/omx_panel_render.h
+usr/include/omx_panel_gesture.h
 usr/lib/*/pkgconfig/omx-panel-render.pc

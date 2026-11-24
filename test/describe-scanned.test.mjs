@@ -81,7 +81,7 @@ test('LSP Para Equalizer x16 Mono: the declared ParaEQ class is kept, with every
   assert.ok(description.roles.every((r) => r.inferred === true));
   assert.deepEqual(description.displays.map((x) => [x.kind, x.basis]), [['eq_response', 'modelled']]);
 });
-test('LSP: a band gain read as a linear factor, its unit unstated, is served `coef`; a gain beside it in no band stays none', () => {
+test('LSP: a band gain read as a linear factor, its unit unstated, is served `coef` (the descriptor-scope standard id, %4); a gain beside it in no band stays none', () => {
   const d = fixture('scanned-lv2-lsp-para-equalizer-x16-mono.json');
   const unit = (s) => describe(d).description.params.find((p) => p.symbol === s).unit;
   assert.deepEqual(Array.from({ length: 16 }, (_, i) => unit(`g_${i}`)), Array(16).fill('coef'));
@@ -101,6 +101,19 @@ test('a Q whose default is zero is no band\'s Q: the width in octaves beside it 
   assert.equal(qOf({ min: 0, default: 0 }), 'w_0');
   // arm: a Q that runs above zero is the band's Q, over the width
   assert.equal(qOf({ min: 0.1, default: 0.7 }), 'q_0');
+});
+
+test('a band holding a Bandwidth and a Q, in either order: the Q is its Q', () => {
+  const t = (symbol, name, unit, min, max, def) => ({ symbol, name, kind: 'travel', travel: { min, max, unit, default: def } });
+  const freq = t('b1_freq', 'Band 1 Frequency', 'Hz', 20, 20000, 1000);
+  const gain = t('b1_gain', 'Band 1 Gain', 'dB', -18, 18, 0);
+  const bw = t('b1_bw', 'Band 1 Bandwidth', '', 0.1, 4, 1);
+  const q = t('b1_q', 'Band 1 Q', '', 0.1, 10, 0.7);
+  const qOf = (...controls) => inferBands(controls).roles.find((r) => r.role === 'band_q')?.symbol;
+  assert.equal(qOf(freq, gain, bw, q), 'b1_q');
+  assert.equal(qOf(freq, gain, q, bw), 'b1_q');
+  // arm: with no Q beside it the Bandwidth is the band's Q
+  assert.equal(qOf(freq, gain, bw), 'b1_bw');
 });
 
 // -- params facts: a choice and a default the console served

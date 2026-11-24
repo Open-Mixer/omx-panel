@@ -69,6 +69,24 @@ static void fill_shape(omx_canvas *c, double bx0, double by0, double bx1, double
   }
 }
 
+void omx_paint(omx_canvas *c, double bx0, double by0, double bx1, double by1, omx_inside_fn inside, omx_colour_fn colour, const void *ctx) {
+  int x0 = (int)maxd(0, floor(bx0)), y0 = (int)maxd(0, floor(by0));
+  int x1 = (int)mind(c->w, ceil(bx1)), y1 = (int)mind(c->h, ceil(by1));
+  for (int y = y0; y < y1; y++) {
+    for (int x = x0; x < x1; x++) {
+      int n = 0;
+      for (int sy = 0; sy < SS; sy++)
+        for (int sx = 0; sx < SS; sx++)
+          if (inside(ctx, x + (sx + 0.5) / SS, y + (sy + 0.5) / SS)) n++;
+      if (n == 0) continue;
+      double rgba[4];
+      colour(ctx, x + 0.5, y + 0.5, rgba);
+      omx_rgb rgb = {{(uint8_t)omx_round(rgba[0]), (uint8_t)omx_round(rgba[1]), (uint8_t)omx_round(rgba[2])}};
+      blend(c, x, y, rgb, ((double)n / (SS * SS)) * rgba[3]);
+    }
+  }
+}
+
 /* The gradient's colour at y: the stops' colours, linear between them, flat beyond the first and the last. */
 static omx_rgb gradient_at(double y, double y0, double y1, const double *t, const omx_rgb *stops, size_t ns) {
   double f = y1 > y0 ? (y - y0) / (y1 - y0) : 0;

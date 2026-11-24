@@ -2,15 +2,24 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# tools/runtime-install-check.sh <omx-panel.rpm | omx-panel.deb>: the package as a runtime install takes it, in a
+# tools/runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>: the package as a runtime install
+# takes it, in a
 # clean Fedora or Debian container with the OpenMixer channel configured:
 #
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
 #   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
-#   4. `omx-panel vocabulary omx-plugins/omx-delay` reads the meanings, plugin-hostd's LV2 table and an installed
-#      descriptor from /usr/share/omx-contract, with no omx-contract.pc and no variable set.
+#   4. `omx-panel vocabulary` reads the meanings, plugin-hostd's LV2 table and the param-contract units from
+#      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
+#   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
+#   6. the installed tools load and run (tools/installed-tools-check.sh): @openmixer/omx-contract resolves.
+#
+# The check judges only what omx-panel itself ships. The panel domain is the omx-panel-contract package's: that package,
+# the second argument, is installed after omx-panel, and every file of it under /usr/share/omx-contract/contract.d is
+# listed by its own file list and must be installed; a contract package that lists none fails, and a panel domain file in
+# omx-panel itself is a second copy and fails.
+# No descriptor of another package is demanded here: a package that ships its own descriptors checks them itself.
 #
 # A contract package the channel does not publish yet is named in $NOT_YET_PUBLISHED (a space list). The package is then
 # installed without that one dependency (rpm --nodeps, dpkg --force-depends), and its owner's contract directory is
@@ -19,9 +28,9 @@
 # the stand-in ends with the publication. Any other dependency the channel cannot satisfy fails.
 set -euo pipefail
 
-PKG=${1:?usage: runtime-install-check.sh <omx-panel.rpm | omx-panel.deb>}
+PKG=${1:?usage: runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>}
+CPKG=${2:?usage: runtime-install-check.sh <omx-panel.rpm | .deb> <omx-panel-contract.rpm | .deb>}
 NOT_YET_PUBLISHED=${NOT_YET_PUBLISHED:-}
-DESCRIPTOR=${DESCRIPTOR:-omx-plugins/omx-delay}
 CONTRACTDIR=/usr/share/omx-contract/contract.d
 fails=0
 fail() { echo "FAIL $*"; fails=$((fails + 1)); }
@@ -41,6 +50,8 @@ case "$PKG" in
     dnf -q makecache >/dev/null 2>&1
     reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' -e '^config(' | sed 's/ *$//')
     weak=$(rpm -qp --recommends "$PKG")
+    shipped() { rpm -qpl "$CPKG" | grep -E '^/usr/share/omx-contract/contract\.d/' || true; }
+    in_panel() { rpm -qpl "$PKG" | grep -E '^/usr/share/omx-contract/contract\.d/panel/' || true; }
     ;;
   *.deb)
     FORMAT=deb
@@ -60,9 +71,13 @@ case "$PKG" in
     unpack() { (cd "$2" && apt-get download -q "$1" >/dev/null 2>&1 && dpkg-deb --fsys-tarfile ./*.deb | tar -x -C / "./usr/share/omx-contract/contract.d/3/$3"); }
     reqs=$(dpkg-deb -f "$PKG" Depends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$')
     weak=$(dpkg-deb -f "$PKG" Recommends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' || true)
+    shipped() { dpkg-deb -c "$CPKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/' | grep -v '/$' || true; }
+    in_panel() { dpkg-deb -c "$PKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/panel/' | grep -v '/$' || true; }
     ;;
   *) echo "runtime-install-check: $PKG is neither an RPM nor a DEB" >&2; exit 2 ;;
 esac
+
+shipped_files=$(shipped)
 
 # 1. what the package itself asks for
 bad=$(printf '%s\n' "$reqs" "$weak" | awk '{print $1}' | grep -E -- "$DEVEL" || true)
@@ -106,6 +121,20 @@ echo "added: $(echo $added)"
 bad=$(echo "$added" | grep -E -- "$DEVEL" || true)
 [ -z "$bad" ] && pass "$FORMAT: the install adds no development package" || fail "$FORMAT: the install adds $(echo $bad)"
 
+# 2b. the panel domain is omx-panel-contract's, installed after omx-panel: the list is that package's own, so it cannot
+# drift from what it installs; omx-panel itself ships no panel domain file (a second copy)
+copy=$(in_panel)
+[ -z "$copy" ] && pass "$FORMAT: omx-panel ships no panel domain file of its own" \
+  || fail "$FORMAT: omx-panel ships a second copy of the panel domain: $(echo $copy)"
+if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$CPKG" >/dev/null 2>&1
+else apt-get install -y -q --no-install-recommends "$CPKG" >/dev/null; fi
+pass "$FORMAT: $(basename "$CPKG") installed"
+[ -n "$shipped_files" ] || fail "$FORMAT: $CPKG ships no contract file under $CONTRACTDIR"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  if [ -e "$f" ]; then pass "$FORMAT: $f is installed"; else fail "$FORMAT: $f is in the package and not installed"; fi
+done <<< "$shipped_files"
+
 # the contract directories of the dependencies not yet published, from their -devel payloads
 stand_in() {
   local owner=${1%-contract} from tmp
@@ -141,14 +170,29 @@ done
 want=$(case "$FORMAT" in rpm) rpm -qp --qf '%{VERSION}' "$PKG" ;; deb) dpkg-deb -f "$PKG" Version | cut -d- -f1 ;; esac)
 [ "$(omx-panel --version)" = "omx-panel $want" ] && pass "omx-panel --version says $want" || fail "omx-panel --version says $(omx-panel --version), the package is $want"
 
-out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA -u PLUGIN_HOSTD_TABLES omx-panel vocabulary "$DESCRIPTOR" || true)
+out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA omx-panel vocabulary || true)
 echo "$out"
 expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "omx-panel vocabulary: $1"; }
 expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\$"
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
-expect "the LV2 table from the contract directory" "^ok   lv2-units [1-9][0-9]* from $CONTRACTDIR/3/plugin-hostd/formats/lv2\\.json\$"
-expect "the descriptor $DESCRIPTOR from the contract directory" "^ok   descriptor $DESCRIPTOR [1-9][0-9]* controls from $CONTRACTDIR/3/${DESCRIPTOR%%/*}/plugins/${DESCRIPTOR#*/}\\.json\$"
+expect "the standard units from omx-contract's param domain" "^ok   param-units [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
 expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-contract/param-contract\\.json\$"
+
+# 5. the curve function: node_modules/@openmixer/omx-dsp is a link to omx-dsp-wasm's files, and answers one curve
+if listed omx-dsp-wasm; then
+  unverified+=("omx-dsp-wasm's curve through node_modules/@openmixer/omx-dsp: not published, so not installed")
+else
+  out=$(node "$(dirname "$0")/omx-dsp-link-check.mjs" /usr/share/omx-panel || true)
+  echo "$out"
+  link="the package's node_modules/@openmixer/omx-dsp link"
+  grep -q '^PASS omx-dsp curve' <<< "$out" && pass "omx-dsp's loadCurve answers a curve through $link" || fail "omx-dsp's loadCurve answers no curve through $link"
+fi
+
+# 6. the installed tools load and run: their @openmixer/omx-contract resolves through the package's own node_modules
+# (0.15.0 linked none, and `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with ERR_MODULE_NOT_FOUND)
+out=$(bash "$(dirname "$0")/installed-tools-check.sh" /usr/share/omx-panel 2>&1) && rc=0 || rc=$?
+echo "$out"
+[ "$rc" -eq 0 ] && pass "the installed tools load and run (tools/installed-tools-check.sh)" || fail "the installed tools do not load or run (tools/installed-tools-check.sh)"
 
 for u in "${unverified[@]}"; do echo "::warning::not verified: $u"; done
 [ "$fails" -eq 0 ] || { echo "runtime-install-check: $fails check(s) failed" >&2; exit 1; }
