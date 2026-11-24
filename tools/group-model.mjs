@@ -16,6 +16,7 @@ import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORD
 import { EQ_WORDS } from './meaning-infer.mjs';
 import { keyOf } from './panel-description.mjs';
 import { DYNAMICS_WORDS } from './role-table.mjs';
+import { lv2UnitTerms, unitIdOf } from './vocabulary.mjs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // The reason codes: the only ways a candidate repeated group falls back to a plain list (docs/group-model.md, "Uncertain").
@@ -32,15 +33,25 @@ export const REASONS = {
   'declared-index-conflict': "a declared instance's controls carry a symbol number that is not the declared one, nor one less",
 };
 
-/** The frequency unit: the one parameter whose range may differ by instance (a low band and a high band). */
-const FREQUENCY_UNIT = 'hz';
+/** Whether a control's unit token is the frequency unit, the one parameter whose range may differ by instance (a low
+ * band and a high band): the standard id of Hz, read when asked, so importing this module reads no contract directory. */
+const isFrequency = (unit) => unit === unitIdOf('Hz');
 
-/** A unit as a short token: LV2's units:hz and a descriptor's "Hz" are both `hz`. */
-const UNIT_TOKENS = { '%': 'pc', percent: 'pc', db: 'db', hz: 'hz', khz: 'khz', ms: 'ms', s: 's', oct: 'oct', coef: 'coef', '': '' };
+/** An LV2 unit URI (units:hz, or written out) and its term. */
+const LV2_UNIT = /^(?:https?:\/\/lv2plug\.in\/ns\/extensions\/units#|units:)([A-Za-z0-9]+)$/;
+
+/** An LV2 term -> its standard id: plugin-db's lv2 domain (LV2_UNIT_IDS), read backwards once. */
+let lv2Ids;
+const idOfLv2Term = (term) => (lv2Ids ??= new Map([...lv2UnitTerms()].map(([id, t]) => [t, id]))).get(term);
+
+/** A unit as one token: its standard id, PARAM_UNITS of omx-contract's param domain (#74). A descriptor's symbol ("Hz",
+ * "%", "dB/oct") is read as the symbol it is; an LV2 unit (units:hz) and a unit an LV2 plugin defines on a blank node,
+ * known by its label (often the term, "hz"), as its term through plugin-db's lv2 domain. No unit is the empty unit's id.
+ * A unit neither list holds keeps its own text, so it never joins a standard unit. */
 export function unitToken(unit) {
-  if (unit == null) return '';
-  const tail = String(unit).replace(/^.*[#/]/, '').toLowerCase();
-  return UNIT_TOKENS[tail] ?? tail;
+  const text = unit == null ? '' : String(unit);
+  const term = LV2_UNIT.exec(text)?.[1];
+  return (term === undefined ? unitIdOf(text) ?? idOfLv2Term(text) : idOfLv2Term(term)) ?? text;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -144,12 +155,12 @@ function claimOf(words, kind, unit) {
     if (w.every((x) => OFF_WORDS.has(x))) return { role: 'off', byWord: true };
     return { role: null, byWord: false };
   }
-  if (unit === FREQUENCY_UNIT) return { role: 'freq', byWord: w.some((x) => ROLE_WORDS.freq.includes(x)) };
+  if (isFrequency(unit)) return { role: 'freq', byWord: w.some((x) => ROLE_WORDS.freq.includes(x)) };
   for (const role of ROLE_ORDER) if (w.some((x) => ROLE_WORDS[role].includes(x))) return { role, byWord: true };
   // a weaker word (the table's fallback: a bandwidth or a width for a Q, a mode for a type) claims as a unit does: a control
   // whose words name the role outright wins it, and the weaker one keeps a row of its own
   for (const role of ROLE_ORDER) if (w.some((x) => EQ_WORDS.fallback[role]?.includes(x))) return { role, byWord: false };
-  if (unit === 'db') return { role: 'gain', byWord: false };
+  if (unit === unitIdOf('dB')) return { role: 'gain', byWord: false };
   return { role: null, byWord: false };
 }
 
@@ -353,7 +364,7 @@ function instancesGroup(key, b, source, slotted, loose) {
     if (kinds.size > 1) return refuse(key, b, source, 'kind-mismatch', `${k}: ${[...kinds].join(', ')}`);
     const units = new Set(cs.map((c) => c.unit));
     if (units.size > 1) return refuse(key, b, source, 'unit-mismatch', `${k}: ${[...units].join(', ')}`);
-    if (cs[0].unit !== FREQUENCY_UNIT && cs[0].kind !== 'toggle') {
+    if (!isFrequency(cs[0].unit) && cs[0].kind !== 'toggle') {
       const spans = new Set(cs.map((c) => (c.kind === 'choice' ? `${c.options}` : `${c.min}..${c.max}`)));
       if (spans.size > 1) return refuse(key, b, source, 'range-mismatch', `${k}: ${[...spans].join(', ')}`);
     }
@@ -399,7 +410,7 @@ function instancesGroup(key, b, source, slotted, loose) {
     const cs = holders.map(({ s }) => s.bySlot.get(k));
     if (!holders.every(({ i }, h) => { const ns2 = nameNumbers(cs[h].name); return ns2.length === printed[i].size && ns2.every((n) => printed[i].has(n)); })) return false;
     if (new Set(cs.map((c) => c.kind)).size > 1 || new Set(cs.map((c) => c.unit)).size > 1) return false;
-    if (cs[0].unit === FREQUENCY_UNIT || cs[0].kind === 'toggle') return true;
+    if (isFrequency(cs[0].unit) || cs[0].kind === 'toggle') return true;
     return new Set(cs.map((c) => (c.kind === 'choice' ? `${c.options}` : `${c.min}..${c.max}`))).size === 1;
   });
   for (const k of lone) {

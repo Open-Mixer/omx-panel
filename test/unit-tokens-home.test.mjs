@@ -41,4 +41,5 @@ test('tools/group-model.mjs keeps no unit list of its own: the vocabulary is the
   const src = readFileSync(join(ROOT, 'tools', 'group-model.mjs'), 'utf8');
   assert.doesNotMatch(src, /\bUNIT_TOKENS\b/);
   assert.doesNotMatch(src, /'%'\s*:|\bkhz\s*:|\bpercent\s*:\s*'/, 'a unit spelled as a key of a table');
+  assert.doesNotMatch(src, /\bunit\s*[!=]==?\s*'[^']*'/, 'a unit compared with a spelled word');
 });
