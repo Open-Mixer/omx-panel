@@ -249,25 +249,37 @@ clients' settings carry skin ids.
 
 ## 10. Open decisions, for the owner
 
+Each question carries the coordinator's recommendation of 2026-11-24; none is ruled until the owner confirms it.
+
 1. **Confirm the split:** libraries share only the style vocabulary and each skin's kind → style map; colours, fonts,
    images and metrics live in per-library skin files (11-19 "no shared look tokens" read with 11-24 "vintage is just a
    skin").
+   *Coordinator recommendation (owner to confirm):* yes, the split as written.
 2. **The default selection:** two skins `default` (flat) and `vintage` ship; which one a fresh install selects, per
    client (today vintage everywhere), and whether Zynthian's `stock` is a skin of its own.
+   *Coordinator recommendation (owner to confirm):* a fresh install selects `vintage` on every client, as today; Zynthian's `stock` IS a skin.
 3. **Where the new kinds live:** `on-off` / `momentary` (splitting `switch`) and `lamp` as panel-domain widgets
    (`PANEL_STANDARD_WIDGETS`, a served-description change) or as look-domain words over the panel's.
+   *Coordinator recommendation (owner to confirm):* `on-off`, `momentary` and `lamp` are kinds and go into the panel domain's `PANEL_STANDARD_WIDGETS`; their looks (`dot`, `jewel`, `led`) are look-domain styles.
 4. **Where per-library skin files live:** inside the house skin package (one directory per library), or in each
    library's repository keyed by skin id (closer to the 11-19 ownership, wider to gate).
+   *Coordinator recommendation (owner to confirm):* each library's per-library skin files live in that library's repository, keyed by skin id.
 5. **Per-plugin styles:** may a plugin skin carry its own `styles` (a plugin whose panel is a VU meter under any skin),
    or only name a house skin.
+   *Coordinator recommendation (owner to confirm):* no: a plugin skin names a house skin and carries no kind -> style map of its own.
 6. **Style names beyond the owner's examples:** Zynthian's pill-and-thumb switch is `flat` or `toggle-switch`; the
    MOD GUI 3d keycap is `toggle-switch` or a style of its own.
+   *Coordinator recommendation (owner to confirm):* the pill-and-thumb is `toggle-switch`; the MOD GUI 3d keycap is a style of its own, `keycap`.
 7. **Theme, accent, finish:** remain user axes inside every skin (each per-library file carries every axis value), or
    a skin may fix them (vintage = dark, aluminium).
+   *Coordinator recommendation (owner to confirm):* theme, accent and finish are user axes in every skin; a skin only sets their defaults.
 8. **The MOD GUI's pin of the console's vintage tokens** (`tools/look/console-vintage.json`, `docs/modgui.md` "The map"):
    kept as a deliberate likeness, or retired as shared look tokens under 11-19.
+   *Coordinator recommendation (owner to confirm):* retire the pin; the MOD GUI gets its own vintage file.
 9. **`needle-vu` and ballistics:** the needle draws the same reading as the bar (the 11-24 "same control state"), or a
    VU's 300 ms integration (`tools/look/geometry.json` `vu.tauMs`, today in the MOD GUI's dials) is allowed as part of
    the style.
+   *Coordinator recommendation (owner to confirm):* `needle-vu` applies VU ballistics (300 ms), computed in the shared C core as a meter mode, so every library gets the same reading; the style only draws it.
 10. **The panel domain's own version line** (`contract.d/panel/panel.json` `info.version` 1.3.0): moves to omx-panel's
     `0.MAJOR.MINOR` with the `look` domain, under the versioned-with-its-package rule, or keeps its line.
+   *Coordinator recommendation (owner to confirm):* yes: the panel domain moves to omx-panel's `0.MAJOR.MINOR` (omx-clap-core#123).
