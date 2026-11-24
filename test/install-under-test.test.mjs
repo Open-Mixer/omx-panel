@@ -76,7 +76,7 @@ test('sabotage: the tool without --allow-downgrades, --reinstall or dnf reinstal
     for (const [cut, format, installed] of [[' --allow-downgrades', 'deb', '2 channel'], [' --reinstall', 'deb', '1 channel'], ['dnf reinstall', 'rpm', '1 channel']]) {
       assert.ok(src.includes(cut), `the tool no longer has: ${cut}`);
       const script = join(dir, 'tool.sh');
-      writeFileSync(script, src.replace(cut, cut === 'dnf reinstall' ? 'true reinstall' : ''));
+      writeFileSync(script, src.replaceAll(cut, cut === 'dnf reinstall' ? 'true reinstall' : ''));
       assert.notEqual(run(format, installed, '1 local', { script })[0], 0, cut);
     }
   } finally {

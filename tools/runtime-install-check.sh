@@ -126,9 +126,9 @@ bad=$(echo "$added" | grep -E -- "$DEVEL" || true)
 copy=$(in_panel)
 [ -z "$copy" ] && pass "$FORMAT: omx-panel ships no panel domain file of its own" \
   || fail "$FORMAT: omx-panel ships a second copy of the panel domain: $(echo $copy)"
-if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$CPKG" >/dev/null 2>&1
-else apt-get install -y -q --no-install-recommends "$CPKG" >/dev/null; fi
-pass "$FORMAT: $(basename "$CPKG") installed"
+# omx-panel's own dependency may have brought the channel's copy: the file under test goes over it, and is proven to be it
+if bash "$(dirname "$0")/install-under-test.sh" "$CPKG"; then pass "$FORMAT: $(basename "$CPKG") installed, over any channel copy"
+else fail "$FORMAT: $(basename "$CPKG") is not what is installed"; fi
 [ -n "$shipped_files" ] || fail "$FORMAT: $CPKG ships no contract file under $CONTRACTDIR"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
