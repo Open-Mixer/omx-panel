@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
+.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
 
 all: build
 
@@ -105,6 +105,22 @@ store-check: build store
 # The packages ship the store (omx-panel-store and -devel; libomx-panel-store0, libomx-panel-store-dev and the command's
 # omx-panel-store): store/'s install, all of it: the library, its .so link, header and pkg-config file, the command and
 # its page, and the DDL as $(DATADIR)/omx-panel-store/panel.sql. Never the static library: it is not installed.
+# The descriptions store's base (docs/descriptions-store.md 6, lane 5): base/inputs/ derived by omx-panel base and written
+# by the store's command (built by make store) into base/build/panel.sqlite. The word checks read one contract directory:
+# base/build/contract.d holds the installed domains (BASE_CONTRACTDIR, omx-contract's contractdir: plugin-db's among
+# them) with this tree's panel domain in place of an installed one.
+BASE_CONTRACTDIR ?= $(shell pkg-config --variable=contractdir omx-contract 2>/dev/null)
+base: build store
+	rm -rf base/build
+	mkdir -p base/build/contract.d
+	for d in $(BASE_CONTRACTDIR)/*; do [ "$${d##*/}" = panel ] || ln -s "$$d" base/build/contract.d/; done
+	ln -s $(CURDIR)/contract.d/panel base/build/contract.d/panel
+	PATH=$(CURDIR)/store/build:$$PATH OMX_CONTRACT_PATH=$(CURDIR)/base/build/contract.d node dist/bin/omx-panel.mjs base --in base/inputs --out base/build/panel.sqlite
+
+# omx-panel-descriptions: the base, the one file
+install-base:
+	install -D -m 0644 base/build/panel.sqlite $(DESTDIR)$(DATADIR)/omx/panel/panel.sqlite
+
 install-store:
 	$(MAKE) -C store install PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR) MANDIR=$(MANDIR)
 

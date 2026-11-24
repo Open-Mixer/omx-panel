@@ -9,7 +9,7 @@ Build-Depends: debhelper-compat (= 13),
                nodejs (>= 18),
                npm,
                omx-contract-data (>= 3.22.0~) <!nocheck>,
-               plugin-db-contract (>= 0.5.0~) <!nocheck>,
+               plugin-db-contract (>= 0.5.0~),
                libcjson-dev,
                libsqlite3-dev (>= 3.38.0~),
                libomx-contract-dev (>= 3.21.0~),
@@ -84,11 +84,22 @@ Package: omx-panel-store
 Architecture: any
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel-contract (>= ${source:Version})
+Recommends: omx-panel-descriptions
 Description: descriptions store of panel descriptions, the command
  The command omx-panel-store gets, puts and removes an entry of the
  descriptions store (the base, the system layer and the user layer of
  panel.sqlite) and checks the layers; omx-panel's tools and the console's
  server call it.
+
+Package: omx-panel-descriptions
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: descriptions store of panel descriptions, the base
+ The base of the descriptions store, /usr/share/omx/panel/panel.sqlite: each
+ reference plugin's panel description and port groups, derived once, keyed by
+ its binary's SHA-256, read below the system and user layers. One file serves
+ every architecture.
 
 Package: omx-panel-contract
 Architecture: all

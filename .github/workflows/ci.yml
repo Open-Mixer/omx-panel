@@ -279,7 +279,7 @@ jobs:
             rpmbuild -bb --nocheck packaging/omx-panel.spec
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm out/'
+              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-descriptions-[0-9]*.rpm out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
       - name: The renderer's library in its RPMs
         run: |
@@ -345,7 +345,7 @@ jobs:
             apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck
             cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
-              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /w/out/'
+              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /b/omx-panel-descriptions_*.deb /w/out/'
       # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages

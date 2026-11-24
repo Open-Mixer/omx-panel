@@ -108,7 +108,7 @@ jobs:
       package-name: omx-panel
       # omx-panel, the renderer's shared library with its development files, the descriptions store (its library and
       # command, and its development files) and the panel domain (each installed by the install checks)
-      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-contract
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-descriptions omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
@@ -124,7 +124,7 @@ jobs:
     with:
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-descriptions omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

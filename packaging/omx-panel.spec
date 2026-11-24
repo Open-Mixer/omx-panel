@@ -114,12 +114,24 @@ build against the omx-panel renderer and its gesture reference.
 Summary: The descriptions store of panel descriptions: its library and its command
 # the store checks its words against the panel domain at open and at put
 Requires: omx-panel-contract >= %{version}-%{release}
+# without a base the store answers absent and its readers infer: the base package makes it a store
+Recommends: omx-panel-descriptions
 
 %description -n omx-panel-store
 libomx-panel-store.so.0 reads and writes the descriptions store: the base, the
 system layer and the user layer of panel.sqlite, merged in that order of
 precedence. The command omx-panel-store gets, puts and removes an entry and
 checks the layers; omx-panel's tools and the console's server call it.
+
+%package -n omx-panel-descriptions
+Summary: The base of the descriptions store: panel descriptions of the reference plugin sets
+BuildArch: noarch
+
+%description -n omx-panel-descriptions
+The base of the descriptions store, /usr/share/omx/panel/panel.sqlite: each
+reference plugin's panel description and port groups, derived once, keyed by
+its binary's SHA-256, read below the system and user layers. One file serves
+every architecture.
 
 %package -n omx-panel-store-devel
 Summary: Header, link, pkg-config file and schema of the descriptions store
@@ -141,11 +153,13 @@ test -d node_modules || npm ci --no-audit --no-fund
 %make_build
 %make_build -C renderer WINDOW=0 PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} DATADIR=%{_datadir}
 %make_build -C store PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir}
+make base
 
 %install
 %make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir} MANDIR=%{_mandir}
+make install-base DESTDIR=%{buildroot} DATADIR=%{_datadir}
 # the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5): the preset says so
 install -D -m 0644 systemd/80-omx-panel.preset %{buildroot}%{_presetdir}/80-omx-panel.preset
 
@@ -210,6 +224,11 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
 %{_libdir}/libomx-panel-store.so.0
 %{_bindir}/omx-panel-store
 %{_mandir}/man1/omx-panel-store.1*
+
+%files -n omx-panel-descriptions
+%license LICENSE
+%dir %{_datadir}/omx/panel/
+%{_datadir}/omx/panel/panel.sqlite
 
 %files -n omx-panel-store-devel
 %{_libdir}/libomx-panel-store.so
