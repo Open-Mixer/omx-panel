@@ -23,23 +23,25 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, servedToken, SLOPE_UNITS } from './vocabulary.mjs';
+import { meaningOfRole, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
-/** The extension's families, by enum value. */
-export const FAMILIES = ['none', 'gate', 'dynamics', 'limiter', 'deesser', 'eq', 'filter', 'drive', 'modulation', 'delay', 'reverb', 'pitch', 'utility'];
+/** The extension's families, by enum value: the panel domain's PANEL_FAMILIES (contract.d/panel). */
+export const FAMILIES = Object.freeze(panelWords('PANEL_FAMILIES'));
 
-/** The widgets a face serves, by enum value. */
-export const WIDGETS = ['auto', 'knob', 'fader', 'switch', 'selector'];
+/** The widgets a face serves, by enum value: PANEL_WIDGETS. */
+export const WIDGETS = Object.freeze(panelWords('PANEL_WIDGETS'));
 
-/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each. */
-export const STANDARD_WIDGETS = ['knob', 'fader', 'switch', 'selector', 'meter', 'curve', 'xy', 'display'];
+/** The standard widgets a panel picks from a descriptor; a representation (a skin) draws each: PANEL_STANDARD_WIDGETS. */
+export const STANDARD_WIDGETS = Object.freeze(panelWords('PANEL_STANDARD_WIDGETS'));
 /** What a meter measures, the level kinds the descriptor spells (contract §7.9): `rms`, `vu` and
  * `ppm` are not words. */
 export const MEASUREMENTS = ['peak', 'true-peak', 'lufs-m', 'lufs-s', 'lufs-i', 'lra'];
-/** The units a read-only travel is a level meter in. */
-const LEVEL_UNITS = ['dB', 'dBFS', 'dBTP', 'dBu', 'LUFS', 'LU'];
+/** The dimensions a read-only travel is a level meter in (omx-contract's PARAM_UNIT_DIMENSIONS, M4): its unit is one of
+ * their standard units (dB, dBFS, dBTP, dBu, LUFS, LU). */
+const LEVEL_DIMENSIONS = ['gain', 'level', 'loudness'];
+const isLevelUnit = (unit) => unitsOfDimensions(LEVEL_DIMENSIONS).includes(unit);
 /** The units a level meter's clip word can be in: a digital clip, never a modelled one (contract §7.9). */
 const CLIP_UNITS = ['dBFS', 'dBTP'];
 /** A word that names the state of an analogue input stage (phantom power, a pad, a head amp): a meter is a measurement,
@@ -66,7 +68,7 @@ export function widgetOf(c, declared) {
   if (declared !== undefined) return { widget: DECLARED_WIDGET[declared] ?? declared };
   if (c.readonly) {
     const unit = c.travel?.unit;
-    return LEVEL_UNITS.includes(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
+    return isLevelUnit(unit) ? { widget: 'meter', measurement: null, held: false, clip: false } : { widget: 'display' };
   }
   if (c.kind === 'toggle') return { widget: 'switch' };
   if (c.kind === 'trigger') return { widget: 'switch', momentary: true };
@@ -77,17 +79,17 @@ export function widgetOf(c, declared) {
 /** The widget a face serves for a standard widget. */
 export const servedWidget = (standard) => SERVED_WIDGET[standard] ?? 'auto';
 
-/** The display kinds and sources, by enum value. */
-export const DISPLAY_KINDS = ['gain_reduction_bar', 'transfer_curve', 'eq_response', 'meter', 'time_response'];
-export const DISPLAY_SOURCES = ['family', 'meters', 'gain_adjustment', 'curve'];
+/** The display kinds and sources, by enum value: PANEL_DISPLAY_KINDS, PANEL_DISPLAY_SOURCES. */
+export const DISPLAY_KINDS = Object.freeze(panelWords('PANEL_DISPLAY_KINDS'));
+export const DISPLAY_SOURCES = Object.freeze(panelWords('PANEL_DISPLAY_SOURCES'));
 /** The axes a display is drawn on (the panel domain's PANEL_DISPLAY_AXES, in its code order), and the one the layout gives each kind:
  * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
  * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
-export const DISPLAY_AXES = ['linear', 'log-frequency', 'time'];
+export const DISPLAY_AXES = Object.freeze(panelWords('PANEL_DISPLAY_AXES'));
 export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
-export const PLACEMENTS = ['insert', 'return', 'bus', 'master'];
+export const PLACEMENTS = Object.freeze(panelWords('PANEL_PLACEMENTS'));
 
 /** A section `graph` -> the display the extension names for it; a graph word with none here is
  * refused by name when the panel is described (a declaration error, never a silent drop). */
@@ -103,10 +105,13 @@ export const basisOf = (descriptor, section) => (section.basis === 'exact' && de
 /** The displays a host computes from a family's roles in closed form. */
 const CLOSED_FORMS = { gate: ['transfer_curve'], dynamics: ['transfer_curve'], eq: ['eq_response'], drive: ['transfer_curve'], delay: ['time_response'], reverb: ['time_response'] };
 
-/** A descriptor unit -> the token a role checks it against: the param-contract extension's own table,
- * so a unit it serves is a unit a role can take. A unit it has no token for (`unknown` among them) is
- * a plain number and takes no role. */
-export const unitToken = (unit) => servedToken(unit);
+/** A descriptor unit -> the standard id a role checks it against (omx-contract's PARAM_UNITS, P1), when the
+ * param-contract extension serves it (as on main). A unit it does not serve, or one the list has no id for (`unknown`
+ * among them), is a plain number and takes no role. */
+export const unitToken = (unit) => {
+  const id = unitIdOf(unit);
+  return id !== undefined && servedUnit(id) ? id : undefined;
+};
 
 /** Each family's roles and the units each accepts, and the roles that repeat by index: tools/role-table.mjs's, the
  * one table, data a browser loads as it is. */
@@ -180,12 +185,12 @@ const keyOfText = (s) => {
 /** A descriptor with no control to lay out (none stated, or every one hidden): there is no panel to make, and the
  * layout says so by code instead of answering an empty one. */
 export class NoControls extends Error {
-  code = 'panel.describe.no-controls';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelNoControls;
 }
 
 /** A declared family none of whose meanings the controls carry: a transient designer is no compressor (#138). */
 export class FamilyNotBacked extends Error {
-  code = 'panel.describe.family-not-backed';
+  code = panelCodes('PANEL_DESCRIBE_CODES').panelFamilyNotBacked;
 }
 
 /** A section's declared `bars: true` that fails a check of the bar rule, by the check's code (tools/bars.mjs). */
@@ -303,7 +308,8 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? SLOPE_UNITS[unit] : undefined) ?? unitToken(unit);
+    // a filter slope names its unit's id (dB/oct is dB-oct) whether or not the extension serves it, as main read it as the dB of a slope
+    const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
     else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
@@ -430,7 +436,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
   const have = new Set(meters.map((m) => m.symbol));
   for (const c of all) {
-    if (!c.readonly || have.has(keyOf(c)) || !LEVEL_UNITS.includes(c.travel?.unit)) continue;
+    if (!c.readonly || have.has(keyOf(c)) || !isLevelUnit(c.travel?.unit)) continue;
     const named = [c.meaning, keyOf(c), c.name].filter((t) => typeof t === 'string').find(namesAnalogueState);
     if (named !== undefined) { refuseMeter(keyOf(c), `a meter is a measurement; '${named}' names an analogue input state`); continue; }
     meters.push({ declared: false, symbol: keyOf(c), widget: 'meter', kind: 'level', measurement: null, unit: c.travel.unit, min: c.travel.min, max: c.travel.max, channels: 1, held: false, clip: false, label: label(c.label ?? c.name, `'${keyOf(c)}'`), labelKey: labelKey(snake(keyOf(c)), 'control label key') });

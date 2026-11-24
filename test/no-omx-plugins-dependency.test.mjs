@@ -53,20 +53,20 @@ test('no tool reads omx_param_contract.h or $OMX_PARAM_CONTRACT_H', () => {
   assert.deepEqual(files.filter((f) => /omx_param_contract\.h|OMX_PARAM_CONTRACT_H/.test(read(f))), []);
 });
 
-test('a contract directory with no omx-plugins answers the unit table with the declared codes', () => {
+test('a contract directory with no omx-plugins answers the standard unit ids of omx-contract\'s param domain', () => {
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-no-plugins-'));
   const put = (rel, value) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), JSON.stringify(value));
   };
-  put('3/omx-contract/param-contract.json', { OMX_PARAM_CONTRACT_UNITS: { kind: 'sheet', value: { none: 0, db: 13, lufs: 259 } } });
-  put('lv2.json', { PLUGIN_HOSTD_LV2_MAP: { kind: 'formatMap', rows: { unit: { word: { word: 'controls[].travel.unit', transform: 'lookup', values: { 'units:db': 'dB' } } } } } });
+  const word = (id, symbol, dimension) => ({ const: id, title: id, 'x-symbol': symbol, 'x-dimension': dimension });
+  put('param/param.json', { components: { schemas: { PARAM_UNITS: { oneOf: [word('none', '', 'none'), word('dB', 'dB', 'gain'), word('LUFS', 'LUFS', 'loudness')] } } } });
   const code = `const v = await import(${JSON.stringify(join(ROOT, 'dist/tools/vocabulary.mjs'))});
-    process.stdout.write(JSON.stringify([v.servedToken('dB'), v.servedToken('LUFS'), v.servedToken('dB/s') ?? null, v.paramUnits().get('LUFS')]));`;
+    process.stdout.write(JSON.stringify([v.unitIdOf('dB'), v.unitIdOf('LUFS'), v.unitIdOf('dB/s') ?? null, v.standardUnits().get('LUFS')]));`;
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
     encoding: 'utf8',
-    env: { ...process.env, OMX_CONTRACT_PATH: dir, PLUGIN_HOSTD_TABLES: dir, PKG_CONFIG: '/nonexistent/pkg-config' },
+    env: { ...process.env, OMX_CONTRACT_PATH: dir, PKG_CONFIG: '/nonexistent/pkg-config' },
   });
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(JSON.parse(r.stdout), ['db', 'lufs', null, 259]);
+  assert.deepEqual(JSON.parse(r.stdout), ['dB', 'LUFS', null, { id: 'LUFS', dimension: 'loudness' }]);
 });
