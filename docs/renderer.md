@@ -205,7 +205,11 @@ canvas through a Python copy of the law read against omx-dsp's vectors. Every ba
 `meter-surfaces` job). The stream's ticks carry clips and clears too: each surface lights its lamps by the clip word (the
 browser's lamp the MOD GUI template's own, its `omx-clip-lit` class set; Tk's through a Python copy read against omx-dsp's clip
 vector), and at every tick each meter's lamp must be lit or dark exactly as the renderer's, its four edges within the same 1 and
-2 px; the loudness meter, which has no clip word, reports clips and lights nothing on any surface. The command's state takes
+2 px; the loudness meter, which has no clip word, reports clips and lights nothing on any surface. `--look vintage` runs the
+same stream in the look every bundle wears by default (CI's second step): the MOD GUI there shows its needle dials, so the browser
+leg holds each dial's clip lamp (docs/modgui.md, "The clip lamp on a dial") to the renderer's, lit or dark at every tick and its
+edges within 1 px of its face's place, counts one lamp on each dial whose meter has a clip word and none on the others, and has no
+bar, marker or frame to compare; the renderer and Tk draw their frames as in every look. The command's state takes
 `"meters": {"<symbol>": [{"value", "elapsed", "clip", "clear"}, ...]}`, one entry for each draw tick: `clear` true clears the
 clip word first, then `clip` true is a clip since the last tick; a `clip` or `clear` that is not true or false is refused.
 

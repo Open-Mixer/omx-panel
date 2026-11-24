@@ -10,6 +10,12 @@
   `omx_panel_view_set_clip`, `omx_panel_view_clear_clip`, `omx_panel_view_meter_clip`; the command's meter readings take
   `clip` and `clear`. An unheld meter's caption says so. The MOD GUI's frames and face draw the same lamp and caption, and
   `meter-surfaces` measures the lamp on the renderer, the MOD GUI in Chromium and Tk. The four meters goldens carry the lamp.
+- The vintage look's needle dials wear the clip lamp (#218). Vintage, the MOD GUI's default, hides the meter frames and shows
+  the dials, so the frame's lamp was never seen there: a dial whose meter has a clip word now wears a period peak lamp in its
+  top right corner, a round jewel in a dark ring, dark as the look's unlit lamp (`--led-off`) and lit the meter red by the same
+  `omx-clip-lit` class while the clip word is; a dial whose meter has none wears no lamp. `meter-surfaces --look vintage` (a
+  second step of CI's job) holds each dial's lamp to the renderer's, lit or dark at every tick, its edges within 1 px of its
+  place. No golden moves: the renderer and the face draw frames in every look.
 - The words a surface draws of its own have keys: the panel domain's `PANEL_LABELS` (domain 1.3.0) holds `Meters`, `More`,
   `unheld` and `Gain reduction` with their keys (`panel.label.*`), rendered into `schema/codes.json` and the six catalogs, and a
   layout and a description serve them in `words`. The renderer, the MOD GUI, the skin package and the layout spell none of them.

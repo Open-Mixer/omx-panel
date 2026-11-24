@@ -151,7 +151,9 @@ jobs:
 
   # One recorded meter stream drawn by the renderer, by the MOD GUI's template in Chromium (playwright-core, the twin of omx-dsp's
   # view law) and on a Tk canvas (a Python copy read against omx-dsp's vectors), measured from the pixels: every bar end, marker and
-  # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5).
+  # frame edge within 1 px of the renderer's in the browser and 2 px in Tk (contract 7.9, the one-panel spec's 7.5). Twice: in the
+  # console look, and in the vintage look every bundle wears by default, whose MOD GUI shows needle dials, each dial's clip lamp held to
+  # the renderer's tick by tick (omx-panel#218).
   meter-surfaces:
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.OMX_RUNNER || 'ubuntu-latest' }}
     container:
@@ -184,11 +186,18 @@ jobs:
         env:
           OMX_ROLE_MEANINGS: ${{github.workspace}}/test/fixtures/role-meanings/panel-roles.json
         run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --json meter-surfaces.json
+      - name: The three surfaces from one stream, in the vintage look
+        if: success() || failure()
+        env:
+          OMX_ROLE_MEANINGS: ${{github.workspace}}/test/fixtures/role-meanings/panel-roles.json
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' node renderer/test/meter-surfaces.mjs --look vintage --json meter-surfaces-vintage.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: meter-surfaces
-          path: meter-surfaces.json
+          path: |
+            meter-surfaces.json
+            meter-surfaces-vintage.json
 
   # The renderer's window (WINDOW=1): pugl and NanoVG on OpenGL, drawn under Xvfb on Mesa's software GL and held to the
   # buffer by structure (renderer/test/window.test.mjs), never skipped here. pugl-devel and nanovg-devel are built from
