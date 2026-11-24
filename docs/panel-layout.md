@@ -212,7 +212,10 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 
 `describe` reads the descriptor's `meters` word (omx-contract, the first descriptor word for what a plugin publishes while it
 runs): each meter is a meter control in the description's `meters` list, in the descriptor's order, with
-`{ kind, measurement, unit, min, max, channels, symbol, held, clip }`.
+`{ kind, measurement, unit, unitText, min, max, channels, symbol, held, clip }`.
+
+- `unit` is the PARAM_UNITS id. `unitText` is that id's `x-symbol`, the unit as a person reads it: a renderer's caption
+  shows it (`percent` is shown as `%`), never the id.
 
 - `kind` is `level` or `gain-reduction`; a level's `measurement` is `peak`, `true-peak`, `lufs-m`, `lufs-s`, `lufs-i` or
   `lra` (units dBFS, dBTP, LUFS, LU), a gain reduction's is `gain-reduction` (dB). `rms`, `vu` and `ppm` are not words.

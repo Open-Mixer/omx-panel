@@ -100,14 +100,14 @@ test('a head with no on/off has its caption in a row of its own, the last: omx-d
 function governedStrip() {
   const controls = [
     { symbol: 'eqOn', name: 'EQ', kind: 'toggle', default: true },
-    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: 8, step: 1, default: 4, unit: '', scale: 'linear' } },
+    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: 8, step: 1, default: 4, unit: 'none', scale: 'linear' } },
   ];
   const fields = ['Freq', 'Gain', 'Q', 'Type', 'On'];
   for (let n = 1; n <= 8; n++) {
     controls.push(
       { symbol: `b${n}Freq`, name: `${n} Freq`, kind: 'travel', travel: { min: 20, max: 20000, default: 1000, unit: 'Hz', scale: 'log' } },
       { symbol: `b${n}Gain`, name: `${n} Gain`, kind: 'travel', travel: { min: -18, max: 18, default: 0, unit: 'dB', scale: 'linear' } },
-      { symbol: `b${n}Q`, name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: '', scale: 'log' } },
+      { symbol: `b${n}Q`, name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: 'none', scale: 'log' } },
       { symbol: `b${n}Type`, name: `${n} Type`, kind: 'choice', ids: ['bell', 'shelf'], values: [0, 1], default: 'bell' },
       { symbol: `b${n}On`, name: `${n} On`, kind: 'toggle', default: true },
     );
