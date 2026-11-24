@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 // Sorting pass row V3 (omx-panel#157): the `panel.*` codes sheet is the panel domain's. PANEL_SKIN_CODES,
-// PANEL_MODGUI_CODES and PANEL_DESCRIBE_CODES hold the 32 codes with their English sentence (x-text), placeholders
+// PANEL_MODGUI_CODES and PANEL_DESCRIBE_CODES hold the 34 codes with their English sentence (x-text), placeholders
 // (x-args) and key (x-name); their translations are the domain's catalogs. schema/codes.json and catalogs/<lang>.json
 // are rendered from it (tools/codes-render.mjs), never written by hand.
-// (a) golden: the rendered sheet and catalogs are, as JSON, those of origin/main 3cace58 (sha256 of the parsed JSON);
-// the files on disk are the render; the readers (bin/omx-panel.mjs, the package exports) read those files.
+// (a) golden: the rendered sheet and catalogs are, as JSON, those of origin/main 3cace58 (sha256 of the parsed JSON),
+// less the codes the domain gained after the move, each named in ADDED: a code is never reworded, so every code the move
+// carried still hashes to its golden, and a code added without its line in ADDED breaks it too; the files on disk are the render; the readers (bin/omx-panel.mjs, the package exports) read those files.
 // (c) a temporary contract directory decides the render: a changed sentence or a dropped code changes it.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -34,15 +35,21 @@ const GOLDEN = {
   'catalogs/it.json': 'd878a12812e110373249a0212cc7042101e9ce90909f59ffe5cd4fbc8ad75d6e',
   'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
+/** The codes the domain gained after the move, by code word; a new code joins this list in the commit that adds it. */
+const ADDED = new Set([
+  'panel.skin.override-refused', // omx-panel#14, domain 1.3.0: override-invalid's facts with the reason word
+  'panel.skin.entry-missing', // omx-panel#14, domain 1.3.0: a view or modgui entry not in the package
+]);
 const canonical = (f, j) => (f.startsWith('catalogs/')
-  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
-  : j);
+  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).filter(([c]) => !ADDED.has(c)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
+  : { ...j, codes: Object.fromEntries(Object.entries(j.codes).filter(([, c]) => !ADDED.has(c.code))) });
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 
-test('(a) the domain holds the 32 codes: 5 skin, 11 MOD GUI (the skin\'s MOD GUI licence last), 16 describe', () => {
+test('(a) the domain holds the 34 codes: 7 skin (#14\'s two last), 11 MOD GUI (the skin\'s MOD GUI licence last), 16 describe', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8')).components.schemas;
-  assert.equal(s.PANEL_SKIN_CODES?.oneOf.length, 5);
+  assert.equal(s.PANEL_SKIN_CODES?.oneOf.length, 7);
+  assert.deepEqual(s.PANEL_SKIN_CODES.oneOf.slice(5).map((w) => w.const), [...ADDED]);
   assert.equal(s.PANEL_MODGUI_CODES?.oneOf.length, 11);
   assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 16);
 });

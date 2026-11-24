@@ -53,6 +53,27 @@
         "file"
       ]
     },
+    "skinOverrideRefused": {
+      "code": "panel.skin.override-refused",
+      "text": {
+        "en": "The override for {plugin} is invalid at {field} ({reason}); fix skin.json and reload the skin."
+      },
+      "args": [
+        "plugin",
+        "field",
+        "reason"
+      ]
+    },
+    "skinEntryMissing": {
+      "code": "panel.skin.entry-missing",
+      "text": {
+        "en": "The {field} entry {entry} is not in the package; reload it, or remove the skin if it keeps failing."
+      },
+      "args": [
+        "field",
+        "entry"
+      ]
+    },
     "modguiNotFound": {
       "code": "panel.modgui.not-found",
       "text": {
