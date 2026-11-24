@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { treeGrep } from '../../test/tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const includedir = execFileSync('pkg-config', ['--variable=includedir', 'omxdsp'], { encoding: 'utf8' }).trim();
@@ -22,11 +23,8 @@ test('(1) omx-dsp\'s header defines OMX_READOUT_RATE_HZ, 50 Hz', () => {
 });
 
 test('(3) no file of omx-panel names READOUT_RATE_HZ or omx-contract\'s header that held it, beside this test', () => {
-  let out = '';
-  try {
-    out = execFileSync('git', ['grep', '-n', '-e', 'READOUT_RATE_HZ', '-e', 'omx_contract_limits.h', '--', '.', ':!renderer/test/readout-home.test.mjs', ':!CHANGELOG.md', ':!debian/changelog'], { cwd: ROOT, encoding: 'utf8' });
-  } catch (e) {
-    assert.equal(e.status, 1, `git grep failed: ${e.stderr}`);
-  }
+  // read from the files, not by git grep: CI's container could not run it on a checkout another user owns ("detected
+  // dubious ownership"), and a package build has no .git (#207)
+  const out = treeGrep(ROOT, /READOUT_RATE_HZ|omx_contract_limits\.h/, ['.'], ['renderer/test/readout-home.test.mjs', 'CHANGELOG.md', 'debian/changelog']);
   assert.equal(out, '', `omx-panel names the old home or a copy:\n${out}`);
 });

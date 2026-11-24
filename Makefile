@@ -48,7 +48,8 @@ spdx:
 
 # No tracked file points into a private repository, branch, issue or path.
 # Open-Mixer/.github's private-refs check, from a checkout of it (OPENMIXER_DOTGITHUB, else ../openmixer-dotgithub); CI
-# runs it through the public-sources-check workflow.
+# runs it through the public-sources-check workflow. The check reads this repository's visibility and topics from GitHub
+# first, with GH_TOKEN (or GITHUB_TOKEN); on a desk: GH_TOKEN=$$(gh auth token) make public-sources.
 public-sources:
 	$(OPENMIXER_DOTGITHUB)/.github/actions/private-refs-check/check.sh .
 

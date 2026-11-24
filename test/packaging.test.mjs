@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { compareVersions, packagingFloor, re } from './packaging-floors.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const { version } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
@@ -126,27 +127,32 @@ test('the package carries look.json, the vintage tokens with the knob pointer an
 
 // The installed tools import @openmixer/omx-contract/entry (isMain): the installed package links
 // node_modules/@openmixer/omx-contract to the omx-contract package's /usr/lib/omx-contract, requires that package at the
-// floor package.json builds against (floor only), and %check, debian/rules and debian/tests run an installed tool
+// floor the spec states (floor only; package.json's npm floor is never above it), and %check, debian/rules and debian/tests run an installed tool
 // (tools/installed-tools-check.sh). 0.15.0 shipped none of it: `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with
 // ERR_MODULE_NOT_FOUND on a host.
 test('the installed tools resolve @openmixer/omx-contract: linked, required by a floor, run by the package checks', () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  const floor = /^>=(\d+\.\d+\.\d+)$/.exec(pkg.devDependencies['@openmixer/omx-contract'])?.[1];
-  assert.ok(floor, 'package.json floors @openmixer/omx-contract');
+  const npmFloor = /^>=(\d+\.\d+\.\d+)$/.exec(pkg.devDependencies['@openmixer/omx-contract'])?.[1];
+  assert.ok(npmFloor, 'package.json floors @openmixer/omx-contract');
+  // the packages' floor is the spec's (packaging-floors.mjs); the npm one follows the npm publish and is never above it
+  const floor = packagingFloor('omx-contract');
+  assert.ok(compareVersions(npmFloor, floor) <= 0, `package.json floors @openmixer/omx-contract at ${npmFloor}, above the packages' ${floor}`);
   const makefile = readFileSync(join(ROOT, 'Makefile'), 'utf8');
   assert.match(makefile, /^OMX_CONTRACT_LIB \?= \$\(PREFIX\)\/lib\/omx-contract$/m);
   assert.match(makefile, /^\tln -sfn \$\(OMX_CONTRACT_LIB\) \$\(DESTDIR\)\$\(PKGDIR\)\/node_modules\/@openmixer\/omx-contract$/m);
   const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
   const main = spec.slice(0, spec.indexOf('%description'));
-  assert.match(main, new RegExp(`^Requires: omx-contract >= ${floor.replace(/\./g, '\\.')}$`, 'm'));
+  assert.match(main, new RegExp(`^Requires: omx-contract >= ${re(floor)}$`, 'm'));
   const control = readFileSync(join(ROOT, 'debian/control'), 'utf8');
   const depends = /^Package: omx-panel\n(?:.*\n)*?Depends: (.*)$/m.exec(control)?.[1] ?? '';
   assert.ok(depends.split(/,\s*/).includes(`omx-contract (>= ${floor}~)`), `omx-panel Depends: ${depends}`);
   for (const dep of [main.match(/^Requires: omx-contract\b.*$/gm) ?? [], depends.split(/,\s*/).filter((d) => d.startsWith('omx-contract ('))].flat()) {
     assert.doesNotMatch(dep, /<|(?<!>)=\s*\d|Breaks|Conflicts/, `a floor only: ${dep}`);
   }
-  assert.match(spec, /^%check\n(?:.*\n)*?tools\/installed-tools-check\.sh %\{buildroot\}%\{_datadir\}\/omx-panel$/m);
-  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /^\ttools\/installed-tools-check\.sh \$\(CURDIR\)\/debian\/omx-panel\/usr\/share\/omx-panel$/m);
+  // a package build has no omx-panel-contract installed: the check reads the panel domain the same build staged, where
+  // %install put it (rpm) or debian/rules moved it for omx-panel-contract (deb); v0.16.0's deb build failed without it (#208)
+  assert.match(spec, /^%check\n(?:.*\n)*?tools\/installed-tools-check\.sh %\{buildroot\}%\{_datadir\}\/omx-panel %\{buildroot\}%\{omx_contract_domain_dir\}$/m);
+  assert.match(readFileSync(join(ROOT, 'debian/rules'), 'utf8'), /^\ttools\/installed-tools-check\.sh \$\(CURDIR\)\/debian\/omx-panel\/usr\/share\/omx-panel \$\(CURDIR\)\/debian\/tmp\/usr\/share\/omx-contract\/contract\.d$/m);
   assert.match(readFileSync(join(ROOT, 'debian/tests/control'), 'utf8'), /^Test-Command: tools\/installed-tools-check\.sh \/usr\/share\/omx-panel$/m);
   assert.equal(spawnSync('bash', ['-n', join(ROOT, 'tools/installed-tools-check.sh')]).status, 0);
 });

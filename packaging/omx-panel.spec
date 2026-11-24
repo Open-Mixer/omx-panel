@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.15.1
+Version: 0.16.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -29,16 +29,16 @@ BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
 BuildRequires: omx-contract >= 3.21.0
-BuildRequires: omx-dsp-wasm >= 0.33.0
+BuildRequires: omx-dsp-wasm >= 0.34.0
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
-Requires: omx-contract >= 3.20.2
+Requires: omx-contract >= 3.21.0
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: plugin-hostd >= 0.20.7
+Recommends: plugin-hostd >= 0.21.0
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -62,7 +62,7 @@ Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
 Requires: plugin-db-contract >= 0.5.0
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.33.0
+Requires: omx-dsp-wasm >= 0.34.0
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -125,7 +125,7 @@ Summary: Header, link, pkg-config file and schema of the descriptions store
 Requires: omx-panel-store%{?_isa} = %{version}-%{release}
 Requires: sqlite-devel >= 3.38.0
 Requires: pkgconfig(libcjson)
-Requires: libomx-domain-devel >= 3.20.0
+Requires: libomx-domain-devel >= 3.21.0
 
 %description -n omx-panel-store-devel
 The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
@@ -148,8 +148,9 @@ make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCL
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
-# the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules
-tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel
+# the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules,
+# and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
+tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_domain_dir}
 
 %files
 %license LICENSE
@@ -292,6 +293,15 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.1-1
+- Fix: %check runs from the release tarball, which has no .git: the guard
+  against plugin-hostd's LV2 table reads the files itself (#207). The installed
+  tools check reads the panel domain this build staged for omx-panel-contract
+  (#208). 0.16.0 built no package.
+
+* Sun Nov 22 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.0-1
+- Sorting pass: V1, V2, V3, V4, V22 and V23d.
+
 * Fri Nov 20 2026 Pau Aliagas <linuxnow@gmail.com> - 0.15.1-1
 - Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import and
   the rest that decide run-not-imported with omx-contract's isMain) resolve
