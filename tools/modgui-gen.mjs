@@ -723,9 +723,18 @@ export function valueText(k) {
 
 /** A meter's caption: the label, then the description's range with its unit, then the panel's word for an unheld meter. */
 export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}${m.unheld ? `  ${m.unheld}` : ''}`;
-/** A meter's clip lamp in its frame, in px from the frame's outer top left at scale 1 (the renderer's draw_meter places it the same):
- * a square of geometry.meterLamp, 6 px in from the right, 4 px down. */
-export const meterLamp = (frameW) => ({ x: frameW - 6 - GEOMETRY.meterLamp, y: 4, size: GEOMETRY.meterLamp });
+/** A meter's clip lamp in its face, in px from the face's outer top left at scale 1: a square of geometry.meterLamp, 5 px in from the
+ * right and 3 px down inside the face's `border` (px). A frame's rim is 1 px, so its lamp is 6 px in and 4 px down (the renderer's
+ * draw_meter places it the same); a needle dial's border is its look's bezel (vuFaces). */
+export const meterLamp = (frameW, border = 1) => ({ x: frameW - border - 5 - GEOMETRY.meterLamp, y: border + 3, size: GEOMETRY.meterLamp });
+/** The width in px of a look's needle-dial bezel, its --vu-bezel border (`3px solid ...`). */
+const bezelOf = (look) => Number(/^(\d+(?:\.\d+)?)px\b/.exec(look.depth['--vu-bezel'] ?? '')?.[1] ?? 0);
+/** The needle dials of a meters band as the template places them, in px from the band's top left: the band's meters side by side,
+ * each as tall as the band's rows; given a look, each with its bezel as `border` (the place is every look's, the bezel its own). */
+export function vuFaces(band, look) {
+  const g = GEOMETRY, n = band.meters.length, dw = Math.floor((band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap;
+  return band.meters.map((m, i) => ({ symbol: m.symbol, x: g.sectionPad + i * dw, y: g.sectionTitleH, w: dw - 4, h: dh, ...(look ? { border: bezelOf(look) } : {}) }));
+}
 
 /** The face at `scale`, every control at its declared default. */
 export function renderFace(lay, look, scale) {
@@ -987,7 +996,7 @@ ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${ds
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
             <h2 class="omx-section-title">${esc(lay.band.title)}</h2>
-${lay.band.meters.map((m, i) => { const n = lay.band.meters.length, dw = Math.floor((lay.band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap, rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" style="left:${g.sectionPad + i * dw}px;top:${g.sectionTitleH}px;width:${dw - 4}px;height:${dh}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span><div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
+${lay.band.meters.map((m, i) => { const f = vuFaces(lay.band)[i], rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" style="left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span><div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
 ${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" data-clip="${m.clip ? 1 : 0}" data-held="${m.held ? 1 : 0}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span>${m.clip ? '<span class="omx-meter-clip"></span>' : ''}</div>`).join('\n')}
         </div>` : '');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
