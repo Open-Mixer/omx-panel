@@ -35,7 +35,7 @@ case "$PKG" in
       rel=${f#"$tmp"}
       # what the image's dpkg is configured not to unpack (path-exclude: docs, man pages, translations) is not there to compare
       case "$rel" in /usr/share/doc/* | /usr/share/man/* | /usr/share/locale/*) continue ;; esac
-      cmp -s "$f" "$rel" || wrong "$name" "$rel differs"
+      [ "$(sha256sum < "$f")" = "$(sha256sum < "$rel" 2>/dev/null)" ] || wrong "$name" "$rel differs"
     done < <(find "$tmp" -type f -print0)
     ;;
   *) echo "install-under-test: $PKG is neither an RPM nor a DEB" >&2; exit 2 ;;
