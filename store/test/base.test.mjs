@@ -13,6 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { describe } from '../../dist/tools/describe.mjs';
 import { planBundle, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
 import { CMD, DatabaseSync, hex, run, tmp } from './helpers.mjs';
 import { contract, descriptorOf, FIXTURES, OMX_PANEL, sourceOf, TRIPLE, bundle } from './plugin-world.mjs';
@@ -95,7 +96,8 @@ test('the reader reads the base: the LV2 input with the complement\'s groups, th
   assert.deepEqual(lv2.groups.map((g) => g.symbol).sort(), plan.groups.map((g) => g.symbol).sort());
   const clap = get({ sha256: hex('c'), format: 'clap', uri: COMP.plugin.id }, sourceOf('clap', join(w.in, 'omx-comp', 'descriptor.json')));
   assert.equal(clap.layer, 'base');
-  assert.equal(clap.family, 'dynamics');
+  assert.equal(clap.family, describe(COMP).description.family, 'the family describe derives');
+  assert.ok(clap.body?.sections.length > 0, 'a body was stored');
   assert.equal(existsSync(user), false);
 });
 

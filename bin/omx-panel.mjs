@@ -21,6 +21,9 @@
  *   sync [--lv2-path <list>]                             tools/panel-sync.mjs: the store half of omx-panel-sync, one pass:
  *                                                        each installed LV2 plugin's entry once, then the layer of the
  *                                                        effective uid pruned of plugins no longer installed
+ *   base --in <inputs> --out <file>                      tools/base-build.mjs: the descriptions store's base from the inputs
+ *                                                        directory (key.json, descriptor.json, an LV2 bundle/ each),
+ *                                                        written by omx-panel-store build
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
@@ -56,6 +59,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
   + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
   + '       omx-panel sync [--lv2-path <list>]   (the store half of omx-panel-sync)\n'
+  + '       omx-panel base --in <inputs> --out <file>   (the descriptions store\'s base)\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
@@ -249,6 +253,28 @@ async function syncCommand(argv) {
   process.exit(r.failed ? 1 : 0);
 }
 
+/** The descriptions store's base (docs/descriptions-store.md 6): exit 0, 1 with the refusal, 2 on usage. */
+async function baseCommand(argv) {
+  const opt = (flag) => {
+    const k = argv.indexOf(flag);
+    return k >= 0 ? argv[k + 1] : undefined;
+  };
+  if (argv.length !== 4 || !opt('--in') || !opt('--out')) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { buildBase } = await import(join(TOOLS, 'base-build.mjs'));
+  const { PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  try {
+    const r = buildBase({ inDir: opt('--in'), out: opt('--out') });
+    process.stdout.write(`omx-panel base: ${r.entries} entries into ${opt('--out')}, built from ${r.builtFrom}\n`);
+  } catch (err) {
+    if (!(err instanceof PluginRefusal)) throw err;
+    process.stderr.write(`omx-panel: ${err.message}\n`);
+    process.exit(1);
+  }
+}
+
 /** One step of Compare for a host that is not JavaScript (docs/compare.md): JSON in, JSON out, no state between runs. */
 async function compare(argv) {
   const m = await import(join(TOOLS, 'compare.mjs'));
@@ -321,6 +347,7 @@ else if (command === 'layout') await layout(args);
 else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
 else if (command === 'sync') await syncCommand(args);
+else if (command === 'base') await baseCommand(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');

@@ -60,7 +60,7 @@ const sha256Of = (file) => {
 };
 
 /** The store command, run once; its stdout, or a refusal carrying its own code and text. */
-function store(args, { input, env } = {}) {
+export function storeCommand(args, { input, env } = {}) {
   const r = spawnSync('omx-panel-store', args, { encoding: 'utf8', input, env, maxBuffer: 64 << 20 });
   if (r.error?.code === 'ENOENT') throw new PluginRefusal('omx-panel-store is not on PATH: install omx-panel-store');
   if (r.error) throw new PluginRefusal(`omx-panel-store ${args[0]}: ${r.error.message}`);
@@ -146,6 +146,17 @@ function findDescriptor(t, target, given, env) {
 }
 
 /**
+ * One plugin's entry, derived (docs/descriptions-store.md 3.4): an LV2 plugin's descriptor takes the complement's
+ * verdict over its bundle as its controls' groups, then `describeStored`, then the store's codec. The one derivation of
+ * every producer: `describe --plugin --store`, the pass and the base builder.
+ */
+export function deriveEntry({ descriptor, where, bundle, uri, source, rules, madeBy: made }) {
+  const verdict = bundle ? verdictOf(bundle, uri) : null;
+  const derived = describeStored(withStoredGroups(descriptor, verdict), { where });
+  return entryOf({ derived, verdict, source, rules, madeBy: made });
+}
+
+/**
  * The call. Returns the `get` answer's text, as the store printed it: the entry any layer held, or the one this call
  * derived and wrote. Throws a PluginRefusal for what the command reports.
  * `bundle` is the installed bundle of an LV2 target when the caller has read it (the complement), else it is found;
@@ -171,19 +182,16 @@ export function describePlugin({ target, descriptor: given, sha256, madeBy: made
       t.input = found.file;
     }
     const key = ['--sha256', sha256 ?? sha256Of(t.binary), '--format', t.format, '--uri', t.uri];
-    const source = store(['source', '--format', t.format, '--path', t.input], { env }).trim();
-    const get = () => store(['get', ...key, '--source', source, '--json'], { env });
+    const source = storeCommand(['source', '--format', t.format, '--path', t.input], { env }).trim();
+    const get = () => storeCommand(['get', ...key, '--source', source, '--json'], { env });
     const held = get();
     if (held.trim() !== 'null') return held;
     if (!derive) throw new PluginRefusal(`${target}: no layer holds an entry`, 'no-entry');
 
     found ??= findDescriptor(t, target, given, env);
     if (found.scratch && !scratch.includes(found.scratch)) scratch.push(found.scratch);
-    const verdict = bundle ? verdictOf(bundle, t.uri) : null;
-    const derived = describeStored(withStoredGroups(found.descriptor, verdict), { where: found.file });
-    const rules = Number(store(['rules'], { env }).trim());
-    const entry = entryOf({ derived, verdict, source, rules, madeBy: made });
-    store(['put', ...key], { input: JSON.stringify(entry), env });
+    const entry = deriveEntry({ descriptor: found.descriptor, where: found.file, bundle, uri: t.uri, source, rules: Number(storeCommand(['rules'], { env }).trim()), madeBy: made });
+    storeCommand(['put', ...key], { input: JSON.stringify(entry), env });
     return get();
   } finally {
     for (const d of scratch) rmSync(d, { recursive: true, force: true });
