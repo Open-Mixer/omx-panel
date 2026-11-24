@@ -885,6 +885,20 @@ int omx_panel_store_put(omx_panel_store *w, const omx_panel_store_key *k, const 
     return st;
 }
 
+int omx_panel_store__keys(omx_panel_store *w, void (*each)(const char *, const char *, const char *, void *), void *ctx, omx_panel_store_error *err) {
+    sqlite3_stmt *q;
+    w->msg[0] = 0;
+    if (!w->w) return refuse(w, err, OMX_PANEL_STORE_NOT_A_STORE, "not a writer");
+    int rc = sqlite3_prepare_v2(w->w, "SELECT sha256, format, uri FROM plugin ORDER BY sha256, format, uri", -1, &q, NULL);
+    while (rc == SQLITE_OK && (rc = sqlite3_step(q)) == SQLITE_ROW) {
+        each((const char *)sqlite3_column_text(q, 0), (const char *)sqlite3_column_text(q, 1), (const char *)sqlite3_column_text(q, 2), ctx);
+        rc = SQLITE_OK;
+    }
+    if (rc == SQLITE_DONE) rc = SQLITE_OK;
+    sqlite3_finalize(q);
+    return rc == SQLITE_OK ? 0 : refuse(w, err, from_sqlite(rc), "%s: %s", w->wpath, sqlite3_errmsg(w->w));
+}
+
 int omx_panel_store_remove(omx_panel_store *w, const omx_panel_store_key *k, omx_panel_store_error *err) {
     sqlite3_stmt *q;
     w->msg[0] = 0;

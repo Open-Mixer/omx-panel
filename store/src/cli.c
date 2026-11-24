@@ -16,6 +16,7 @@
     "usage: omx-panel-store get --sha256 H --format F --uri U --source H [--rules N] --json\n" \
     "       omx-panel-store put --sha256 H --format F --uri U       (the entry as JSON on stdin)\n" \
     "       omx-panel-store remove --sha256 H --format F --uri U\n" \
+    "       omx-panel-store list                                    (the keys of the layer of the effective uid)\n" \
     "       omx-panel-store check\n" \
     "       omx-panel-store source --format lv2|clap --path P\n" \
     "       omx-panel-store places --production user|system\n" \
@@ -126,6 +127,10 @@ static void print_entry(const omx_panel_store_entry *e) {
     cJSON_Delete(o);
 }
 
+static void print_key(const char *sha256, const char *format, const char *uri, void *ctx) {
+    (void)ctx;
+    printf("%s\t%s\t%s\n", sha256, format, uri);
+}
 static char *slurp_stdin(void) {
     size_t cap = 1 << 16, n = 0, r;
     char *b = malloc(cap + 1);
@@ -168,7 +173,7 @@ int main(int argc, char **argv) {
         free(t); cJSON_Delete(j); free(b); free(s); free(u);
         return 0;
     }
-    int writer = !strcmp(cmd, "put") || !strcmp(cmd, "remove");
+    int writer = !strcmp(cmd, "put") || !strcmp(cmd, "remove") || !strcmp(cmd, "list");
     if (strcmp(cmd, "get") && strcmp(cmd, "check") && !writer) return usage();
     char *base, *system, *user;
     const char *contract;
@@ -184,6 +189,18 @@ int main(int argc, char **argv) {
         omx_panel_store_close(s);
         puts("ok");
         return 0;
+    }
+    if (!strcmp(cmd, "list")) {
+        /* the keys of the layer of the effective uid; a layer not made yet holds none, and is not made by a list */
+        int root = geteuid() == 0;
+        const char *path = root ? system : user;
+        if (!path || access(path, F_OK)) return 0;
+        omx_panel_store *w;
+        rc = omx_panel_store_writer_open_at(path, root ? 1 : 2, contract, &w, &err);
+        if (rc) return fail(rc, &err);
+        rc = omx_panel_store__keys(w, print_key, NULL, &err);
+        omx_panel_store_close(w);
+        return rc ? fail(rc, &err) : 0;
     }
     if (!o.sha256 || !o.format || !o.uri) return usage();
     omx_panel_store_key key = { o.sha256, o.format, o.uri };

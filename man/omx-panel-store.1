@@ -16,6 +16,8 @@ omx-panel-store \- read and write the descriptions store of panel descriptions
 .B omx-panel-store remove
 .BI --sha256 " H" " --format " F " --uri " U
 .br
+.B omx-panel-store list
+.br
 .B omx-panel-store check
 .br
 .B omx-panel-store source
@@ -41,6 +43,8 @@ is skipped as stale.
 writes the entry read as JSON on standard input, and
 .B remove
 removes it.
+.B list
+prints the keys of the layer of the effective uid, its SHA-256, format and URI tab-separated, one per line.
 .B check
 opens every layer and prints ok or the refusal's code.
 .B source

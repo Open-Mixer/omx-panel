@@ -16,4 +16,8 @@ int omx_panel_store__places(omx_panel_store_scope scope, char **base, char **sys
 /* The same rule for the writer: the system layer's path as root, the user layer's otherwise. */
 int omx_panel_store__writer_place(char **path, int *layer, omx_panel_store_error *err);
 
+/* Each key of the writer's layer, in (sha256, format, uri) order: `each` is called with the three. 0, or a status. */
+int omx_panel_store__keys(omx_panel_store *w, void (*each)(const char *sha256, const char *format, const char *uri, void *ctx), void *ctx,
+                          omx_panel_store_error *err);
+
 #endif
