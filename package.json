@@ -39,6 +39,10 @@
       "types": "./dist/tools/describe.d.mts",
       "default": "./dist/tools/describe.mjs"
     },
+    "./store-entry": {
+      "types": "./dist/tools/store-entry.d.mts",
+      "default": "./dist/tools/store-entry.mjs"
+    },
     "./bars": {
       "types": "./dist/tools/bars.d.mts",
       "default": "./dist/tools/bars.mjs"

@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+- `@openmixer/omx-panel/store-entry` exports the store codec (`storedOf`, `entryOf`, `withStoredGroups`): a Node.js
+  client of the descriptions store (section 5, "The doors": the console's server) reads an `omx-panel-store get --json`
+  answer through the one `storedOf` and cuts it with `describeFromStored` (`./describe`), and keeps no copy of the codec.
+
 - `omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <file>] [--remote <file>] [--pages [--per-page
   N]]` (#220): describe's output cut from a descriptions-store entry, for a client that is not Node.js (Zynthian's
   engine). The answer `omx-panel-store get --json` prints is read by `storedOf` and cut by `describeFromStored`: a
