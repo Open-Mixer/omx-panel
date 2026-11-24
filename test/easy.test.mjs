@@ -91,9 +91,9 @@ const delay = {
   ports: [],
   controls: [
     { id: 0, symbol: 'pingpong', name: 'pingpong', kind: 'toggle' },
-    { id: 1, symbol: 'tone', name: 'tone', kind: 'travel', group: ['Colour'], meaning: 'tone', travel: { min: 0, max: 1, unit: '', default: 0.5, scale: 'linear' } },
+    { id: 1, symbol: 'tone', name: 'tone', kind: 'travel', group: ['Colour'], meaning: 'tone', travel: { min: 0, max: 1, unit: 'none', default: 0.5, scale: 'linear' } },
     { id: 2, symbol: 'time', name: 'time', kind: 'travel', group: ['Main'], meaning: 'delay', travel: { min: 1, max: 2000, unit: 'ms', default: 350, scale: 'log' } },
-    { id: 3, symbol: 'feedback', name: 'feedback', kind: 'travel', group: ['Main'], meaning: 'feedback', travel: { min: 0, max: 1, unit: '', default: 0.3, scale: 'linear' } },
+    { id: 3, symbol: 'feedback', name: 'feedback', kind: 'travel', group: ['Main'], meaning: 'feedback', travel: { min: 0, max: 1, unit: 'none', default: 0.3, scale: 'linear' } },
     { id: 4, symbol: 'gr', name: 'gr', kind: 'travel', readonly: true, travel: { min: -60, max: 0, unit: 'dB', default: 0, scale: 'linear' } },
   ],
 };

@@ -209,7 +209,7 @@
       "travel": {
         "min": 0.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -1338,7 +1338,7 @@
       "travel": {
         "min": 0.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 0.0
       },

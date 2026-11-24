@@ -30,13 +30,13 @@ const sym = (n, f) => `b${n}${f}`;
 function strip(def = 4) {
   const controls = [
     { symbol: 'eqOn', name: 'EQ', kind: 'toggle', default: true },
-    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: BANDS, step: 1, default: def, unit: '', scale: 'linear' } },
+    { symbol: 'eqBands', name: 'Bands', kind: 'travel', travel: { min: 1, max: BANDS, step: 1, default: def, unit: 'none', scale: 'linear' } },
   ];
   for (let n = 1; n <= BANDS; n++) {
     controls.push(
       { symbol: sym(n, 'Freq'), name: `${n} Freq`, kind: 'travel', travel: { min: 20, max: 20000, default: 1000, unit: 'Hz', scale: 'log' } },
       { symbol: sym(n, 'Gain'), name: `${n} Gain`, kind: 'travel', travel: { min: -18, max: 18, default: 0, unit: 'dB', scale: 'linear' } },
-      { symbol: sym(n, 'Q'), name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: '', scale: 'log' } },
+      { symbol: sym(n, 'Q'), name: `${n} Q`, kind: 'travel', travel: { min: 0.1, max: 10, default: 0.7, unit: 'none', scale: 'log' } },
       { symbol: sym(n, 'Type'), name: `${n} Type`, kind: 'choice', ids: ['bell', 'shelf'], values: [0, 1], default: 'bell' },
       { symbol: sym(n, 'On'), name: `${n} On`, kind: 'toggle', default: true },
     );
