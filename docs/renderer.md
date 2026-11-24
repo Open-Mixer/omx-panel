@@ -85,9 +85,11 @@ declares no role FAILS, naming `$OMX_ROLE_MEANINGS`, before it draws anything.
 
 A display of the description that is a curve (`eq_response`, `transfer_curve`) has a row of its own at the top of its section, above the
 controls: a frame, the basis word (`exact` or `modelled`) in its caption place, and the stroke once the host gives points
-(`omx_panel_view_set_curve`). The renderer computes no point: the host's are copied, ascending in x, and scaled to the frame, an
-`eq_response` on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` on linear dB with input
-and output on one span and the unity line. A `time_response` (a delay's tap train, a reverb's decay envelope: the processing-view spec, amendment 2026-09-16h) is drawn on a
+(`omx_panel_view_set_curve`). The renderer computes no point and picks no axis: the axis is the display's `axis` word, read from the
+description (`PANEL_DISPLAY_AXES`, [panel-layout.md](panel-layout.md) "Displays and their axis"), and a display with none, or with
+another word, refuses the description by name. The host's points are copied, ascending in x, and scaled to the frame, an
+`eq_response` (`log-frequency`) on a log frequency axis with the dB symmetric about 0 to the next 6 dB, a `transfer_curve` (`linear`) on linear dB with input
+and output on one span and the unity line. A `time_response` (`time`) (a delay's tap train, a reverb's decay envelope: the processing-view spec, amendment 2026-09-16h) is drawn on a
 time axis in ms from 0 to the content's end and a level window from the floor, -60 dB, to 0 (raised to the next 6 dB when a level
 exceeds 0), with the 0 dB line as the reference: its envelope is the display's curve (x in ms, y in dB) and its stems are
 `omx_panel_view_set_stems`, one per tap from the floor to its level, dimmed by its shade and with its leg letter above; each array is

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
  * gestures.mjs — the reference of the one gesture vocabulary (one-panel spec 7.8; docs/panel-gestures.md). Every
- * surface moves a panel's controls with the gestures schema/gestures.json declares; each maps its own inputs onto
+ * surface moves a panel's controls with the gestures schema/gestures.json declares (rendered from contract.d/gestures); each maps its own inputs onto
  * them, and is checked against this module: given a control and a script of events with timestamps, it answers
  * the resulting value in the control's own unit and the begin and end of each gesture.
  *

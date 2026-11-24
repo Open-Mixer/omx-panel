@@ -59,6 +59,11 @@ function bandPages(file, perPage, places) {
     .map((p) => ({ name: p.pageName, slots: p.ids.map((id) => (id === null ? null : places.get(symbolOf.get(id)) ?? { column: -1, row: symbolOf.get(id) })) }))
     .filter((p) => p.slots.some((s) => s && s.column >= 0));
 }
+/** The band screens of a cut (the controls of one band) and its row screens (one row of the matrix across several bands). */
+function splitScreens(pages) {
+  const several = (p) => new Set(p.slots.filter(Boolean).map((s) => s.column)).size > 1;
+  return { bands: pages.filter((p) => !several(p)), rows: pages.filter(several) };
+}
 
 for (const eq of EQS) {
   test(`${eq.name}: the band matrix is HPF, Band 1 .. Band ${eq.bands}, LPF`, () => {
@@ -86,7 +91,7 @@ for (const eq of EQS) {
   for (const perPage of WIDTHS) {
     test(`${eq.name} at ${perPage} slots: the screens walk HPF, the bands, LPF, one band a screen, each run contiguous`, () => {
       const m = matrixOf(eq.file);
-      const pages = bandPages(eq.file, perPage, placesOf(m));
+      const { bands: pages } = splitScreens(bandPages(eq.file, perPage, placesOf(m)));
       const columns = pages.map((p) => [...new Set(p.slots.filter(Boolean).map((s) => s.column))]);
       for (const [i, held] of columns.entries()) assert.equal(held.length, 1, `${pages[i].name} holds the controls of one band, not of ${held.map((c) => m.heads[c]?.label ?? 'no band')}`);
       // the screens in order: each band's screens together, the bands in the matrix's order, none left out
@@ -94,9 +99,26 @@ for (const eq of EQS) {
       assert.deepEqual(walked.map((c) => m.heads[c].label), order(eq.bands));
     });
 
+    test(`${eq.name} at ${perPage} slots: a screen of several bands is one row of the matrix over a contiguous run, band j on slot j`, () => {
+      const m = matrixOf(eq.file);
+      const { rows } = splitScreens(bandPages(eq.file, perPage, placesOf(m)));
+      // a band is longer than the page only below five slots (on, freq, gain, q, type): its type is then a row screen
+      assert.equal(rows.length > 0, perPage < 5, rows.map((p) => p.name).join(', '));
+      for (const p of rows) {
+        const held = p.slots.filter(Boolean);
+        assert.equal(new Set(held.map((s) => s.row)).size, 1, `${p.name} holds one row`);
+        const at = p.slots.map((s) => s?.column ?? null);
+        assert.ok(at.every((c, j) => c === null || j === 0 || at[j - 1] === null || c === at[j - 1] + 1), `${p.name}: the bands of a contiguous run, in order: ${at}`);
+        assert.ok(p.slots.length <= perPage);
+      }
+      // every band's type is on one row screen, once
+      const types = rows.flatMap((p) => p.slots.filter(Boolean)).filter((s) => s.row === 'Type').map((s) => m.heads[s.column].label);
+      assert.deepEqual(types, perPage < 5 ? order(eq.bands).slice(1, -1) : []);
+    });
+
     test(`${eq.name} at ${perPage} slots: place k of a band's screens is the same parameter in every band`, () => {
       const m = matrixOf(eq.file);
-      const pages = bandPages(eq.file, perPage, placesOf(m));
+      const { bands: pages } = splitScreens(bandPages(eq.file, perPage, placesOf(m)));
       // a band's places: its screens end to end, a blank slot counted
       const placesByColumn = new Map();
       for (const p of pages) {

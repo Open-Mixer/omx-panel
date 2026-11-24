@@ -77,20 +77,21 @@ test('arm: a frame given a port role is refused: a meter frame is static', () =>
   assert.equal(status, 1);
   assert.ok(out.some((l) => l.startsWith('FAIL template draws meter lufs as a frame')), out.join('\n'));
 });
-// plugin-hostd's LV2 table missing: the layout cannot be read, and neither the test nor the generator may answer "no meters"
-const NO_TABLES = mkdtempSync(join(tmpdir(), 'omx-panel-no-tables-'));
-const NOT_INSTALLED = `vocabulary: plugin-hostd's LV2 table is not installed (${join(NO_TABLES, 'lv2.json')})`;
-test('arm: without plugin-hostd\'s LV2 table the meter check fails with the reason, it does not pass with no meters', () => {
+// omx-contract's param domain missing (the standard units, sorting pass P1, P2): the layout cannot be read, and neither the
+// test nor the generator may answer "no meters"
+const NO_TABLES = mkdtempSync(join(tmpdir(), 'omx-panel-no-param-'));
+const NOT_INSTALLED = `vocabulary: omx-contract's param domain (param/param.json) is not installed in ${NO_TABLES}`;
+test('arm: without omx-contract\'s param domain the meter check fails with the reason, it does not pass with no meters', () => {
   const bundle = written();
-  const r = spawnSync('sh', [join(ROOT, 'tools/modgui-test.sh'), bundle, DESC, PANEL], { encoding: 'utf8', env: { ...process.env, MODGUI_SOURCE: SOURCE, PLUGIN_HOSTD_TABLES: NO_TABLES } });
+  const r = spawnSync('sh', [join(ROOT, 'tools/modgui-test.sh'), bundle, DESC, PANEL], { encoding: 'utf8', env: { ...process.env, MODGUI_SOURCE: SOURCE, OMX_CONTRACT_PATH: NO_TABLES } });
   const out = r.stdout.split('\n');
   assert.equal(r.status, 1);
   assert.ok(out.some((l) => l.startsWith(`FAIL read the meters of ${DESC} (${NOT_INSTALLED}`)), r.stdout);
   assert.ok(!out.some((l) => l.startsWith('PASS template draws exactly')), r.stdout);
 });
-test('arm: without plugin-hostd\'s LV2 table the generator refuses with the reason, it writes no MOD GUI without its meters', () => {
+test('arm: without omx-contract\'s param domain the generator refuses with the reason, it writes no MOD GUI without its meters', () => {
   const bundle = join(mkdtempSync(join(tmpdir(), 'omx-panel-modgui-test-')), 'meters.lv2');
-  const r = spawnSync(process.execPath, [join(ROOT, 'tools/modgui-gen.mjs'), '--descriptor', DESC, '--panel', PANEL, '--out', bundle, '--source', SOURCE], { encoding: 'utf8', env: { ...process.env, PLUGIN_HOSTD_TABLES: NO_TABLES } });
+  const r = spawnSync(process.execPath, [join(ROOT, 'tools/modgui-gen.mjs'), '--descriptor', DESC, '--panel', PANEL, '--out', bundle, '--source', SOURCE], { encoding: 'utf8', env: { ...process.env, OMX_CONTRACT_PATH: NO_TABLES } });
   assert.notEqual(r.status, 0);
   assert.ok(r.stderr.includes(NOT_INSTALLED), r.stderr);
   assert.ok(!existsSync(join(bundle, 'modgui/icon-meters.html')));

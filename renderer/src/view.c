@@ -6,13 +6,12 @@
  * and the widgets are the MOD GUI face's (tools/modgui-gen.mjs: layout, renderFace, drawKnob ...), the
  * numbers tools/look/geometry.json's and the colours the colour roles' (schema/look-roles.json, whose list
  * look_roles.h carries), valued by the look its host passes, tools/look.json by default; nothing here types a size or
- * a colour. The widget names are omx-contract's (PANEL_STANDARD_WIDGETS).
+ * a colour. The widget names are omx-panel's panel domain's (PANEL_STANDARD_WIDGETS).
  */
 #include "omx_panel_render.h"
 
 #include <cjson/cJSON.h>
 #include <math.h>
-#include <omxcontract/omx_vocabulary.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +20,13 @@
 #include "scene.h"
 #include "gesture_words.h"
 #include "view.h"
+
+/* whether `w` is the widget word whose X-macro name is `name` (view.h): the word is the name in lower case */
+static int is_widget_word(const char *w, const char *name) {
+  for (; *name; w++, name++)
+    if (*w != (*name >= 'A' && *name <= 'Z' ? *name - 'A' + 'a' : *name)) return 0;
+  return *w == 0;
+}
 
 static void fail(char *err, size_t n, const char *fmt, const char *a, const char *b) {
   if (err && n) snprintf(err, n, fmt, a ? a : "", b ? b : "");
@@ -195,7 +201,7 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
     }
     int found = -1;
     for (size_t k = 0; k < sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES; k++)
-      if (strcmp(w, WIDGET_NAMES[k].name) == 0) found = (int)WIDGET_NAMES[k].w;
+      if (is_widget_word(w, WIDGET_NAMES[k].name)) found = (int)WIDGET_NAMES[k].w;
     if (found < 0) {
       fail(err, n, "description: control '%s' names the widget '%s', which is not a standard widget", sym, w);
       goto bad;
@@ -390,7 +396,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       v->nband += (size_t)m->in_band;
     }
   }
-  /* the displays: each on a section, its kind the curve's axes, its basis the caption */
+  /* the displays: each on a section, its axis (a PANEL_DISPLAY_AXES word the description serves) the curve's axes, its basis the
+   * caption. The axis is read, never inferred from the kind: a display without one, or with another word, is refused by name */
   cJSON *dis = cJSON_GetObjectItemCaseSensitive(root, "displays");
   if (cJSON_IsArray(dis)) {
     v->ndisplays = (size_t)cJSON_GetArraySize(dis);
@@ -401,14 +408,25 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       cJSON *sec = cJSON_GetObjectItemCaseSensitive(it, "section");
       const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
       const char *basis = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "basis"));
+      const char *axis = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "axis"));
       if (!cJSON_IsNumber(sec) || sec->valueint < 0 || (size_t)sec->valueint >= v->nsections || !kind) {
         fail(err, n, "description: a display lacks a section index or a kind%s%s", NULL, NULL);
         goto bad;
       }
+      char which[96];
+      snprintf(which, sizeof which, "%zu (%.64s)", i - 1, kind);
+      if (!axis) {
+        fail(err, n, "description: display %s has no axis, one of PANEL_DISPLAY_AXES (linear, log-frequency, time)%s", which, "");
+        goto bad;
+      }
+      if (strcmp(axis, "linear") != 0 && strcmp(axis, "log-frequency") != 0 && strcmp(axis, "time") != 0) {
+        fail(err, n, "description: display %s has the axis '%s', none of PANEL_DISPLAY_AXES (linear, log-frequency, time)", which, axis);
+        goto bad;
+      }
       /* only a closed-form curve has a place on the panel; a gain-reduction bar or a meter is a control's reading */
-      d->time_x = strcmp(kind, "time_response") == 0;
-      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0 || d->time_x) ? sec->valueint : -1;
-      d->log_x = strcmp(kind, "eq_response") == 0, d->symmetric = d->log_x;
+      d->section = (strcmp(kind, "eq_response") == 0 || strcmp(kind, "transfer_curve") == 0 || strcmp(kind, "time_response") == 0) ? sec->valueint : -1;
+      d->time_x = strcmp(axis, "time") == 0;
+      d->log_x = strcmp(axis, "log-frequency") == 0, d->symmetric = d->log_x;
       d->basis = dup(basis ? basis : "modelled");
     }
   }
@@ -996,9 +1014,9 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
   }
 }
 
-/* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes come from the
- * points alone: an eq_response is a log frequency axis with the dB symmetric about 0, to the next 6 dB; a transfer_curve is linear dB,
- * input and output on one span, with the unity line. No point is computed here. With no points the frame and the caption stand: a
+/* A curve: its frame, its axis, the points the host gave as a polyline, and the basis word in the caption place. The axes are the
+ * display's `axis` word over the points' extent: log-frequency (an eq_response) is a log frequency axis with the dB symmetric about 0, to
+ * the next 6 dB; linear (a transfer_curve) is linear dB, input and output on one span, with the unity line; time, below. No point is computed here. With no points the frame and the caption stand: a
  * modelled curve is never read as the plugin's response, so the word is always there. */
 static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double x, double y, double w, double h, double s,
                        const palette *col) {

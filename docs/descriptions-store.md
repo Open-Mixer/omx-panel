@@ -10,7 +10,7 @@ A plugin's panel description and its inferred port groups are made today on each
 server cuts a description from a descriptor, Zynthian runs `omx-panel describe` per plugin, `omx-complement-sync` infers
 the groups of every LV2 bundle again, and plugin-hostd reads declared `pg:group` only. This spec keeps them as DATA, in
 three SQLite files with the qualification store's key (the layers differ, section 2), so every consumer reads one answer per plugin binary, inference
-runs once per plugin and layer, and each host generates its toolkit files from the stored data.
+runs once per plugin and layer, and each host generates its toolkit files from the stored data, except where a key-gated staged file of a known set applies (section 6).
 
 ## 1. Scope
 
@@ -26,8 +26,10 @@ runs once per plugin and layer, and each host generates its toolkit files from t
 
 - Not a qualification store. The qualification store (plugin-db-qualification
   plugin-db-qualification's qualification store spec) holds no description, and this store holds no qualification figure.
-- Not a toolkit file. A MOD GUI, an LV2 complement bundle and an LV2 desktop UI bundle are generated on each host from
-  the store and never shipped in a package (section 6).
+- Not a toolkit file. A MOD GUI, an LV2 complement bundle and an LV2 desktop UI bundle are generated from the store.
+  They are shipped, STAGED and key-gated, only for the KNOWN plugin sets of two packages (`omx-plugins-gui`,
+  `omx-zynthian-gui`), and a host generates them locally for every other plugin and for a non-default look (section 6).
+  Nothing generated is committed to git.
 - Not the derivation. `tools/describe.mjs`, `tools/group-infer.mjs` and `tools/group-model.mjs` stay the one derivation;
   the store keeps their answers.
 - Not the behaviour core. The core (`docs/behaviour-core.md`) reads a served description; the store is where the served
@@ -137,7 +139,7 @@ are agreed with the description schema owner before lane 1 (section 13) merges; 
 
 What `describe` serves today (`tools/describe.mjs:283-309`): `family`, `fingerprint`, `easy`, `params`, `sections`
 (each with `bars`, or with the served `matrix` of a repeated group, `docs/group-model.md` "The served matrix"),
-`controls`, `meters`, `roles`, `displays` and `pages`. What the complement writes (`tools/lv2-complement.mjs:227-228`):
+`controls`, `meters`, `roles`, `displays` and `pages`. Each display carries its `axis`, a `PANEL_DISPLAY_AXES` word, in the body; `describeFromStored` refuses a body whose display has none or another word. What the complement writes (`tools/lv2-complement.mjs:227-228`):
 the verdict of `inferGroups` (`tools/group-infer.mjs:194`) with the group model's instance groups, each group a
 `symbol`, a `name`, a `displayPriority`, its `ports` by port symbol and the `rule` that made it.
 
@@ -222,6 +224,8 @@ CREATE TABLE port_group_member (
   the two are byte-equal by construction, and a corpus test holds it. `pages` is never stored: it depends on the surface's width. No client
   needs the plugin's descriptor: plugin-hostd and Zynthian have none for a third-party plugin.
 
+**Bodies stored before the axis (panel domain 1.2.0).** A body stored without `displays[].axis` is refused by `describeFromStored`, by name: the reader stays strict and never completes the axis, from the display's kind or from anything else, on read. What happens to the rows that exist at the upgrade: the base is built new by the release that adds the axis (3.5: never migrated), and a derived row of the system layer is stale (`rules` raised with the change, 3.6) and derived again. A person's EDITED row of the user layer (`edited` 1) is carried by the user-layer MIGRATION step of 3.5 (owner ruling: a person's edits are migrated across schema versions): it writes the axis into the row ONCE, at the upgrade. What it reads is exactly this: each display of the row's body keeps its `kind` word unchanged, and the step maps that word once by the same table `describe` uses (`AXIS_OF_KIND`, `tools/panel-description.mjs`: eq_response log-frequency, transfer_curve linear, gain_reduction_bar linear, meter linear, time_response time), writing the table's word into the display; the reader never does this on read and no default exists (a kind the table has no word for makes the whole row one the step cannot carry); an edit the step cannot carry is kept aside in the file beside the layer and NAMED, as 3.5 says, never dropped silently.
+
 ### 3.5 `user_version`
 
 `PRAGMA user_version = 1`, `OMX_PANEL_STORE_SCHEMA_VERSION`, held once in `schema/panel.sql` and compiled into the reader
@@ -229,7 +233,9 @@ and the writer. Any change of the DDL is +1, and the rule is the qualification s
 exactly its version; `schema-other` for a file at another version; `schema-mismatch` when the opened files differ from
 each other (checked first, naming every file and version); `not-a-store` for 0, a missing `store_info` row, or a file
 whose `store_info.layer` is not the place it was opened as. The base is built new at each version and never upgraded; a
-system layer is not upgraded: it is derived again.
+system layer is not upgraded: it is derived again. Version 1 has no older version to carry: a layer at another version
+is refused as `schema-other` by the reader and by the writer alike, and the user-layer migration below is written with
+the first schema change that needs it.
 
 **A schema change** (section 14, 9; an owner-approved compatibility mechanism, scoped as follows and no wider). An
 omx-panel release that raises `OMX_PANEL_STORE_SCHEMA_VERSION` installs a base at the new version. Then:
@@ -257,7 +263,9 @@ derives otherwise, would keep serving the old entry from every layer. So each en
   plugin of omx-plugins the description it carries, for any other the descriptor plugin-hostd's scan wrote for its binary
   (`<probe> describe`, section 7), its described parameter list. One function
   computes it, `omx_panel_store_source(format, path, hex_out)`, in the reader library, so every caller hashes the same
-  bytes the same way.
+  bytes the same way. The canonical JSON of a CLAP descriptor is the function the code uses: object keys in byte order,
+  no white space, numbers as cJSON prints them. A change of that form only stales entries, which are then derived again;
+  it is never a refusal.
 - `rules`: `OMX_PANEL_RULES_VERSION`, an integer NEW in omx-panel (lane 1 adds it with the schema and its golden),
   raised by every change that moves `describe`'s or the
   inference's output for the same input (a golden of the derivation tests changes with it, so the raise is not forgotten).
@@ -325,14 +333,17 @@ void omx_panel_store_close(omx_panel_store *s);
 typedef struct { const char *sha256, *format, *uri; } omx_panel_store_key;
 typedef struct { const char *symbol, *name, *rule; long display_priority; int declared;
                  const char *const *ports; size_t nports; } omx_panel_store_group;
+typedef struct { const char *symbol, *key, *id, *group_key; int governed; } omx_panel_store_control;   /* group_key NULL: none */
 typedef struct {
     const char *layer;                                   /* "user", "system" or "base" */
     const char *stale_edit_layer;                        /* a layer whose edited entry was skipped as stale, or NULL */
     int edited; const char *made_by, *family, *fingerprint;
     const char *body;                                    /* the description as JSON, or NULL when refused */
+    const char *repeated_groups;                         /* the `groups` column: the repeated groups as JSON, or NULL when refused */
     const char *refused;                                 /* the DESCRIBE_CODES word, or NULL */
     const char *group_outcome, *group_reason;            /* NULL: no verdict (a CLAP plugin) */
-    const omx_panel_store_group *groups; size_t ngroups;
+    const omx_panel_store_group *groups; size_t ngroups; /* the port groups, by display priority then symbol */
+    const omx_panel_store_control *controls; size_t ncontrols;   /* description_control, in `ordinal` order */
 } omx_panel_store_entry;
 
 /* 0 and *e filled, valid until the next call on s; OMX_PANEL_STORE_NO_ENTRY for a key no layer holds */
@@ -349,8 +360,14 @@ int  omx_panel_store_remove(omx_panel_store *w, const omx_panel_store_key *k, om
 - **Refusals, by name** (NEW `PANEL_STORE_CODES`, `x-c-codes`, in the `panel` domain, as `docs/behaviour-core.md`
   section 4 adds its codes): `panel-store.absent`, `.unreadable`, `.not-a-store`, `.schema-mismatch`, `.schema-other`,
   `.domain-too-old`, `.word-unknown`, `.hot-journal`, `.busy`, `.entry-invalid` (a put whose JSON is not an entry of the
-  description schema or whose words are not in their items), and the loader's codes passed through. Each is the
-  qualification store's code of the same name (its section 6), with `panel-store.` for the prefix.
+  description schema or whose words are not in their items), and the loader's codes passed through, except that a domain
+  below the version a store was checked against (the loader's `contract.package.too-old`) is `panel-store.domain-too-old`.
+  Each is the qualification store's code of the same name (its section 6), with `panel-store.` for the prefix.
+  `PANEL_STORE_CODES` is the one item of the `panel` domain marked `x-c-codes`.
+- **Test and command only, exported.** `omx_panel_store_set_rules` (the reader's `OMX_PANEL_RULES_VERSION`, for a test of
+  the rules rule), `omx_panel_store_writer_open_at` (the writer of a file given, as the system or a user layer) and
+  `omx_panel_store_message` (the reason of the last refusal of a call on a handle, naming the file) stay in the ABI file
+  and the export map, and their header says so. No production binary calls the first two.
 - **Word check at open** and at put, through omx-contract's loader (`omx_domain_open`, `omx_domain_word`), once.
 - **Concurrency**, as the qualification store's: the base opened `mode=ro&immutable=1`; a layer opened `mode=ro` with
   `busy_timeout` 250 ms by a reader; the rollback journal (`journal_mode` `DELETE`), not WAL; one entry per transaction.
@@ -373,7 +390,8 @@ store has:
 **The command** `omx-panel-store`: `get --sha256 .. --format .. --uri .. --json` (the entry and its layer), `put
 --sha256 .. --format .. --uri ..` (the entry as JSON on stdin, into the layer of the effective uid), `remove`, `check`
 (opens every layer, prints `ok` or the code), `build --in <dir> --out <file> --built-from <commit>` (the base, section
-6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage.
+6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of a key no layer holds prints
+`null` and exits 0.
 
 ## 6. Producers
 
@@ -405,13 +423,65 @@ store first and prints the entry it finds, writing nothing. Else it takes the de
 over them (section 3.4), writes the entry through `omx-panel-store put` and prints it. `--sha256` is the binary's hash
 when the caller has it; else the command hashes the binary by the same rule. One plugin, never a scan.
 
-### Generated files are never shipped
+### Generated files: shipped key-gated for known sets, generated locally otherwise
 
-A MOD GUI, an LV2 complement bundle and an LV2 UI bundle are generated on each host and never shipped in a package. That
-includes omx-plugins' committed MOD GUIs: each plugin's bundle carries `modgui.ttl` and `modgui/` generated by
-`omx-panel modgui` and committed (omx-plugins `plugins/omx-comp/Makefile:78-85`, `:113-120`; its manifest's
-`rdfs:seeAlso <modgui.ttl>`, `tools/gen.mjs:771`). They leave the tree and the packages; `omx-modgui-sync` gives those
-plugins their MOD GUI on the host, from the base's entries, as it does for any plugin without one.
+Owner ruling (section 14, 11). A MOD GUI, an LV2 complement bundle and an LV2 desktop UI bundle are generated from the
+store's entries. Nothing generated is committed to git. Generated GUI formats ARE shipped, in two packages, for KNOWN
+plugin sets only, and a shipped file is only STAGED: a host uses it when its key matches and generates locally otherwise.
+
+- **`omx-plugins-gui`** is built in the omx-plugins package build, over its own built bundles. It carries MOD GUI and
+  LV2 desktop UI and no LV2 complement: omx-plugins' own TTL already has the groups.
+- **`omx-zynthian-gui`** covers Zynthian's default third-party plugin set. It is built from the BASE descriptions by
+  the zynthian-sys image or CI build, and carries MOD GUI, LV2 complement and LV2 desktop UI.
+- Both are noarch and both are made by the one builder, `omx-panel gui-stage` (below). omx-panel never builds a
+  third-party binary: the builder reads the set's installed bundles.
+- omx-plugins' committed MOD GUIs still leave the tree (each plugin's `modgui.ttl` and `modgui/`, generated by
+  `omx-panel modgui` and committed: omx-plugins `plugins/omx-comp/Makefile:78-85`, `:113-120`; the manifest's
+  `rdfs:seeAlso <modgui.ttl>`, `tools/gen.mjs:771`). The package build stages the same files generated, with a key.
+
+**Where staged files live.** Under `/usr/share/omx/gui/<package>/`, beside the base's `/usr/share/omx/panel/` (section 2):
+`/usr/share/omx/gui/<package>/<sha256>/` per plugin, `<sha256>` the plugin binary's, holding `modgui/` (the
+`modgui.ttl` and its resources), `complement/` (the complement bundle, `omx-zynthian-gui` only) and `lv2ui/` (the
+desktop UI bundle), and `/usr/share/omx/gui/<package>/keys.json`, the key record.
+
+**The key record** `keys.json`, one per package, holds per plugin: `sha256` (the binary's SHA-256, the store's plugin
+key), `format`, `uri`, `source` (the entry's `source` of section 3.6: every `.ttl` of an LV2 bundle, or the CLAP
+descriptor, as installed when the file was staged), `rules` (the `OMX_PANEL_RULES_VERSION` the file was built with), and
+the SHA-256 of each staged file. A binary alone is too narrow a key: a GUI is generated from the description, whose
+inputs are the source and the rules, so a TTL-only update over the same binary, or a host with another rules version,
+would activate a stale GUI. The key is therefore the triple (`sha256`, `source`, `rules`) for EVERY staged file, MOD GUI
+and desktop UI included. The entry's `fingerprint` is not used: it covers the layout only, not the source (section 3.4).
+For a complement, `source` is the installed TTL's hash and is the same field.
+
+**Activation** is a step of `omx-modgui-sync` and `omx-complement-sync` (and of `omx-lv2ui-sync`), before they
+generate. For an installed plugin the sync finds the staged directory by the binary's SHA-256 and compares, for every kind, the record's triple with the
+store entry the host holds (read as in step 1 above, through the reader's `source` and `rules`):
+
+- the binary's SHA-256 with the record's `sha256`;
+- the host's `source` (computed from the installed files by `omx_panel_store_source`) with the record's `source`;
+- the reader's `OMX_PANEL_RULES_VERSION` with the record's `rules`.
+
+On a match the sync LINKS the staged file with a symbolic link (it works across file systems; there is no copy) into
+the place it writes today (`MODGUI_DIR`, the bundle names of `docs/lv2-complement.md`), marked as the sync's own so the
+removal rules apply. Where a link cannot be made the sync generates locally and logs it: that is the non-match path
+below, not a second mechanism. A link whose target is gone (the package was removed or upgraded) is the sync's own
+file: the next pass removes it, or regenerates the file. Otherwise the sync generates locally from the entry, as before. The cases that generate locally: a key mismatch (a
+different binary, a changed source, another rules version), a NON-DEFAULT look (a skin or a per-page choice other than the default; the staged
+files are the default look's), and an unknown plugin (not in the record). Key-gating is the owner's ruling, not a
+compatibility mechanism, and there is no other fallback. A staged file never shadows a user's own edits (an edited
+entry, `edited` 1, is generated locally from the entry) nor a locally generated file for a non-default look: an
+existing file the sync did not write is left alone, and a locally generated file of a non-default look is never
+replaced by a link.
+
+**The builder** `omx-panel gui-stage --set <file> --descriptions <panel.sqlite> --out <dir>`: for each plugin of the
+set it writes MOD GUI, LV2 complement and LV2 desktop UI under `<dir>`, from the descriptions file's entries. The
+complement is written only where the installed TTL lacks groups, and never for our own plugins. It writes `keys.json`
+as above. It refuses a `sha256` that another package's `keys.json` already stages (the Zynthian set excludes
+omx-plugins' plugins), so no precedence between packages exists. Run in the zynthian-sys build, `gui-stage` reads the
+INSTALLED `omx-plugins-gui` `keys.json` (`/usr/share/omx/gui/omx-plugins-gui/keys.json`) for that check; the omx-plugins
+build has no other package's record to read. Its bytes are deterministic (fixed order, no timestamps), so two runs over the same input give the same bytes.
+`--set` is the list of installed bundles (each by its path), `--descriptions` the base file, `--out` required. Flags
+only: no environment variable is read.
 
 ### The base is built centrally
 
@@ -494,6 +564,9 @@ and nothing depends on them (section 14, 5).
 
 ## 8. Plugin GUIs
 
+Generated GUI files are staged, key-gated, for the known sets (section 6): the lists below say what draws or generates,
+and a host uses a matching staged file instead of generating.
+
 - **Every plugin of omx-plugins offers `clap.gui` and an LV2 `ui:X11UI`**, both drawn from its description by omx-panel's renderer
   window (`renderer/include/omx_panel_window.h`). `clap.gui` comes first as a Wayland floating window
   (`CLAP_WINDOW_API_WAYLAND`), then X11 embedded and floating; omx-clap-core's host already opens both
@@ -506,7 +579,8 @@ and nothing depends on them (section 14, 5).
 - **A CI gate in omx-plugins** refuses a plugin of the tree whose CLAP face answers no `clap.gui` from `get_extension` or whose
   LV2 bundle declares no `ui:X11UI` for the plugin. It runs over every plugin of the tree, sabotage-checked.
 - **Third-party LV2 plugins get a desktop UI from the host.** `omx-lv2ui-sync` writes, for each installed LV2 plugin with
-  no desktop UI, a separate bundle that declares a `ui:X11UI` on the plugin's URI, its `ui:binary` the one generic UI
+  no desktop UI, and whose key matches no staged `lv2ui/` bundle of `omx-plugins-gui` or `omx-zynthian-gui` (which it
+  links instead, section 6), a separate bundle that declares a `ui:X11UI` on the plugin's URI, its `ui:binary` the one generic UI
   library omx-panel installs; the installed bundle is never touched, and the bundle is marked, rewritten and removed by
   the rules of the complement (`docs/lv2-complement.md`, "What is removed"). The generic UI reads the entry of the key
   the bundle names. No per-plugin binary is built.
@@ -555,7 +629,8 @@ happens say instead that the work runs on a direct call and that the unit is a b
 
 ### omx-panel
 
-The store (`schema/panel.sql`, `store/`, `omx-panel-store`, `python3-omx-panel-store`); `omx-panel describe --plugin
+The store (`schema/panel.sql`, `store/`, `omx-panel-store`, `python3-omx-panel-store`); `omx-panel gui-stage`; the
+staged-activation step of `omx-modgui-sync`, `omx-complement-sync` and `omx-lv2ui-sync` (section 6); `omx-panel describe --plugin
 --store`; the generators reading the store; `omx-panel-sync`; `omx-lv2ui-sync` and the generic UI library; the window's
 Wayland backend; the base builder and `omx-panel-descriptions`; the NEW `panel` items `PANEL_GROUP_OUTCOMES`,
 `PANEL_GROUP_REASONS`, `PANEL_GROUP_RULES` (the words `tools/group-infer.mjs` and `tools/group-model.mjs` write today)
@@ -575,7 +650,14 @@ The store reader linked; groups from the store, else declared; the ask, `ask_unk
 ### omx-plugins
 
 `clap.gui` and `ui:X11UI` in every plugin, drawn from its description; the CI gate; the committed MOD GUIs removed with
-their `make modgui` checks, and the manifest's `<modgui.ttl>` with them (section 6).
+their `make modgui` checks, and the manifest's `<modgui.ttl>` with them (section 6); the package build runs
+`omx-panel gui-stage` over its own built bundles and ships `omx-plugins-gui` (MOD GUI and LV2 desktop UI, no
+complement). Nothing generated is committed.
+
+### zynthian-sys
+
+Its image or CI build runs `omx-panel gui-stage` over the installed default third-party set, from the base file, and
+ships `omx-zynthian-gui` (MOD GUI, LV2 complement, LV2 desktop UI), noarch.
 
 ### plugin-qualify
 
@@ -617,6 +699,10 @@ store holds; it reacts to `description_changed`.
 | `port_group.rule` | `panel`, NEW `PANEL_GROUP_RULES` | `tools/group-infer.mjs`, `tools/group-model.mjs` | omx-panel | the complement; a reader of a diagnosis |
 | `port_group` symbol, name, priority, `declared`; `port_group_member` | names | the inference, or the plugin for a declared node | omx-panel (the rules) | plugin-hostd, the complement, Zynthian |
 | store refusal codes | `panel`, NEW `PANEL_STORE_CODES` | the reader and the writer | omx-panel | every door |
+| `omx-panel gui-stage` and its output format (`keys.json`) | omx-panel | omx-panel | omx-panel | omx-plugins' and zynthian-sys's builds |
+| `omx-plugins-gui` (staged MOD GUI, LV2 desktop UI) | omx-panel (the formats); omx-plugins (the set) | omx-plugins' package build, by running `gui-stage` | omx-plugins | the syncs |
+| `omx-zynthian-gui` (staged MOD GUI, complement, LV2 desktop UI) | omx-panel (the formats); zynthian-sys (the set) | zynthian-sys's image or CI build, by running `gui-stage` over the base | zynthian-sys | the syncs |
+| the activation of a staged file (key check, link) | omx-panel | `omx-modgui-sync`, `omx-complement-sync`, `omx-lv2ui-sync` | omx-panel (its sync lane) | the host's LV2 hosts and MOD |
 | `ask_unknown` (a plugin-hostd setting) | plugin-hostd | plugin-hostd | plugin-hostd | the person configuring it |
 | the `add` word `ask` / `no-ask`, the verb `description_get`, the event `description_changed`, and the codes they answer (today's `-529` `DESCRIPTOR_ABSENT` and `-530` `DESCRIPTOR_PENDING`, `doc/protocol.md:843-844`, widened to the store, or new codes) | plugin-hostd-protocol (its table, grammar and header) | plugin-hostd | plugin-hostd-protocol | the console, Zynthian |
 | `plugin-qualify-sync --plugin` | plugin-qualify | plugin-qualify | plugin-qualify | plugin-hostd |
@@ -665,14 +751,29 @@ the run in the PR body, then the commits that turn it green.
    only, at nice 19, and never for a second plugin; with `plugin-qualify-sync` absent no child runs and the add answers
    as before; `ask_unknown 0` runs none, and `add ... ask` runs them; a known key runs none; the three generators run with
    that plugin's `--only` and no other; with no store installed, the add pages by the declared groups.
-10. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library, generated
-   bundles only. Red: for a fixture LV2 plugin with no UI, lilv lists a `ui:X11UI` on its URI from the generated bundle;
+10. **omx-panel: the window on Wayland, the generic LV2 UI and `omx-lv2ui-sync`.** Proves: one UI library; the tree holds no
+   generated bundle (the package may stage generated ones, lanes 14 to 17). Red: for a fixture LV2 plugin with no UI, lilv lists a `ui:X11UI` on its URI from the generated bundle;
    the window opens under a headless Wayland compositor and under Xvfb and draws the stored description.
 11. **omx-plugins: `clap.gui`, `ui:X11UI` and the gate.** Proves: every plugin of the tree has both. Red: the gate over today's
-   tree fails on every plugin; the tree holds no generated `modgui.ttl`.
+   tree fails on every plugin; the tree holds no generated `modgui.ttl` (git only: the package stages generated files, lane 15).
 12. **zynthian-ui: entries from the store.** Proves: Zynthian reads, does not derive. Red: with a fixture store whose
     description differs from what `describe` derives, the engine draws the store's.
 13. **The console: served from the store.** Red: a fixture entry is served as stored, and no derivation runs for its key.
+14. **omx-panel: `omx-panel gui-stage`.** Proves: one deterministic builder. Red: two runs over the same set and base
+    give the same bytes; `keys.json` holds the binary's SHA-256, format, uri, `source`, `rules` and file hashes;
+    a `sha256` already in the installed `omx-plugins-gui` `keys.json` is refused when staging `omx-zynthian-gui`; the complement is omitted when the installed TTL has groups and for our own plugins
+    (sabotage: writing it anyway turns that red); an input path that does not exist is refused by name.
+15. **omx-plugins: `omx-plugins-gui`.** Proves: the package stages generated MOD GUI and LV2 desktop UI, and no
+    complement, and git holds none. Red: the package build runs `gui-stage` over its built bundles and the package lists
+    the staged files and `keys.json`; the tree holds no generated `modgui.ttl`.
+16. **zynthian-sys: `omx-zynthian-gui`.** Proves: the default set is staged from the base. Red: the image or CI build
+    runs `gui-stage` over the installed default set and the package holds MOD GUI, complement and desktop UI for it.
+17. **omx-panel: staged activation in the syncs.** Proves: a key match activates, anything else generates. Red: a
+    staged file whose key (binary, source, rules) matches is activated (symlinked into the place the sync writes today);
+    a key mismatch is generated locally, for each of: another binary; a changed TTL over the same binary; another
+    `OMX_PANEL_RULES_VERSION`; a non-default look; an unknown plugin; a link that cannot be made (generated locally and
+    logged); a link whose target is gone is removed or regenerated on the next pass; a user's edit and a locally
+    generated non-default file are never shadowed. Sabotage: activation without the key check, or with the binary alone as the key, turns it red.
 
 ## 14. Decided
 
@@ -698,3 +799,14 @@ The owner's answers to the questions this design raised (2026-11-19). The sectio
 9. **A schema change** (OWNER): a MIGRATION carries a person's edits across schema versions, an owner-approved
    compatibility mechanism scoped to the user layer only; the system layer and the base are regenerated (section 3.5).
 10. **Figures under load** are recorded with a measured-under-load mark; the ask is not deferred (section 7).
+11. **Generated GUIs ship key-gated for known sets** (OWNER, 2026-11-19). This supersedes "generated toolkit files are never
+    shipped" (sections 1 and 6). Generated GUI formats are shipped for known plugin sets, in `omx-plugins-gui` (MOD GUI
+    and LV2 desktop UI, built in the omx-plugins package build) and `omx-zynthian-gui` (MOD GUI, LV2 complement and LV2
+    desktop UI, built from the base descriptions for Zynthian's default third-party set). They are STAGED: the host's
+    sync activates one only when the binary's SHA-256 (the store's plugin key) matches, and for a complement the
+    installed TTL's hash. A mismatch, a non-default look or an unknown plugin is generated locally, as before. Nothing
+    generated is committed to git, and omx-plugins' committed MOD GUIs still go away. `omx-modgui-sync` and
+    `omx-complement-sync` gain the staged-activation step. One builder, `omx-panel gui-stage`, run by omx-plugins' build
+    and by zynthian-sys's image or CI build (section 6). The key of a staged file is the triple (binary SHA-256, the
+    entry's `source`, the rules version), because a GUI is generated from the description and a binary alone would
+    activate a stale one after a TTL-only update; activation is a symbolic link only (section 6).

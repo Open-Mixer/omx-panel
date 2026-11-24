@@ -6,23 +6,27 @@
 #ifndef OMX_PANEL_VIEW_H
 #define OMX_PANEL_VIEW_H
 
-#include <omxcontract/omx_vocabulary.h>
+#include <omxdomain/panel_codes.h>
 #include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
 
-typedef enum { W_KNOB, W_FADER, W_SWITCH, W_SELECTOR, W_METER, W_CURVE, W_XY, W_DISPLAY } widget;
+/* The standard widgets, omx-panel's panel domain (PANEL_STANDARD_WIDGETS, rendered into omxdomain/panel_codes.h): a
+ * widget it adds is drawn here before the count below lets this file build. A widget's code is its domain code. */
+typedef enum {
+#define W_OF(code, WORD) W_##WORD = code,
+  OMX_PANEL_STANDARD_WIDGETS(W_OF)
+#undef W_OF
+} widget;
 
-/* The standard widgets by omx-contract's names (PANEL_STANDARD_WIDGETS): a widget it adds is drawn
- * here before the count below lets this file build. */
+/* a widget's word is its X-macro name, compared without case (view.c): the standard widget words are one lowercase word */
 static const struct { const char *name; widget w; } WIDGET_NAMES[] = {
-    {OMX_PANEL_STANDARD_WIDGETS_KNOB, W_KNOB},       {OMX_PANEL_STANDARD_WIDGETS_FADER, W_FADER},
-    {OMX_PANEL_STANDARD_WIDGETS_SWITCH, W_SWITCH},   {OMX_PANEL_STANDARD_WIDGETS_SELECTOR, W_SELECTOR},
-    {OMX_PANEL_STANDARD_WIDGETS_METER, W_METER},     {OMX_PANEL_STANDARD_WIDGETS_CURVE, W_CURVE},
-    {OMX_PANEL_STANDARD_WIDGETS_XY, W_XY},           {OMX_PANEL_STANDARD_WIDGETS_DISPLAY, W_DISPLAY},
+#define W_NAME(code, WORD) {#WORD, W_##WORD},
+    OMX_PANEL_STANDARD_WIDGETS(W_NAME)
+#undef W_NAME
 };
 _Static_assert(sizeof WIDGET_NAMES / sizeof *WIDGET_NAMES == OMX_PANEL_STANDARD_WIDGETS_COUNT,
-               "every standard widget of omx-contract is drawn");
+               "every standard widget of the panel domain is drawn");
 
 typedef struct {
   char *symbol, *label;
@@ -53,9 +57,10 @@ typedef struct {
 /* A display of the description (`displays`): a curve drawn from points the host gives, never computed here. */
 typedef struct {
   int section;
-  int log_x;     /* eq_response: x in Hz on a log axis; transfer_curve: input dB on a linear one */
-  int symmetric; /* eq_response: y in dB about 0; transfer_curve: output dB on the input's span */
-  int time_x;    /* time_response: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
+  /* the display's axis, the description's `axis` word (PANEL_DISPLAY_AXES), never its kind's name: */
+  int log_x;     /* log-frequency: x in Hz on a log axis; linear: x on a linear span (a transfer curve's input dB) */
+  int symmetric; /* log-frequency: y in dB about 0; linear: y on x's span (a transfer curve's output dB) */
+  int time_x;    /* time: x in ms from 0 to the content's end, y in dB from the floor (-60) to 0 or the next 6 dB above a level */
   char *basis;   /* "exact" or "modelled", printed in the caption place */
   double *x, *y;
   size_t n;

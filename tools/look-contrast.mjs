@@ -10,9 +10,8 @@
  * Usage: `node tools/look-contrast.mjs` prints the table and the lowest ratio of each look, before and after.
  */
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
 import { contrast, LOOK_JSON, loadRoles } from './look.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 /**
  * Every text rule: its selector (without the pedal's scope), the look token that sets its colour, the colour role it had in
@@ -90,4 +89,4 @@ function main() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+if (isMain(import.meta.url)) main();

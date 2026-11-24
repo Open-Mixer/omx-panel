@@ -18,8 +18,9 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 export const PIN_JSON = join(dirname(fileURLToPath(import.meta.url)), 'look', 'console-vintage.json');
 /** The four tokens of the vintage glass the first pin carried (the pin's `tokens`). */
@@ -176,4 +177,4 @@ function main(argv) {
   console.log('look-pin: tools/look/console-vintage.json is what tokens.css holds at the pinned commit');
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

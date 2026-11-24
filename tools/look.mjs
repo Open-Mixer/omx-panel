@@ -17,9 +17,10 @@
  * schema/look-roles.json gives, or when the role file breaks a rule of checkRoles.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { consoleTokens, loadPin } from './look-pin.mjs';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
 export const ROLES_JSON = join(TOOLS, '..', 'schema', 'look-roles.json');
@@ -281,4 +282,4 @@ function main(argv) {
   for (const [file, want, name] of outs) writeFileSync(file, want), console.log(`look: wrote ${name}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv.slice(2));
+if (isMain(import.meta.url)) main(process.argv.slice(2));

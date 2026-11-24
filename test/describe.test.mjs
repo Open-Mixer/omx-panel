@@ -97,7 +97,7 @@ test('an LSP-shaped EQ with the declared class is an eq from inferred bands: fre
   const { description } = describe(eqDescriptor(lv2('lv2:ParaEQPlugin'), 4));
   assert.equal(description.family, 'eq');
   const r = (role, index) => description.roles.find((x) => x.role === role && x.index === index);
-  assert.deepEqual(r('band_freq', 2), { role: 'band_freq', index: 2, symbol: 'f_2', unit: 'hz', inferred: true });
+  assert.deepEqual(r('band_freq', 2), { role: 'band_freq', index: 2, symbol: 'f_2', unit: 'Hz', inferred: true });
   assert.deepEqual(r('band_gain', 2), { role: 'band_gain', index: 2, symbol: 'g_2', unit: 'coef', inferred: true });
   assert.deepEqual(r('band_q', 2), { role: 'band_q', index: 2, symbol: 'w_2', unit: 'oct', inferred: true });
   assert.deepEqual(r('band_type', 2).shapes, ['off', 'bell', 'highshelf', 'lowshelf']);
@@ -219,7 +219,7 @@ test('params: the contract facts of each control', () => {
   ]));
   const [cut, drive, mode, on] = description.params;
   assert.equal(cut.scale, 'linear', 'log over a floor at zero is served linear');
-  assert.deepEqual([drive.unit, drive.scale, drive.step, drive.default], ['db', 'linear', 0, 6]);
+  assert.deepEqual([drive.unit, drive.scale, drive.step, drive.default], ['dB', 'linear', 0, 6]);
   assert.deepEqual([mode.enumLabels, mode.default, mode.step, mode.scale], [['Alpha', 'Beta'], 1, 1, 'stepped']);
   assert.deepEqual([on.min, on.max, on.default], [0, 1, 1]);
 });

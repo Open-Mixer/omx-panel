@@ -11,12 +11,13 @@
 import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from '@openmixer/omx-contract/entry';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
 /** The tree's own checks, which the package does not carry. */
-const NOT_SHIPPED = ['tools/copy-data.mjs'];
+const NOT_SHIPPED = ['tools/copy-data.mjs', 'tools/skin-schema-words.mjs', 'tools/codes-render.mjs'];
 /** Every .mjs module the package carries, as the tree holds it. */
 export const MODULES = ['bin', 'lib', 'tools'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.mjs')).map((f) => `${d}/${f}`)).filter((f) => !NOT_SHIPPED.includes(f));
 /** The shipped fixture bundles (tools/fixtures.mjs), every file under fixtures/. */
@@ -28,8 +29,10 @@ const FIXTURES = readdirSync(join(ROOT, 'fixtures'), { recursive: true, withFile
 const CATALOGS = readdirSync(join(ROOT, 'catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `catalogs/${f}`);
 /** What zynthian-ui reads from the installed tree (tests/test_bar_xy_gestures.py): the gesture parity scripts and the descriptors they name. */
 const GESTURE_FIXTURES = ['test/fixtures/gestures/scripts.json', 'test/fixtures/dyn-curve/dyn.descriptor.json', 'test/fixtures/eq-marks/eq.descriptor.json', 'test/fixtures/organ/organ.descriptor.json'];
+/** The panel domain, which the tools read their panel words from (tools/vocabulary.mjs panelWords): dist/ is a tree. */
+const PANEL_DOMAIN = ['contract.d/panel/panel.json', ...readdirSync(join(ROOT, 'contract.d/panel/catalogs')).filter((f) => f.endsWith('.json')).sort().map((f) => `contract.d/panel/catalogs/${f}`)];
 /** Every file dist/ carries that is not a module. */
-export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/look/console-vintage.json', 'tools/look/knob-3d.svg', 'tools/look/fader-vintage.svg', 'schema/modgui-looks.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Gelasio.woff2', 'tools/fonts/Gelasio-OFL.txt', 'tools/look/font-gelasio.json', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
+export const DATA = [...FIXTURES, ...GESTURE_FIXTURES, ...PANEL_DOMAIN, 'schema/skin-package.schema.json', 'schema/codes.json', ...CATALOGS, 'schema/panel.schema.json', 'schema/gestures.json', 'schema/look-roles.json', 'tools/look.json', 'tools/look/geometry.json', 'tools/look/console-vintage.json', 'tools/look/knob-3d.svg', 'tools/look/fader-vintage.svg', 'schema/modgui-looks.json', 'tools/fonts/Inter-Regular.ttf', 'tools/fonts/Gelasio.woff2', 'tools/fonts/Gelasio-OFL.txt', 'tools/look/font-gelasio.json', 'tools/fonts/Inter-LICENSE.txt', 'tools/modgui-terms.ttl', 'tools/modgui-test.sh'];
 /** The files dist/ runs as commands. */
 export const COMMANDS = ['bin/omx-panel.mjs', 'tools/copies-check.mjs', 'tools/modgui-gen.mjs', 'tools/look.mjs', 'tools/lv2-complement.mjs', 'tools/gesture-words.mjs', 'tools/modgui-test.sh'];
 
@@ -54,7 +57,7 @@ export function copyData(dist = DIST) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMain(import.meta.url)) {
   try {
     copyData();
   } catch (err) {

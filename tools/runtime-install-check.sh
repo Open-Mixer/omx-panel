@@ -12,7 +12,8 @@
 #   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
 #   4. `omx-panel vocabulary` reads the meanings, plugin-hostd's LV2 table and the param-contract units from
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
-#   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link.
+#   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
+#   6. the installed tools load and run (tools/installed-tools-check.sh): @openmixer/omx-contract resolves.
 #
 # The check judges only what omx-panel itself ships. The panel domain is the omx-panel-contract package's: that package,
 # the second argument, is installed after omx-panel, and every file of it under /usr/share/omx-contract/contract.d is
@@ -169,12 +170,12 @@ done
 want=$(case "$FORMAT" in rpm) rpm -qp --qf '%{VERSION}' "$PKG" ;; deb) dpkg-deb -f "$PKG" Version | cut -d- -f1 ;; esac)
 [ "$(omx-panel --version)" = "omx-panel $want" ] && pass "omx-panel --version says $want" || fail "omx-panel --version says $(omx-panel --version), the package is $want"
 
-out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA -u PLUGIN_HOSTD_TABLES omx-panel vocabulary || true)
+out=$(env -u OMX_CONTRACT_PATH -u OMX_CONTRACT_SCHEMA omx-panel vocabulary || true)
 echo "$out"
 expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "omx-panel vocabulary: $1"; }
 expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\$"
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
-expect "the LV2 table from the contract directory" "^ok   lv2-units [1-9][0-9]* from $CONTRACTDIR/3/plugin-hostd/formats/lv2\\.json\$"
+expect "the standard units from omx-contract's param domain" "^ok   param-units [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
 expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-contract/param-contract\\.json\$"
 
 # 5. the curve function: node_modules/@openmixer/omx-dsp is a link to omx-dsp-wasm's files, and answers one curve
@@ -186,6 +187,12 @@ else
   link="the package's node_modules/@openmixer/omx-dsp link"
   grep -q '^PASS omx-dsp curve' <<< "$out" && pass "omx-dsp's loadCurve answers a curve through $link" || fail "omx-dsp's loadCurve answers no curve through $link"
 fi
+
+# 6. the installed tools load and run: their @openmixer/omx-contract resolves through the package's own node_modules
+# (0.15.0 linked none, and `node /usr/share/omx-panel/tools/modgui-gen.mjs` died with ERR_MODULE_NOT_FOUND)
+out=$(bash "$(dirname "$0")/installed-tools-check.sh" /usr/share/omx-panel 2>&1) && rc=0 || rc=$?
+echo "$out"
+[ "$rc" -eq 0 ] && pass "the installed tools load and run (tools/installed-tools-check.sh)" || fail "the installed tools do not load or run (tools/installed-tools-check.sh)"
 
 for u in "${unverified[@]}"; do echo "::warning::not verified: $u"; done
 [ "$fails" -eq 0 ] || { echo "runtime-install-check: $fails check(s) failed" >&2; exit 1; }

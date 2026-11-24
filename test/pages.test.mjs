@@ -50,10 +50,19 @@ test('a hidden control keeps its slot, blank: the controls after it do not move 
   assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), [[1, null, 3, 4, 5, null, null, null]]);
   assert.deepEqual(pagesOf(x, { perPage: 4 }).map((p) => p.ids), [[1, null, 3, 4], [5, null, null, null]]);
 });
-test('a section every control of which is hidden still has its page, all blank', () => {
+test('a section every control of which is hidden has no page: no screen has zero visible items', () => {
   const x = band();
   x.controls = x.controls.map(hidden);
-  assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), [[null, null, null, null, null, null, null, null]]);
+  assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), []);
+  // the same section, its values showing them: its page
+  assert.deepEqual(pagesOf(x, { perPage: 8, values: { gov: 0 } }).length, 0);
+  x.controls = x.controls.map((c) => ({ ...c, mask: 1n }));
+  assert.deepEqual(pagesOf(x, { perPage: 8 }).map((p) => p.ids), [[1, 2, 3, 4, 5, null, null, null]]);
+});
+test('a declared remote page that names no control is not cut either; its neighbours stay as given', () => {
+  const x = band();
+  const pages = pagesOf(x, { perPage: 4, remote: [{ name: 'None', ids: [null, 99] }, { name: 'Mix', ids: [2, null, 1] }] });
+  assert.deepEqual(pages.map((p) => [p.pageName, p.ids]), [['Mix', [2, null, 1, null]]]);
 });
 test('the values show a hidden control in its own slot', () => {
   const x = band();
@@ -113,7 +122,7 @@ test('a hidden Easy control keeps its slot on the Easy page, blank', () => {
   assert.deepEqual(pagesOf(x, { perPage: 4 })[0].ids, [null, 1, null, null]);
 });
 
-test('the same controls, in the same order, at 4 and 8, and a hidden band leaves blank slots with no reflow at both', () => {
+test('the same controls, in the same order, at 4 and 8, and a hidden band leaves blank slots with no reflow at both, a page of them alone not cut', () => {
   const x = bandsX(3, ['s1']);
   x.controls = x.controls.map((c) => (c.param >= 4 && c.param <= 6 ? hidden(c) : c));
   for (const perPage of [4, 8]) {
@@ -123,7 +132,7 @@ test('the same controls, in the same order, at 4 and 8, and a hidden band leaves
     assert.equal(got.length % perPage, 0);
     assert.ok(at(7) - at(3) > 1, `band 1's three slots stay between the bands at ${perPage}`);
   }
-  assert.deepEqual(pagesOf(x, { perPage: 4 }).map((p) => p.ids), [[1, null, null, null], [2, 3, null, null], [null, null, null, null], [7, 8, 9, null]]);
+  assert.deepEqual(pagesOf(x, { perPage: 4 }).map((p) => p.ids), [[1, null, null, null], [2, 3, null, null], [7, 8, 9, null]]);
 });
 
 test('remote pages replace the derived ones and are not edited', () => {
