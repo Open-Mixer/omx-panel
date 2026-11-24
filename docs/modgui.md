@@ -141,12 +141,15 @@ tools/look-contrast.mjs` prints the contrast of every text pair of every look; `
 ## The map: the console's vintage, element by element
 
 The owner's rule: any vintage look goes into mod-ui, so the `vintage` look draws each console element in the console's own
-tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed); `test/modgui-console-map.test.mjs` holds
+tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed by `node tools/console-map-render.mjs`: an edit
+to the table is made in the map, and `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not
+what the map gives); `test/modgui-console-map.test.mjs` holds
 every row to it: each token a row lists is in the pin, is named as a placeholder (`{console:--x}` or `{finish:--x}`) in the look
 token or the drawing the row names, and is worn as the pinned value in `tools/look.json`; and a value moved in a `tokens.css` goes
 red in the drift check, token by token. A row marked "the owner's mock" is not a console element (the cream enclosure, the label
 plate, the red LED) and reads no pinned token. Those rows are the ONLY place a vintage token may hold a colour literal: the rows' `via` lists name them, and `test/modgui-no-retyped-look.test.mjs` refuses a `#rrggbb` anywhere else.
 
+<!-- the map table: printed from tools/look/console-map.json by tools/console-map-render.mjs, do not edit by hand -->
 | Row | Console element | MOD GUI element | Pinned tokens |
 |---|---|---|---|
 | `knob-cap` | the console's Encoder .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (the knob-vintage drawing of tools/look.json) | `finish:--knob-cap-hi`, `finish:--knob-face` |
@@ -171,6 +174,7 @@ plate, the red LED) and reads no pinned token. Those rows are the ONLY place a v
 | `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
 | `label-plate` | none: the owner's mock, the dark label plate and its serif title | .omx-head and .omx-label | none (the owner's mock) |
 | `bypass-led` | none: the owner's mock, the red bypass LED | .omx-bypass-light | none (the owner's mock) |
+<!-- end of the map table -->
 
 **What the pin keeps** (`tools/look/console-vintage.json`, read from `tokens.css` at one commit with its sha-256, by
 `node tools/look-pin.mjs --write <tokens.css> <commit>`, verified by `--check` and `$OPENMIXER_TOKENS_CSS` in the test): the glass, its

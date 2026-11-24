@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- The map table of `docs/modgui.md` ("The map: the console's vintage, element by element") is printed from
+  `tools/look/console-map.json` by `tools/console-map-render.mjs` (#69), between two marker comments; `--check`,
+  `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not what the map gives. The first
+  print found the `screw` row edited in the document and not in the map; the map now carries the document's cell.
+
 - `omx_gesture_run` costs time in proportion to the script's length (#105): the events were read by indexing cJSON's
   list from its head once per event, so a script of 40000 wheel events cost 22.4 s where 5000 cost 0.11 s. They are now
   walked once: 0.26 s against 0.03 s, held by `renderer/test/gesture-c-cost.test.mjs` (eight times the events, at most
