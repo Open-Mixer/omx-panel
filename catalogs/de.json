@@ -213,6 +213,30 @@
       "model": "lane-draft",
       "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
     },
+    "panel.label.meters": {
+      "text": "Anzeigen",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "efd2ff93442f3220c980f7ce416e689ffd3b2553600cd9cf907fd90bbaac14c2"
+    },
+    "panel.label.more": {
+      "text": "Weitere",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d47d7cb0e4f8fd2be5ee07826694c18917d83ca77d0a01698582d05f432db996"
+    },
+    "panel.label.unheld": {
+      "text": "ohne Halten",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "39c3ce2672020f54ec9b5c15d5aab45bd5a9efd2c5eeb4bccd4bb28c9489870a"
+    },
+    "panel.label.gain.reduction": {
+      "text": "Gain-Reduktion",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d632dda56094e974face924283175f3344d7701f3582c48e7013c6bb1a6b374a"
+    },
     "panel.gesture.read-only": {
       "text": "Ein schreibgeschütztes Bedienelement nimmt keine Geste an.",
       "by": "machine",

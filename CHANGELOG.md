@@ -80,6 +80,22 @@
   token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
   move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
 
+- A meter's clip lamp and its unheld caption (#13). A meter of the band whose description says `clip: true` wears a lamp at its
+  frame's top right, lit by omx-dsp's clip word (`omx_meter_view_clip`, kept lit until `omx_meter_view_clip_clear`) and held to
+  omx-dsp's clip vector; a meter without one never lights. New C API beside `omx_panel_view_set_meter`:
+  `omx_panel_view_set_clip`, `omx_panel_view_clear_clip`, `omx_panel_view_meter_clip`; the command's meter readings take
+  `clip` and `clear`. An unheld meter's caption says so. The MOD GUI's frames and face draw the same lamp and caption, and
+  `meter-surfaces` measures the lamp on the renderer, the MOD GUI in Chromium and Tk. The four meters goldens carry the lamp.
+- The vintage look's needle dials wear the clip lamp (#218). Vintage, the MOD GUI's default, hides the meter frames and shows
+  the dials, so the frame's lamp was never seen there: a dial whose meter has a clip word now wears a period peak lamp in its
+  top right corner, a round jewel in a dark ring, dark as the look's unlit lamp (`--led-off`) and lit the meter red by the same
+  `omx-clip-lit` class while the clip word is; a dial whose meter has none wears no lamp. `meter-surfaces --look vintage` (a
+  second step of CI's job) holds each dial's lamp to the renderer's, lit or dark at every tick, its edges within 1 px of its
+  place. No golden moves: the renderer and the face draw frames in every look.
+- The words a surface draws of its own have keys: the panel domain's `PANEL_LABELS` (domain 1.3.0) holds `Meters`, `More`,
+  `unheld` and `Gain reduction` with their keys (`panel.label.*`), rendered into `schema/codes.json` and the six catalogs, and a
+  layout and a description serve them in `words`. The renderer, the MOD GUI, the skin package and the layout spell none of them.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the

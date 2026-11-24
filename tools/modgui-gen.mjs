@@ -411,11 +411,14 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   }
   // the meters of the panel description (contract 7.9) that are no control of a section: a static frame with the description's
   // range, in a band below the sections (a live MOD GUI meter waits for its own spec). A foreign meter that is a control stays one.
-  let meters = [];
+  // Each carries the description's clip word and hold: a clip word is a lamp at the frame's top right, an unheld meter's caption
+  // says so in the panel's own word; the band's title is the panel's word too (the layout's `words`, PANEL_LABELS)
+  let meters = [], words = null;
   try {
     const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
     const symbols = new Set(x.controls.map((c) => c.symbol));
-    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: unitSymbolOf(m.unit), min: m.min, max: m.max, kind: m.kind }));
+    words = x.words;
+    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: unitSymbolOf(m.unit), min: m.min, max: m.max, kind: m.kind, clip: m.clip === true, held: m.held === true, unheld: m.held === true ? null : x.words.unheld.label }));
   } catch (err) {
     // a refusal of the layout carries its code and leaves no meter to draw; anything else (plugin-hostd's LV2 table not
     // installed) would write a MOD GUI that silently lacks its meters
@@ -441,7 +444,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       });
     }
   }
-  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, words, skipped };
 }
 
 /**
@@ -570,7 +573,7 @@ export function layout(panel) {
   let band = null;
   if (meters.length > 0) {
     const h = g.sectionTitleH + meters.length * (g.meterH + g.meterGap) + g.sectionPad / 2;
-    band = { x: g.pad, y: bottom + g.sectionGap, w: sectionW, h, meters };
+    band = { x: g.pad, y: bottom + g.sectionGap, w: sectionW, h, meters, title: panel.words.meters.label };
     bottom = band.y + h;
   }
   return { w: sectionW + 2 * g.pad, h: bottom + g.pad, sections, band };
@@ -719,8 +722,20 @@ export function valueText(k) {
   return k.unit ? `${n} ${k.unit}` : n;
 }
 
-/** A meter's caption: the label, then the description's range with its unit. */
-export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}`;
+/** A meter's caption: the label, then the description's range with its unit, then the panel's word for an unheld meter. */
+export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}${m.unheld ? `  ${m.unheld}` : ''}`;
+/** A meter's clip lamp in its face, in px from the face's outer top left at scale 1: a square of geometry.meterLamp, 5 px in from the
+ * right and 3 px down inside the face's `border` (px). A frame's rim is 1 px, so its lamp is 6 px in and 4 px down (the renderer's
+ * draw_meter places it the same); a needle dial's border is its look's bezel (vuFaces). */
+export const meterLamp = (frameW, border = 1) => ({ x: frameW - border - 5 - GEOMETRY.meterLamp, y: border + 3, size: GEOMETRY.meterLamp });
+/** The width in px of a look's needle-dial bezel, its --vu-bezel border (`3px solid ...`). */
+const bezelOf = (look) => Number(/^(\d+(?:\.\d+)?)px\b/.exec(look.depth['--vu-bezel'] ?? '')?.[1] ?? 0);
+/** The needle dials of a meters band as the template places them, in px from the band's top left: the band's meters side by side,
+ * each as tall as the band's rows; given a look, each with its bezel as `border` (the place is every look's, the bezel its own). */
+export function vuFaces(band, look) {
+  const g = GEOMETRY, n = band.meters.length, dw = Math.floor((band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap;
+  return band.meters.map((m, i) => ({ symbol: m.symbol, x: g.sectionPad + i * dw, y: g.sectionTitleH, w: dw - 4, h: dh, ...(look ? { border: bezelOf(look) } : {}) }));
+}
 
 /** The face at `scale`, every control at its declared default. */
 export function renderFace(lay, look, scale) {
@@ -812,12 +827,19 @@ export function renderFace(lay, look, scale) {
   if (lay.band) {
     const b = lay.band;
     if (look.depth['--section-bg'] !== 'none') roundRect(c, b.x * s, b.y * s, b.w * s, b.h * s, g.sectionRadius * s, hexOf(look, lay.stem, '--section-bg'));
-    drawText(c, font, fitText(font, 'METERS', TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
+    drawText(c, font, fitText(font, b.title.toUpperCase(), TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
     b.meters.forEach((m, row) => {
       const mx = (b.x + g.sectionPad) * s, my = (b.y + g.sectionTitleH + row * (g.meterH + g.meterGap)) * s, mw = (b.w - 2 * g.sectionPad) * s, mh = g.meterH * s;
       roundRect(c, mx, my, mw, mh, Math.min(4, mh / 4), col.rim);
       roundRect(c, mx + 1, my + 1, mw - 2, mh - 2, Math.min(3, mh / 4), col.screen);
-      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s), mx + 6 * s, my + 12 * s, TEXT.small * s, tx.screenDim);
+      const lamp = g.meterLamp * s;
+      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s - (m.clip ? lamp + 4 * s : 0)), mx + 6 * s, my + 12 * s, TEXT.small * s, tx.screenDim);
+      // a meter with a clip word: its lamp, dark until a clip (the face has no reading)
+      if (m.clip) {
+        const lx = mx + mw - 6 * s - lamp, ly = my + 4 * s;
+        roundRect(c, lx, ly, lamp, lamp, 2 * s, col.rim);
+        roundRect(c, lx + s, ly + s, lamp - 2 * s, lamp - 2 * s, s, col.screen);
+      }
     });
   }
 
@@ -974,9 +996,9 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
 ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}${(s.captions ?? []).map((h) => `\n            <div class="omx-colhead" data-mx-dy="${h.mxdy}" style="left:${h.x}px;top:${h.y}px">${esc(h.text)}</div>`).join('')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
-            <h2 class="omx-section-title">Meters</h2>
-${lay.band.meters.map((m, i) => { const n = lay.band.meters.length, dw = Math.floor((lay.band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap, rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" style="left:${g.sectionPad + i * dw}px;top:${g.sectionTitleH}px;width:${dw - 4}px;height:${dh}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span><div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
-${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span></div>`).join('\n')}
+            <h2 class="omx-section-title">${esc(lay.band.title)}</h2>
+${lay.band.meters.map((m, i) => { const f = vuFaces(lay.band)[i], rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" data-clip="${m.clip ? 1 : 0}" style="left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span>${m.clip ? '<span class="omx-vu-clip"></span>' : ''}<div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
+${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" data-clip="${m.clip ? 1 : 0}" data-held="${m.held ? 1 : 0}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span>${m.clip ? '<span class="omx-meter-clip"></span>' : ''}</div>`).join('\n')}
         </div>` : '');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
         <div class="mod-${dir} mod-${dir}-disconnected" title="{{name}}" mod-role="${dir}-${kind}-port" mod-port-symbol="{{symbol}}">
@@ -1071,10 +1093,16 @@ ${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; ba
 ${P} .omx-vu-needle { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 78%; margin-left: -1px; background: ${tok['--surface']}; transform-origin: 50% 100%; border-radius: 1px; }
 ${P} .omx-vu-pivot { position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: ${tok['--surface']}; }
 ${P} .omx-vu-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-control')}; white-space: nowrap; }
+${P} .omx-vu[data-clip="1"] .omx-vu-caption { right: ${5 + g.meterLamp + 4}px; overflow: hidden; }
+${P} .omx-vu-clip { position: absolute; right: 5px; top: 3px; box-sizing: border-box; width: ${g.meterLamp}px; height: ${g.meterLamp}px; border-radius: 50%; border: 1px solid ${tok['--border-strong']}; background: ${D('--led-off')}; }
+${P} .omx-vu-clip.omx-clip-lit { background: ${tok['--meter-red']}; box-shadow: 0 0 4px 1px ${tok['--meter-red']}; }
 ${look.name === 'vintage' ? `${P} .omx-meter-frame { display: none; }
 ${P} .omx-vu { display: block; }
 ` : ''}` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-screen-dim')}; white-space: nowrap; overflow: hidden; }
+${P} .omx-meter-frame[data-clip="1"] .omx-meter-caption { right: ${6 - 1 + g.meterLamp + 4}px; }
+${P} .omx-meter-clip { position: absolute; right: ${6 - 1}px; top: ${4 - 1}px; box-sizing: border-box; width: ${g.meterLamp}px; height: ${g.meterLamp}px; border: 1px solid ${tok['--border-strong']}; border-radius: 2px; background: ${D('--screen-bg')}; }
+${P} .omx-meter-clip.omx-clip-lit { background: ${tok['--meter-red']}; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ` : ''}`;
 }

@@ -77,13 +77,17 @@ test('every drawing the look reads ships in dist: the copy step lists each SVG o
   for (const f of readdirSync(join(ROOT, 'tools/look')).filter((n) => n.endsWith('.svg'))) assert.ok(DATA.includes(`tools/look/${f}`), `${f} is not copied into dist`);
 });
 
-test('the meter-surfaces proof wears the flat look in the template as in the stylesheet: the template names the look it is given', () => {
+test('the meter-surfaces proof wears one look in the template as in the stylesheet: the template names the look it is given', () => {
   // the template's class names the look (omx-look-<name>) and the stylesheet scopes its rules by it: a template left to the default look
-  // (vintage) under the flat look's stylesheet hides the bar and measures Infinity (the CI run of meter-surfaces)
+  // (vintage) under the flat look's stylesheet hides the bar and measures Infinity (the CI run of meter-surfaces). The proof wears the
+  // look --look names (omx-panel#218), LOOK: the template is given its name and the stylesheet the look itself.
   const src = readFileSync(join(ROOT, 'renderer/test/meter-surfaces.mjs'), 'utf8');
   const calls = [...src.matchAll(/modgui\.emitTemplate\(([^)]*)\)/g)].map((m) => m[1]);
   assert.ok(calls.length > 0);
-  for (const c of calls) assert.match(c, /,\s*'console'\s*$/, `emitTemplate(${c}) names no look`);
+  for (const c of calls) assert.match(c, /,\s*LOOK\.name\s*$/, `emitTemplate(${c}) names no look, or not the proof's`);
+  const sheets = [...src.matchAll(/modgui\.emitStylesheet\(([^)]*)\)/g)].map((m) => m[1]);
+  assert.ok(sheets.length > 0);
+  for (const c of sheets) assert.match(c, /^\s*p,\s*LOOK,/, `emitStylesheet(${c}) does not wear the proof's look`);
 });
 
 test('docs/modgui.md "The labels of a face" prints the numbers the face declares: a moved declaration makes the spec red', async () => {

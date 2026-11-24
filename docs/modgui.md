@@ -239,6 +239,18 @@ and the ballistics, `tauMs` per meter kind: a level needle rises and falls like 
 (`value += (target - value) * (1 - exp(-dt / tau))`, stepped by the script on a timer), and the gain-reduction needle is REVERSED: it rests at
 the right (0 dB) and swings left as the gain is reduced. The needle is a DOM transform; no port is written.
 
+**The clip lamp on a dial** (omx-panel#218). The vintage look hides the frames, so a frame's clip lamp is never seen there: a dial whose
+meter has a clip word (`clip: true` in the description) wears its own, a period peak lamp. It is a round jewel of `meterLamp` px in a ring
+of the strong border, set in the dial's top right corner where a VU meter's peak lamp sits, at the frame lamp's place measured inside
+the face's border: 5 px in from the right and 3 px down inside the bezel (`meterLamp(w, border)`, the dials' places and bezels
+`vuFaces`). Dark, it is the look's unlit lamp (`--led-off`, the unlit lens the bypass lamp wears); lit, it is the meter red, the
+frame lamp's colour, glowing. The lamp follows the clip word as the frame's does: the same `omx-clip-lit` class, set
+while omx-dsp's clip word is (lit by a clip, kept lit until cleared), and a dial whose meter has no clip word wears none. The
+caption keeps clear of it, as the frame's does. Ruling (#218): the renderer and Tk draw the description's frames in every look (the
+description carries no dial and the renderer's style picks only its knob), so the vintage leg of `meter-surfaces` holds the dial's
+lamp to the renderer's frame lamp by what they share: lit or dark at every tick, and each lamp's edges against its own face's
+declared place.
+
 ## Tiers and edge bands
 
 A plugin declares each control's tier in its panel block, `tiers` (symbol to `easy` or `advanced`; a control that names none is

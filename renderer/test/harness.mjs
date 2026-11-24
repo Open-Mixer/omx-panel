@@ -21,7 +21,7 @@ export const TOOLS = join(ROOT, 'tools');
 /** A copy of the tools directory whose look.json names the console style: the renderer draws the knob the style's `--knob` names (the
  * vintage scene by default, omx-panel#123), and the goldens and the parity checks are held to the flat console knob, so they pin it
  * here, explicitly. A real copy, not links: a test that rewrites a file of the directory must not write through to the tree. */
-function pinnedData(style = 'console') {
+export function pinnedData(style = 'console') {
   // the gesture declaration is schema/gestures.json, found beside the tools directory (view.c): the copy keeps that layout
   const base = mkdtempSync(join(tmpdir(), 'omx-panel-data-'));
   const dir = join(base, 'tools');

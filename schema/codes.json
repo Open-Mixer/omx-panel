@@ -1,6 +1,6 @@
 {
   "kind": "codes",
-  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.",
+  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, and the words its surfaces draw of their own (panel.label.*, by the key a description serves), each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.",
   "codes": {
     "skinOverrideInvalid": {
       "code": "panel.skin.override-invalid",
@@ -364,6 +364,34 @@
         "plugin",
         "family"
       ]
+    },
+    "meters": {
+      "code": "panel.label.meters",
+      "text": {
+        "en": "Meters"
+      },
+      "args": []
+    },
+    "more": {
+      "code": "panel.label.more",
+      "text": {
+        "en": "More"
+      },
+      "args": []
+    },
+    "unheld": {
+      "code": "panel.label.unheld",
+      "text": {
+        "en": "unheld"
+      },
+      "args": []
+    },
+    "gainReduction": {
+      "code": "panel.label.gain.reduction",
+      "text": {
+        "en": "Gain reduction"
+      },
+      "args": []
     },
     "readOnly": {
       "code": "panel.gesture.read-only",

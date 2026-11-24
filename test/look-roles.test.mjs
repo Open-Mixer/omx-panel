@@ -235,10 +235,13 @@ test('arm: the renderer reading chrome instead of a role is red', () => {
 const FIX = join(ROOT, 'test/fixtures/omx-delay');
 const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 
-/** The MOD GUI of omx-delay, every file it writes, at `look`. */
+const METERS = join(ROOT, 'test/fixtures/meters');
+/** The MOD GUI of omx-delay, every file it writes, at `look`; and the meters fixture's, whose frames read the meter roles (a clip
+ * lamp lights in the meter red). */
 function modguiAt(look) {
   const out = generateModgui(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay', source: 'look-roles test' }, look);
-  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look), renderFaderFilm(look)]);
+  const meters = generateModgui(JSON.parse(readFileSync(join(METERS, 'meters.descriptor.json'), 'utf8')), { panel: JSON.parse(readFileSync(join(METERS, 'meters.panel.json'), 'utf8')), stem: 'meters', source: 'look-roles test' }, look);
+  return [...out, ...meters].map(([, body]) => Buffer.from(body)).concat([renderFilm(look), renderFaderFilm(look)]);
 }
 
 test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws (the console look reads them all)', () => {

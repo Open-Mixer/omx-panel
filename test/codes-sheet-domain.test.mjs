@@ -36,6 +36,9 @@ const GOLDEN = {
   'catalogs/it.json': 'd878a12812e110373249a0212cc7042101e9ce90909f59ffe5cd4fbc8ad75d6e',
   'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
+/** The panel's own words (PANEL_LABELS, panel.label.*) joined the sheet after the move (omx-panel#13), and the sheet's doc line says
+ * so: the move's golden reads the codes it moved, so both are left out of it here. */
+const GOLDEN_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
 /** The codes the domain gained after the move, by code word; a new code joins this list in the commit that adds it. */
 const ADDED = new Set([
   'panel.skin.override-refused', // omx-panel#14, domain 1.3.0: override-invalid's facts with the reason word
@@ -43,10 +46,10 @@ const ADDED = new Set([
   'panel.describe.family-unknown', // omx-panel#199, domain 1.4.0: an override family that is no panel family
 ]);
 // the panel's codes only: the gesture codes joined the sheet after the move (#106) and are held by their own test below
-const panelOnly = (codes) => Object.fromEntries(Object.entries(codes).filter(([k, v]) => !(v.code ?? k).startsWith('panel.gesture.') && !ADDED.has(v.code ?? k)));
+const panelOnly = (codes) => Object.fromEntries(Object.entries(codes).filter(([k, v]) => !(v.code ?? k).startsWith('panel.gesture.') && !ADDED.has(v.code ?? k) && !(v.code ?? k).startsWith('panel.label.')));
 const canonical = (f, j) => (f.startsWith('catalogs/')
   ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(panelOnly(j.messages)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
-  : { ...j, codes: panelOnly(j.codes) });
+  : { ...j, doc: GOLDEN_DOC, codes: panelOnly(j.codes) });
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 

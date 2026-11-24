@@ -104,6 +104,8 @@ typedef struct {
   double min, max;
   int gain_reduction; /* the bar grows from the top of the range toward its foot */
   int in_band;        /* drawn in the meters band */
+  int clip;           /* the description's `clip`: the meter has a clip word, drawn as a lamp; a meter without one never lights */
+  int held;           /* the description's `held`: the plugin keeps its value between reads; an unheld meter's caption says so */
   int has;            /* a reading was given; until then the frame stands */
   double fill;        /* the last reading's fraction of the range, 0..1 */
   double marker;      /* the marker's fraction, omx_meter_view_step()'s */
@@ -112,7 +114,7 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH, screw, screwInset;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, meterLamp, scribbleW, scribbleH, screw, screwInset;
 } geometry;
 
 typedef struct {
@@ -146,6 +148,7 @@ struct omx_panel_view {
   size_t nmatrices;
   char *brand, *name;
   bool headless; /* omx_panel_view_set_head(view, false): no head, the sections start at `pad` */
+  char *word_meters, *word_unheld; /* the description's `words` a surface draws of its own (PANEL_LABELS): NULL when not served */
   int row_controls;
   geometry g;
   textsizes t;

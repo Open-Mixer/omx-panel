@@ -246,3 +246,15 @@ export function panelCodes(item) {
   });
 }
 
+
+/**
+ * The words a panel surface draws of its own (the panel domain's PANEL_LABELS, omx-panel#13): `{ <title>: { labelKey, label } }`,
+ * the key the word (`panel.label.meters`) and the label its English sentence (x-text), from the first domain directory that
+ * holds panel/panel.json, as the loader opens it. A description serves them in `words`; no surface spells one.
+ */
+export function panelLabels() {
+  const words = openDomainAt(panelDomainDirs(), 'panel').words('PANEL_LABELS');
+  const file = panelDomainDirs().map((d) => join(d, 'panel', 'panel.json')).find((f) => existsSync(f));
+  const text = new Map(JSON.parse(readFileSync(file, 'utf8')).components.schemas.PANEL_LABELS.oneOf.map((w) => [w.const, w['x-text']]));
+  return Object.freeze(Object.fromEntries(words.map((w) => [w.title, Object.freeze({ labelKey: w.word, label: text.get(w.word) })])));
+}
