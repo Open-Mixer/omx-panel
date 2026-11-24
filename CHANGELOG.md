@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The EQ band matrix (#97): a CLAP name that carries a second number beside its band's ("Band 3 Gain 2", "Band 3 2nd
+  Order") joins its band, the band's number being the one position that varies across the controls of that shape; a grid
+  where both vary is still `two-indices` (docs/group-model.md S3). A control only one band has ("Band 3 Drive") is paged
+  after the matrix, never on a screen before the high-pass (P1). Edges named in another language are ruled to come from a
+  descriptor word (S9), tracked by #205 and omx-contract#208.
+
 - A choice's unit is the descriptor's (#68): `panelLayout` reads omx-contract's descriptor `choiceUnits` (a choice control's
   name to its unit), so the served description, the MOD GUI's curve and every host read the one unit the plugin declares.
   The panel block's `choiceUnits` is retired: `schema/panel.schema.json` drops its `$defs.choiceUnits`, and `panelLayout`

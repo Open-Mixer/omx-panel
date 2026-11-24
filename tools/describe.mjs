@@ -33,6 +33,7 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
+import { nameTokens } from './group-infer.mjs';
 import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
 import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
@@ -479,8 +480,9 @@ function pagesOfDescription(description, stored, { perPage, remote }) {
  * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order, HPF first
  * and LPF last, and holds its `slots`: a place the head has no control at is a blank slot (`param: null`), so slot `k` of
  * every instance's screen is the same parameter; each slot carries its place (`PLACE`) and the matrix row it is (`ROW`), so
- * the cut can put the places past a page on the matrix's row screens. The section's own controls (the count, an EQ's master on) come before the
- * instances. Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
+ * the cut can put the places past a page on the matrix's row screens. The section's own controls that print no number (the count, an
+ * EQ's master on) come before the instances; one that prints a number is one band's and no row of the group (a "Band 3 Drive"), and
+ * comes after them, so no screen ahead of the high-pass holds it and the walk stays HPF, the bands, LPF (#97). Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
  */
 function byInstance(sections, controls) {
   const bySymbol = new Map(controls.map((c) => [c.symbol, c]));
@@ -503,5 +505,9 @@ function byInstance(sections, controls) {
     }));
   });
   const own = controls.filter((c) => !placed.has(c.symbol));
-  return sections.flatMap((_, at) => [...own.filter((c) => c.section === at), ...(instances.get(at) ?? [])]);
+  const banded = (c) => instances.has(c.section) && nameTokens(c.label).some((t) => /^\d+$/.test(t));
+  return sections.flatMap((_, at) => {
+    const mine = own.filter((c) => c.section === at);
+    return [...mine.filter((c) => !banded(c)), ...(instances.get(at) ?? []), ...mine.filter(banded)];
+  });
 }
