@@ -45,6 +45,7 @@ const CODE = panelCodes('PANEL_DESCRIBE_CODES');
 export const DESCRIBE_CODES = Object.freeze({
   noControls: CODE.panelNoControls,
   familyNotBacked: CODE.panelFamilyNotBacked,
+  familyUnknown: CODE.panelFamilyUnknown,
   layoutInvalid: CODE.panelLayoutInvalid,
   overrideUnavailable: CODE.panelOverrideUnavailable,
   overrideRefused: CODE.panelOverrideRefused,
@@ -218,6 +219,12 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
       const r = applyOverride(descriptor, overrides, {});
       effective = r.descriptor;
       userFamily = r.family;
+      // a family that is no word of PANEL_FAMILIES is refused by name and the panel is `none` (#199): omx-contract's
+      // override schema takes any identifier, the words are the panel domain's
+      if (userFamily !== undefined && !FAMILIES.includes(userFamily)) {
+        refusals.push(refuse(DESCRIBE_CODES.familyUnknown, { plugin, family: userFamily }));
+        userFamily = 'none';
+      }
       for (const x of r.refused ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideRefused, { plugin, layer: x.layer, name: x.name, message: x.message }));
       for (const x of r.dropped ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideDropped, { plugin, layer: x.layer, control: x.control, name: x.name, message: x.message }));
     }
@@ -251,7 +258,7 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
       // a declared panel's family, or a user's override over it, is applied as the layout applies it
       layout = tryDeclared(() => panelLayout(effective, { ...options, panel: userFamily === undefined ? panel : { ...panel, family: userFamily }, derive: true }));
     } else if (userFamily !== undefined) {
-      const family = FAMILIES.includes(userFamily) ? userFamily : 'none';
+      const family = userFamily;
       const inferred = family === 'eq' ? inferBands(effective.controls) : null;
       const { needs } = familyOf(effective.controls, family);
       layout = tryDeclared(() => {
