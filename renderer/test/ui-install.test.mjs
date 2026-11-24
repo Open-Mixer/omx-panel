@@ -17,7 +17,9 @@ const staged = (dir) => readdirSync(dir, { recursive: true, withFileTypes: true 
 
 test('an install without the window stages nothing of the ui library: no header, no pkg-config file, no library', () => {
   const dest = scratch('omx-panel-ui-install-');
-  const r = spawnSync('make', ['-C', RENDERER, 'install', 'WINDOW=0', `DESTDIR=${dest}`, 'PREFIX=/usr', 'LIBDIR=/usr/lib'], { encoding: 'utf8' });
+  // `-o all`: what is built is staged as it is; a rebuild here (another PREFIX is another data directory in the command) would
+  // replace the command under the tests that run beside this one
+  const r = spawnSync('make', ['-C', RENDERER, '-o', 'all', 'install', 'WINDOW=0', `DESTDIR=${dest}`, 'PREFIX=/usr', 'LIBDIR=/usr/lib'], { encoding: 'utf8' });
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
   const files = staged(dest);
   assert.ok(files.includes('omx_panel_render.h') && files.includes('omx-panel-render.pc'), `the renderer is staged: ${files.join(', ')}`);
