@@ -4,6 +4,15 @@
 
 ## Unreleased
 
+- The generators read the descriptions store and `omx-panel-sync` is the one pass (#167, descriptions store lane 4).
+  `omx-complement-sync` writes the groups the store holds (each plugin's entry from `describe --plugin --store`),
+  never an inference of a stored key; with no store, or no base, it infers as before and says so. `omx-panel-sync`
+  stores each installed LV2 plugin's entry once, prunes the entries of plugins no longer installed from the layer it
+  writes (`omx-panel-store list`), then runs `omx-complement-sync` and `omx-modgui-sync`; it never runs `systemctl`.
+  `omx-panel-sync.service` replaces `omx-modgui-sync.service` and `omx-complement-sync.service` (and one drop-in their
+  two) and is ENABLED by default where systemd exists; nothing depends on it. A complement bundle's marker names its
+  groups, so a stored edit over the same TTL writes it again.
+
 - `omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store` (#166, descriptions store
   lane 3): one plugin's entry in the descriptions store. The store is asked first and an entry any layer holds is
   printed, nothing written; else the description is derived over the port groups the LV2 complement infers for that one
