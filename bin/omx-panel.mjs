@@ -13,6 +13,11 @@
  *                                                        --pages just the pages, the Easy ones first, cut at N by the one cut;
  *                                                        with --layout the derived layout it was made from, what the renderer
  *                                                        draws (no skin: a skin reorders the description, not the layout)
+ *   describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store
+ *                                                        tools/describe-plugin.mjs: one plugin's entry in the descriptions
+ *                                                        store, printed as the store's get answers it; derived, with the LV2
+ *                                                        groups the complement infers, and written to the layer of the
+ *                                                        effective uid only when no layer holds it
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
@@ -46,6 +51,7 @@ const TOOLS = join(HERE, '..', 'tools');
 const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...\n'
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
+  + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
@@ -157,6 +163,7 @@ async function describeCommand(argv) {
     const k = argv.indexOf(flag);
     return k >= 0 ? argv[k + 1] : undefined;
   };
+  if (argv.includes('--plugin')) return describePluginCommand(argv, opt);
   const file = opt('--descriptor');
   if (!file) {
     process.stderr.write(USAGE);
@@ -198,6 +205,28 @@ async function describeCommand(argv) {
     } else process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
   } catch (err) {
     process.stderr.write(`omx-panel: ${err.code ? `${said(err.code, err.args)} ` : ''}${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+/**
+ * One plugin's entry in the descriptions store (docs/descriptions-store.md 6): `--plugin <target> --store`, with
+ * `--descriptor` and `--sha256` and nothing else. Without `--store` it is a usage error: never a derivation that writes nothing.
+ */
+async function describePluginCommand(argv, opt) {
+  const allowed = new Set(['--plugin', '--descriptor', '--sha256']);
+  const ok = argv.includes('--store') && argv.every((a, i) => a === '--store' || (allowed.has(a) && argv[i + 1] !== undefined) || allowed.has(argv[i - 1]));
+  if (!ok || !opt('--plugin')) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { describePlugin, PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  try {
+    const answer = describePlugin({ target: opt('--plugin'), descriptor: opt('--descriptor'), sha256: opt('--sha256'), madeBy: `omx-panel ${packageVersion()}` });
+    process.stdout.write(answer.endsWith('\n') ? answer : `${answer}\n`);
+  } catch (err) {
+    if (!(err instanceof PluginRefusal)) throw err;
+    process.stderr.write(`omx-panel: ${err.message}\n`);
     process.exit(1);
   }
 }

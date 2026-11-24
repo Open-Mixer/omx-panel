@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- `omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store` (#166, descriptions store
+  lane 3): one plugin's entry in the descriptions store. The store is asked first and an entry any layer holds is
+  printed, nothing written; else the description is derived over the port groups the LV2 complement infers for that one
+  plugin (`verdictOf`, the function the complement runs per plugin), written to the layer of the effective uid and read
+  back. `tools/store-entry.mjs` is the one codec between `describeStored` and the store (a CLAP id stored as its decimal
+  text). `omx-panel-store rules` prints `OMX_PANEL_RULES_VERSION`.
+
 - The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
   `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
   `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.
