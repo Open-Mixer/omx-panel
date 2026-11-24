@@ -390,8 +390,9 @@ store has:
 **The command** `omx-panel-store`: `get --sha256 .. --format .. --uri .. --json` (the entry and its layer), `put
 --sha256 .. --format .. --uri ..` (the entry as JSON on stdin, into the layer of the effective uid), `remove`, `check`
 (opens every layer, prints `ok` or the code), `build --in <dir> --out <file> --built-from <commit>` (the base, section
-6), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of a key no layer holds prints
-`null` and exits 0.
+6), `rules` (prints `OMX_PANEL_RULES_VERSION`, the one place a derivation outside C reads it from, so the `rules` an
+entry is put with is the reader's), and the four place flags of section 2. Exit 0, 1 with the code, 2 on usage. `get` of
+a key no layer holds prints `null` and exits 0.
 
 ## 6. Producers
 
@@ -422,6 +423,25 @@ store first and prints the entry it finds, writing nothing. Else it takes the de
 `bin/omx-modgui-sync:16-19`), infers the LV2 groups as `tools/lv2-complement.mjs:227-228` does, derives the description
 over them (section 3.4), writes the entry through `omx-panel-store put` and prints it. `--sha256` is the binary's hash
 when the caller has it; else the command hashes the binary by the same rule. One plugin, never a scan.
+
+Ruled with lane 3 (2026-11-24), the call's details:
+
+- `--plugin` is only ever given with `--store`; without it the call is a usage error (exit 2), never a derivation that
+  quietly writes nothing.
+- An LV2 target's bundle is the first on `LV2_PATH` (else plugin-hostd's list, `/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2`)
+  whose manifest declares the URI; its binary is the bundle's `lv2:binary` for it, its `source` the bundle
+  (`omx-panel-store source --format lv2 --path <bundle>`). A CLAP target's binary is its path, its `source` the descriptor.
+- The groups are `tools/lv2-complement.mjs`'s verdict for that one plugin (`verdictOf`, the function `planBundle` runs per
+  plugin), so the complement and the store hold one inference. An inference rule is stored as its `PANEL_GROUP_RULES`
+  word (rule 1 `own` to rule 6 `modgui`, a repeated instance's group `instance`); `declared` is 1 for `own` only.
+- ONE codec between `describeStored` and the store, `tools/store-entry.mjs`: `entryOf` makes the JSON `put` takes, and
+  `storedOf` turns a `get` answer back into what `describeFromStored` reads. The `groups` column holds the repeated
+  groups as `describeStored` gives them (an array). A control's `id` column is text: a CLAP parameter id (a `uint32`) is
+  stored as its decimal digits and `storedOf` reads it back as a number for a `clap` key; an LV2 id is its symbol.
+- A refused derivation is stored with `family` `none` and `fingerprint` 64 zeros: no layout was made, and the columns
+  are `NOT NULL`.
+- The answer printed is always a `get` answer: after a `put` the command reads the key back and prints that, so a caller
+  sees one form whichever layer answered and the round trip through the store is what it reads.
 
 ### Generated files: shipped key-gated for known sets, generated locally otherwise
 
