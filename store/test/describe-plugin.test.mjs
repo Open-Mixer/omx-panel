@@ -11,84 +11,20 @@
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { describe, describeFromStored } from '../../dist/tools/describe.mjs';
-import { readPluginPorts } from '../../dist/tools/group-infer.mjs';
-import { pluginTriples, planBundle, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
-import { CMD, DatabaseSync, contractDir, entry, mkStore, panelVersion, ROOT, RULES, run, snapshot, tmp } from './helpers.mjs';
+import { planBundle, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
+import { CMD, entry, mkStore, panelVersion, RULES, run, snapshot } from './helpers.mjs';
+import { DELAY, descriptorOf, FIXTURES, keysOf, OMX_PANEL, sha256, sourceOf, storeEnv, TRIPLE, world } from './plugin-world.mjs';
 
-const OMX_PANEL = join(ROOT, 'dist', 'bin', 'omx-panel.mjs');
-const LV2 = 'http://lv2plug.in/ns/lv2core#';
-const TRIPLE = 'http://plugin.org.uk/swh-plugins/triplePara';
-const DELAY = 'http://plugin.org.uk/swh-plugins/delayorama';
-const FIXTURES = join(ROOT, 'test', 'fixtures');
 const unprivileged = process.geteuid() !== 0;
 if (!unprivileged) process.stderr.write('describe-plugin.test.mjs: skipping the user-layer arms: run as root, the writer writes the system layer\n');
 
-/** The contract directories the derivation reads (the installed ones), with the store's fixture panel and plugin-db over them. */
-function contract(dir) {
-  const from = (process.env.OMX_CONTRACT_PATH || '/usr/share/omx-contract/contract.d').split(':').filter(Boolean).reverse();
-  for (const d of from) if (existsSync(d)) cpSync(d, dir, { recursive: true });
-  return contractDir(dir);
-}
-
-/** An installed bundle: the fixture's TTL, a manifest naming it and its binary, and the binary (bytes of its own). */
-function bundle(lv2, name, fixture, uri) {
-  const dir = join(lv2, `${name}.lv2`);
-  mkdirSync(dir, { recursive: true });
-  copyFileSync(join(FIXTURES, 'lv2-groups', fixture, 'plugin.ttl'), join(dir, 'plugin.ttl'));
-  writeFileSync(join(dir, `${name}.so`), `the ${name} binary\n`);
-  writeFileSync(join(dir, 'manifest.ttl'), `@prefix lv2: <${LV2}> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n`
-    + `<${uri}> a lv2:Plugin ; lv2:binary <${name}.so> ; rdfs:seeAlso <plugin.ttl> .\n`);
-  return { dir, binary: join(dir, `${name}.so`), uri };
-}
-
-/** The descriptor a scan writes for an installed LV2 plugin, made from its ports (its id the port symbol, as a scan's): no control states a group. */
-function descriptorOf(b) {
-  const ports = readPluginPorts(pluginTriples(readInstalledBundle(b.dir), b.uri), b.uri).ports.filter((p) => p.control && p.input);
-  return {
-    plugin: { format: 'lv2', id: b.uri, uri: b.uri, name: b.uri.split('/').at(-1), vendor: 'swh' },
-    origin: 'scanned',
-    controls: ports.map((p) => ({ id: p.symbol, name: p.name, kind: 'travel', travel: { min: p.min ?? 0, max: p.max ?? 1, default: p.min ?? 0, unit: '', scale: 'linear' } })),
-  };
-}
-
-const sha256 = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
-const sourceOf = (format, path) => {
-  const r = run(['source', '--format', format, '--path', path]);
-  assert.equal(r.status, 0, r.stderr);
-  return r.stdout.trim();
-};
-const keysOf = (path) => {
-  const db = new DatabaseSync(path, { readOnly: true });
-  const rows = db.prepare('SELECT sha256, format, uri FROM plugin ORDER BY uri').all().map((r) => ({ ...r }));
-  db.close();
-  return rows;
-};
-
-/** A world: two bundles on the search path, their descriptors where a scan writes them, an empty base, no layer yet. */
-function world(t, { descriptors = true } = {}) {
-  const d = tmp(t, 'omx-panel-describe-plugin-');
-  const lv2 = join(d, 'lv2');
-  const triple = bundle(lv2, 'triple_para-swh', 'swh-triplepara', TRIPLE);
-  const delay = bundle(lv2, 'delayorama-swh', 'swh-delayorama', DELAY);
-  const scans = join(d, 'descriptors');
-  mkdirSync(scans, { recursive: true });
-  if (descriptors) for (const b of [triple, delay]) writeFileSync(join(scans, `${b.uri.split('/').at(-1)}.json`), JSON.stringify(descriptorOf(b)));
-  const places = { base: join(d, 'share', 'panel.sqlite'), system: join(d, 'var', 'panel.sqlite'), user: join(d, 'home', 'panel.sqlite'), contract: contract(join(d, 'contract.d')) };
-  mkStore(places.base, { layer: 0, panel: panelVersion(places.contract) });
-  return { d, lv2, triple, delay, scans, places };
-}
-
 /** The call, with the places by the command's variables and the store command on PATH; no plugin-hostd-probe there. */
 function describePlugin(w, target, extra = []) {
-  const env = {
-    PATH: dirname(CMD), LV2_PATH: w.lv2, DESCRIPTOR_DIRS: w.scans, HOME: join(w.d, 'nohome'),
-    OMX_PANEL_STORE_BASE: w.places.base, OMX_PANEL_STORE_SYSTEM: w.places.system, OMX_PANEL_STORE_USER: w.places.user, OMX_CONTRACT_PATH: w.places.contract,
-  };
+  const env = storeEnv(w);
   const r = spawnSync(process.execPath, [OMX_PANEL, 'describe', '--plugin', target, ...extra, '--store'], { encoding: 'utf8', env, timeout: 60000 });
   return { ...r, answer: r.status === 0 && r.stdout.trim() ? JSON.parse(r.stdout) : undefined };
 }
