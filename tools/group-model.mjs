@@ -122,6 +122,31 @@ const isNum = (t) => /^\d+$/.test(t);
 /** The numbers a name prints as whole words ("EQ 3 Freq" -> [3]). */
 const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
 
+/**
+ * Each numbered control's instance number and its stem, over one bucket (#97). A control whose text carries one number has it.
+ * Controls whose text carries more ("Band 3 Gain 2", a CLAP name with a "2nd" slope) are taken by their shape, the text with
+ * every number written `#`: when exactly one position varies across the shape's controls, that position is the instance
+ * number and the others are part of the parameter's name; when none or more than one does (a grid: "Send 1 Bus 2" over every
+ * send and bus), none of them has a number, and the bucket's two-indices check sees them.
+ * @returns {Map<Control, { stem: string, n: number }>}
+ */
+function instanceNumbers(controls) {
+  const out = new Map();
+  /** the text with the number at `p` written `#` and the others kept */
+  const at = (c, p) => { let i = -1; return written(c).replace(/\d+/g, (m) => (++i === p ? '#' : m)); };
+  const shapes = new Map();
+  for (const c of controls) {
+    const r = runs(c);
+    if (r.length === 1) out.set(c, { stem: stemOf(c), n: Number(r[0]) });
+    else if (r.length > 1) shapes.set(stemOf(c), [...(shapes.get(stemOf(c)) ?? []), c]);
+  }
+  for (const cs of shapes.values()) {
+    const varying = runs(cs[0]).map((_x, p) => p).filter((p) => new Set(cs.map((c) => runs(c)[p])).size >= 2);
+    if (varying.length === 1) for (const c of cs) out.set(c, { stem: at(c, varying[0]), n: Number(runs(c)[varying[0]]) });
+  }
+  return out;
+}
+
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
 export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
 const ON_WORDS = new Set(['on', 'enable', 'enabled', 'active', 'power']);
@@ -277,7 +302,8 @@ const refuse = (key, b, source, reason, detail) => list(key, b, { source, reason
 /** One bucket's group: the declared instances (a), else the symbols' numbers (b); either checked by (c). */
 function bucketGroup(key, b) {
   const numbered = b.controls.filter((c) => runs(c).length >= 1);
-  const two = numbered.filter((c) => runs(c).length >= 2);
+  const resolved = instanceNumbers(b.controls);
+  const two = numbered.filter((c) => runs(c).length >= 2 && !resolved.has(c));
   const declaredAny = b.controls.some((c) => c.path.length >= 1);
   if (numbered.length > 0 && two.length * 2 > numbered.length) {
     return refuse(key, b, declaredAny ? 'declared' : 'indexed', 'two-indices', `${two.length} of ${numbered.length} numbered controls carry two numbers (${two[0].symbol})`);
@@ -319,14 +345,14 @@ function slotKey(c) {
 }
 
 function indexedInstances(key, b) {
-  const numbered = b.controls.filter((c) => runs(c).length >= 1);
   /** @type {Map<string, Map<number, Control>>} */
   const stems = new Map();
-  for (const c of numbered) {
-    if (runs(c).length !== 1) continue;
-    const s = stemOf(c);
+  const numberOf = instanceNumbers(b.controls);
+  for (const c of b.controls) {
+    if (!numberOf.has(c)) continue;
+    const { stem: s, n } = numberOf.get(c);
     if (!stems.has(s)) stems.set(s, new Map());
-    stems.get(s).set(Number(runs(c)[0]), c);
+    stems.get(s).set(n, c);
   }
   const repeated = [...stems.entries()].filter(([, m]) => m.size >= 2);
   if (repeated.length === 0) return list(key, b);

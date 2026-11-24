@@ -1205,8 +1205,10 @@ static scripted *door_events_read(const cJSON *events, const door_control *c, id
   size_t n = (size_t)cJSON_GetArraySize(events);
   scripted *sc = calloc(n + 1, sizeof *sc);
   if (!sc) return NULL;
-  for (size_t i = 0; i < n; i++) {
-    const cJSON *j = cJSON_GetArrayItem(events, (int)i);
+  size_t i = 0;
+  const cJSON *j;
+  /* walked once: cJSON_GetArrayItem walks the list from its head, so indexing each event made the read quadratic (#105) */
+  cJSON_ArrayForEach(j, events) {
     scripted *s = &sc[i];
     const char *type = jstr(j, "type"), *pt = jstr(j, "ptype"), *key = jstr(j, "key");
     s->order = i, s->member = -1;
@@ -1222,6 +1224,7 @@ static scripted *door_events_read(const cJSON *events, const door_control *c, id
     const char *bar = jstr(j, "bar");
     for (size_t k = 0; bar && c->tg.kind == GE_BAR && k < c->n; k++)
       if (!strcmp(c->names[k], bar)) s->member = (int)k;
+    i++;
   }
   qsort(sc, n, sizeof *sc, by_time);
   *nev = n;

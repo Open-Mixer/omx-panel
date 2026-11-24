@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { CLI, DATA, FIXTURES, ROOT, descriptionFile, rects, resolved, scratch } from './harness.mjs';
 
@@ -199,7 +199,15 @@ test('the visible-column rule answers the cross-language vector the JavaScript t
   assert.ok(vectors.length >= 8);
   for (const v of vectors) {
     const file = descriptionFile({ name: 'vector', served: true, descriptor: v.descriptor }, scratch());
-    const out = execFileSync(CLI, ['--description', file, '--data', DATA, '--scale', String(v.scale), '--visible-columns', String(v.width)], { encoding: 'utf8' });
+    const args = ['--description', file, '--data', DATA, '--scale', String(v.scale), '--visible-columns', String(v.width)];
+    if (v.count !== undefined) {
+      // the count is set as a host sets it: the state's integers, under the matrix's count control
+      const { symbol } = JSON.parse(readFileSync(file, 'utf8')).sections.find((s) => s.matrix).matrix.count;
+      const state = join(dirname(file), 'count.state.json');
+      writeFileSync(state, JSON.stringify({ values: {}, integers: { [symbol]: v.count } }));
+      args.push('--state', state);
+    }
+    const out = execFileSync(CLI, args, { encoding: 'utf8' });
     assert.equal(Number(/visible-columns (\d+)/.exec(out)[1]), v.expect, v.name);
   }
 });

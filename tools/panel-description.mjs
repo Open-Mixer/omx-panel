@@ -227,16 +227,18 @@ function portsOf(ports = []) {
  * The panel of `descriptor`, of any origin. `panel` (a declaration's) gives the family, sections,
  * order, roles, widgets and graphs; with none, the sections are the controls' groups, the family the
  * one their meanings make and the roles the ones their meanings play. `ns` is the label-key namespace
- * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
+ * (without one the label keys are null); `byKind` is a declaration's extra. A choice's unit is the descriptor's own
+ * `choiceUnits` (omx-contract, by the control's name), declared once by the plugin: an option of that name is refused (#68).
  */
-export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false } = {}) {
+export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false, ...unknown } = {}) {
+  if ('choiceUnits' in unknown) throw new Error(`${where}: choiceUnits is the descriptor's (omx-contract choiceUnits, by the control's name), never a layout option`);
   // the panel a plugin serves (plugin-hostd-probe panel: omx-clap-scan's object, parameters by id) is read as the
   // declared form over this descriptor's keys (tools/panel-served.mjs, #43)
   if (panel && isServedPanel(panel)) panel = declaredFromServed(panel, descriptor, { where, keyOf, indexedRoles: INDEXED_ROLES });
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
-  const unitOf = (c) => c.travel?.unit ?? choiceUnits[keyOf(c)] ?? noUnitId();
+  const unitOf = (c) => c.travel?.unit ?? (c.kind === 'choice' ? descriptor.choiceUnits?.[c.name] : undefined) ?? noUnitId();
   const key = (k, what) => {
     if (!KEY.test(k) || k.length > KEY_MAX) throw new Error(`${where}: ${what} '${k}' is not a key of ${PANEL_ID} ([a-z][a-z0-9_]*, dotted, at most ${KEY_MAX} bytes)`);
     return k;

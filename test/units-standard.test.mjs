@@ -155,7 +155,7 @@ const NOT_AN_ID = /[/-]/;
 
 test('(a) no unit the tree states carries / or -: the role table and every JSON unit and choiceUnits are ids', () => {
   const stated = statedUnits();
-  assert.ok(stated.some(([, u]) => u === 'dBPerOct'), 'positive control: the scan reads the strip-eq panel\'s choiceUnits');
+  assert.ok(stated.some(([, u]) => u === 'dBPerOct'), 'positive control: the scan reads the strip-eq descriptor\'s choiceUnits');
   assert.ok(stated.length > 500, `positive control: the scan reads the fixtures (${stated.length} units)`);
   const bad = stated.filter(([, u]) => NOT_AN_ID.test(u)).map(([w, u]) => `${w}: ${u}`);
   for (const [family, roles] of Object.entries(ROLES)) {
@@ -164,7 +164,7 @@ test('(a) no unit the tree states carries / or -: the role table and every JSON 
   assert.deepEqual(bad, []);
 });
 
-test('(a) arm: a unit `dB/oct` and a choiceUnits `dB-s` planted in a fixture are seen; the panel schema refuses both', (t) => {
+test('(a) arm: a unit `dB/oct` and a choiceUnits `dB-s` planted in a fixture are seen', (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-unit-ids-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   mkdirSync(join(dir, 'test/fixtures/planted'), { recursive: true });
@@ -172,11 +172,4 @@ test('(a) arm: a unit `dB/oct` and a choiceUnits `dB-s` planted in a fixture are
     JSON.stringify({ controls: [{ travel: { unit: 'dB/oct' } }, { travel: { unit: 'dBPerOct' } }], choiceUnits: { hpfSlope: 'dB-s' } }));
   assert.deepEqual(statedUnits(dir).filter(([, u]) => NOT_AN_ID.test(u)),
     [['test/fixtures/planted/p.json.controls[0].travel.unit', 'dB/oct'], ['test/fixtures/planted/p.json.choiceUnits.hpfSlope', 'dB-s']]);
-  const schema = JSON.parse(readFileSync(join(ROOT, 'schema/panel.schema.json'), 'utf8'));
-  let pattern;
-  const find = (v) => { if (v && typeof v === 'object') { if (v.choiceUnits?.additionalProperties?.pattern) pattern = v.choiceUnits.additionalProperties.pattern; Object.values(v).forEach(find); } };
-  find(schema);
-  assert.ok(pattern, 'schema/panel.schema.json: choiceUnits states a pattern for its unit ids');
-  const re = new RegExp(pattern);
-  assert.deepEqual(['dBPerOct', 'dB', 'dB/oct', 'dB-oct', 'dB-s', '%'].map((u) => re.test(u)), [true, true, false, false, false, false]);
 });

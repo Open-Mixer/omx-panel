@@ -43,6 +43,40 @@
   back. `tools/store-entry.mjs` is the one codec between `describeStored` and the store (a CLAP id stored as its decimal
   text). `omx-panel-store rules` prints `OMX_PANEL_RULES_VERSION`.
 
+- The renderer wears the look's style whole (#123): under the vintage style a panel is the MOD GUI's vintage face, pixel
+  for pixel: the cream enclosure with its radius, the head plate, the screws, no section plates, the dark keys and
+  screens, the lamp and each text in the look's own ink, beside the vintage knob. Every value is `looks[style]` of
+  `look.json`, read by the face's rule (a token's first colour, a role in braces, `none` for a thing not drawn). A host
+  that passes its own look with a `style` must set every token the face wears, or the renderer refuses it by the
+  token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
+  move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
+
+- The rules the JavaScript tools and the C renderer both apply are listed in docs/renderer.md ("The rules both languages
+  apply", #76), each held by a vector both suites read: the visible columns, now with the drawn heads at a set count
+  (`visible-columns.json` gains `count` entries), and the visibility rule (`test/fixtures/rules/visible-when.json`, new).
+
+- The EQ band matrix (#97): a CLAP name that carries a second number beside its band's ("Band 3 Gain 2", "Band 3 2nd
+  Order") joins its band, the band's number being the one position that varies across the controls of that shape; a grid
+  where both vary is still `two-indices` (docs/group-model.md S3). A control only one band has ("Band 3 Drive") is paged
+  after the matrix, never on a screen before the high-pass (P1). Edges named in another language are ruled to come from a
+  descriptor word (S9), tracked by #205 and omx-contract#208.
+
+- A choice's unit is the descriptor's (#68): `panelLayout` reads omx-contract's descriptor `choiceUnits` (a choice control's
+  name to its unit), so the served description, the MOD GUI's curve and every host read the one unit the plugin declares.
+  The panel block's `choiceUnits` is retired: `schema/panel.schema.json` drops its `$defs.choiceUnits`, and `panelLayout`
+  refuses a `choiceUnits` option by name. A plugin that declared its slope's unit in its panel block declares it in its
+  descriptor.
+
+- The map table of `docs/modgui.md` ("The map: the console's vintage, element by element") is printed from
+  `tools/look/console-map.json` by `tools/console-map-render.mjs` (#69), between two marker comments; `--check`,
+  `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not what the map gives. The first
+  print found the `screw` row edited in the document and not in the map; the map now carries the document's cell.
+
+- `omx_gesture_run` costs time in proportion to the script's length (#105): the events were read by indexing cJSON's
+  list from its head once per event, so a script of 40000 wheel events cost 22.4 s where 5000 cost 0.11 s. They are now
+  walked once: 0.26 s against 0.03 s, held by `renderer/test/gesture-c-cost.test.mjs` (eight times the events, at most
+  sixteen times the time).
+
 - The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
   `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
   `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.

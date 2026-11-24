@@ -58,10 +58,6 @@
   "lpf_slope": "lpfSlope",
   "lpf_on": "lpfOn"
  },
- "choiceUnits": {
-  "hpfSlope": "dBPerOct",
-  "lpfSlope": "dBPerOct"
- },
  "sections": [
   {
    "key": "filter",

@@ -98,7 +98,12 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
 - **S3, indexed instances (source b).** In a bucket with no declared instances, a symbol carrying exactly one number
   (`b3_freq`, `eq3Freq`, `f_3`, `freq3`, `threshold3`) is parameter `stem` (the symbol with `#` for the number) of
   instance `number`. A stem seen at two numbers or more is repeated; the instances are the numbers of the repeated stems.
-  *Tests: omx-strip, x42 fil4, LSP para-equalizer x8, Calf multiband compressor in the corpus.*
+  A text carrying more than one number (a CLAP name, which is what a scan reads the number from: "Band 3 Gain 2", "Band 3
+  2nd Order") is read by its shape, the text with every number `#`: when exactly one position varies across the bucket's
+  controls of that shape, it is the instance number and the other numbers are part of the parameter (#97); when none or
+  more than one does (a grid, "Send 1 Bus 2" over every send and bus), the control has no number and counts towards
+  `two-indices`. *Tests: omx-strip, x42 fil4, LSP para-equalizer x8, Calf multiband compressor in the corpus;
+  test/group-model-name-numbers.test.mjs.*
 - **S4, matched across instances (source c).** A parameter (a stem every instance holds) has the same kind in every
   instance, the same unit, and, unless its unit is hertz or it is a toggle, the same range (a choice: the same number of
   options). A frequency may span another range per band. *Tests: "S4: kind / unit / range mismatch is refused", one each.*
@@ -144,6 +149,9 @@ Each rule names the test that proves it (`test/group-model.test.mjs`).
   gives the EQ its HPF (head `hpfOn`, rows `freq`, `slope`) and its LPF, and keeps `filterOn` as a list of one. An edge
   has a frequency, or it is no edge and its controls stay where they were. *Tests: omx-eq8, x42 fil4, omx-strip in the
   corpus (HPF first, LPF last); "S9: ...".*
+  **Ruled 2026-11-24 (#97, localized edges):** the edge words stay English and are not translated into lists per
+  language. An edge named in another language is found by a descriptor word, the filter's response a plugin states on the
+  control, once omx-contract declares one (omx-contract#208); until then such an edge keeps its number position (#205).
 - **S10, the count.** A repeated group's own parameter that sets how many of its instances are live is the group's
   `count: { symbol }`. It is a whole-number travel (step 1) from 0 or 1, whose maximum is the number of instances, and
   whose name holds a word the group is called by (the instances' shared word or the group's label), singular or plural:
@@ -325,8 +333,10 @@ carries no matrix and is drawn as before. *Tests: `test/describe-group-model.tes
     places**: slot `k` of an instance's screen is the same parameter in every instance. A place an instance has no control
     at (the cell is empty: an edge with no Q; or the Easy pages took the control: a band's gain) is a **blank slot**, never
     closed up, so the Q of band 1 is not under the encoder that turns the gain of band 3; the blank places after an
-    instance's last control are left off. The section's own parameters (the count, an EQ's master on) come before the
-    instances, in the description's order. An instance is one page of its own, never sharing it with the instance before
+    instance's last control are left off. The section's own parameters that print no number (the count, an EQ's master
+    on) come before the instances, in the description's order; one that prints a number is one band's and no row of the
+    group (a "Band 3 Drive" only band 3 has), and comes after the instances, so no screen ahead of the HPF holds it (#97,
+    test/eq-band-only-control.test.mjs). An instance is one page of its own, never sharing it with the instance before
     or after (a page ends early), named by its head's label (`Band 3`). **An instance longer than the page follows the
     aligned matrix (L7), never a continuation screen of its own:** from two slots up, its first `perPage` places are its
     screen, and each place past them is a **row** of the matrix, cut after the instances: one screen per run of `perPage`

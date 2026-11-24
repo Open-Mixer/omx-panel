@@ -155,7 +155,7 @@ test('the visible-column rule answers the cross-language vector (the C renderer 
   assert.ok(vectors.length >= 8);
   for (const v of vectors) {
     const m = describedLayout(v.descriptor).sections.find((s) => s.matrix).matrix;
-    assert.equal(model.visibleColumns(m, { width: v.width, column: GEOMETRY.cellW * v.scale }), v.expect, v.name);
+    assert.equal(model.visibleColumns(m, { width: v.width, column: GEOMETRY.cellW * v.scale, ...(v.count !== undefined ? { count: v.count } : {}) }), v.expect, v.name);
   }
 });
 
