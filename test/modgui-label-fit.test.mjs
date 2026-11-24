@@ -25,8 +25,8 @@ function descriptor() {
   const base = d.controls.find((c) => c.kind === 'travel');
   let id = 100;
   const add = (symbol, name, travel) => { d.controls.push({ ...base, id: id++, symbol, name, travel: { scale: 'stepped', ...travel } }); return symbol; };
-  const labels = NAMES.map((n, i) => add(`lab${i}`, n, { min: 0, max: 1, step: 0.01, unit: '', default: 0.5 }));
-  const count = add('eqBands', 'EQ Bands', { min: 1, max: 32, step: 1, unit: '', default: 4 });
+  const labels = NAMES.map((n, i) => add(`lab${i}`, n, { min: 0, max: 1, step: 0.01, unit: 'none', default: 0.5 }));
+  const count = add('eqBands', 'EQ Bands', { min: 1, max: 32, step: 1, unit: 'none', default: 4 });
   const ms = add('wideMs', 'Time', { min: 0, max: 2000, step: 1, unit: 'ms', default: 100 });
   const few = add('fewDb', 'Range', { min: -12, max: 0, step: 1, unit: 'dB', default: -6 });
   const panel = read('omx-delay.panel.json');
@@ -85,5 +85,5 @@ test('a count or an enumeration is a selector, a wide or measured travel a knob:
   assert.equal(widgetOf({ kind: 'integer', min: 1, max: 32, unit: '' }), 'selector');
   assert.equal(widgetOf({ kind: 'integer', min: -100, max: 100, unit: '' }), 'knob');
   assert.equal(widgetOf({ kind: 'integer', min: 0, max: 100, unit: '%' }), 'knob');
-  assert.equal(widgetOf(travelOf({ kind: 'travel', travel: { min: 1, max: 32, step: 1, unit: '', default: 4 } })), 'selector');
+  assert.equal(widgetOf(travelOf({ kind: 'travel', travel: { min: 1, max: 32, step: 1, unit: 'none', default: 4 } })), 'selector');
 });
