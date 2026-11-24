@@ -6,6 +6,7 @@
  * fills what is left. It takes the layout's family, roles and controls, and has no Node import, so a browser loads it too.
  */
 import { DYNAMICS_ROLES } from './role-table.mjs';
+import { codeOf } from './sheet-codes.mjs';
 
 /** The most controls a declared list names: what one surface page holds. */
 export const EASY_DECLARED_MAX = 8;
@@ -38,7 +39,7 @@ export const EASY_ROLES = Object.freeze({
 });
 
 export class EasyRefused extends Error {
-  code = 'panel.describe.easy-refused';
+  code = codeOf('panelEasyRefused');
 }
 
 /** A layout control a face can set: no reading, no trigger, no bypass (the header draws it). */

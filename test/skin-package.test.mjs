@@ -178,7 +178,7 @@ describe('the override file (§6.3)', () => {
 
 describe('D6 over the panel vocabulary', () => {
   it('drops a role outside the family, a unit the role does not take, an unknown symbol, a repeat and an index on a plain role', () => {
-    const params = [param('t', 'ms'), param('f', 'none'), param('g', 'db'), { kind: 'path', symbol: 'p', name: 'p', default: '' }];
+    const params = [param('t', 'ms'), param('f', 'none'), param('g', 'dB'), { kind: 'path', symbol: 'p', name: 'p', default: '' }];
     const { roles, dropped } = checkSkinRoles('delay', [
       { role: 'time', index: 0, symbol: 't' },
       { role: 'time', index: 0, symbol: 't' },

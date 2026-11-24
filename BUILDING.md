@@ -3,13 +3,13 @@
 # Building omx-panel
 
 Needs Node.js 18 or newer and npm. The tools that read the plugin vocabulary need it installed: omx-contract's
-schema and contract directory (`omx-contract-data`), plugin-hostd's format tables (`plugin-hostd-contract`), the
-param-contract unit table (`omx-contract-data`, from 3.6.0: the OMX_PARAM_CONTRACT_UNITS sheet in `3/omx-contract/param-contract.json`). Nothing of
+schema, contract directory, standard units (its param domain, from 3.21.0) and param-contract unit table (the
+OMX_PARAM_CONTRACT_UNITS sheet in `3/omx-contract/param-contract.json`) (`omx-contract-data`), and plugin-db's LV2 terms
+and their F1 mapping to the standard words (its `lv2` domain, `plugin-db-contract` from 0.5.0). Nothing of
 omx-plugins is needed to build or test: its descriptors (`omx-plugins-contract`) are not a dependency of this package; `modgui --installed` reads them when they are installed. The contract directory is `$OMX_CONTRACT_PATH` (a `:`
 list, the first that holds a package wins), else omx-contract's pkg-config variable `contractdir` where
 `omx-contract-devel` installs `omx-contract.pc`, else `/usr/share/omx-contract/contract.d`; no pkg-config is needed.
-`$PLUGIN_HOSTD_TABLES` (a directory holding `lv2.json`) and `$OMX_CONTRACT_SCHEMA` (an `omx-contract.schema.json`)
-stand in for the installed ones. `omx-panel vocabulary [<package>/<name>]...` prints where each is read from. `tools/modgui-test.sh` also needs `sord_validate` (sord) and the LV2
+`$OMX_CONTRACT_SCHEMA` (an `omx-contract.schema.json`) stands in for the installed one. `omx-panel vocabulary [<package>/<name>]...` prints where each is read from. `tools/modgui-test.sh` also needs `sord_validate` (sord) and the LV2
 specification bundles (lv2).
 
 ```

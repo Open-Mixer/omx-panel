@@ -12,15 +12,29 @@
 #      (test/fixtures/omx-delay, the film strip left out) fresh: exit 0 and "every generated file is fresh".
 #
 # The fixture is the source tree's, next to this script; the tools are the installed ones.
+#
+# tools/installed-tools-check.sh <pkgdir> <staged contract dir>: in a package build. The tools open the panel domain when
+# they load, and a build host has no omx-panel-contract installed: the domain is the one the same build staged
+# (%{buildroot}%{omx_contract_domain_dir} in %check, debian/tmp/usr/share/omx-contract/contract.d in debian/rules). It
+# goes first on the tools' OMX_CONTRACT_PATH, before the installed contract directory (omx-contract's, where the param
+# domain and the packages' contract data are). v0.16.0's deb build ran without it, and every tool that opens the panel
+# domain refused (#208). With no second argument the tools read the installed domain, as on a host.
 set -uo pipefail
 
-PKGDIR=${1:?usage: installed-tools-check.sh <pkgdir, e.g. /usr/share/omx-panel>}
+PKGDIR=${1:?usage: installed-tools-check.sh <pkgdir, e.g. /usr/share/omx-panel> [<staged contract dir>]}
+STAGED=${2:-}
 FIX=$(cd "$(dirname "$0")/../test/fixtures/omx-delay" && pwd)
 fails=0
 fail() { echo "FAIL $*"; fails=$((fails + 1)); }
 pass() { echo "PASS $*"; }
 
 [ -d "$PKGDIR/tools" ] || { echo "installed-tools-check: no $PKGDIR/tools" >&2; exit 2; }
+if [ -n "$STAGED" ]; then
+  [ -d "$STAGED" ] || { echo "installed-tools-check: no staged contract directory $STAGED" >&2; exit 2; }
+  installed=$(pkg-config --variable=contractdir omx-contract 2>/dev/null)
+  export OMX_CONTRACT_PATH="$STAGED:${installed:-/usr/share/omx-contract/contract.d}"
+  echo "installed-tools-check: the panel domain from $STAGED (OMX_CONTRACT_PATH=$OMX_CONTRACT_PATH)"
+fi
 
 users=$(grep -l "@openmixer/omx-contract" "$PKGDIR"/tools/*.mjs)
 [ -n "$users" ] || fail "no installed tool imports @openmixer/omx-contract: the check would prove nothing"
