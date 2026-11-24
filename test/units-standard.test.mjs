@@ -9,9 +9,9 @@
 // directory whose param domain has no dBu: a dBu control has no unit id and a read-only one is no level meter.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { contractDirs } from '../dist/tools/vocabulary.mjs';
@@ -119,4 +119,65 @@ test('(c) omx-contract\'s served set decides: a PARAM_UNITS_CLAP_ENCODED with no
   mkdirSync(join(dir, 'param'), { recursive: true });
   writeFileSync(join(dir, 'param/param.json'), JSON.stringify(doc));
   assert.deepEqual(answers(['LUFS', 'dB'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }).map(([id]) => id), [null, 'dB']);
+});
+
+// Owner ruling 2026-11-23 (units keep standard symbols only; a non-standard spelling is a bug at its source): a unit id is
+// letters and digits from a letter (omx-contract's PARAM_UNITS, `dB/oct` is `dBPerOct`). No unit this tree states, in the
+// role table, a descriptor or panel fixture, a domain, an example or a schema, carries '/' or '-': a symbol (`dB/oct`) or
+// an old spelling (`dB-oct`, `dB-s`) stated as a unit is refused by file and key. LV2 Turtle is a format's own text
+// (`units:symbol`) and is not read.
+const UNIT_DIRS = ['test/fixtures', 'fixtures', 'examples', 'contract.d', 'schema', 'tools', 'store', 'catalogs'];
+
+/** Every unit word the JSON under `root`'s UNIT_DIRS states: a string `unit`, and each value of a `choiceUnits`. */
+function statedUnits(root = ROOT) {
+  const out = [];
+  const visit = (v, where) => {
+    if (Array.isArray(v)) { v.forEach((x, i) => visit(x, `${where}[${i}]`)); return; }
+    if (!v || typeof v !== 'object') return;
+    for (const [k, x] of Object.entries(v)) {
+      if (k === 'unit' && typeof x === 'string') out.push([`${where}.unit`, x]);
+      else if (k === 'choiceUnits' && x && typeof x === 'object' && !('type' in x)) for (const [s, u] of Object.entries(x)) out.push([`${where}.choiceUnits.${s}`, u]);
+      visit(x, `${where}.${k}`);
+    }
+  };
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) { if (e.name !== 'node_modules') walk(p); }
+      else if (e.name.endsWith('.json')) visit(JSON.parse(readFileSync(p, 'utf8')), relative(root, p));
+    }
+  };
+  for (const d of UNIT_DIRS) walk(join(root, d));
+  return out;
+}
+
+const NOT_AN_ID = /[/-]/;
+
+test('(a) no unit the tree states carries / or -: the role table and every JSON unit and choiceUnits are ids', () => {
+  const stated = statedUnits();
+  assert.ok(stated.some(([, u]) => u === 'dBPerOct'), 'positive control: the scan reads the strip-eq panel\'s choiceUnits');
+  assert.ok(stated.length > 500, `positive control: the scan reads the fixtures (${stated.length} units)`);
+  const bad = stated.filter(([, u]) => NOT_AN_ID.test(u)).map(([w, u]) => `${w}: ${u}`);
+  for (const [family, roles] of Object.entries(ROLES)) {
+    for (const [role, units] of Object.entries(roles)) for (const u of units) if (NOT_AN_ID.test(u)) bad.push(`role-table ${family}.${role}: ${u}`);
+  }
+  assert.deepEqual(bad, []);
+});
+
+test('(a) arm: a unit `dB/oct` and a choiceUnits `dB-s` planted in a fixture are seen; the panel schema refuses both', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'omx-panel-unit-ids-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  mkdirSync(join(dir, 'test/fixtures/planted'), { recursive: true });
+  writeFileSync(join(dir, 'test/fixtures/planted/p.json'),
+    JSON.stringify({ controls: [{ travel: { unit: 'dB/oct' } }, { travel: { unit: 'dBPerOct' } }], choiceUnits: { hpfSlope: 'dB-s' } }));
+  assert.deepEqual(statedUnits(dir).filter(([, u]) => NOT_AN_ID.test(u)),
+    [['test/fixtures/planted/p.json.controls[0].travel.unit', 'dB/oct'], ['test/fixtures/planted/p.json.choiceUnits.hpfSlope', 'dB-s']]);
+  const schema = JSON.parse(readFileSync(join(ROOT, 'schema/panel.schema.json'), 'utf8'));
+  let pattern;
+  const find = (v) => { if (v && typeof v === 'object') { if (v.choiceUnits?.additionalProperties?.pattern) pattern = v.choiceUnits.additionalProperties.pattern; Object.values(v).forEach(find); } };
+  find(schema);
+  assert.ok(pattern, 'schema/panel.schema.json: choiceUnits states a pattern for its unit ids');
+  const re = new RegExp(pattern);
+  assert.deepEqual(['dBPerOct', 'dB', 'dB/oct', 'dB-oct', 'dB-s', '%'].map((u) => re.test(u)), [true, true, false, false, false, false]);
 });
