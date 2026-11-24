@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+- **ABI break: the renderer's library is `libomx-panel-render.so.1`** (#240). The spectrum takes both taps and the console's
+  modes: `omx_panel_view_set_spectrum(view, index, hz, pre_db, post_db, peak_db, n, mode, delta, db_min, db_max, grid_db)`,
+  `mode` an `omx_panel_tap_mode_t` (`OMX_PANEL_TAP_PRE`, `OMX_PANEL_TAP_POST`, `OMX_PANEL_TAP_BOTH`), a tap the mode does not
+  show NULL, `delta` (omx-dsp's wedges between the taps) only with both; it was `(view, index, hz, db, peak_db, n, db_min,
+  db_max, grid_db)`. PRE is drawn as a dim reference line, POST filled; with the delta both are full-strength lines and
+  nothing is filled. The soname moves from `.so.0` to `.so.1` and the symbol version from `OMX_PANEL_RENDER_0` to
+  `OMX_PANEL_RENDER_1`; the DEB library package is `libomx-panel-render1` (was `libomx-panel-render0`), the RPM
+  `omx-panel-render` carries the `.so.1`. No `.so.0` is kept: a surface that loads the `.so.0` or calls the old
+  `set_spectrum` moves with this release.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the
