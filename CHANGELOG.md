@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+- The rules the JavaScript tools and the C renderer both apply are listed in docs/renderer.md ("The rules both languages
+  apply", #76), each held by a vector both suites read: the visible columns, now with the drawn heads at a set count
+  (`visible-columns.json` gains `count` entries), and the visibility rule (`test/fixtures/rules/visible-when.json`, new).
+
 - The EQ band matrix (#97): a CLAP name that carries a second number beside its band's ("Band 3 Gain 2", "Band 3 2nd
   Order") joins its band, the band's number being the one position that varies across the controls of that shape; a grid
   where both vary is still `two-indices` (docs/group-model.md S3). A control only one band has ("Band 3 Drive") is paged

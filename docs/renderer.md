@@ -304,6 +304,25 @@ equal to `modgui-gen.mjs`'s face at three scales and to the committed MOD GUI sc
 images can then come from the renderer, and `tools/raster.mjs`'s shapes and `modgui-gen.mjs`'s drawing go
 away.
 
+### The rules both languages apply
+
+Helpers that exist in the JavaScript tools and again in the C renderer split in two (#76). A helper that encodes a RULE,
+a number both sides must agree on, is held by a shared vector, one JSON file both suites read; pure mechanics stay per
+language and are held by the drawing itself.
+
+| Rule | JavaScript | C | Held by |
+|---|---|---|---|
+| The visible columns (docs/group-model.md L7) | `visibleColumns` (tools/group-model.mjs) | `omx_panel_view_visible_columns` | `test/fixtures/group-model/visible-columns.json` |
+| The drawn heads under a count (L6: every edge, the first `count` instances) | `drawnHeads` | `visible_heads` (view.c) | the same vector, its `count` entries, set as a host sets it (the state's `integers`) |
+| A governed control shown at a value (docs/panel-layout.md "Visibility": the mask's bit, 0..63) | `visibilityMask`, `isVisible` (tools/panel-description.mjs) | `shown` (view.c) | `test/fixtures/rules/visible-when.json` |
+| Every gesture word, timing and refusal (docs/panel-gestures.md) | `runGesture` (tools/gestures.mjs) | `omx_gesture_run` (gesture.c) | `renderer/test/gesture-c.test.mjs`: the shipped scripts, the rules and a seeded fuzz, each answer equal |
+
+Mechanics with no number of their own (a rectangle's arithmetic, the grid of a section, cutting a label to its cell) stay
+per language: the C rasteriser is the MOD GUI generator's carried operation for operation, and `renderer/test/parity.test.mjs`
+holds the two faces equal pixel for pixel, so a mechanic that drifts is red there. Each vector's readers are sabotage-checked:
+a C `shown` that reads bit 64, a `visible_heads` or `drawnHeads` that keeps one instance past the count, a `visibilityMask`
+that sets the bit after each value, each turns its vector red.
+
 ### The window
 
 `renderer/include/omx_panel_window.h`, built with `WINDOW=1`:

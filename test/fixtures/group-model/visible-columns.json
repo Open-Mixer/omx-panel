@@ -1,5 +1,5 @@
 {
-  "about": "The visible-column rule of docs/group-model.md L7, one vector for every language: the served matrix of `omx-panel describe --layout` over `descriptor`, a surface `width` px wide at `scale` (a column is the face's cellW times scale), the count at its served default. test/group-model-served.test.mjs reads it through visibleColumns, renderer/test/repeats.test.mjs through omx_panel_view_visible_columns: both must give `expect`.",
+  "about": "The visible-column rule of docs/group-model.md L7, one vector for every language: the served matrix of `omx-panel describe --layout` over `descriptor`, a surface `width` px wide at `scale` (a column is the face's cellW times scale), the count at its served default, or at `count` where a vector names one (L6, #76: every edge, and the first `count` instances). test/group-model-served.test.mjs reads it through visibleColumns, renderer/test/repeats.test.mjs through omx_panel_view_visible_columns (the count set through the state's integers): both must give `expect`.",
   "vectors": [
     { "name": "omx-eq8, all ten columns fit", "descriptor": "test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json", "width": 2000, "scale": 1, "expect": 10 },
     { "name": "omx-eq8, four fit", "descriptor": "test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json", "width": 300, "scale": 1, "expect": 4 },
@@ -7,6 +7,10 @@
     { "name": "omx-eq8 at 2x, two fit", "descriptor": "test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json", "width": 300, "scale": 2, "expect": 2 },
     { "name": "omx-eq8 at 0.5x, all ten", "descriptor": "test/fixtures/group-model/omx-plugins/omx-eq8.descriptor.json", "width": 400, "scale": 0.5, "expect": 10 },
     { "name": "omx-strip, the count (4) closes up 28 bands: four and the two edges", "descriptor": "test/fixtures/group-model/omx-plugins/omx-strip.descriptor.json", "width": 3000, "scale": 1, "expect": 6 },
+    { "name": "omx-strip at count 0: the two edges alone", "descriptor": "test/fixtures/group-model/omx-plugins/omx-strip.descriptor.json", "width": 3000, "scale": 1, "count": 0, "expect": 2 },
+    { "name": "omx-strip at count 2: two bands and the edges", "descriptor": "test/fixtures/group-model/omx-plugins/omx-strip.descriptor.json", "width": 3000, "scale": 1, "count": 2, "expect": 4 },
+    { "name": "omx-strip at count 7: seven bands and the edges", "descriptor": "test/fixtures/group-model/omx-plugins/omx-strip.descriptor.json", "width": 3000, "scale": 1, "count": 7, "expect": 9 },
+    { "name": "omx-strip at count 2, three fit", "descriptor": "test/fixtures/group-model/omx-plugins/omx-strip.descriptor.json", "width": 216, "scale": 1, "count": 2, "expect": 3 },
     { "name": "omx-delay, the count (1) leaves one tap", "descriptor": "test/fixtures/group-model/omx-plugins/omx-delay.descriptor.json", "width": 2000, "scale": 1, "expect": 1 },
     { "name": "the compressor in rows: the five parameters and the head row are the columns", "descriptor": "test/fixtures/group-model/mbc.descriptor.json", "width": 2000, "scale": 1, "expect": 6 },
     { "name": "the compressor in rows, three fit", "descriptor": "test/fixtures/group-model/mbc.descriptor.json", "width": 216, "scale": 1, "expect": 3 }
