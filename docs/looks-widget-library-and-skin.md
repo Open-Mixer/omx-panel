@@ -2,13 +2,14 @@
 <!-- Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com> -->
 # Looks: control styles, widget libraries and the skin
 
-Status: Accepted (owner, 2026-11-24). Design spec, not built. It designs
-within the owner's rulings of 2026-11-19 and 2026-11-24 (section 1) and re-opens neither. A fact checked against a file names the file (this repository at
-`origin/devel`; openmixer at `main`; zynthian-ui PR #114 and zynthian-sys PR #40 at their heads). Anything else is
-marked as an assumption. The ten decisions the first rulings left open are ruled in section 10.
+Status: Accepted (owner, 2026-11-24). Design spec, not built. It designs within the owner's rulings of 2026-11-19
+and 2026-11-24 (section 1) and re-opens neither. A fact checked against a file names the file (this repository at
+`origin/devel`; zynthian-ui PR #114 and zynthian-sys PR #40 at their heads); a fact about the console is stated, not
+pointed at. Anything else is marked as an assumption. The ten decisions the first rulings left open are ruled in
+section 10.
 
-A look today is four unrelated things: the console's `style` axis (`vintage | modern`, openmixer
-`packages/core/src/session.ts` `SURFACE_STYLES`), the MOD GUI's `modgui-look` setting (`vintage | console | 3d`,
+A look today is four unrelated things: the console's `style` axis (`vintage | modern`, the console's
+`SURFACE_STYLES`), the MOD GUI's `modgui-look` setting (`vintage | console | 3d`,
 `schema/modgui-looks.json`), Zynthian's `ZYNTHIAN_UI_LOOK` (`stock | vintage`, zynthian-ui PR #114) and the
 `look` field of a plugin's skin package (`docs/skin-package.md`). Each client decides in code what "vintage" means.
 This spec makes a look DATA: one shared vocabulary of control kinds and their styles, one skin notion (the skin package
@@ -48,7 +49,7 @@ Read together, and this is what the rest of the spec builds on:
 
 | Library | Toolkit | Draws | Owner of the drawing |
 |---|---|---|---|
-| `nuxt` | Nuxt UI / Vue | the console web UI | openmixer `packages/web-ui` |
+| `nuxt` | Nuxt UI / Vue | the console web UI | the console's web UI |
 | `tk` | Tk + PIL | Zynthian's UI (its own Tk widgets since 2026-11-19) | zynthian-ui |
 | `native` | pugl + NanoVG | the omx-panel native window: every plugin's LV2 X11 UI and `clap.gui` | this repository, `renderer/` |
 | `modgui` | HTML + CSS, generated | MOD GUI bundles (`omx-panel modgui`, `omx-modgui-sync`) | this repository, `tools/modgui-gen.mjs` |
@@ -142,13 +143,13 @@ each in its library's own repository (section 4.1, below the table).
 | `defaults` | the skin's default `theme`, `accent` and `finish`; the user's choice beats them (decision 7) |
 
 The per-library files hold the colours, fonts, images and metrics. Each lives in its library's own repository, keyed
-by skin id (decision 4): openmixer web-ui for `nuxt`, zynthian-sys for `tk` (`config/ui-looks/<skin id>.sh`), this
+by skin id (decision 4): the console's web UI for `nuxt`, zynthian-sys for `tk` (`config/ui-looks/<skin id>.sh`), this
 repository for `native` and `modgui`. Their form is the library's: `nuxt` a token block
 `tokens.css` reads, `tk` the `ZYNTHIAN_UI_*` file zynthian-sys installs, `native` the role values `read_look` takes
 (`schema/look-roles.json` is that library's schema, no longer a cross-toolkit one), `modgui` a look of
 `schema/modgui-looks.json`. Each file names the skin id and the `contract` it was written for, and the library's own
-check validates it (every role it reads present, for every theme, accent and finish the user may pick; contrast floors; files under its
-own tree). omx-panel validates the shared part only.
+check validates it (every role it reads present, for every theme, accent and finish the user may pick; contrast
+floors; files under its own tree). omx-panel validates the shared part only.
 
 ### 4.2 The plugin skin
 
@@ -198,7 +199,7 @@ Two rules, checked by one tool, `omx-panel look check --skins <dir> --library <l
   (`look.library.style-unknown`).
 
 Where it runs: in each library's CI against the skins that library ships with (zynthian-ui against zynthian-sys's
-skins, openmixer web-ui against the console's, omx-panel against its own for `native` and `modgui`), and in the CI of
+skins, the console's web UI against the console's, omx-panel against its own for `native` and `modgui`), and in the CI of
 any package that ships a skin. The refusal codes are the `look` domain's (`LOOK_SKIN_CODES`), each with its sentence in
 `schema/codes.json` and the catalogs, never reworded. Like every guard, the gate lands with a sabotage arm: a skin with
 one style its library lacks must turn it red.
@@ -222,8 +223,8 @@ skin falls back to.
   each naming the upstream file that draws it, and only `tk` ships it).
 - **A fresh install selects `vintage` on every client**, as today (decision 2). `default` is what a refused skin falls
   back to (section 5).
-- Theme, accent and finish (openmixer `2026-10-04-omx-look.md` §2(a)) are the user's axes in every skin; a skin only
-  sets their defaults (`defaults`, decision 7).
+- Theme, accent and finish (the console's look axes: theme `dark | light | hc`, eight accents, three finishes) are
+  the user's axes in every skin; a skin only sets their defaults (`defaults`, decision 7).
 
 ## 8. Migration of what exists
 
