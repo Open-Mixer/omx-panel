@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The descriptions store's base is built and packaged (#168, descriptions store lane 5): `omx-panel base --in
+  base/inputs --out <file>` derives each input and `omx-panel-store build` writes the file reproducibly (key order,
+  page size 4096, VACUUM, user_version last, renamed when whole; byte-identical across builds with the same SQLite).
+  `built_from` is `base/BUILT_FROM`, substituted by `git archive`, else git's HEAD, else refused. The new noarch package
+  `omx-panel-descriptions` holds `/usr/share/omx/panel/panel.sqlite`; `omx-panel-store` recommends it. The inputs are
+  empty for now: an empty base is a base.
+
 - The generators read the descriptions store and `omx-panel-sync` is the one pass (#167, descriptions store lane 4).
   `omx-complement-sync` writes the groups the store holds (each plugin's entry from `describe --plugin --store`),
   never an inference of a stored key; with no store, or no base, it infers as before and says so. `omx-panel-sync`
