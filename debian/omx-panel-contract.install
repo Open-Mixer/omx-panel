@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+usr/share/omx-contract/contract.d/gestures/
+usr/share/omx-contract/contract.d/panel/
+usr/include/omxdomain/panel_codes.h

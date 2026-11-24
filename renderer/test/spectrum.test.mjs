@@ -31,7 +31,7 @@ const W = ref.window;
 /** The state of the dyn-curve fixture with its display as an eq_response, the curve given and, when `spectrum` is, the spectrum. */
 function withSpectrum(dir, { curve = ref.input.curve, spectrum = null } = {}) {
   const d = JSON.parse(readFileSync(descriptionFile(fx, dir), 'utf8'));
-  d.displays[0].kind = 'eq_response';
+  d.displays[0].kind = 'eq_response', d.displays[0].axis = 'log-frequency';
   const desc = join(dir, 'eq.layout.json');
   writeFileSync(desc, JSON.stringify(d));
   const state = JSON.parse(readFileSync(stateFile(fx, dir), 'utf8'));
@@ -48,11 +48,18 @@ const SPECTRUM = {
 
 const px = (img, x, y) => Array.from(img.data.slice((y * img.w + x) * 4, (y * img.w + x) * 4 + 3));
 const near = (a, b, d) => a.every((v, k) => Math.abs(v - b[k]) <= d);
-/** The accent's pixels in the plot: the trace's and the curve's strokes (their cores are the accent at full strength). */
+const STROKE = rgb('--curve-stroke');
+const apart = (a, b) => Math.hypot(...a.map((v, k) => v - b[k]));
+/** The strokes' pixels in the plot: the trace's, in the accent, and the curve's, in the curve stroke. A stroke is a 0.75 px hairline, so
+ * its core is three quarters the role's colour over what is under it: over the green foot of the fill the vintage orange lands 46 from
+ * itself in red, hence the 50. The clip tick is --meter-red, which the orange sits near: a pixel nearer the red than either stroke is
+ * the tick's, not a stroke's. */
 function accentPixels(img) {
   const out = [];
-  for (let y = Math.floor(PLOT.y) - 1; y <= PLOT.y + PLOT.h + 1; y++) for (let x = Math.floor(PLOT.x) - 1; x <= PLOT.x + PLOT.w + 1; x++)
-    if (near(px(img, x, y), ACCENT, 40)) out.push([x, y]);
+  for (let y = Math.floor(PLOT.y) - 1; y <= PLOT.y + PLOT.h + 1; y++) for (let x = Math.floor(PLOT.x) - 1; x <= PLOT.x + PLOT.w + 1; x++) {
+    const p = px(img, x, y);
+    if ((near(p, ACCENT, 50) || near(p, STROKE, 50)) && Math.min(apart(p, ACCENT), apart(p, STROKE)) < apart(p, RED)) out.push([x, y]);
+  }
   return out;
 }
 /** A polyline of plot fractions, sampled every 0.25 px and set as the pixels it crosses. */
@@ -132,11 +139,11 @@ for (const [why, change] of [
   });
 }
 
-test('a spectrum on a display with no log axis (a transfer_curve) is refused', () => {
+test('a spectrum on a display with no log frequency axis (a transfer_curve on its linear axis) is refused', () => {
   const dir = scratch();
   const { desc, state } = withSpectrum(dir, { spectrum: SPECTRUM });
   const d = JSON.parse(readFileSync(desc, 'utf8'));
-  d.displays[0].kind = 'transfer_curve';
+  d.displays[0].kind = 'transfer_curve', d.displays[0].axis = 'linear';
   writeFileSync(desc, JSON.stringify(d));
   const st = JSON.parse(readFileSync(state, 'utf8'));
   st.curves = { 0: { x: [-80, 0], y: [-80, 0] } };

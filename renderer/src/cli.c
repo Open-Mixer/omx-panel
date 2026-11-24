@@ -37,7 +37,7 @@
 static const char *USAGE =
     "usage: omx-panel-render --description <layout.json> [--data <tools dir>] [--state <state.json>]\n"
     "                        [--width W --height H] [--scale S] [--format rgba|bgra] [--alpha premultiplied|straight]\n"
-    "                        [--raw <file>] [--png <file>] [--rects] [--window] [--input <script.json>]\n"
+    "                        [--raw <file>] [--png <file>] [--rects] [--visible-columns <width>] [--window] [--input <script.json>]\n"
     "                        [--steps <script.json> --steps-out <dir> [--cap 1..64]]\n";
 
 static uint32_t crc_table[256];
@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
   const char *desc = NULL, *data = OMX_PANEL_DATA_DIR, *state = NULL, *raw = NULL, *png = NULL, *input = NULL, *stepfile = NULL, *stepdir = NULL;
   size_t cap = 64;
   double scale = 1;
-  long width = 0, height = 0;
+  long width = 0, height = 0, vcw = 0;
   int bgra = 0, straight = 0, rects = 0, window = 0;
   for (int i = 1; i < argc; i++) {
     const char *a = argv[i], *val = i + 1 < argc ? argv[i + 1] : NULL;
@@ -485,6 +485,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(a, "--steps")) stepfile = val;
     else if (!strcmp(a, "--steps-out")) stepdir = val;
     else if (!strcmp(a, "--cap") && strtol(val, NULL, 10) >= 1 && strtol(val, NULL, 10) <= 64) cap = (size_t)strtol(val, NULL, 10);
+    else if (!strcmp(a, "--visible-columns")) vcw = strtol(val, NULL, 10);
     else if (!strcmp(a, "--scale")) scale = strtod(val, NULL);
     else if (!strcmp(a, "--width")) width = strtol(val, NULL, 10);
     else if (!strcmp(a, "--height")) height = strtol(val, NULL, 10);
@@ -493,7 +494,7 @@ int main(int argc, char **argv) {
     else { fputs(USAGE, stderr); return 2; }
     i++;
   }
-  if (!desc || (!raw && !png && !rects && !input && !stepfile) || (!stepfile != !stepdir) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
+  if (!desc || (!raw && !png && !rects && !input && !stepfile && vcw <= 0) || (!stepfile != !stepdir) || !(scale > 0) || (width != 0) != (height != 0) || width < 0 || height < 0 ||
       (window && width)) {
     fputs(USAGE, stderr);
     return 2;
@@ -558,6 +559,7 @@ int main(int argc, char **argv) {
     if (omx_panel_view_control_rect(v, b.width, b.height, scale, i, r)) printf("%g %g %g %g\n", r[0], r[1], r[2], r[3]);
     else puts("hidden");
   }
+  if (ok && vcw > 0) printf("visible-columns %u\n", omx_panel_view_visible_columns(v, (uint32_t)vcw, scale));
   if (!ok) fprintf(stderr, "omx-panel-render: could not draw or write the image\n");
   free(b.pixels);
 #ifdef OMX_PANEL_WINDOW

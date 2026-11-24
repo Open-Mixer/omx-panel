@@ -120,7 +120,8 @@ static void expose(struct omx_panel_window *w) {
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   if (!w->vg) return;
   nvgBeginFrame(w->vg, (float)w->w, (float)w->h, 1);
-  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_fill_under, nvg_text};
+  /* no scene callback: the window's NanoVG backend does not paint the look's scenes yet, so the knob is the flat one */
+  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_fill_under, nvg_text, NULL};
   omx_panel_view_paint(w->view, w->w, w->h, w->scale, &d);
   nvgEndFrame(w->vg);
   if (w->read) {

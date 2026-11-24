@@ -8,7 +8,7 @@
   the family, the pages of eight a controller shows), under the plugin's declared panel when it has one
   ([panel-layout.md](panel-layout.md)).
 - The MOD GUI generator: `omx-panel modgui` writes a plugin's MOD GUI from its descriptor, its images rasterised
-  byte for byte, in the omx look (the colour roles of `schema/look-roles.json` at their defaults) ([modgui.md](modgui.md)).
+  byte for byte, in the omx look (the colour roles of `schema/look-roles.json` at their defaults, the vintage tokens of `tools/look.json`) ([modgui.md](modgui.md)).
 - The sync: `omx-modgui-sync` gives a generated MOD GUI to every installed LV2 plugin that ships none, into
   `/usr/local/lib/lv2` (`~/.lv2` for a user), one bundle per plugin, never touching a bundle that is not its own.
   The systemd unit is installed, not enabled: `systemctl enable omx-modgui-sync` makes it run after each
@@ -30,6 +30,7 @@
   directory name, the override and how it applies, the licence allow-list, the refusal codes)
   ([skin-package.md](skin-package.md)).
 - The importer: `omx-panel import` turns a MOD GUI bundle into a skin package.
+- The behaviour core (a design spec, not built): one C library, also built as WebAssembly, for gestures, scale laws, steps and value text on every client ([behaviour-core.md](behaviour-core.md)).
 - The widgets a panel names (`schema/panel.schema.json`): knob, fader, switch, selector, meter, display, curve, xy; their gestures are in [panel-gestures.md](panel-gestures.md).
 - The renderer: a C library that draws a panel description in the omx look into a plain pixel buffer, the MOD GUI's
   face to the bit, at any size and scale, for a plugin window, a host's inline view or the console

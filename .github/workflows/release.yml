@@ -7,7 +7,7 @@ name: release
 # GitHub release. The npm package is published by publish.yml (npmjs.com trusts that file by name, with no
 # environment), on the same tag.
 
-# A manual run with staged on (never a tag) builds fc44 x86_64 and trixie amd64 only, against the staging channel, and
+# A manual run with staged on (never a tag) builds fc45 x86_64 and trixie amd64 only, against the staging channel, and
 # publishes them, signed, to the staging channel (staging/rpm and staging/deb of the channel repository), where the
 # next layer of the release chain finds them by adding the staging channel beside the real one. Nothing reaches the
 # real channel, and the real release still publishes once from the v<version> tag (Open-Mixer/.github build-rpm.yml
@@ -27,7 +27,7 @@ on:
         type: boolean
         default: false
       staged:
-        description: 'Build fc44 x86_64 and trixie amd64 only and publish them to the staging channel for the next layer; publishes nothing to the real channel'
+        description: 'Build fc45 x86_64 and trixie amd64 only and publish them to the staging channel for the next layer; publishes nothing to the real channel'
         type: boolean
         default: false
 
@@ -45,7 +45,7 @@ jobs:
     permissions:
       contents: read
     container:
-      image: fedora:44
+      image: fedora:45
     steps:
       - name: Install node
         run: |
@@ -57,13 +57,23 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.18.0' 'omx-contract-data < 4' 'plugin-hostd-contract >= 0.20.7' 'plugin-hostd-contract < 0.21'
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract-data >= 3.21.0' 'plugin-db-contract >= 0.5.0'
+          # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
+          # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
+          dnf install -y --setopt=install_weak_deps=False 'omx-contract >= 3.21.0' 'omx-contract-devel >= 3.21.0' 'libomx-domain-devel >= 3.21.0'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
       - name: The checkout is a git directory this job may read
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install the real MOD bundles the importer proof reads
+        # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
+        # bundle reads them where they are installed, and no MOD file is copied into this tree.
+        run: |
+          dnf copr enable -y ycollet/audinux
+          dnf install -y --setopt=install_weak_deps=False caps-lv2
+      # npm ci installs omx-dsp (package.json's @openmixer/omx-dsp), the curve the cases read, as in ci.yml
       - run: npm ci
       - name: The tag names the package version
         if: github.ref_type == 'tag'
@@ -75,12 +85,19 @@ jobs:
       - name: npm test, the lilv proofs required (python3-lilv is installed above)
         env:
           OMX_PANEL_LILV: required
+          # the importer's proof on the installed caps bundles runs here, or the job fails: no skip for a missing bundle
+          OMX_PANEL_REAL_BUNDLES: required
+          # the panel domain is formatted and validated here by the installed omx-contract CLI, or the job fails
+          OMX_CONTRACT_CLI: /usr/lib/omx-contract/bin/omx-contract.mjs
         run: npm test
       - name: The shared private-refs and SPDX checks, outside the checkout they scan (at v1)
         run: |
           git clone -q https://github.com/Open-Mixer/.github "$RUNNER_TEMP/openmixer-dotgithub"
           git -c advice.detachedHead=false -C "$RUNNER_TEMP/openmixer-dotgithub" checkout -q openmixer-v1
       - run: make check OPENMIXER_DOTGITHUB="$RUNNER_TEMP/openmixer-dotgithub"
+        env:
+          # the private-refs check reads this repository's visibility and topics from GitHub before it judges the tree
+          GH_TOKEN: ${{ github.token }}
       - name: The bump covers every change since the previous tag
         run: |
           prev=$(git tag --list 'v*' --sort=-v:refname --merged HEAD | grep -vx "v$(node -p 'require("./package.json").version')" | head -1)
@@ -92,12 +109,13 @@ jobs:
     with:
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      # omx-panel, and the renderer's shared library with its development files (each installed by the install checks)
-      binary-names: omx-panel omx-panel-render omx-panel-render-devel
+      # omx-panel, the renderer's shared library with its development files, the descriptions store (its library and
+      # command, and its development files) and the panel domain (each installed by the install checks)
+      binary-names: omx-panel omx-panel-render omx-panel-render-devel omx-panel-store omx-panel-store-devel omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       needs-mod-host: false
-      # omx-contract-data and plugin-hostd-contract, which %check reads,
+      # omx-contract-data and plugin-db-contract, which %check reads,
       # come from the channel
       channel-deps: true
     secrets: inherit
@@ -109,12 +127,12 @@ jobs:
     with:
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev
+      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''
       requires: ''
-      # omx-contract-data and plugin-hostd-contract, which the tests read,
+      # omx-contract-data and plugin-db-contract, which the tests read,
       # come from the channel
       channel-deps: true
     secrets: inherit

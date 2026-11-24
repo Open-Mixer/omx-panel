@@ -1,0 +1,613 @@
+{
+  "kind": "catalog",
+  "lang": "pt",
+  "owner": "omx-panel",
+  "messages": {
+    "PANEL_DISPLAY_KINDS.gain_reduction_bar": {
+      "text": "Uma barra que mostra a redução de ganho.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "03ad40765c387734861a7a8fb00a021f7cf65907d692710647cd9726663f853f"
+    },
+    "PANEL_DISPLAY_KINDS.transfer_curve": {
+      "text": "A curva de transferência da dinâmica: o nível de saída em função do de entrada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "6025ca94dd504e70ce62f6c57cb83c633fa8604705f440486f354524fb3b819a"
+    },
+    "PANEL_DISPLAY_KINDS.eq_response": {
+      "text": "A resposta em frequência do equalizador.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "0877c82ba2901b0b7a9f5ad0430069cd3a07270ba376f08938b5295580634940"
+    },
+    "PANEL_DISPLAY_KINDS.meter": {
+      "text": "Um medidor de nível.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2ca8f607dd30ba6ce17aea6ba8ef8b32f270b4ee043ada7d4b891fb23e2e8b5"
+    },
+    "PANEL_DISPLAY_KINDS.time_response": {
+      "text": "A resposta no tempo: as repetições de um atraso ou a cauda de uma reverberação.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ba75ee20c1bd3ded3b9f24b00af1eea2cebd05afcce7a8050fcb705eff254d35"
+    },
+    "PANEL_DISPLAY_SOURCES.curve": {
+      "text": "Uma curva que o plugin declara.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "850e649623c182a6b46558f20c630e2bcad638ace266205cfc665723ae909bd5"
+    },
+    "PANEL_DISPLAY_SOURCES.family": {
+      "text": "Os dados que a família de painéis implica.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9140db72be08d430d1fb8534b75cfeb039bf9e00057ec287241839d56b5b264b"
+    },
+    "PANEL_DISPLAY_SOURCES.gain_adjustment": {
+      "text": "O ganho que o processador aplica.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "dfb3bafbca9720e7d55452673fb05325a01b2eb8f7394b7053f2d36cddf9abad"
+    },
+    "PANEL_DISPLAY_SOURCES.meters": {
+      "text": "As leituras dos medidores do plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "617533371cf411b2cf39e880a0f97fe42bf541fd22cb5a4b856a5a792d8f1e22"
+    },
+    "PANEL_FAMILIES.deesser": {
+      "text": "A família de painel de um de-esser.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "2e80851594f548fe38bf9b71c6a179e0fe226ae660b7ec422d111f08f577eaee"
+    },
+    "PANEL_FAMILIES.delay": {
+      "text": "Uma família de painéis para delay.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "39632e3c2f4ccd94068f32d088de776ac7caec3b90b9ad88876743e955182d11"
+    },
+    "PANEL_FAMILIES.drive": {
+      "text": "Uma família de painéis para saturadores ou distorções.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5984a37474e21563302bf0bf66b47511cf99b5967cf7842f6801639a0243a47f"
+    },
+    "PANEL_FAMILIES.dynamics": {
+      "text": "A família de painel de um compressor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "fa2c2b321a53cef9faff3d5cc52438413529b6d8dcc3f48cccd286d51f3a01ce"
+    },
+    "PANEL_FAMILIES.eq": {
+      "text": "A família de painel de um equalizador, paramétrico ou gráfico.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "1be3fd049d5af58fa4d3f884df995604775d9ca1fc991382d6afd2a33c8852aa"
+    },
+    "PANEL_FAMILIES.filter": {
+      "text": "A família de painel de um filtro.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5765a92579509e3b59550271c259e7e9c97c3c4c0728a1869f71e2bbf3769767"
+    },
+    "PANEL_FAMILIES.gate": {
+      "text": "A família de painel de um gate ou de um expansor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "335c1e42f489bcccc2bc5ab2f2ee13bf2d8c5f33bb30772a59dc3b0b0b9669a5"
+    },
+    "PANEL_FAMILIES.limiter": {
+      "text": "A família de painel de um limiter.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c7d6dec58579dc0d58e0fa0718612d33b66440c2e756da2089b1d4c9399e4896"
+    },
+    "PANEL_FAMILIES.modulation": {
+      "text": "Uma família de painéis para chorus, flanger, phaser ou tremolo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "16011b067f1656202cc6c9bb5ed5c5468161eab515c589454e915a9e46202e79"
+    },
+    "PANEL_FAMILIES.none": {
+      "text": "Um plugin sem família: seu painel é disposto a partir de seus grupos e seus papéis.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "c0fdc99c45116d4cff42136cf0158a8daaee2016eab2f865fc99f8ec28a5219a"
+    },
+    "PANEL_FAMILIES.pitch": {
+      "text": "Uma família de painéis para pitch shifter.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "7e5d400f3ec6105e741da32756a023f90b260dba103556d4ea8cb383e1a3ebac"
+    },
+    "PANEL_FAMILIES.reverb": {
+      "text": "Uma família de painéis para reverb.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "05ef5c056ad778a381dc2f2122deb6b774359a8658883a4d9cef2f16e81fad8b"
+    },
+    "PANEL_FAMILIES.utility": {
+      "text": "Uma família de painéis para utilitários: um trim, um controlo de largura, um equilibrador ou um clipper.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "403438fa1cccb39d52e91587502cf94860f203012166395e4317cdb64629f803"
+    },
+    "PANEL_PLACEMENTS.bus": {
+      "text": "Uma instância num bus.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8ca00e6dcf4cf5613a411bb25981b76beeba669fba1eeed1d2b32dc6bdffa4a0"
+    },
+    "PANEL_PLACEMENTS.insert": {
+      "text": "Uma instância na cadeia de insert.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f2f1de26ee7dc81a7fd07063d3e99a009021901acc17fe13e7a47fc0f48efe6a"
+    },
+    "PANEL_PLACEMENTS.master": {
+      "text": "Uma instância no master.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "de46ff87d59217184fc58d8c8747b66ac9464fb58f8d6e628b7eb7fd65bc9d11"
+    },
+    "PANEL_PLACEMENTS.return": {
+      "text": "Uma instância numa pista de retorno.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "307e4ce780d050bd2508c8aa43271d077aa66074cc49d160a0c2a9c0deea9a46"
+    },
+    "PANEL_STANDARD_WIDGETS.curve": {
+      "text": "Uma curva de resposta ou transferência, desenhada como um gráfico.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0a7920fd9b263d3ebb3e32117e05a7f58280c4cdc0734d3fae6481ebe0087668"
+    },
+    "PANEL_STANDARD_WIDGETS.display": {
+      "text": "Um valor mostrado como texto.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "6e013d5873685d59d99827aaaf6a77533d25983f85b9215685b2e5f55009bbb1"
+    },
+    "PANEL_STANDARD_WIDGETS.fader": {
+      "text": "Um controle longo, desenhado como um fader.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "efbf109439a8c3888f791465c872ef57bcbae7cc0899165676ab95ef228ffeff"
+    },
+    "PANEL_STANDARD_WIDGETS.knob": {
+      "text": "Um controle rotativo, desenhado como um botão.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "e6c672d8c14ebe015ee1a3e8cb7b2aad90b4876151b8957390ec05bc0bb6cc30"
+    },
+    "PANEL_STANDARD_WIDGETS.meter": {
+      "text": "Uma leitura, desenhada como um medidor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "9a9066901c13f888069e833a57740d7b910de67f72d77fefd10c1d02b7279e0f"
+    },
+    "PANEL_STANDARD_WIDGETS.selector": {
+      "text": "Um controle de valores inteiros ou rotulados, desenhado como um seletor.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ebc164759fd083dc7d7ee184182e9d60e40c491722195f36d21cb59170c66964"
+    },
+    "PANEL_STANDARD_WIDGETS.switch": {
+      "text": "Um interruptor, desenhado como um switch.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "98b2658b477130cc95ff55c83b96ce1ece461a4cf0c5b2aac7f63c1ef3ba5566"
+    },
+    "PANEL_STANDARD_WIDGETS.xy": {
+      "text": "Dois controles desenhados juntos como um ponto em um plano.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ea76439d1a2cdf7fdf71fc2f5e5c0aaeb95c12e111b4fd03311f05b0f72ef53d"
+    },
+    "PANEL_WIDGETS.auto": {
+      "text": "Deixado de fora de uma declaração de painel: o layout escolhe o widget do controle.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a22458b4a94ae0983acc62a8fc805ccac81b52521ef3801d93587c89733b2676"
+    },
+    "PANEL_WIDGETS.fader": {
+      "text": "Um controle linear.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "f850832e569562ebd52de79dd1b082e1dee30ab7893f7173ae1ae6ac614092da"
+    },
+    "PANEL_WIDGETS.knob": {
+      "text": "Um controle rotativo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "dafbc707b0588ef18141ce808852c376a358804a6d9d33252556fc4fefbc9277"
+    },
+    "PANEL_WIDGETS.selector": {
+      "text": "Um controle que escolhe um de alguns valores.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "bc89412b58b3c796dd602bacb38091876f4c8342856f9ec50672a8deb67d4791"
+    },
+    "PANEL_WIDGETS.switch": {
+      "text": "Um controle de dois estados.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "3a108468ff6ad2eef53811db2720e3738b3427f03ad7b8a0515b64de399a8383"
+    },
+    "PANEL_STORE_CODES.panel-store.absent": {
+      "text": "O ficheiro da base não existe.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4886d70a72641c5b033e7b3fcdc28a4882979d352cec3dc811a050152877196f"
+    },
+    "PANEL_STORE_CODES.panel-store.unreadable": {
+      "text": "Um ficheiro do armazém existe e não pode ser lido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "9442fb05d12e7f5bf6c4ac4deb884fdef51513f76069abc919beb8dad59a3a5b"
+    },
+    "PANEL_STORE_CODES.panel-store.not-a-store": {
+      "text": "O ficheiro não é um armazém da camada com que foi aberto.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b548c5415a33726dd9e3b43f3c6d64c821cdf1a05a372b71f621b35965dd6874"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-mismatch": {
+      "text": "Os ficheiros do armazém têm versões de esquema diferentes.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "770133c9bd5b295a772c6c338a2097eec3a59be393a1acd3ac083670aeabd092"
+    },
+    "PANEL_STORE_CODES.panel-store.schema-other": {
+      "text": "Um ficheiro do armazém tem outra versão de esquema que a do leitor.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98debebefb977b5d4704404f644c39dceb85c024492032d1ac7c9bf67871e3b5"
+    },
+    "PANEL_STORE_CODES.panel-store.domain-too-old": {
+      "text": "Um domínio instalado é mais antigo do que aquele com que o armazém foi verificado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "b6f217f98b6f7dd80da59171421bd6af7512a9dc882f8a4edd6b735d6a3e2f76"
+    },
+    "PANEL_STORE_CODES.panel-store.word-unknown": {
+      "text": "Uma palavra guardada não está em nenhum dos itens com que a coluna é verificada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "981bbabd1afbb0fa0a1a55643cd20695b035ae186075b47af22f66f71fd2381d"
+    },
+    "PANEL_STORE_CODES.panel-store.hot-journal": {
+      "text": "Uma camada tem um diário ativo: o seu escritor parou dentro de uma transação.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "98b1dac00f36f5e0a81d583a2856f5071480a91c2ae6841840f96f26a3116b56"
+    },
+    "PANEL_STORE_CODES.panel-store.busy": {
+      "text": "Uma camada ficou bloqueada além do tempo limite.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "207d5cc48aa4288d7a67d5103d373460c0fe370fd42613d909c0e69318e84339"
+    },
+    "PANEL_STORE_CODES.panel-store.entry-invalid": {
+      "text": "A entrada não é uma entrada do esquema de descrição, ou tem uma palavra que o seu item não tem.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4bf1960cce76c5a5c3932e6d9332c589dfb2c1a34ea9ed291010039ea050c47e"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.no-controls": {
+      "text": "{plugin} não tem nenhum controle que um painel possa mostrar, então ele não recebe um painel ({message}).",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0d8937eb7e62f845a685c5968ea99e639e47ffff52ebc9c9baa99af247c60e78"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.family-not-backed": {
+      "text": "Os controles de {plugin} não carregam o que essa família de painéis precisa ({message}); escolha outra família ou nenhuma.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "3aef7b0ffe7bf5e75c878c47337b0274d4a32aed3acac3554013ab1eb340d19f"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.layout-invalid": {
+      "text": "O painel declarado para {plugin} não pode ser disposto ({message}); corrija sua declaração de painel.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "d93b3b2b757014cf7f002210d32d8d714a14b18f5229a72ef1cf34e0ae16aa0a"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-unavailable": {
+      "text": "As camadas de sobreposição {layers} para {plugin} não foram aplicadas: este host não pode ler sobreposições.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "d51652ba74184827831d8ab26f283d4ae7cbb7fab2322bfee38f056ba373f3fa"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-refused": {
+      "text": "A camada de sobreposição {layer} ({name}) para {plugin} foi recusada: {message}. As camadas abaixo ainda se aplicam.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "fbfc148f4cd135c2b0fec5d21b81a28d32eb94e862094036e532a7697d7e0577"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.override-dropped": {
+      "text": "Na camada de sobreposição {layer} ({name}) para {plugin}, a entrada para {control} foi descartada: {message}.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "982d684624425a47663cd4a09deb8a8fe452cf2374658778e113409a126ed045"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.role-dropped": {
+      "text": "A função {entry} em {symbol} de {plugin} não está sendo mostrada ({reason}); o controle permanece em sua página.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ad6c38efee765d69c30aa71caed9c0be73c03edbca33141f32c8bf212c50e368"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.skin-dropped": {
+      "text": "A entrada {field} da skin {entry} para {plugin} foi descartada ({reason}); o restante da skin ainda se aplica.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "42f8b6bde1ee7a02b5d2925be21c0a3d5106433647a75423b7a8ef24d441177d"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.meter-refused": {
+      "text": "O medidor {symbol} de {plugin} foi omitido: {reason}.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a21a314334feea1060c5d7efd4abd090d3d2d552b109ce4d308d2c5d43107a67"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.param-unserved": {
+      "text": "O parâmetro {symbol} de {plugin} não está sendo servido: sua faixa {range} não é um caminho nem um texto.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "d12649c4da7d53ec2c5994f698d9e65f48cfbad01b07d9b765e61753dd69ee3e"
+    },
+    "PANEL_GROUP_OUTCOMES.nothing-to-do": {
+      "text": "O plugin fica como está.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f8fd9aa31a359c0b38d76ba56f11dc7ff159ab6f0bfee9fa0890deebc8ffd66b"
+    },
+    "PANEL_GROUP_OUTCOMES.grouped": {
+      "text": "Cada controlo foi colocado num grupo.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "126fa341f699289b9f248f0b4b97cd36016f079d3569cb32d028959936dcfa2a"
+    },
+    "PANEL_GROUP_OUTCOMES.no-confident-grouping": {
+      "text": "As regras não encontraram um agrupamento fiável.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "da71ee8c7ba68581ceaff2a638882de8bd80a066c260c06abcc8b2beaf06c2f5"
+    },
+    "PANEL_GROUP_REASONS.no-controls": {
+      "text": "O plugin não tem controlos a colocar.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e34d2c0387467d79db3d8b7c7b6bbc19cc4d93756f0d9b6f379f3ba5b8f85b06"
+    },
+    "PANEL_GROUP_REASONS.own-groups-complete": {
+      "text": "Os grupos do próprio plugin já colocam todos os controlos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ed9cac998cb42d947e35209b45f710ba4fbc544628ad0a9d699f9b245205b451"
+    },
+    "PANEL_GROUP_REASONS.fits-one-screen": {
+      "text": "Os controlos cabem num ecrã.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "e1e3590b2b38e8fe21c7b69d782a24f5f0735931d57d76e188e71ba22c8fcfd1"
+    },
+    "PANEL_GROUP_REASONS.unplaced-controls": {
+      "text": "Nenhuma regra colocou um controlo.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "22f49c012a775707abe3b6ac9373e87e6201733ea05c4bcc8b7f659b089c67ab"
+    },
+    "PANEL_GROUP_REASONS.too-few-groups": {
+      "text": "As regras fizeram poucos grupos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "682e56081d9171f1e75411bada1a56beeca0f594a3c298ab6df2a6d46d5fdb63"
+    },
+    "PANEL_GROUP_REASONS.too-many-groups": {
+      "text": "As regras fizeram demasiados grupos.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "5036c139cfee4b339931b175a181fe868b8094935704d34e4e1844e6bdf0d797"
+    },
+    "PANEL_GROUP_REASONS.mostly-by-index": {
+      "text": "A maioria dos controlos foi colocada apenas por uma série de índices de porta.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "a69e7e129a266ed3ded35466f446bbaa756ce86e3465d345d6c71f4e50f3cc00"
+    },
+    "PANEL_GROUP_RULES.own": {
+      "text": "O grupo do próprio plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "2d7f87e4b524d41a5b6d95c77e7da0ab58b5140c0953547deb6ee96da4db0352"
+    },
+    "PANEL_GROUP_RULES.designation": {
+      "text": "Uma designação do vocabulário de parâmetros.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "29a54fa52bd74ba71c5c80105b32bf5363e417172e215a8b1c20ae9d35250e7c"
+    },
+    "PANEL_GROUP_RULES.name": {
+      "text": "Um prefixo de nome ou símbolo, ou um número, partilhado.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ae53596d003ed3654d198720814e735cf37b4855075c3a0ce56df79eef1e1d9c"
+    },
+    "PANEL_GROUP_RULES.unit": {
+      "text": "Uma unidade partilhada.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "4ee5c86a73656aecac990237516633f0cd8895b4ce4d9435fbf821407d0eac68"
+    },
+    "PANEL_GROUP_RULES.index": {
+      "text": "Uma série de índices de porta.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "825eee304bf393c82b98b2ebbfb3f9830f587f4504507138295d25a6ca99a398"
+    },
+    "PANEL_GROUP_RULES.modgui": {
+      "text": "O esquema MOD GUI do próprio plugin.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "c8745485e14ce421ae90e6a9c4ca1a182c5077a621f4e697e4cbf26509729b23"
+    },
+    "PANEL_GROUP_RULES.instance": {
+      "text": "Um grupo de uma instância de um grupo repetido.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "646fe87a13d99ad9cb920ad6cbbac76cd71a57abcb5830bd1aab05f2e3a09d3d"
+    },
+    "PANEL_SKIN_CODES.panel.skin.override-invalid": {
+      "text": "A sobreposição para {plugin} é inválida em {field}; corrija skin.json e recarregue o skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "eab6928c6a32766a7c0347a00fa5480523e70ef3c63965d2c4732e63d3eba787"
+    },
+    "PANEL_SKIN_CODES.panel.skin.override-entry-dropped": {
+      "text": "A entrada {entry} de {field} para {plugin} foi descartada ({reason}); o restante da sobreposição ainda se aplica.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "5c9604e417a4f6fc6cb686cd65b9b28e150eeee4dfe408b382068c7083fce028"
+    },
+    "PANEL_SKIN_CODES.panel.skin.api-mismatch": {
+      "text": "Este skin declara a API {declared}, que este console não suporta (ele serve {supported}); o skin não foi carregado.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "192aef3f6089c428a49377ad97ee3b1517d62321c94226a485a8d9e1b87f1b67"
+    },
+    "PANEL_SKIN_CODES.panel.skin.view-error": {
+      "text": "A visualização do skin falhou: {message}. Recarregue-o ou remova o skin se continuar falhando.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0244e35396bf647ce54d605cc4e811ec2c76aacfc6a95956eb1233dfd81db8c3"
+    },
+    "PANEL_SKIN_CODES.panel.skin.view-lint": {
+      "text": "A visualização {file} usa a palavra proibida {word}; remova-a e recarregue o skin.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "dbf53148cd7052ec872917c7d65edadc36b6b89ae56355406f00e9e9e5718e84"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.not-found": {
+      "text": "Nenhum MOD GUI para importar foi encontrado em {file} ({detail}); nada foi escrito.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "0ebebee5aaa3febf4f0a6a0009a2630bc7094e0dc4903d31fae0a81fba28d0d2"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.ttl-invalid": {
+      "text": "O arquivo {file} do pacote não é lido como TTL válido ({detail}); corrija-o e importe novamente.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "2fbeedc1735931fbef746f2b6e3f0a4cfc50e70523d15b32a36a9dd0a2e22d8d"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.no-licence": {
+      "text": "{file} não declara nenhuma licença ({detail}); adicione uma ao seu pacote antes que o MOD GUI possa ser importado.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a28fe232511d5ceb27b3aec158b9b5c41779d29a07689bd50f596f10ff2d14b8"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.licence-unmapped": {
+      "text": "A licença em {file} não é uma que este importador mapeie para um ID SPDX ({detail}); adicione o mapeamento ou altere a licença.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "99774d13cc82dcde8ff3bca50d0ccc70f122102927c7c0ad7ca67a1fc651900f"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.licence-refused": {
+      "text": "A licença em {file} está fora da lista permitida ({detail}); o MOD GUI não é importado.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "72f4d619ae4cf2d2ad4ad258151b7e69fedb2719a13b7505c0f197a90e5a2879"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.unknown-property": {
+      "text": "{file} carrega uma propriedade desconhecida ({detail}); remova-a ou corrija-a antes de importar.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "d275c04d32649050d5fd0afeeb4d66f6bba9fa5ef6e95e2590a2899e4f7e90ea"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.port-unknown": {
+      "text": "{file} nomeia uma porta que não é uma das portas do plugin ({detail}); corrija o símbolo e importe novamente.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "b253a88c2c2a3b441ecfa71881cdddcf6ba0cce27008725bd42dfce12a1dce96"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.image-not-found": {
+      "text": "{file} nomeia uma imagem que não está nos recursos do pacote ({detail}); adicione o arquivo ou corrija a referência.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "6fb2dad4fdcf08dc5658a25f1a638d67d28566d87d844d0a99c863956cfd329d"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.path-escape": {
+      "text": "{file} nomeia um caminho que resolve fora do pacote ({detail}); nada é importado de fora do pacote.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "396fc32954b25c018cf0b4ef725969e109d25bf735c3ae0e78200a4e19138801"
+    },
+    "PANEL_MODGUI_CODES.panel.modgui.target-exists": {
+      "text": "{file} já existe ({detail}); remova-o primeiro para importar sobre ele.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "31e251dbbfe2c7e17ce955a8168068f582971d6f617ac0fd5b880acaa34b0f09"
+    },
+    "PANEL_MODGUI_CODES.panel.skin.modgui-licence": {
+      "text": "O script MOD GUI para {plugin} foi descartado: sua licença {licence} está faltando ou não é permitida.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "772bcf9e050394d8a5c6be509cc9982f73fc8858726f20afecd344acba2284aa"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-too-few": {
+      "text": "Um grupo de barras de {plugin} tem poucos controles para desenhar como barras ({message}); eles são desenhados como botões.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "611e560479557cab540b926ec2bea6c1ab8c4602c8819789d0490281deb1d1aa"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-not-travel": {
+      "text": "Um grupo de barras de {plugin} contém um controle que não pode ser uma barra ({message}); corrija o grupo na declaração do painel.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "a705a879593c6960cff7d67d6961a77e952c2bebb9a5b1c48f316389bca4435a"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-facts-differ": {
+      "text": "Os controles de um grupo de barras de {plugin} diferem em faixa, passo, unidade ou escala ({message}); as barras devem compartilhá-los.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "ce52a1720f0d9c17fe37e2b918f64d0f5e6dbb8e37644f5a898f7c31d1fd0076"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-labels-not-series": {
+      "text": "Os rótulos de um grupo de barras de {plugin} não formam uma série ({message}); renomeie-os ou divida o grupo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "34b550c209a88a51af7b2f15267e472806464006a2a47a0538e0d9fe606b4112"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.bars-unknown-control": {
+      "text": "Um grupo de barras de {plugin} nomeia um controle que o plugin não possui ({message}); corrija o símbolo.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "18b0555e220142971d8d75d0eca6c09ce7dbeefcc37d0107af58547b74626a6b"
+    },
+    "PANEL_DESCRIBE_CODES.panel.describe.easy-refused": {
+      "text": "A lista Easy de {plugin} foi recusada ({message}); a página Easy usa a regra em vez disso.",
+      "by": "machine",
+      "model": "draft-prose",
+      "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
+    },
+    "PANEL_DISPLAY_AXES.linear": {
+      "text": "Um eixo linear: um nível em dB num intervalo linear.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "097771ce5282009b7b2da9af193c41fa13e9f790eec1403a377fc198e6395dfb"
+    },
+    "PANEL_DISPLAY_AXES.log-frequency": {
+      "text": "Um eixo de frequência logarítmico: a frequência em Hz em escala logarítmica, o nível em dB em torno de 0.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "84d71cb0c7ff5bf29c11e5c194d56996b5a27b65b656aea4f5fd4f8af6c9a8da"
+    },
+    "PANEL_DISPLAY_AXES.time": {
+      "text": "Um eixo de tempo: o tempo em ms desde 0, o nível em dB desde o piso.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "46633ca72d9a1af20d0ea479e30cbe230a33da294832b58580df3aabae9b5d10"
+    }
+  }
+}

@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { skipWithoutTwin, FIXTURES, RENDERER, compare, decodePng, descriptionFile, encodePng, render, scratch, stateFile } from './harness.mjs';
+import { FIXTURES, RENDERER, compare, decodePng, descriptionFile, encodePng, render, scratch, stateFile } from './harness.mjs';
 
 const GOLDEN = join(RENDERER, 'test', 'golden');
 const UPDATE = process.env.OMX_PANEL_RENDER_UPDATE === '1';
@@ -28,9 +28,11 @@ const READINGS = { gr: { fraction: 0.4, text: '8 dB' }, outlevel: { fraction: 0.
 
 for (const fx of FIXTURES) {
   for (const [sizeName, size] of SIZES) {
+    // a fixture with a committed MOD GUI screenshot has its natural size held by parity.test.mjs, exact against the screenshot and the face
+    if (sizeName === 'natural' && fx.screenshot) continue;
     for (const scale of SCALES) {
       const file = join(GOLDEN, `${fx.name}-${sizeName}@${scale}x.png`);
-      test(`${fx.name}, ${sizeName}, ${scale}x: the golden image`, skipWithoutTwin(fx), () => {
+      test(`${fx.name}, ${sizeName}, ${scale}x: the golden image`, () => {
         const dir = scratch();
         const readings = Object.fromEntries(Object.entries(READINGS).filter(([sym]) => fx.descriptor.includes('zamcomp') && sym));
         const drawn = render(descriptionFile(fx, dir), stateFile(fx, dir, readings), { scale, ...(size ? { size: size.map((n) => n * scale) } : {}) });

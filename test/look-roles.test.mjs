@@ -3,15 +3,17 @@
 // The colour roles (the one-panel spec, §7.10): declared once in
 // schema/look-roles.json, each with its family, its floor and ONE default; tools/look.json and the renderer's role list
 // derive from that file; the hand copy of the console's cascade (tools/look/tokens.css) is gone; no surface spells a
-// colour, every token a surface reads is a role; and each role a surface reads moves what it draws. Every rule has a
-// sabotage arm.
+// colour, every token a surface reads is a role; and each role a surface reads moves what it draws. The defaults are
+// the vintage look and tools/look.json, shipped in the package, is their one public source; the knob's pointer and a
+// curve's stroke are roles of their own, and a look that lacks either is refused by name (docs/modgui.md "The look").
+// Every rule has a sabotage arm.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { checkRoles, contrast, emitLook, emitRoleHeader, loadRoles, LOOK_JSON, ROLE_HEADER, ROLES_JSON } from '../tools/look.mjs';
-import { generateModgui, loadLook, renderFaderFilm, renderFilm } from '../tools/modgui-gen.mjs';
+import { emitStylesheet, generateModgui, loadLook, renderFaderFilm, renderFilm, resolvePanel } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const doc = loadRoles();
@@ -19,10 +21,10 @@ const clone = () => structuredClone(doc);
 const role = (d, n) => d.roles.find((r) => r.name === n);
 
 /** The census of §7.10: surfaces and rim, ink, legend, glass, accent, the meter zones, the EQ delta pair, the state
- * lamps, the origin marks. */
+ * lamps, the origin marks; and the two roles of one drawing each, the knob's pointer and a curve's stroke. */
 const CENSUS = [
   '--surface', '--surface-2', '--surface-3', '--glass', '--border', '--border-strong',
-  '--ink', '--ink-dim', '--ink-faint', '--legend', '--accent',
+  '--ink', '--ink-dim', '--ink-faint', '--legend', '--accent', '--knob-pointer', '--curve-stroke',
   '--meter-green', '--meter-amber', '--meter-red', '--eq-delta-boost', '--eq-delta-cut',
   '--state-engaged', '--state-reduction', '--state-bypass',
   '--origin-fbs', '--origin-hrp', '--origin-room-mode',
@@ -33,7 +35,7 @@ const CHROME = ['--knob-face', '--knob-edge', '--fader-cap', '--fader-slot', '--
 test('the role file is the census: the roles §7.10 names, under the console token names, and no chrome', () => {
   assert.deepEqual(doc.roles.map((r) => r.name), CENSUS);
   for (const c of CHROME) assert.equal(role(doc, c), undefined, `${c} is chrome, not a role`);
-  assert.deepEqual(doc.look, { theme: 'dark', accent: 'cyan', finish: 'aluminium', style: 'modern' });
+  assert.deepEqual(doc.look, { theme: 'dark', accent: 'orange', finish: 'aluminium', style: 'vintage' });
 });
 
 test('each role once, its family one of four, a floor or a ground, one default: the file as committed breaks no rule', () => {
@@ -110,6 +112,56 @@ test('the hand copy of the console cascade is gone, and nothing ships or names i
   assert.match(readFileSync(join(ROOT, 'tools/copy-data.mjs'), 'utf8'), /'schema\/look-roles\.json'/);
 });
 
+/** The two roles that are one drawing each (docs/modgui.md "The look"). */
+const OWN = ['--knob-pointer', '--curve-stroke'];
+
+test('the knob pointer and the curve stroke are roles: what each colours, its family, and the accent no longer names either', () => {
+  const pointer = role(doc, '--knob-pointer'), stroke = role(doc, '--curve-stroke');
+  assert.equal(pointer?.family, 'fixed', 'the pointer does not follow the accent');
+  assert.match(pointer?.draws ?? '', /\bpointer\b/);
+  assert.ok(pointer?.floor?.on.includes('--surface-3'), 'the pointer is read on the knob\'s body');
+  assert.equal(stroke?.family, 'accent');
+  assert.match(stroke?.draws ?? '', /\bcurve\b.*\bstroke\b|\bstroke\b.*\bcurve\b/);
+  assert.ok(stroke?.floor?.on.includes('--surface-3'), 'the stroke is read on the curve\'s frame');
+  assert.doesNotMatch(role(doc, '--accent').draws, /pointer|curve/);
+});
+
+test('the defaults are the vintage tokens: the console\'s dark theme, orange accent and vintage glass, the cream pointer', () => {
+  const at = (n) => role(doc, n)?.default;
+  assert.equal(at('--accent'), '#e8732c');
+  assert.equal(at('--glass'), '#05070a');
+  assert.equal(at('--knob-pointer'), '#f4efe2');
+  assert.equal(at('--curve-stroke'), at('--accent'), 'at the vintage look the stroke is the accent\'s colour');
+});
+
+test('a look missing --knob-pointer or --curve-stroke is refused by name: a host\'s values, look.json as the generator loads it, the MOD GUI', () => {
+  for (const n of OWN) {
+    const values = Object.fromEntries(doc.roles.map((r) => [r.name, r.default]));
+    assert.ok(n in values, `${n} is a role with a default`);
+    delete values[n];
+    assert.match(checkRoles(doc, values).join('\n'), new RegExp(`${n} has no #rrggbb value`));
+    const base = loadLook();
+    assert.ok(n in base.tokens, `tools/look.json carries ${n}`);
+    const tokens = { ...base.tokens };
+    delete tokens[n];
+    assert.throws(() => modguiAt({ ...base, tokens }), new RegExp(`sets no ${n}\\b`));
+  }
+});
+
+test('the MOD GUI draws the pointer in --knob-pointer and the curve line in --curve-stroke, neither in --accent', () => {
+  const base = loadLook('console');
+  const read_ = reads('tools/modgui-gen.mjs', text('tools/modgui-gen.mjs'));
+  for (const n of OWN) assert.ok(read_.includes(n), `the generator reads ${n}`);
+  for (const n of OWN) assert.ok(reads('renderer/src/view.c', text('renderer/src/view.c')).includes(n), `the renderer reads ${n}`);
+  // the knob film is a knob's rim, body and pointer and nothing else: the accent moves no byte of it, the pointer does
+  const film = (tokens) => renderFilm({ ...base, tokens: { ...base.tokens, ...tokens } });
+  assert.ok(film({ '--accent': '#010203' }).equals(film({})), 'the accent moved the knob film: the pointer is still drawn in it');
+  assert.ok(!film({ '--knob-pointer': '#010203' }).equals(film({})), '--knob-pointer moved nothing of the knob film');
+  // the template's curve line is stroked by the stylesheet
+  const css = emitStylesheet(resolvePanel(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay' }), { ...base, tokens: { ...base.tokens, '--curve-stroke': '#010203' } }, 'look-roles test');
+  assert.match(css, /\.omx-curve-line \{ stroke: #010203;/);
+});
+
 test("the renderer's role list is the role file's, and read_look walks it", () => {
   assert.equal(emitRoleHeader(doc), readFileSync(ROLE_HEADER, 'utf8'));
   const view = readFileSync(join(ROOT, 'renderer/src/view.c'), 'utf8');
@@ -165,9 +217,9 @@ test('positive control: the ratchet sees the reads it judges (--accent in the ge
 
 test('arm: a hex colour, an rgb() and a named colour in the generator are red; so is a token that is no role', () => {
   const gen = text('tools/modgui-gen.mjs');
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
-  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: #ff0000'), NAMES).join('\n'), /spells the colour '#ff0000'/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: rgb(1, 2, 3)'), NAMES).join('\n'), /spells the colour 'rgb\('/);
+  assert.match(surfaceFaults('g', gen.replace("background: ${tok['--surface-3']}", 'background: white'), NAMES).join('\n'), /spells the colour 'white'/);
   assert.match(surfaceFaults('g', gen.replace("tok['--accent']", "tok['--tab-line']"), NAMES).join('\n'), /reads --tab-line, which is no role/);
 });
 
@@ -186,11 +238,11 @@ const read = (f) => JSON.parse(readFileSync(join(FIX, f), 'utf8'));
 /** The MOD GUI of omx-delay, every file it writes, at `look`. */
 function modguiAt(look) {
   const out = generateModgui(read('omx-delay.descriptor.json'), { panel: read('omx-delay.panel.json'), stem: 'omx-delay', source: 'look-roles test' }, look);
-  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look.tokens), renderFaderFilm(look.tokens)]);
+  return out.map(([, body]) => Buffer.from(body)).concat([renderFilm(look), renderFaderFilm(look)]);
 }
 
-test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws', () => {
-  const base = loadLook();
+test('a fixture per role: each role the MOD GUI reads, moved to a colour of its own, moves what it draws (the console look reads them all)', () => {
+  const base = loadLook('console');
   const drawn = [...new Set(reads('tools/modgui-gen.mjs', text('tools/modgui-gen.mjs')))].filter((n) => NAMES.includes(n));
   assert.ok(drawn.length >= 7, `the MOD GUI reads ${drawn.join(' ')}`);
   const was = modguiAt(base);

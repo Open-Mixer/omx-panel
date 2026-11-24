@@ -10,6 +10,7 @@
 
 #include "omx_panel_render.h"
 #include "raster.h"
+#include "scene.h"
 
 typedef struct omx_draw {
   void *ctx;
@@ -22,6 +23,9 @@ typedef struct omx_draw {
                      const omx_rgb *stops, size_t nstops, double alpha);
   /* `cps` already cut to fit; `x` the left edge, the centre or the right edge by `align`, `y` the baseline */
   void (*text)(void *ctx, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align align);
+  /* a drawing of the look (the vintage knob) painted with its origin at (ox, oy), `k` px per unit, the pointer at `angle` degrees from
+   * straight up; NULL where a backend does not paint scenes (the window's NanoVG, for now): the knob is then the flat one */
+  void (*scene)(void *ctx, omx_scene *s, double ox, double oy, double k, double angle);
 } omx_draw;
 
 /* The panel through `d`, laid out for a box of width x height device px at `scale`. */
