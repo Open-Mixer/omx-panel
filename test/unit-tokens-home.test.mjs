@@ -43,3 +43,9 @@ test('tools/group-model.mjs keeps no unit list of its own: the vocabulary is the
   assert.doesNotMatch(src, /'%'\s*:|\bkhz\s*:|\bpercent\s*:\s*'/, 'a unit spelled as a key of a table');
   assert.doesNotMatch(src, /\bunit\s*[!=]==?\s*'[^']*'/, 'a unit compared with a spelled word');
 });
+
+test('tools/meaning-infer.mjs reads a unit as its standard id, never a spelled word (#251)', () => {
+  const src = readFileSync(join(ROOT, 'tools', 'meaning-infer.mjs'), 'utf8');
+  assert.match(src, /unitIdOf/, 'positive control: it reads the vocabulary');
+  assert.doesNotMatch(src, /\bunit\w*\s*[!=]==?\s*'[^']*'|unitOf\([^)]*\)\s*[!=]==?\s*'[^']*'|toLowerCase\(\)[^\n]*unit|unit[^\n]*toLowerCase\(\)/, 'a unit compared with a spelled word');
+});
