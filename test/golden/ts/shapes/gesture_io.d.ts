@@ -420,7 +420,8 @@ export interface Refusal {
     | "GESTURE_HOLD_BELOW_FLOOR"
     | "GESTURE_NO_TARGET"
     | "GESTURE_PAINT_REQUIRED_ON_TOUCH"
-    | "GESTURE_BAD_SETTING";
+    | "GESTURE_BAD_SETTING"
+    | "GESTURE_BAD_INPUT";
   /**
    * The time of the refused event.
    */

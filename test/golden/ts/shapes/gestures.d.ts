@@ -56,6 +56,7 @@ export interface Gestures {
   inputs: Input[];
   table: Table;
   paint: Paint;
+  codes: Codes;
   /**
    * The section exceptions layered on the table; none today.
    */
@@ -202,6 +203,51 @@ export interface Paint {
    * Painting with a mouse.
    */
   mouse: "required" | "optional";
+}
+/**
+ * The refusal codes a gesture run answers, each by its name (GESTURE_READ_ONLY ...) with its sentence in English.
+ */
+export interface Codes {
+  /**
+   * The sentence of GESTURE_READ_ONLY.
+   */
+  GESTURE_READ_ONLY: string;
+  /**
+   * The sentence of GESTURE_CONTROL_OWNED.
+   */
+  GESTURE_CONTROL_OWNED: string;
+  /**
+   * The sentence of GESTURE_NO_DEFAULT.
+   */
+  GESTURE_NO_DEFAULT: string;
+  /**
+   * The sentence of GESTURE_NOT_IN_TABLE.
+   */
+  GESTURE_NOT_IN_TABLE: string;
+  /**
+   * The sentence of GESTURE_HOLD_SHORT.
+   */
+  GESTURE_HOLD_SHORT: string;
+  /**
+   * The sentence of GESTURE_HOLD_BELOW_FLOOR.
+   */
+  GESTURE_HOLD_BELOW_FLOOR: string;
+  /**
+   * The sentence of GESTURE_NO_TARGET.
+   */
+  GESTURE_NO_TARGET: string;
+  /**
+   * The sentence of GESTURE_PAINT_REQUIRED_ON_TOUCH.
+   */
+  GESTURE_PAINT_REQUIRED_ON_TOUCH: string;
+  /**
+   * The sentence of GESTURE_BAD_SETTING.
+   */
+  GESTURE_BAD_SETTING: string;
+  /**
+   * The sentence of GESTURE_BAD_INPUT.
+   */
+  GESTURE_BAD_INPUT: string;
 }
 /**
  * A section's exception layered on the table: in the named section, this widget's input means another word.

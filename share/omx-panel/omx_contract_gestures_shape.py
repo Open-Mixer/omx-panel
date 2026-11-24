@@ -8,6 +8,24 @@ from __future__ import annotations
 
 from typing import Literal, NotRequired, TypeAlias, TypedDict
 
+
+class Codes(TypedDict):
+    """
+    The refusal codes a gesture run answers, each by its name (GESTURE_READ_ONLY ...) with its sentence in English.
+    """
+
+    GESTURE_READ_ONLY: str
+    GESTURE_CONTROL_OWNED: str
+    GESTURE_NO_DEFAULT: str
+    GESTURE_NOT_IN_TABLE: str
+    GESTURE_HOLD_SHORT: str
+    GESTURE_HOLD_BELOW_FLOOR: str
+    GESTURE_NO_TARGET: str
+    GESTURE_PAINT_REQUIRED_ON_TOUCH: str
+    GESTURE_BAD_SETTING: str
+    GESTURE_BAD_INPUT: str
+
+
 Word: TypeAlias = Literal[
     'drag', 'fine', 'step', 'second', 'reset', 'more', 'select', 'toggle', 'paint'
 ]
@@ -171,4 +189,5 @@ class Gestures(TypedDict):
     inputs: list[Input]
     table: Table
     paint: Paint
+    codes: Codes
     exceptions: list[Exception]

@@ -41,6 +41,66 @@
     "paint": {
       "$ref": "#/$defs/Paint"
     },
+    "codes": {
+      "type": "object",
+      "title": "Codes",
+      "description": "The refusal codes a gesture run answers, each by its name (GESTURE_READ_ONLY ...) with its sentence in English.",
+      "properties": {
+        "GESTURE_READ_ONLY": {
+          "type": "string",
+          "description": "The sentence of GESTURE_READ_ONLY."
+        },
+        "GESTURE_CONTROL_OWNED": {
+          "type": "string",
+          "description": "The sentence of GESTURE_CONTROL_OWNED."
+        },
+        "GESTURE_NO_DEFAULT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NO_DEFAULT."
+        },
+        "GESTURE_NOT_IN_TABLE": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NOT_IN_TABLE."
+        },
+        "GESTURE_HOLD_SHORT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_HOLD_SHORT."
+        },
+        "GESTURE_HOLD_BELOW_FLOOR": {
+          "type": "string",
+          "description": "The sentence of GESTURE_HOLD_BELOW_FLOOR."
+        },
+        "GESTURE_NO_TARGET": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NO_TARGET."
+        },
+        "GESTURE_PAINT_REQUIRED_ON_TOUCH": {
+          "type": "string",
+          "description": "The sentence of GESTURE_PAINT_REQUIRED_ON_TOUCH."
+        },
+        "GESTURE_BAD_SETTING": {
+          "type": "string",
+          "description": "The sentence of GESTURE_BAD_SETTING."
+        },
+        "GESTURE_BAD_INPUT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_BAD_INPUT."
+        }
+      },
+      "required": [
+        "GESTURE_READ_ONLY",
+        "GESTURE_CONTROL_OWNED",
+        "GESTURE_NO_DEFAULT",
+        "GESTURE_NOT_IN_TABLE",
+        "GESTURE_HOLD_SHORT",
+        "GESTURE_HOLD_BELOW_FLOOR",
+        "GESTURE_NO_TARGET",
+        "GESTURE_PAINT_REQUIRED_ON_TOUCH",
+        "GESTURE_BAD_SETTING",
+        "GESTURE_BAD_INPUT"
+      ],
+      "additionalProperties": false
+    },
     "exceptions": {
       "type": "array",
       "description": "The section exceptions layered on the table; none today.",
@@ -59,6 +119,7 @@
     "inputs",
     "table",
     "paint",
+    "codes",
     "exceptions"
   ],
   "additionalProperties": false,

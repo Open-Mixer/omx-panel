@@ -151,6 +151,7 @@ class Refusal(TypedDict):
         'GESTURE_NO_TARGET',
         'GESTURE_PAINT_REQUIRED_ON_TOUCH',
         'GESTURE_BAD_SETTING',
+        'GESTURE_BAD_INPUT',
     ]
     t: float
     why: str
