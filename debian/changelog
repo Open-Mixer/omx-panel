@@ -1,3 +1,9 @@
+omx-panel (0.16.0) unstable; urgency=medium
+
+  * Sorting pass: V1, V2, V3, V4, V22 and V23d.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sun, 22 Nov 2026 12:30:00 +0100
+
 omx-panel (0.15.1) unstable; urgency=medium
 
   * Fix: the installed tools (modgui-gen, look, lv2-complement, modgui-import

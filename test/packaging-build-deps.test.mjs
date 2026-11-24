@@ -9,14 +9,15 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { packagingFloor, re } from './packaging-floors.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 
 const CLI = '/usr/lib/omx-contract/bin/omx-contract.mjs';
-const WASM_FLOOR = '0.33.0';
-// omx-contract's floor, as package.json declares it (contract-floor-agreement holds every other file to it)
-const CONTRACT_FLOOR = JSON.parse(read('package.json')).devDependencies['@openmixer/omx-contract'].match(/>=\s*(\d+\.\d+\.\d+)/)[1];
+// the floors the spec's main package states (packaging-floors.mjs): the build dependencies must say the same
+const WASM_FLOOR = packagingFloor('omx-dsp-wasm');
+const CONTRACT_FLOOR = packagingFloor('omx-contract');
 
 /** The body of the spec's %check section (to the next section header). */
 function specCheck(spec) {
@@ -38,8 +39,8 @@ function buildDepends(control) {
 
 test('the spec builds against the omx-contract CLI package and the packaged omx-dsp-wasm at its floor', () => {
   const spec = read('packaging/omx-panel.spec');
-  assert.match(spec, new RegExp(`^BuildRequires: omx-contract >= ${CONTRACT_FLOOR.replace(/\./g, '\\.')}$`, 'm'), `the spec lacks BuildRequires: omx-contract >= ${CONTRACT_FLOOR} (the CLI formats and validates the panel domain from that floor)`);
-  assert.match(spec, new RegExp(`^BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR.replace(/\./g, '\\.')}$`, 'm'),
+  assert.match(spec, new RegExp(`^BuildRequires: omx-contract >= ${re(CONTRACT_FLOOR)}$`, 'm'), `the spec lacks BuildRequires: omx-contract >= ${CONTRACT_FLOOR} (the CLI formats and validates the panel domain from that floor)`);
+  assert.match(spec, new RegExp(`^BuildRequires: omx-dsp-wasm >= ${re(WASM_FLOOR)}$`, 'm'),
     `the spec lacks BuildRequires: omx-dsp-wasm >= ${WASM_FLOOR}`);
 });
 
@@ -66,8 +67,10 @@ test('no vendored copy of the omx-dsp twin is kept in the tree', () => {
 });
 
 test('the sabotage arm: a spec without the CLI build dependency is red', () => {
-  const spec = read('packaging/omx-panel.spec').replace(/^BuildRequires: omx-contract >= 3\.19\.1\n/m, '');
-  assert.doesNotMatch(spec, /^BuildRequires: omx-contract >= 3\.19\.1$/m);
-  const control = read('debian/control').replace(/omx-dsp-wasm \(>= 0\.33\.0~\)/, '');
+  const line = new RegExp(`^BuildRequires: omx-contract >= ${re(CONTRACT_FLOOR)}$`, 'm');
+  assert.match(read('packaging/omx-panel.spec'), line, 'the plant needs the line to remove');
+  const spec = read('packaging/omx-panel.spec').replace(new RegExp(`^BuildRequires: omx-contract >= ${re(CONTRACT_FLOOR)}\n`, 'm'), '');
+  assert.doesNotMatch(spec, line);
+  const control = read('debian/control').replace(`omx-dsp-wasm (>= ${WASM_FLOOR}~)`, '');
   assert.equal(buildDepends(control).some((d) => d.startsWith('omx-dsp-wasm')), false);
 });

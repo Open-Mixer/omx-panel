@@ -38,20 +38,22 @@ import { inferBands } from './meaning-infer.mjs';
 import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
+import { panelCodes } from './vocabulary.mjs';
 
-/** The refusal codes of the derivation, beside the layout's and the bar rule's. */
-export const DESCRIBE_CODES = {
-  noControls: 'panel.describe.no-controls',
-  familyNotBacked: 'panel.describe.family-not-backed',
-  layoutInvalid: 'panel.describe.layout-invalid',
-  overrideUnavailable: 'panel.describe.override-unavailable',
-  overrideRefused: 'panel.describe.override-refused',
-  overrideDropped: 'panel.describe.override-dropped',
-  roleDropped: 'panel.describe.role-dropped',
-  skinDropped: 'panel.describe.skin-dropped',
-  meterRefused: 'panel.describe.meter-refused',
-  paramUnserved: 'panel.describe.param-unserved',
-};
+/** The refusal codes of the derivation, beside the layout's and the bar rule's: the panel domain's PANEL_DESCRIBE_CODES. */
+const CODE = panelCodes('PANEL_DESCRIBE_CODES');
+export const DESCRIBE_CODES = Object.freeze({
+  noControls: CODE.panelNoControls,
+  familyNotBacked: CODE.panelFamilyNotBacked,
+  layoutInvalid: CODE.panelLayoutInvalid,
+  overrideUnavailable: CODE.panelOverrideUnavailable,
+  overrideRefused: CODE.panelOverrideRefused,
+  overrideDropped: CODE.panelOverrideDropped,
+  roleDropped: CODE.panelRoleDropped,
+  skinDropped: CODE.panelSkinDropped,
+  meterRefused: CODE.panelMeterRefused,
+  paramUnserved: CODE.panelParamUnserved,
+});
 
 /** The LV2 range of a patch parameter -> the kind it is served as: a file (atom:Path) or a text (atom:String). */
 const TEXT_KIND_OF_RANGE = {
