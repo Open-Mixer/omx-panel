@@ -84,17 +84,24 @@ test('under the console style the same panel draws the flat knob: none of the me
   assert.notDeepEqual(pixel(img, at.cx + Math.sin(0.13) * 18.5 * k, at.cy + Math.cos(0.13) * 18.5 * k), hex(FINISH['--knob-edge']));
 });
 
-test('a style whose --knob is flat draws the flat knob, and the vintage and the flat panel differ only in the knob', () => {
+test('a style whose --knob is flat draws the flat knob: the vintage panel with it differs from the vintage one only in the knob', () => {
   const vintage = drawn('vintage').img, flat = drawn(undefined).img, other = drawn('console').img;
   assert.deepEqual(other.data, flat.data, 'the console style is the pinned data');
-  let off = 0;
+  // a look that names no style is worn as the roles give it: the console style's picture
+  assert.deepEqual(drawn('console', (look) => { delete look.style; }).img.data, flat.data, 'no style is the roles');
+  // the rest of the vintage style (the enclosure, the plates, the inks) is held to the MOD GUI's face by vintage-face.test.mjs
+  const flatKnob = drawn('vintage', (look) => { look.looks.vintage['--knob'] = 'flat'; }).img;
+  let off = 0, inKnob = 0;
   const at = drawn('vintage').at;
   for (let y = 0; y < vintage.h; y++) for (let x = 0; x < vintage.w; x++) {
     const i = (y * vintage.w + x) * 4;
     const inside = Math.abs(x - at.cx) <= at.r * 1.3 && Math.abs(y - at.cy) <= at.r * 1.3;
-    if (!inside && (vintage.data[i] !== flat.data[i] || vintage.data[i + 1] !== flat.data[i + 1] || vintage.data[i + 2] !== flat.data[i + 2] || vintage.data[i + 3] !== flat.data[i + 3])) off++;
+    const differs = vintage.data[i] !== flatKnob.data[i] || vintage.data[i + 1] !== flatKnob.data[i + 1] || vintage.data[i + 2] !== flatKnob.data[i + 2] || vintage.data[i + 3] !== flatKnob.data[i + 3];
+    if (differs && inside) inKnob++;
+    if (differs && !inside) off++;
   }
-  assert.equal(off, 0, `${off} pixels outside the knob differ between the vintage style and the console style`);
+  assert.equal(off, 0, `${off} pixels outside the knob differ between the vintage style and the same style with a flat knob`);
+  assert.ok(inKnob > 100, `the knob itself differs (${inKnob} pixels)`);
 });
 
 test('a look whose style names a drawing it does not carry is refused by name, not drawn flat', () => {

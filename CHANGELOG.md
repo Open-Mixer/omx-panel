@@ -72,6 +72,14 @@
   `dist/fixtures/gestures/scripts.json`, and a test refuses an export backed by a test path (#101). An installed reader
   finds them at `<datadir>/omx-panel/fixtures/gestures/scripts.json`.
 
+- The renderer wears the look's style whole (#123): under the vintage style a panel is the MOD GUI's vintage face, pixel
+  for pixel: the cream enclosure with its radius, the head plate, the screws, no section plates, the dark keys and
+  screens, the lamp and each text in the look's own ink, beside the vintage knob. Every value is `looks[style]` of
+  `look.json`, read by the face's rule (a token's first colour, a role in braces, `none` for a thing not drawn). A host
+  that passes its own look with a `style` must set every token the face wears, or the renderer refuses it by the
+  token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
+  move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
+
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the

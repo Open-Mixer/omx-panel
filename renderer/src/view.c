@@ -11,6 +11,7 @@
 #include "omx_panel_render.h"
 
 #include <cjson/cJSON.h>
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,6 +63,124 @@ static int look_colour(cJSON *flat, cJSON *tok, const char *name, omx_rgb *out, 
   return 0;
 }
 
+/* The first `#rrggbb` in `s` (the MOD GUI face's rule, tools/modgui-gen.mjs hexOf): six hex digits after a `#`. */
+static int first_hex(const char *s, omx_rgb *out) {
+  for (const char *p = s ? strchr(s, '#') : NULL; p; p = strchr(p + 1, '#')) {
+    char hex[8] = {0};
+    size_t k = 0;
+    while (k < 6 && isxdigit((unsigned char)p[1 + k])) k++;
+    if (k < 6) continue;
+    memcpy(hex, p, 7);
+    return hex_colour(hex, out);
+  }
+  return 0;
+}
+
+/* The colour a token of the look's style wears: the first `#rrggbb` its text names once each colour role in braces (`{--accent}`) is
+ * read in `tok` and `{--enclosure}` as `enclosure`; the surface role when it names none (`none`, an rgba() alone). 0, naming the
+ * token, when the style does not set it. */
+static int style_colour(cJSON *entry, cJSON *tok, const char *name, const omx_rgb *enclosure, const omx_rgb *surface, omx_rgb *out, char *err,
+                        size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, name));
+  if (!s) {
+    fail(err, n, "look: the style does not set %s%s", name, NULL);
+    return 0;
+  }
+  for (const char *p = s; *p; p++) {
+    if (*p == '#') {
+      char hex[8] = {0};
+      size_t k = 0;
+      while (k < 6 && isxdigit((unsigned char)p[1 + k])) k++;
+      if (k == 6) {
+        memcpy(hex, p, 7);
+        return hex_colour(hex, out);
+      }
+    } else if (*p == '{' && p[1] == '-' && p[2] == '-') {
+      const char *end = strchr(p, '}');
+      char role[48];
+      if (!end || (size_t)(end - p) > sizeof role) continue;
+      snprintf(role, sizeof role, "%.*s", (int)(end - p - 1), p + 1);
+      if (strcmp(role, "--enclosure") == 0) {
+        if (enclosure) {
+          *out = *enclosure;
+          return 1;
+        }
+      } else if (first_hex(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, role)), out)) {
+        return 1;
+      }
+      p = end;
+    }
+  }
+  *out = *surface;
+  return 1;
+}
+
+/* Whether a token of the style draws its thing: 1, 0 for `none`, -1 (naming it) when the style does not set it. */
+static int style_draws(cJSON *entry, const char *name, char *err, size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, name));
+  if (!s) {
+    fail(err, n, "look: the style does not set %s%s", name, NULL);
+    return -1;
+  }
+  return strcmp(s, "none") != 0;
+}
+
+/* The look's style as the face wears it (omx-panel#123): every plate and ink of looks[style], by the rules of the MOD GUI face
+ * (tools/modgui-gen.mjs renderFace and faceColours), so one look file gives both the same picture. */
+static int read_style(omx_panel_view_t *v, cJSON *entry, cJSON *tok, char *err, size_t n) {
+  palette *c = &v->col;
+  plates *f = &v->plates;
+  const omx_rgb surface = c->surface;
+  omx_rgb enclosure;
+  /* the enclosure: the first of the style's list (the description names no plugin to pick another by) */
+  if (!style_colour(entry, tok, "--enclosure", NULL, &surface, &enclosure, err, n)) return 0;
+  const char *body = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--body-bg"));
+  if (!body) {
+    fail(err, n, "look: the style does not set %s%s", "--body-bg", NULL);
+    return 0;
+  }
+  if (strstr(body, "{--enclosure}")) c->enclosure = enclosure;
+  else if (!style_colour(entry, tok, "--body-bg", &enclosure, &surface, &c->enclosure, err, n)) return 0;
+  struct { const char *name; omx_rgb *to; } want[] = {
+      {"--key-bg", &c->body},          {"--screen-bg", &c->screen},     {"--key-pressed-bg", &c->pressed}, {"--led-on-bg", &c->lamp},
+      {"--t-brand", &c->tBrand},       {"--t-label", &c->tLabel},       {"--t-section", &c->tSection},     {"--t-control", &c->tControl},
+      {"--t-value", &c->tValue},       {"--t-key", &c->tKey},           {"--t-screen", &c->tScreen},       {"--t-screen-dim", &c->tScreenDim},
+      {"--curve-line", &c->curve},     {"--scribble-bg", &c->scribbleBg}, {"--scribble-ink", &c->scribbleInk},
+  };
+  for (size_t i = 0; i < sizeof want / sizeof *want; i++)
+    if (!style_colour(entry, tok, want[i].name, &enclosure, &surface, want[i].to, err, n)) return 0;
+  struct { const char *name; int *draws; omx_rgb *to; } plate[] = {
+      {"--head-bg", &f->head, &c->head}, {"--head-rule", &f->rule, &c->rule}, {"--section-bg", &f->sections, &c->section}, {"--screws", &f->screws, &c->screws},
+  };
+  for (size_t i = 0; i < sizeof plate / sizeof *plate; i++) {
+    int draws = style_draws(entry, plate[i].name, err, n);
+    if (draws < 0) return 0;
+    *plate[i].draws = draws;
+    if (draws && !style_colour(entry, tok, plate[i].name, &enclosure, &surface, plate[i].to, err, n)) return 0;
+  }
+  if (f->screws && !style_colour(entry, tok, "--screws-slot", &enclosure, &surface, &c->screwSlot, err, n)) return 0;
+  /* the body's radius is a number or `none` (the geometry's); the head plate's inset is `none` or its top and side in px */
+  cJSON *radius = cJSON_GetObjectItemCaseSensitive(entry, "--body-radius"), *inset = cJSON_GetObjectItemCaseSensitive(entry, "--head-inset");
+  const char *rs = cJSON_GetStringValue(radius), *is = cJSON_GetStringValue(inset);
+  if (!cJSON_IsNumber(radius) && !rs) {
+    fail(err, n, "look: the style does not set %s%s", "--body-radius", NULL);
+    return 0;
+  }
+  f->radius = cJSON_IsNumber(radius) ? radius->valuedouble : strcmp(rs, "none") == 0 ? -1 : strtod(rs, NULL);
+  if (!is) {
+    fail(err, n, "look: the style does not set %s%s", "--head-inset", NULL);
+    return 0;
+  }
+  f->insetTop = f->insetSide = 0;
+  if (strcmp(is, "none") != 0) {
+    char *end;
+    f->insetTop = strtod(is, &end);
+    while (*end && *end != ' ') end++;
+    f->insetSide = strtod(end, NULL);
+  }
+  return 1;
+}
+
 static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n) {
   cJSON *root = cJSON_Parse(json);
   cJSON *tok = cJSON_GetObjectItemCaseSensitive(root, "tokens");
@@ -93,6 +212,11 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
       return 0;
     }
   }
+  /* a look that names no style is worn as the roles give it: the surface, the accent's rule and lamp, a plate under each section */
+  v->col.enclosure = v->col.surface, v->col.screen = v->col.body, v->col.pressed = v->col.rule = v->col.lamp = v->col.accent;
+  v->col.tBrand = v->col.tSection = v->col.tControl = v->col.tScreenDim = v->col.inkDim;
+  v->col.tLabel = v->col.tValue = v->col.tKey = v->col.tScreen = v->col.ink;
+  v->plates = (plates){0, 1, 1, 0, -1, 0, 0};
   /* the scribble strip's two colours are the console look's (the flat look the roles give): a colour or a role's name in braces */
   cJSON *flat = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(root, "looks"), "console");
   if (!look_colour(flat, tok, "--scribble-bg", &v->col.scribbleBg, err, n) || !look_colour(flat, tok, "--scribble-ink", &v->col.scribbleInk, err, n)) {
@@ -107,6 +231,10 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
     const char *knob = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--knob"));
     if (!cJSON_IsObject(entry) || !knob) {
       fail(err, n, "look: the style '%s' names no look with a --knob%s", style, NULL);
+      cJSON_Delete(root);
+      return 0;
+    }
+    if (!read_style(v, entry, tok, err, n)) {
       cJSON_Delete(root);
       return 0;
     }
@@ -149,6 +277,7 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, switchTop, &v->g, "geometry"); NUM(g, selectorW, &v->g, "geometry"); NUM(g, selectorH, &v->g, "geometry");
   NUM(g, selectorTop, &v->g, "geometry"); NUM(g, faderW, &v->g, "geometry"); NUM(g, faderCap, &v->g, "geometry");
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
+  NUM(g, screw, &v->g, "geometry"); NUM(g, screwInset, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
   NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
   NUM(g, scribbleW, &v->g, "geometry"); NUM(g, scribbleH, &v->g, "geometry");
@@ -909,7 +1038,7 @@ static void draw_display(const omx_draw *d, double x, double y, double w, double
 }
 
 static void draw_switch(const omx_draw *d, double x, double y, double w, double h, int on, const palette *col) {
-  d->round_rect(d->ctx, x, y, w, h, h / 2, on ? col->accent : col->body);
+  d->round_rect(d->ctx, x, y, w, h, h / 2, on ? col->pressed : col->body);
   double r = h / 2 - h * 0.15;
   d->disc(d->ctx, on ? x + w - h / 2 : x + h / 2, y + h / 2, r, on ? col->ink : col->inkDim);
 }
@@ -956,7 +1085,7 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
     if (g > lo + c->spec_grid * 1e-9 && k > 0) {
       char label[24];
       snprintf(label, sizeof label, "%g", fabs(g) < 1e-9 ? 0.0 : g);
-      text(d, font, label, 0, iw, ix + 3 * s, y - 2 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+      text(d, font, label, 0, iw, ix + 3 * s, y - 2 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
     }
   }
   static const double stop_t[4] = {0, 0.18, 0.5, 1};
@@ -979,8 +1108,8 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
     double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
     char one[2] = {c->mark_letter[k], 0};
-    d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
-    text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+    d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
+    text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
   }
 #undef AX
 #undef AY
@@ -1015,12 +1144,12 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
   for (size_t k = 0; k < c->nstems; k++) {
     if (!(c->stem_y[k] > lo)) continue; /* a stem at or below the floor is not there */
     double qx = ix + (c->stem_x[k] / xmax) * iw, qy = iy + ih - ((c->stem_y[k] - lo) / (hi - lo)) * ih;
-    d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->body, col->accent, c->stem_shade[k]));
+    d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->screen, col->accent, c->stem_shade[k]));
     if (c->stem_letter[k] != ' ') {
       /* the letter's baseline sits 3 px over the stem's top; a stem at the ceiling would put it over the frame, so it is
        * held to the frame's top (the text is baseline-aligned: the glyph occupies the size above the baseline) */
       char one[2] = {c->stem_letter[k], 0};
-      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
     }
   }
 }
@@ -1032,7 +1161,7 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
 static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double x, double y, double w, double h, double s,
                        const palette *col) {
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
-  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->screen);
   double ix = x + 5 * s, iy = y + 5 * s, iw = w - 10 * s, ih = h - 10 * s - 12 * s;
   if (c->nspec)
     draw_analyser(d, font, T, c, ix, iy, iw, ih, s, col);
@@ -1064,11 +1193,11 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
       double u = (log10(c->mark_freq[k]) - x0) / (x1 - x0);
       double qx = ix + u * iw, qy = iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih;
       char one[2] = {c->mark_letter[k], 0};
-      d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
-      text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
+      text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
     }
   }
-  text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
 }
 
 /* The layout a box of width x height device px at `scale` gets, and the scale it is drawn at: the controls a row that
@@ -1122,14 +1251,14 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
 static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, const meter *m, double x, double y, double w, double h, double s,
                        const palette *col) {
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
-  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->screen);
   char cap[256];
   snprintf(cap, sizeof cap, "%s  %g to %g %s", m->label, m->min, m->max, m->unit);
-  text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
   if (!m->has) return;
   double inner = w - 4 * s, f = m->fill, mk = m->marker;
   if (f > 0) d->round_rect(d->ctx, x + 2 * s, y + h - 6 * s, inner * f, 4 * s, 0, col->accent);
-  d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->ink);
+  d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->tScreen);
 }
 
 void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
@@ -1140,21 +1269,35 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
   double s;
   laid L = place(v, width, height, scale, &s);
 
-  d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
-  d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
+  /* the body is the style's enclosure, with its screws in the foot's corners; a style with a head plate sets it over the top */
+  const plates *f = &v->plates;
+  double radius = f->radius < 0 ? g->radius : f->radius;
+  d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, radius * s, col->rim);
+  d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (radius - 1) * s, col->enclosure);
+  if (f->screws) {
+    double r = g->screw / 2, cy = L.h - g->screwInset - r;
+    double at[2] = {g->screwInset + r, L.w - g->screwInset - r};
+    for (int k = 0; k < 2; k++) {
+      d->disc(d->ctx, at[k] * s, cy * s, r * s, col->screws);
+      d->segment(d->ctx, (at[k] - r * 0.7) * s, (cy + r * 0.7) * s, (at[k] + r * 0.7) * s, (cy - r * 0.7) * s, fmax(0.6, 0.8 * s), col->screwSlot);
+    }
+  }
   if (!v->headless) {
-    d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
-    d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
+    if (f->head)
+      d->round_rect(d->ctx, (1 + f->insetSide) * s, (1 + f->insetTop) * s, (L.w - 2 - 2 * f->insetSide) * s, (g->headH - 1 - f->insetTop) * s,
+                    (f->insetSide ? 4 : radius - 1) * s, col->head);
+    if (f->rule) d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->rule);
+    d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->lamp);
     double head_w = (L.w - 2 * g->pad - 24) * s;
-    text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
-    text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+    text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->tBrand, OMX_ALIGN_LEFT);
+    text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->tLabel, OMX_ALIGN_LEFT);
   }
   for (size_t si = 0; si < v->nsections; si++) {
     if (!L.drawn[si]) continue;
     box sec = L.sections[si];
-    d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
+    if (f->sections) d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
-         T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+         T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t m = 0; m < v->ndisplays; m++) {
       if (v->displays[m].section != (int)si) continue;
@@ -1201,23 +1344,23 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
       /* a selector's and a display's label stands under its control; every other label sits on its value strip (geometry.json) */
       int strip = !reading && (k->bar || k->w != W_SELECTOR);
-      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->tControl, OMX_ALIGN_CENTRE);
       if (!k->bar && k->w == W_SELECTOR)
         text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
-             T->small * s, col->ink, OMX_ALIGN_CENTRE);
+             T->small * s, col->tKey, OMX_ALIGN_CENTRE);
       else if (strip) {
         /* the scribble strip: a recessed well the value is set in */
         double sw = g->scribbleW * s;
         d->round_rect(d->ctx, mid - sw / 2, (y + g->cellH - g->scribbleH) * s, sw, g->scribbleH * s, 3 * s, col->scribbleBg);
         text(d, font, k->text, 0, sw - 4 * s, mid, (y + T->valueBase) * s, T->small * s, col->scribbleInk, OMX_ALIGN_CENTRE);
       } else if (k->text[0])
-        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->tValue, OMX_ALIGN_CENTRE);
     }
   }
   if (v->nband) {
     box b = L.meters;
-    d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
-    text(d, font, "Meters", 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    if (f->sections) d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
+    text(d, font, "Meters", 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t k = 0; k < v->nmeters; k++) {
       if (!v->meters[k].in_band) continue;
