@@ -10,12 +10,13 @@
  *     packages declare in their contract directories (omx-contract docs/contract-dir.md, "A package's role meanings";
  *     omx-plugins-contract installs omx-plugins'; `$OMX_ROLE_MEANINGS`, a `:` list of files holding such items, stands
  *     in), never a list of this package's own;
- *   - the unit tokens: the token of a descriptor unit is the LV2 unit a face writes for it, plugin-hostd's
- *     installed LV2 table read backwards (`<contractdir>/3/plugin-hostd/formats/lv2.json`, installed by
- *     plugin-hostd-contract; `$PLUGIN_HOSTD_TABLES`, a directory holding lv2.json, stands in), or the name of a unit
- *     in the param-contract extension's vendor block; a token is served when that extension's unit table gives it a
- *     value (omx-contract's OMX_PARAM_CONTRACT_UNITS sheet, `<contractdir>/3/omx-contract/param-contract.json`, installed by
- *     omx-contract-data from 3.6.0);
+ *   - the units: a descriptor unit (its symbol, `%`, `dB/oct`, `""`) is read as its standard id, the word of omx-contract's
+ *     PARAM_UNITS whose `x-symbol` it is, with its `x-dimension` (the param domain, `<contractdir>/param/param.json`,
+ *     installed by omx-contract-data from 3.21.0; sorting pass rows P1, M4). A unit is served when the param-contract
+ *     extension's unit table gives it a value (omx-contract's OMX_PARAM_CONTRACT_UNITS sheet,
+ *     `<contractdir>/3/omx-contract/param-contract.json`, installed by omx-contract-data from 3.6.0), the sheet keyed by the
+ *     unit's LV2 term: plugin-db's F1 word for the standard id (its lv2 domain, LV2_UNIT_IDS). omx-panel reads no
+ *     plugin-hostd table;
  *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
@@ -28,7 +29,9 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { openDomainAt } from '@openmixer/omx-contract/domain-reader';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
 
@@ -57,6 +60,19 @@ export function contractDirs() {
 export function packageDir(pkg) {
   return contractDirs().map((d) => join(d, '3', pkg)).find((d) => existsSync(d));
 }
+
+/** This tree's contract directory (the source tree's and dist/'s `contract.d`, when there is one). */
+const TREE_CONTRACT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'contract.d');
+
+/** The directories the panel domain is opened from: `$OMX_CONTRACT_PATH`, this tree's `contract.d`, then omx-contract's
+ * `contractdir` (where omx-panel-contract installs it); the first that holds `panel/panel.json` wins. */
+export function panelDomainDirs() {
+  const env = (process.env.OMX_CONTRACT_PATH ?? '').split(':').filter(Boolean);
+  return [...env, TREE_CONTRACT_DIR, pkgVariable('omx-contract', 'contractdir') ?? DEFAULT_CONTRACTDIR];
+}
+
+/** The words of a panel domain item (`PANEL_FAMILIES` ...), in code order, opened with omx-contract's domain loader. */
+export const panelWords = (item) => openDomainAt(panelDomainDirs(), 'panel').words(item).map((w) => w.word);
 
 /** omx-contract's own data directory: its pkg-config `datadir`, else the default. */
 export function contractDataDir() {
@@ -138,30 +154,25 @@ export function meaningOfRole(role) {
   return m !== undefined && meanings().includes(m) ? m : undefined;
 }
 
-/** The file of plugin-hostd's LV2 table: in `$PLUGIN_HOSTD_TABLES`, else in the first contract directory holding
- * plugin-hostd (named in the first one when none does). */
-export function lv2TableFile() {
-  if (process.env.PLUGIN_HOSTD_TABLES) return join(process.env.PLUGIN_HOSTD_TABLES, 'lv2.json');
-  return join(packageDir('plugin-hostd') ?? join(contractDirs()[0], '3', 'plugin-hostd'), 'formats', 'lv2.json');
+/** omx-contract's param domain document, `<contractdir>/param/param.json`, from the first contract directory holding it. */
+export function paramDomainFile() {
+  return contractDirs().map((d) => join(d, 'param', 'param.json')).find((f) => existsSync(f));
 }
 
-/** plugin-hostd's installed LV2 table: `{ <unit>: <LV2 source value> }` from its lookup rows of the unit word. */
-export const lv2UnitTable = once(() => {
-  const file = lv2TableFile();
-  if (!existsSync(file)) throw new Error(`vocabulary: plugin-hostd's LV2 table is not installed (${file}): install plugin-hostd-contract, or name a directory holding lv2.json in $PLUGIN_HOSTD_TABLES`);
-  const item = JSON.parse(readFileSync(file, 'utf8')).PLUGIN_HOSTD_LV2_MAP;
-  if (item?.kind !== 'formatMap' || typeof item.rows !== 'object') throw new Error(`vocabulary: ${file} holds no PLUGIN_HOSTD_LV2_MAP formatMap`);
-  const out = {};
-  for (const row of Object.values(item.rows)) {
-    const w = row.word;
-    if (w?.word !== 'controls[].travel.unit' || w.transform !== 'lookup') continue;
-    for (const [source, unit] of Object.entries(w.values ?? {})) {
-      if (unit in out && out[unit] !== source) throw new Error(`vocabulary: ${file} maps the unit ${unit} from ${out[unit]} and ${source}: a face writes one`);
-      out[unit] = source;
-    }
-  }
-  return out;
+/** The standard units, PARAM_UNITS of omx-contract's param domain: `Map<symbol, { id, dimension }>`. */
+export const standardUnits = once(() => {
+  const file = paramDomainFile();
+  if (!file) throw new Error(`vocabulary: omx-contract's param domain (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.21.0)`);
+  const words = JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.PARAM_UNITS?.oneOf;
+  if (!Array.isArray(words)) throw new Error(`vocabulary: ${file} declares no PARAM_UNITS`);
+  return new Map(words.map((w) => [w['x-symbol'], { id: w.const, dimension: w['x-dimension'] }]));
 });
+
+/** A descriptor unit's standard id (`%` -> `percent`, `""` -> `none`), or undefined for a unit the list does not hold. */
+export const unitIdOf = (unit) => standardUnits().get(unit ?? '')?.id;
+
+/** The symbols of the standard units of `dimensions` (`['gain', 'level', 'loudness']` -> dB, dBFS, LUFS, dBTP, dBu, LU). */
+export const unitsOfDimensions = (dimensions) => [...standardUnits()].filter(([, u]) => dimensions.includes(u.dimension)).map(([symbol]) => symbol);
 
 /** The sheet of the param-contract units is omx-contract's: OMX_PARAM_CONTRACT_UNITS, in its param-contract.json. */
 export const PARAM_UNITS_ITEM = 'OMX_PARAM_CONTRACT_UNITS';
@@ -187,38 +198,21 @@ export const paramUnits = once(() => {
   return new Map(Object.entries(value).map(([name, code]) => [name.replaceAll('_', '').toUpperCase(), code]));
 });
 
+/** plugin-db's F1 mapping of the LV2 units to the standard ids, read backwards (its lv2 domain, LV2_UNIT_IDS: the
+ * term's key is the word's title, the standard id its word): `Map<id, term>`. */
+export const lv2UnitTerms = once(() => new Map(openDomainAt(contractDirs(), 'lv2').words('LV2_UNIT_IDS').map((w) => [w.word, w.title])));
+
 /** The first value of the extension's vendor block: the units of its own, past the LV2 ones. */
 const VENDOR_BLOCK = 0x100;
 
-/** A descriptor unit's token: the LV2 unit a face writes for it (units:db -> db, urn:openmixer:unit#dBFS -> dbfs), else
- * the name of a vendor-block unit it is (dBu -> dbu), else undefined. */
-export function unitTokenOf(unit) {
-  const source = lv2UnitTable()[unit];
-  if (source) return source.startsWith('units:') ? source.slice('units:'.length) : source.split('#').pop().toLowerCase();
-  const name = String(unit).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-  return (paramUnits().get(name) ?? 0) >= VENDOR_BLOCK ? name.toLowerCase() : undefined;
-}
-
-/** A filter slope's unit as omx-dsp's kernels and omx-plugins' declarations spell it (`"unit": "dB/oct"`): neither plugin-hostd's LV2 table nor
- * omx-contract's param-contract units name a per-octave unit, so a choice declared in it (the panel's `choiceUnits`) is read as the
- * dB of a slope, the token the curve twin takes for `hpf_slope` and `lpf_slope`. */
-export const SLOPE_UNITS = Object.freeze({ 'dB/oct': 'db' });
-
-/** The token of a unit the param-contract extension serves (one with a code in the unit table, or "" for none), else undefined. */
-export function servedToken(unit) {
-  if (unit === '') return 'none';
-  const token = unitTokenOf(unit);
-  return token && paramUnits().get(token.toUpperCase()) ? token : undefined;
-}
-
-/** Every unit plugin-hostd's LV2 table maps, and "", with its contract unit: `{ <unit>: [token, code] }`, a unit
- * the unit table has no code for `['none', 0]`. */
-export function contractUnits() {
-  return Object.fromEntries(['', ...Object.keys(lv2UnitTable())].map((u) => {
-    const token = u === '' ? undefined : unitTokenOf(u);
-    const value = token ? paramUnits().get(token.toUpperCase()) ?? 0 : 0;
-    return [u, value ? [token, value] : ['none', 0]];
-  }));
+/** A standard id the param-contract extension serves (`none` is): the sheet gives its LV2 term a value, or, as main read
+ * a unit of the extension's own, the id by name (dBFS -> DBFS) is a unit of its vendor block. An id's `-` is its symbol's
+ * `/`, read "per" as the sheet spells it (dB-oct -> DBPEROCT, the sheet's dbPerOct). */
+export function servedUnit(id) {
+  if (id === 'none') return true;
+  const term = lv2UnitTerms().get(id);
+  if (term && paramUnits().get(term.replaceAll('_', '').toUpperCase())) return true;
+  return (paramUnits().get(String(id).replaceAll('-', 'per').replace(/[^A-Za-z0-9]/g, '').toUpperCase()) ?? 0) >= VENDOR_BLOCK;
 }
 
 /** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:
@@ -256,3 +250,16 @@ export function installedDescriptorFiles() {
   }
   return [...seen.values()].sort();
 }
+
+/** A panel domain item's words by title (`PANEL_GROUP_REASONS` -> `{ noControls: 'no-controls', ... }`): the codes and
+ * words the tools emit, read from the panel domain; a title the item lacks is refused by name, never undefined. */
+export function panelCodes(item) {
+  const words = Object.fromEntries(openDomainAt(panelDomainDirs(), 'panel').words(item).map((w) => [w.title, w.word]));
+  return new Proxy(Object.freeze(words), {
+    get(t, k) {
+      if (typeof k === 'string' && !(k in t)) throw new Error(`vocabulary: the panel domain's ${item} has no word titled ${k}`);
+      return t[k];
+    },
+  });
+}
+

@@ -159,10 +159,11 @@ export function shapesOf(c) {
   return any ? out : undefined;
 }
 
-/** The contract token a gain is read in: dB, or a linear factor (a range that stays above zero). */
+/** The standard unit id a gain is read in: dB, or a linear factor, the curve's coef (a range that stays above zero; a
+ * curve term is a descriptor word, so its descriptor-scope id, %4). */
 function gainToken(c) {
-  if (unitOf(c) === 'db') return 'db';
-  return typeof c.travel?.min === 'number' && c.travel.min > 0 ? 'coef' : 'db';
+  if (unitOf(c) === 'db') return 'dB';
+  return typeof c.travel?.min === 'number' && c.travel.min > 0 ? 'coef' : 'dB';
 }
 
 /** Infer `controls`' EQ bands. See the file's header for the verdict. */
@@ -199,12 +200,12 @@ export function inferBands(controls) {
   const mark = { inferred: true };
   const roles = [];
   for (const { kind, b } of heads) {
-    roles.push({ role: `${kind}_freq`, index: 0, symbol: symbolOf(b.freq), unit: 'hz', ...mark });
+    roles.push({ role: `${kind}_freq`, index: 0, symbol: symbolOf(b.freq), unit: 'Hz', ...mark });
     if (b.enable) roles.push({ role: `${kind}_on`, index: 0, symbol: symbolOf(b.enable), unit: 'none', ...mark });
   }
   rest.forEach((b, index) => {
     // a shape no parameter selects is the band_freq role's own
-    roles.push({ role: 'band_freq', index, symbol: symbolOf(b.freq), unit: 'hz', ...(b.type ? {} : { shape: b.shape }), ...mark });
+    roles.push({ role: 'band_freq', index, symbol: symbolOf(b.freq), unit: 'Hz', ...(b.type ? {} : { shape: b.shape }), ...mark });
     if (b.gain) roles.push({ role: 'band_gain', index, symbol: symbolOf(b.gain), unit: gainToken(b.gain), ...mark });
     if (b.q) roles.push({ role: 'band_q', index, symbol: symbolOf(b.q), unit: unitOf(b.q) === 'oct' ? 'oct' : 'none', ...mark });
     if (b.enable) roles.push({ role: 'band_on', index, symbol: symbolOf(b.enable), unit: 'none', ...mark });
