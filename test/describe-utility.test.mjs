@@ -24,7 +24,7 @@ const panelOf = (roles, controls) => ({ family: 'utility', roles, sections: [{ k
 
 test('utility is a family of the layout, with roles, a required one and an Easy row', () => {
   assert.ok(FAMILIES.includes('utility'));
-  assert.deepEqual(Object.keys(ROLES.utility), ['gain', 'width', 'pseudo', 'pseudo_time', 'bass_mono', 'bass_mono_freq', 'amount', 'range', 'drive', 'ceiling', 'softness']);
+  assert.deepEqual(Object.keys(ROLES.utility), ['gain', 'width', 'pseudo', 'pseudo_time', 'bass_mono', 'bass_mono_freq', 'amount', 'range', 'drive', 'ceiling', 'softness', 'speed', 'slope']);
   assert.deepEqual(REQUIRED_ROLES.utility, [['gain', 'width', 'amount', 'drive']]);
   assert.ok(EASY_ROLES.utility.length > 0 && EASY_ROLES.utility.length <= 6);
 });
@@ -42,6 +42,17 @@ test('a width control carries its width, bass-mono and bass-mono frequency roles
   assert.deepEqual(refusals, []);
   assert.equal(description.family, 'utility');
   assert.deepEqual(description.roles.map((r) => [r.role, r.symbol]).sort(), [['bass_mono', 'bassMono'], ['bass_mono_freq', 'bassMonoHz'], ['width', 'widthPct']]);
+});
+
+test('a balancer carries its amount, range, speed and slope roles: dB/oct is served (omx-contract 3.21.0 codes dbPerOct)', () => {
+  const balancer = descriptor('urn:test:balancer', [
+    travel('amountPct', 'Amount', '%', 0, 100, 0), travel('rangeDb', 'Range', 'dB', 1, 12, 3),
+    travel('speedDbPerS', 'Speed', 'dB', 0.1, 6, 0.5), travel('slopeDbOct', 'Slope', 'dB/oct', -6, 0, -3),
+  ]);
+  const panel = panelOf({ amount: 'amountPct', range: 'rangeDb', speed: 'speedDbPerS', slope: 'slopeDbOct' }, ['amountPct', 'rangeDb', 'speedDbPerS', 'slopeDbOct']);
+  const { description, refusals } = describe(balancer, { panel });
+  assert.deepEqual(refusals, []);
+  assert.deepEqual(description.roles.map((r) => [r.role, r.symbol]).sort(), [['amount', 'amountPct'], ['range', 'rangeDb'], ['slope', 'slopeDbOct'], ['speed', 'speedDbPerS']]);
 });
 
 test('arm: a role the family has no place for is not served', () => {
