@@ -13,13 +13,14 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readPluginPorts } from './group-infer.mjs';
 import { describeStored } from './describe.mjs';
-import { binaryOf, installedBundles, readInstalledBundle, verdictOf } from './lv2-complement.mjs';
-import { entryOf, withStoredGroups } from './store-entry.mjs';
+import { binaryOf, installedBundles, pluginTriples, readInstalledBundle, Refusal, verdictOf } from './lv2-complement.mjs';
+import { entryOf, RULE_OF_WORD, withStoredGroups } from './store-entry.mjs';
 import { installedDescriptorFiles } from './vocabulary.mjs';
 
 /** plugin-hostd's LV2 search list, the one omx-modgui-sync and plugin-qualify read when LV2_PATH is unset. */
@@ -27,8 +28,20 @@ export const LV2_DEFAULT_PATH = '/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2'
 /** How long `plugin-hostd-probe describe` may take, as omx-modgui-sync gives it. */
 const PROBE_TIMEOUT_MS = 30000;
 
-/** A failure the command reports and exits 1 on. */
-export class PluginRefusal extends Error {}
+/** A failure the command reports and exits 1 on; `reason` is `no-descriptor` when nothing could be derived from. */
+export class PluginRefusal extends Error {
+  constructor(message, reason = 'store') {
+    super(message);
+    this.reason = reason;
+  }
+}
+
+/** `omx-panel <version>`: the made_by of an entry this package derives (package.json beside tools/, or two up in dist). */
+export function madeBy() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const file = ['..', '../..'].map((up) => join(here, up, 'package.json')).find(existsSync);
+  return `omx-panel ${file ? JSON.parse(readFileSync(file, 'utf8')).version : 'unknown'}`;
+}
 
 /** `lv2:<uri>` or `clap:<path>#<id>`, the form `plugin-hostd-probe describe` takes; null for anything else. */
 export function parseTarget(target) {
@@ -129,15 +142,17 @@ function findDescriptor(t, target, given, env) {
     writeFileSync(file, r.stdout);
     return { descriptor: d, file, scratch: dir };
   }
-  throw new PluginRefusal(`${target}: no descriptor: none given, none installed, none in ${descriptorDirs(env).join(':')}, and plugin-hostd-probe ${r.error?.code === 'ENOENT' ? 'is not on PATH' : 'made none'}`);
+  throw new PluginRefusal(`${target}: no descriptor: none given, none installed, none in ${descriptorDirs(env).join(':')}, and plugin-hostd-probe ${r.error?.code === 'ENOENT' ? 'is not on PATH' : 'made none'}`, 'no-descriptor');
 }
 
 /**
  * The call. Returns the `get` answer's text, as the store printed it: the entry any layer held, or the one this call
  * derived and wrote. Throws a PluginRefusal for what the command reports.
- * @param {{ target: string, descriptor?: string, sha256?: string, madeBy: string, env?: NodeJS.ProcessEnv }} o
+ * `bundle` is the installed bundle of an LV2 target when the caller has read it (the complement), else it is found;
+ * `derive` false only reads (a PluginRefusal `no-entry` when no layer holds the key): a dry run writes no entry.
+ * @param {{ target: string, descriptor?: string, sha256?: string, madeBy?: string, env?: NodeJS.ProcessEnv, bundle?: any }} o
  */
-export function describePlugin({ target, descriptor: given, sha256, madeBy, env = process.env }) {
+export function describePlugin({ target, descriptor: given, sha256, madeBy: made = madeBy(), env = process.env, bundle: read, derive = true }) {
   const t = parseTarget(target);
   if (!t) throw new PluginRefusal(`${target} is no plugin target: lv2:<uri> or clap:<path>#<id>`);
   if (sha256 !== undefined && !/^[0-9a-f]{64}$/.test(sha256)) throw new PluginRefusal(`--sha256 ${sha256} is not 64 lowercase hex digits`);
@@ -145,7 +160,7 @@ export function describePlugin({ target, descriptor: given, sha256, madeBy, env 
   const scratch = [];
   try {
     if (t.format === 'lv2') {
-      bundle = bundleOf(t.uri, env.LV2_PATH || LV2_DEFAULT_PATH);
+      bundle = read ?? bundleOf(t.uri, env.LV2_PATH || LV2_DEFAULT_PATH);
       t.binary = fileURLToPath(binaryOf(bundle, t.uri));
       t.input = bundle.dir;
     } else {
@@ -160,16 +175,58 @@ export function describePlugin({ target, descriptor: given, sha256, madeBy, env 
     const get = () => store(['get', ...key, '--source', source, '--json'], { env });
     const held = get();
     if (held.trim() !== 'null') return held;
+    if (!derive) throw new PluginRefusal(`${target}: no layer holds an entry`, 'no-entry');
 
     found ??= findDescriptor(t, target, given, env);
     if (found.scratch && !scratch.includes(found.scratch)) scratch.push(found.scratch);
     const verdict = bundle ? verdictOf(bundle, t.uri) : null;
     const derived = describeStored(withStoredGroups(found.descriptor, verdict), { where: found.file });
     const rules = Number(store(['rules'], { env }).trim());
-    const entry = entryOf({ derived, verdict, source, rules, madeBy });
+    const entry = entryOf({ derived, verdict, source, rules, madeBy: made });
     store(['put', ...key], { input: JSON.stringify(entry), env });
     return get();
   } finally {
     for (const d of scratch) rmSync(d, { recursive: true, force: true });
   }
+}
+
+/**
+ * The complement's verdicts from the store (docs/descriptions-store.md 6, lane 4): a function of an installed bundle and
+ * a plugin's URI giving the verdict the store holds for it (derived and written first when no layer holds it), or null
+ * when there is no store: no `omx-panel-store` on PATH, or no base (`panel-store.absent`). A plugin with no descriptor has
+ * no entry: `onNoEntry(uri, message)` is told and the rules infer it. Any other refusal of the store is a Refusal
+ * `store-refused` for the bundle.
+ * `derive` false reads only (a dry run or a check), and a key no layer holds is inferred.
+ * @param {{ env?: NodeJS.ProcessEnv, onNoEntry?: (uri: string, message: string) => void, derive?: boolean }} [o]
+ */
+export function storeVerdicts({ env = process.env, onNoEntry = () => {}, derive = true } = {}) {
+  const r = spawnSync('omx-panel-store', ['check'], { encoding: 'utf8', env });
+  if (r.error?.code === 'ENOENT' || (r.status !== 0 && r.stderr.startsWith('panel-store.absent'))) return null;
+  const made = madeBy();
+  return (bundle, uri) => {
+    let answer;
+    try {
+      answer = JSON.parse(describePlugin({ target: `lv2:${uri}`, bundle, env, madeBy: made, derive }));
+    } catch (e) {
+      if (!(e instanceof PluginRefusal)) throw e;
+      if (e.reason !== 'no-descriptor' && e.reason !== 'no-entry') throw new Refusal('store-refused', `${uri}: ${e.message}`);
+      onNoEntry(uri, e.message);
+      return verdictOf(bundle, uri);
+    }
+    return verdictOfEntry(answer, bundle, uri);
+  };
+}
+
+/** The complement's form of a stored verdict: a declared group keeps the plugin's own node, the pg:group its ports state. */
+export function verdictOfEntry(answer, bundle, uri) {
+  if (!answer.group_outcome) throw new Refusal('store-refused', `${uri}: the stored entry holds no port-group verdict`);
+  const ports = new Map(readPluginPorts(pluginTriples(bundle, uri), uri).ports.map((p) => [p.symbol, p]));
+  const groups = answer.groups.map((g) => {
+    const out = { symbol: g.symbol, name: g.name, displayPriority: g.display_priority, ports: [...g.ports], rule: RULE_OF_WORD.get(g.rule) };
+    if (!g.declared) return out;
+    const node = ports.get(g.ports[0])?.group;
+    if (node === undefined) throw new Refusal('store-refused', `${uri}: the stored group ${g.symbol} is declared, but its port ${g.ports[0]} states no pg:group`);
+    return { ...out, node };
+  });
+  return answer.group_outcome === 'grouped' ? { outcome: answer.group_outcome, groups } : { outcome: answer.group_outcome, reason: answer.group_reason };
 }

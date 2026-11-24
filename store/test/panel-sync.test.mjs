@@ -84,6 +84,20 @@ test('the complement writes the groups the store holds for a key, not what the r
   assert.deepEqual(writtenGroups(w, TRIPLE), halvesByPort, 'the stored halves, port by port');
 });
 
+test('a stored edit of the groups over the same TTL writes the bundle again on the next run', OPTS, (t) => {
+  const w = world(t);
+  const key = { sha: sha256(w.triple.binary), format: 'lv2', uri: TRIPLE, source: sourceOf('lv2', w.triple.dir) };
+  mkStore(w.places.user, { layer: 2, panel: panelVersion(w.places.contract), entries: [entry({ ...key, verdict: HALVES })] });
+  const e = env(w);
+  const sync = join(e.PATH.split(':')[0], 'omx-complement-sync');
+  assert.equal(sh(sync, [], e).status, 0);
+  const moved = { ...HALVES, groups: [{ ...HALVES.groups[0], ports: [...HALVES.groups[0].ports, 'gain_2', 'fc_2', 'bw_2'] }, { ...HALVES.groups[1], ports: HALVES.groups[1].ports.slice(3) }] };
+  mkStore(w.places.user, { layer: 2, panel: panelVersion(w.places.contract), entries: [entry({ ...key, verdict: moved })] });
+  const r = sh(sync, [], e);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  assert.equal(writtenGroups(w, TRIPLE).gain_2, 'lows', 'band 2 moved to the lows, as the store now says');
+});
+
 test('no store installed: the complement infers as before, and says so', OPTS, (t) => {
   const w = world(t);
   const e = env(w, { store: false });

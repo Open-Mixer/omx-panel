@@ -14,6 +14,8 @@ import { panelCodes } from './vocabulary.mjs';
 /** The PANEL_GROUP_RULES word of each inference rule, by its number (tools/group-infer.mjs RULES; 0: a repeated instance's group). */
 const RULE = panelCodes('PANEL_GROUP_RULES');
 export const WORD_OF_RULE = Object.freeze([RULE.instance, RULE.own, RULE.designation, RULE.name, RULE.unit, RULE.index, RULE.modgui]);
+/** Each PANEL_GROUP_RULES word back to its inference rule's number. */
+export const RULE_OF_WORD = new Map(WORD_OF_RULE.map((w, n) => [w, n]));
 /** The fingerprint of a refused derivation: no layout was made, and the column is NOT NULL. */
 export const NO_LAYOUT = '0'.repeat(64);
 

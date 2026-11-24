@@ -18,6 +18,9 @@
  *                                                        store, printed as the store's get answers it; derived, with the LV2
  *                                                        groups the complement infers, and written to the layer of the
  *                                                        effective uid only when no layer holds it
+ *   sync [--lv2-path <list>]                             tools/panel-sync.mjs: the store half of omx-panel-sync, one pass:
+ *                                                        each installed LV2 plugin's entry once, then the layer of the
+ *                                                        effective uid pruned of plugins no longer installed
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
@@ -52,6 +55,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel layout --descriptor <file> [--panel <file>] [--ns <namespace>] [--canonical | --pages [--per-page N] [--easy-first] [--value <symbol>=<n>]...]\n'
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
   + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
+  + '       omx-panel sync [--lv2-path <list>]   (the store half of omx-panel-sync)\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
@@ -222,13 +226,27 @@ async function describePluginCommand(argv, opt) {
   }
   const { describePlugin, PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
   try {
-    const answer = describePlugin({ target: opt('--plugin'), descriptor: opt('--descriptor'), sha256: opt('--sha256'), madeBy: `omx-panel ${packageVersion()}` });
+    const answer = describePlugin({ target: opt('--plugin'), descriptor: opt('--descriptor'), sha256: opt('--sha256') });
     process.stdout.write(answer.endsWith('\n') ? answer : `${answer}\n`);
   } catch (err) {
     if (!(err instanceof PluginRefusal)) throw err;
     process.stderr.write(`omx-panel: ${err.message}\n`);
     process.exit(1);
   }
+}
+
+/** The store half of the one pass (docs/descriptions-store.md 6): exit 0, or 1 when the store refused a plugin or a prune. */
+async function syncCommand(argv) {
+  const k = argv.indexOf('--lv2-path');
+  if (argv.length !== (k >= 0 ? 2 : 0) || (k >= 0 && argv[k + 1] === undefined)) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { pass } = await import(join(TOOLS, 'panel-sync.mjs'));
+  const { LV2_DEFAULT_PATH } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  const r = pass({ lv2Path: k >= 0 ? argv[k + 1] : process.env.LV2_PATH || LV2_DEFAULT_PATH, log: (line) => process.stdout.write(`omx-panel sync: ${line}\n`) });
+  if (r.store) process.stdout.write(`omx-panel sync: ${r.described} stored or up to date, ${r.noDescriptor} with no descriptor, ${r.pruned} pruned, ${r.failed} failed\n`);
+  process.exit(r.failed ? 1 : 0);
 }
 
 /** One step of Compare for a host that is not JavaScript (docs/compare.md): JSON in, JSON out, no state between runs. */
@@ -302,6 +320,7 @@ if (command === 'validate') validate(args);
 else if (command === 'layout') await layout(args);
 else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
+else if (command === 'sync') await syncCommand(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');
