@@ -9,13 +9,14 @@
 // directory whose param domain has no dBu: a dBu control has no unit id and a read-only one is no level meter.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { contractDirs } from '../dist/tools/vocabulary.mjs';
 import { ROLES } from '../dist/tools/role-table.mjs';
+import { treeGrep } from './tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PD = join(ROOT, 'dist/tools/panel-description.mjs');
@@ -68,26 +69,11 @@ test('(c) a param domain with no dBu: a dBu unit has no id and a read-only dBu c
 const HOSTD_NAMES = /PLUGIN_HOSTD_LV2_MAP|PLUGIN_HOSTD_TABLES|plugin-hostd-contract/;
 const HOSTD_PATHS = ['tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', 'debian/rules', '.github', 'BUILDING.md', 'README.md', 'docs', 'man'];
 
-/** Every regular file at or under `rel` of `root`, node_modules aside, as paths relative to `root`. */
-function filesUnder(root, rel) {
-  const at = join(root, rel);
-  if (!existsSync(at)) return [];
-  const st = lstatSync(at);
-  if (st.isFile()) return [rel];
-  if (!st.isDirectory()) return [];
-  return readdirSync(at).sort().filter((n) => n !== 'node_modules').flatMap((n) => filesUnder(root, `${rel}/${n}`));
-}
-
 /** The lines of this tree (or of `root`) that name plugin-hostd's LV2 table or its package: code, packaging, CI, docs.
- * The files are read here, not by git grep: a package build (rpmbuild's %check, a `git archive` tree) has no .git, and
- * the guard holds there too (#207). */
+ * Read from the files (tree-grep.mjs), not by git grep: a package build (rpmbuild's %check, a `git archive` tree) has
+ * no .git, and the guard holds there too (#207). */
 function hostdNames(root = ROOT) {
-  let out = '';
-  for (const rel of HOSTD_PATHS.flatMap((p) => filesUnder(root, p))) {
-    readFileSync(join(root, rel), 'utf8').split('\n').forEach((line, i) => {
-      if (HOSTD_NAMES.test(line)) out += `${rel}:${i + 1}:${line}\n`;
-    });
-  }
+  const out = treeGrep(root, HOSTD_NAMES, HOSTD_PATHS);
   // the spec's package sections (its %changelog is history)
   const spec = readFileSync(join(root, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
   return out + (HOSTD_NAMES.test(spec) ? 'packaging/omx-panel.spec: names plugin-hostd\n' : '');

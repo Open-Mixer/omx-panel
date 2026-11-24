@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { compareVersions, packagingFloor } from './packaging-floors.mjs';
+import { treeGrep } from './tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DOMAIN = join(ROOT, 'contract.d/panel');
@@ -71,8 +72,10 @@ test('one render of the domain: omxdomain/panel_codes.h, what omx-contract rende
   assert.deepEqual(readdirSync(out), ['panel_codes.h']);
   assert.equal(read('include/omxdomain/panel_codes.h'), readFileSync(join(out, 'panel_codes.h'), 'utf8'), 'include/omxdomain/panel_codes.h is not what omx-contract render gives: re-render it');
   assert.deepEqual(readdirSync(join(ROOT, 'include/omxdomain')), ['panel_codes.h']);
-  const named = run(['git', 'grep', '-l', '-e', 'panel_vocabulary', '--', '.', ':!CHANGELOG.md', ':!debian/changelog', ':!test/panel-domain-contract.test.mjs']);
-  assert.equal(named.stdout, '', `files still name a vocabulary render:\n${named.stdout}`);
+  // read from the files: git grep, refused (no .git in a package build, a checkout another user owns in CI), printed
+  // nothing on stdout and so passed whatever the tree named
+  const named = treeGrep(ROOT, /panel_vocabulary/, ['.'], ['CHANGELOG.md', 'debian/changelog', 'test/panel-domain-contract.test.mjs']);
+  assert.equal(named, '', `files still name a vocabulary render:\n${named}`);
   const WORDS = ['PANEL_FAMILIES', 'PANEL_STANDARD_WIDGETS', 'PANEL_WIDGETS', 'PANEL_DISPLAY_KINDS', 'PANEL_DISPLAY_SOURCES', 'PANEL_PLACEMENTS'];
   for (const [item, s] of Object.entries(doc.components.schemas)) {
     assert.equal(s['x-c-codes'], item === 'PANEL_STORE_CODES' || WORDS.includes(item) ? true : undefined, `${item}: x-c-codes`);
