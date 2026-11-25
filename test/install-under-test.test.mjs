@@ -66,7 +66,11 @@ for (const format of ['deb', 'rpm']) {
 test('the runtime install check installs the contract package through it', () => {
   const s = readFileSync(join(ROOT, 'tools/runtime-install-check.sh'), 'utf8');
   assert.match(s, /install-under-test\.sh" "\$CPKG"/);
-  assert.doesNotMatch(s, /(?:dnf|apt-get) install[^\n]*"\$CPKG"/, 'the contract package is installed without the proof');
+  // the one direct install that names it is omx-panel's own transaction (omx-panel requires it at its own version, which
+  // the channel holds only once released, #257); the proof above runs after it all the same
+  assert.doesNotMatch(s, /(?:dnf|apt-get) install[^\n]*(?<!"\$PKG" )"\$CPKG"/, 'the contract package is installed without the proof');
+  const pkg = s.indexOf('"$PKG" "$CPKG"');
+  assert.ok(pkg > 0 && pkg < s.indexOf('install-under-test.sh" "$CPKG"'), 'the proof does not run after omx-panel\'s own install');
 });
 
 test('sabotage: the tool without --allow-downgrades, --reinstall or dnf reinstall is red', () => {
