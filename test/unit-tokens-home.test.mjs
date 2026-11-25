@@ -30,8 +30,8 @@ test('two standard units never share a token (dB/oct is not oct, dB/s is not s)'
 
 test('no unit is the empty unit; an LV2 label is read as a term; a unit no list holds keeps a token of its own', () => {
   assert.equal(unitToken(undefined), unitToken(''), 'a control with no unit and one whose unit is "" are one');
-  assert.equal(unitToken(undefined), noUnitId(), 'and that one is the id of no unit');
-  assert.equal(unitToken(noUnitId()), noUnitId());
+  assert.equal(unitToken(undefined), '', 'and that one is the empty token');
+  assert.equal(unitToken(noUnitId()), '', 'the id of no unit, stated, is no unit');
   assert.equal(unitToken(`${LV2_UNITS}hz`), unitToken('Hz'));
   assert.equal(unitToken('hz'), unitToken('Hz'), 'a blank-node unit known by its label, the term spelled');
   assert.notEqual(unitToken('furlongs'), unitToken('Hz'));

@@ -12,6 +12,7 @@
  *   c  the units, kinds and ranges of a parameter, matched across the instances (b's candidates and a's alike).
  * An inference that does not hold is never drawn as a guessed matrix: the group is a plain list and carries a REASON code.
  */
+import { controlKind } from './control-kind.mjs';
 import { lv2Symbol, nameTokens, placeableControls, readPluginPorts, SECTION_WORDS } from './group-infer.mjs';
 import { EQ_WORDS } from './meaning-infer.mjs';
 import { keyOf } from './panel-description.mjs';
@@ -42,13 +43,14 @@ const LV2_UNIT = /^(?:https?:\/\/lv2plug\.in\/ns\/extensions\/units#|units:)([A-
 
 /** A unit as one token: its standard id, PARAM_UNITS of omx-contract's param domain (#74). A descriptor's unit is the id
  * it is ("Hz", "percent", "dBPerOct"); an LV2 unit (units:hz) and a unit an LV2 plugin defines on a blank node, known by
- * its label (often the term, "hz"), is the id of its term through plugin-db's lv2 domain (LV2_UNIT_IDS). No unit is the
- * id of no unit. A unit neither list holds keeps its own text, so it never joins a standard unit. */
+ * its label (often the term, "hz"), is the id of its term through plugin-db's lv2 domain (LV2_UNIT_IDS). No unit, stated
+ * as the id of no unit or not stated at all, is the empty token. A unit neither list holds keeps its own text, so it
+ * never joins a standard unit. */
 export function unitToken(unit) {
-  if (unit == null || unit === '') return noUnitId();
-  const text = String(unit);
+  const text = unit == null ? '' : String(unit);
   const term = LV2_UNIT.exec(text)?.[1];
-  return (term === undefined ? unitIdOf(text) ?? lv2UnitIds().get(text) : lv2UnitIds().get(term)) ?? text;
+  const id = (term === undefined ? unitIdOf(text) ?? lv2UnitIds().get(text) : lv2UnitIds().get(term)) ?? text;
+  return id === noUnitId() ? '' : id;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -75,8 +77,11 @@ export function controlsOfDescriptor(descriptor, { panel } = {}) {
     .map((c, i) => {
       const symbol = keyOf(c);
       const written = c.symbol ?? (typeof c.id === 'string' ? c.id : null);
-      // a CLAP scan states no toggle: a whole-number travel of the two points 0 and 1 is one (a band's On, an edge's On)
-      const kind = c.kind === 'travel' && c.travel?.step === 1 && c.travel.min === 0 && c.travel.max === 1 ? 'toggle' : c.kind;
+      // a CLAP scan states no toggle: a stepped travel of the two positions 0 and 1 is one (a band's On, an edge's On), by
+      // the one rule of docs/control-kind.md
+      const kind = c.kind === 'travel' && c.travel
+        ? controlKind({ scale: c.travel.scale, min: c.travel.min, max: c.travel.max, ...(c.travel.step !== undefined ? { step: c.travel.step } : {}) }).kind === 'toggle' ? 'toggle' : 'travel'
+        : c.kind;
       return {
         symbol,
         name: c.name ?? symbol,
@@ -125,6 +130,31 @@ const stemOf = (c) => written(c).replace(/\d+/g, '#');
 const isNum = (t) => /^\d+$/.test(t);
 /** The numbers a name prints as whole words ("EQ 3 Freq" -> [3]). */
 const nameNumbers = (name) => nameTokens(name).filter(isNum).map(Number);
+
+/**
+ * Each numbered control's instance number and its stem, over one bucket (#97). A control whose text carries one number has it.
+ * Controls whose text carries more ("Band 3 Gain 2", a CLAP name with a "2nd" slope) are taken by their shape, the text with
+ * every number written `#`: when exactly one position varies across the shape's controls, that position is the instance
+ * number and the others are part of the parameter's name; when none or more than one does (a grid: "Send 1 Bus 2" over every
+ * send and bus), none of them has a number, and the bucket's two-indices check sees them.
+ * @returns {Map<Control, { stem: string, n: number }>}
+ */
+function instanceNumbers(controls) {
+  const out = new Map();
+  /** the text with the number at `p` written `#` and the others kept */
+  const at = (c, p) => { let i = -1; return written(c).replace(/\d+/g, (m) => (++i === p ? '#' : m)); };
+  const shapes = new Map();
+  for (const c of controls) {
+    const r = runs(c);
+    if (r.length === 1) out.set(c, { stem: stemOf(c), n: Number(r[0]) });
+    else if (r.length > 1) shapes.set(stemOf(c), [...(shapes.get(stemOf(c)) ?? []), c]);
+  }
+  for (const cs of shapes.values()) {
+    const varying = runs(cs[0]).map((_x, p) => p).filter((p) => new Set(cs.map((c) => runs(c)[p])).size >= 2);
+    if (varying.length === 1) for (const c of cs) out.set(c, { stem: at(c, varying[0]), n: Number(runs(c)[varying[0]]) });
+  }
+  return out;
+}
 
 /** The canonical parameter roles of a repeated group, the EQ's rows in this order. */
 export const ROLE_ORDER = ['freq', 'gain', 'slope', 'q', 'type'];
@@ -281,7 +311,8 @@ const refuse = (key, b, source, reason, detail) => list(key, b, { source, reason
 /** One bucket's group: the declared instances (a), else the symbols' numbers (b); either checked by (c). */
 function bucketGroup(key, b) {
   const numbered = b.controls.filter((c) => runs(c).length >= 1);
-  const two = numbered.filter((c) => runs(c).length >= 2);
+  const resolved = instanceNumbers(b.controls);
+  const two = numbered.filter((c) => runs(c).length >= 2 && !resolved.has(c));
   const declaredAny = b.controls.some((c) => c.path.length >= 1);
   if (numbered.length > 0 && two.length * 2 > numbered.length) {
     return refuse(key, b, declaredAny ? 'declared' : 'indexed', 'two-indices', `${two.length} of ${numbered.length} numbered controls carry two numbers (${two[0].symbol})`);
@@ -323,14 +354,14 @@ function slotKey(c) {
 }
 
 function indexedInstances(key, b) {
-  const numbered = b.controls.filter((c) => runs(c).length >= 1);
   /** @type {Map<string, Map<number, Control>>} */
   const stems = new Map();
-  for (const c of numbered) {
-    if (runs(c).length !== 1) continue;
-    const s = stemOf(c);
+  const numberOf = instanceNumbers(b.controls);
+  for (const c of b.controls) {
+    if (!numberOf.has(c)) continue;
+    const { stem: s, n } = numberOf.get(c);
     if (!stems.has(s)) stems.set(s, new Map());
-    stems.get(s).set(Number(runs(c)[0]), c);
+    stems.get(s).set(n, c);
   }
   const repeated = [...stems.entries()].filter(([, m]) => m.size >= 2);
   if (repeated.length === 0) return list(key, b);
@@ -489,7 +520,12 @@ function attachEdges(groups, buckets) {
     g.edges = edges;
     // the owner's order puts an edge's slope on the gain row, one aligned row, when the bands hold no slope row of their own
     if (!g.rows.some((r) => r.key === 'slope')) {
-      for (const e of edges) if ('slope' in e.parameters && !('gain' in e.parameters)) { e.parameters.gain = e.parameters.slope; delete e.parameters.slope; }
+      for (const e of edges) {
+        if (!('slope' in e.parameters) || 'gain' in e.parameters) continue;
+        e.parameters.gain = e.parameters.slope;
+        delete e.parameters.slope;
+        e.captions = { ...e.captions, gain: capital('slope') }; // the cell is the slope, and says so (omx-panel#122)
+      }
     }
     // the rows an edge brings that no band holds go after the bands' rows
     for (const e of edges) for (const k of Object.keys(e.parameters)) if (!g.rows.some((r) => r.key === k)) g.rows.push({ key: k, label: capital(k.includes(':') ? k.split(':')[1] : k), role: ROLE_ORDER.includes(k) ? k : null });
@@ -528,13 +564,13 @@ export function matrixOf(g, { values = {} } = {}) {
   const instances = [...g.instances].sort((a, b) => a.index - b.index).map((i, ordinal) => ({ ...i, ordinal }))
     .filter((i) => !(Number.isFinite(live) && i.ordinal >= live));
   const heads = [
-    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
+    ...left.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters, captions: e.captions })),
     ...instances.map((i) => ({ key: `${g.key}#${i.index}`, label: i.label, on: i.on, edge: null, ordinal: i.ordinal, parameters: i.parameters })),
-    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters })),
+    ...right.map((e) => ({ key: e.edge, label: e.label, on: e.on, edge: e.edge, ordinal: null, parameters: e.parameters, captions: e.captions })),
   ];
   const orientation = g.family === 'eq' || heads.length >= g.rows.length ? 'columns' : 'rows';
   const grid = g.rows.map((r) => heads.map((h) => h.parameters[r.key] ?? null));
-  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge, ordinal: h.ordinal });
+  const strip = (h) => ({ key: h.key, label: h.label, on: h.on, edge: h.edge, ordinal: h.ordinal, ...(h.captions ? { captions: h.captions } : {}) });
   return orientation === 'columns'
     ? { orientation, columns: heads.map(strip), rows: g.rows, cells: grid }
     : { orientation, columns: g.rows, rows: heads.map(strip), cells: heads.map((_, c) => g.rows.map((_, r) => grid[r][c])) };
@@ -563,8 +599,8 @@ export function placeMatrix(g, sections) {
 /**
  * The served matrix (docs/group-model.md, "The served matrix"): the ONE shape `omx-panel describe` serves and every surface
  * (the console, modgui-gen, the C renderer, the Zynthian builder) reads and never recomputes. `heads` are every instance and
- * edge along one axis, `rows` the parameters in the owner's order then the head row (always last: `On` when any head has
- * an on/off, else a caption row labelled ''), `cells[row][head]` a symbol as `symbolOf` gives it, or null; `title` the
+ * edge along one axis, `rows` the head row (always first, L3: `On` when any head has an on/off, else a caption row
+ * labelled '') then the parameters in the owner's order, a row carrying `labels` where a cell's parameter is not the row's, `cells[row][head]` a symbol as `symbolOf` gives it, or null; `title` the
  * group's label (else `title`, the label of the section that holds it); `count` only where no visibleWhen rule governs the
  * instances (`governs(symbol)`): such a group keeps every instance's cell and its rules hide them live.
  * @param {Group} g a repeated group of inferGroupModel's
@@ -581,8 +617,12 @@ export function servedMatrix(g, { symbolOf = (x) => x, governs = () => false, ti
     orientation: m.orientation,
     title: g.label ?? title ?? null,
     heads: heads.map((h) => ({ label: h.label, on: h.on ? { symbol: symbolOf(h.on.symbol), sense: h.on.sense } : null, edge: h.edge })),
-    rows: [...lines.map((l) => ({ label: l.label })), { label: headed ? 'On' : '', head: true }],
-    cells: [...lines.map((_, l) => heads.map((_h, h) => sym(at(h, l)))), heads.map((h) => (h.on ? symbolOf(h.on.symbol) : null))],
+    rows: [{ label: headed ? 'On' : '', head: true }, ...lines.map((l) => {
+      // a cell holding a parameter other than the row's (an EQ edge's slope in the gain row, L2) is captioned as itself
+      const labels = heads.map((h) => h.captions?.[l.key] ?? null);
+      return labels.some((x) => x !== null) ? { label: l.label, labels } : { label: l.label };
+    })],
+    cells: [heads.map((h) => (h.on ? symbolOf(h.on.symbol) : null)), ...lines.map((_, l) => heads.map((_h, h) => sym(at(h, l))))],
     ...(g.count && !governed ? { count: { symbol: symbolOf(g.count.symbol), default: countDefault ?? null } } : {}),
   };
 }
@@ -630,7 +670,7 @@ export function visibleColumns(served, { width, column, count } = {}) {
   return Math.min(across, Math.max(1, Math.floor(width / column)));
 }
 
-/** L7: the drawn head `n` (clamped) an encoder surface edits: its head and its cells in row order (the head row last), an empty cell null. */
+/** L7: the drawn head `n` (clamped) an encoder surface edits: its head and its cells in row order (the head row first), an empty cell null. */
 export function selectedColumn(served, n, { count } = {}) {
   const drawn = drawnHeads(served, count);
   const at = Math.min(drawn.length - 1, Math.max(0, Math.trunc(n)));
