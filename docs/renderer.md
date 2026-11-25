@@ -112,8 +112,8 @@ graticule within 1 px of the console's own scene for the same bands and curve, P
 on each of the console's and nowhere else (`test/fixtures/rta/console-scene.json`, made by `tools/rta-console-reference.mjs`
 from a console checkout). The state file's `"spectrum"` is `{"<display index>": {"hz", "pre", "post", "peak", "mode",
 "delta", "dbMin", "dbMax", "gridDb"}}`, `"mode"` one of `"pre"`, `"post"` and `"both"`, a tap left out for none and a null
-level for silence. The signature changed in 0.14.0 (it took one tap's levels before), so the shared library's soname moved to
-`libomx-panel-render.so.1`.
+level for silence. This signature replaces one that took a single tap's levels, so the shared library's soname is
+`libomx-panel-render.so.1` (it was `.so.0`).
 
 The parity of a surface that draws with another rasteriser is held in `renderer/test/harness.mjs`: `strokeParity` (every stroke pixel of the curve layer within 1 px for the console, 2 px for Tk, of the other's, both ways), `barHeights` and `barParity` (heights within a pixel, count, order and labels equal as text). The state file of
 `omx-panel-render` gives them as `"curves": {"<display index>": {"x": [...], "y": [...]}}`.
