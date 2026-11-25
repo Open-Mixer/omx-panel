@@ -42,7 +42,9 @@ SONAME := libomx-panel-render.so.$(SOVERSION)
 WINDOW ?= 0
 # the ui library (omx_panel_ui.h): the view and the binding of a plugin's panel to its parameters, and, with WINDOW=1, the window under it.
 # A plugin's CLAP and LV2 adapters load it at run time (dlopen), so its only exports are omx_panel_ui_* (src/ui-exports.map).
-UI_SONAME := libomx-panel-ui.so.$(SOVERSION)
+# the ui library's own version: its API (include/omx_panel_ui.h) did not break when the renderer's moved to 1
+UI_SOVERSION := 0
+UI_SONAME := libomx-panel-ui.so.$(UI_SOVERSION)
 UI_CFLAGS :=
 UI_LIBS :=
 UI_OBJ := $(LIB_OBJ) $(B)/ui.o
