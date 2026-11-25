@@ -140,4 +140,9 @@ test('packaging: omx-panel-contract ships the gestures domain beside the panel d
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));
   assert.ok(lines.includes('usr/share/omx-contract/contract.d/gestures/') && lines.includes('usr/share/omx-contract/contract.d/panel/'), lines.join(' | '));
   assert.match(read('Makefile'), /install-contract-dir\.sh|OMX_CONTRACT_INSTALLER[^\n]*--domain contract\.d\/gestures|--domain contract\.d\/gestures/);
+  // the installer names the package that installs a domain, and refuses one whose info.x-owner is another (omx-contract #88)
+  const domainLines = read('Makefile').split('\n').filter((l) => / --domain contract\.d\//.test(l));
+  assert.equal(domainLines.length, 2, domainLines.join(' | '));
+  for (const l of domainLines) assert.match(l, / omx-panel$/, `${l}: the --domain call does not name omx-panel`);
+  for (const d of ['panel', 'gestures']) assert.equal(JSON.parse(read(`contract.d/${d}/${d}.json`)).info['x-owner'], 'omx-panel');
 });
