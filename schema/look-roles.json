@@ -17,7 +17,7 @@
     { "name": "--ink-faint", "family": "theme", "draws": "a graticule's numbers and a decoration, never a word that must be read", "floor": { "ratio": 2, "on": ["--surface", "--surface-2", "--surface-3"] }, "default": "#5a6571" },
     { "name": "--legend", "family": "theme", "draws": "the silkscreen: a scale's legend printed on the face or the glass", "floor": { "ratio": 4.5, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#e9dfc6" },
     { "name": "--accent", "family": "accent", "draws": "everything live: a fill, a lit switch, a spectrum's trace, a time response's stems, the head line", "floor": { "ratio": 3, "on": ["--surface", "--surface-2", "--surface-3", "--glass"] }, "default": "#e8732c" },
-    { "name": "--knob-pointer", "family": "fixed", "draws": "a knob's pointer: the line from the knob's centre toward its rim that shows the value", "floor": { "ratio": 3, "on": ["--surface-3"] }, "default": "#f4efe2" },
+    { "name": "--knob-pointer", "family": "fixed", "draws": "a knob's pointer: the line from the knob's centre toward its rim that shows the value", "floor": { "ratio": 3, "on": ["--knob-face"] }, "default": "#f4efe2" },
     { "name": "--curve-stroke", "family": "accent", "draws": "a curve's stroke: the line through the points of an eq_response, a transfer_curve or a time_response display", "floor": { "ratio": 3, "on": ["--surface-3", "--glass"] }, "default": "#e8732c" },
     { "name": "--meter-green", "family": "fixed", "draws": "a meter's safe zone", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#34d17b" },
     { "name": "--meter-amber", "family": "fixed", "draws": "a meter's caution zone", "floor": { "ratio": 3, "on": ["--glass"] }, "default": "#f2b632" },

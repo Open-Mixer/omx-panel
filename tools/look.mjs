@@ -19,7 +19,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { consoleTokens, loadPin } from './look-pin.mjs';
+import { consoleTokens, FINISH_KEYS, loadPin } from './look-pin.mjs';
 import { isMain } from '@openmixer/omx-contract/entry';
 
 const TOOLS = dirname(fileURLToPath(import.meta.url));
@@ -56,7 +56,9 @@ export function contrast(a, b) {
 
 /**
  * Every rule of the role file `doc` broken, as sentences, or none. The floors are measured on `values` (name ->
- * #rrggbb) when given, else on the defaults: a host's table is held to the same floors by the same function.
+ * #rrggbb) when given, else on the defaults: a host's table is held to the same floors by the same function. A floor
+ * on a key a finish sets (`--knob-face`) is measured on that key in every finish of the console's pin: a role drawn
+ * on the hardware is read there, never on the page around it (docs/modgui.md "The look").
  */
 export function checkRoles(doc, values) {
   const faults = [];
@@ -91,13 +93,20 @@ export function checkRoles(doc, values) {
     if (r.floor) {
       if (!(r.floor.ratio >= 1) || !Array.isArray(r.floor.on) || r.floor.on.length === 0) faults.push(`${r.name}'s floor is no ratio on a list of grounds`);
       for (const g of r.floor.on ?? []) {
-        if (byName.get(g)?.ground !== true) {
-          faults.push(`${r.name}'s floor is on ${g}, which is no ground role`);
+        const grounds = byName.get(g)?.ground === true
+          ? [[value(g), '']]
+          : FINISH_KEYS.includes(g)
+            ? Object.entries(loadPin().finish).map(([fn, fin]) => [fin[g], ` (the ${fn} finish)`])
+            : undefined;
+        if (!grounds) {
+          faults.push(`${r.name}'s floor is on ${g}, which is no ground role and no key a finish sets`);
           continue;
         }
-        if (!hex(value(g))) continue;
-        const c = contrast(v, value(g));
-        if (c < r.floor.ratio) faults.push(`${r.name} ${v} measures ${c.toFixed(2)}:1 on ${g} ${value(g)}, under its ${r.floor.ratio}:1 floor`);
+        for (const [gv, where] of grounds) {
+          if (!hex(gv)) continue;
+          const c = contrast(v, gv);
+          if (c < r.floor.ratio) faults.push(`${r.name} ${v} measures ${c.toFixed(2)}:1 on ${g} ${gv}${where}, under its ${r.floor.ratio}:1 floor`);
+        }
       }
     }
     for (const o of r.apart?.from ?? []) {
