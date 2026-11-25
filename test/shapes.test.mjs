@@ -86,7 +86,7 @@ test('the gesture run\'s refusal codes, words and inputs are the reference\'s; i
   assert.deepEqual(defs.Gesture.properties.word.enum, Object.keys(gestures.words));
   assert.deepEqual(defs.Gesture.properties.input.enum, gestures.inputs);
   assert.deepEqual(defs.Control.properties.widget.enum, Object.keys(gestures.table));
-  const scripts = read('test/fixtures/gestures/scripts.json').scripts;
+  const scripts = read('fixtures/gestures/scripts.json').scripts;
   assert.ok(scripts.length >= 20, `${scripts.length} scripts`);
   for (const s of scripts) for (const e of s.script) valid('gesture_io', e, 'Event');
   invalid('gesture_io', { t: 0, type: 'hover' }, 'Event');

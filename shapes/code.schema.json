@@ -7,7 +7,7 @@
   "properties": {
     "code": {
       "type": "string",
-      "pattern": "^panel\\.[a-z]+\\.[a-z-]+$",
+      "pattern": "^panel\\.[a-z]+(\\.[a-z-]+)+$",
       "description": "The code word a refusal carries; never reworded."
     },
     "text": {
