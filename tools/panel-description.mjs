@@ -308,7 +308,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const c = control(sym);
     if (!c) throw new Error(`${where}: role '${role}' names '${sym}', no parameter`);
     const unit = unitOf(c);
-    // a filter slope names its unit's id (dB/oct is dB-oct) whether or not the extension serves it, as main read it as the dB of a slope
+    // a filter slope names its unit's id (dB/oct is dBPerOct) whether or not the extension serves it, as main read it as the dB of a slope
     const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
