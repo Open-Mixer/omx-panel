@@ -11,7 +11,7 @@ omx-panel modgui --descriptor <file> | --installed <package>/<name>
 ```
 
 - `--descriptor` names a descriptor file; `--installed omx-plugins/omx-delay` reads the one a package installed into
-  omx-contract's contract directory (`<contractdir>/3/<package>/plugins/<name>.json`).
+  omx-contract's contract directory (`<contractdir>/<package>/plugins/<name>.json`).
 - `--panel` names a JSON file holding the declared panel: `family`, `sections` (each `key`, `label`, `controls` by
   symbol) and, optionally, `widgets` (symbol to `knob`, `fader`, `switch` or `selector`, the list in
   `schema/panel.schema.json`) and `easy` (the controls of the Easy face); or the panel the plugin serves, as

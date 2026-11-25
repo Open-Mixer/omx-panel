@@ -389,7 +389,7 @@ async function vocabulary(refs) {
   process.exit(failed ? 1 : 0);
 }
 
-/** The installed descriptor files, one path per line: the contract directories read for whatever majors they hold. */
+/** The installed descriptor files, one path per line, from the contract directories. */
 async function descriptors(argv) {
   if (argv.length !== 1 || argv[0] !== '--installed') {
     process.stderr.write(USAGE);

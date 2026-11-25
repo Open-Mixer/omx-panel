@@ -49,7 +49,7 @@ function contractDir(pkgs) {
   const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   for (const [pkg, files] of Object.entries(pkgs)) {
     for (const [rel, body] of Object.entries(files)) {
-      const file = join(dir, '3', pkg, rel);
+      const file = join(dir, pkg, rel);
       mkdirSync(dirname(file), { recursive: true });
       writeFileSync(file, JSON.stringify(body));
     }
@@ -90,8 +90,8 @@ test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one re
   const b = paramDomain(contractDir({ 'omx-plugins': { 'plugins/omx-delay.json': DESCRIPTOR, 'plugins/omx-comp.json': DESCRIPTOR } }), [['dB', 'dB', 'gain'], ['Hz', 'Hz', 'frequency']]);
   const set = { OMX_CONTRACT_PATH: `${a}:${b}`, PKG_CONFIG: NO_PKG_CONFIG };
   assert.equal(lookup('v.paramDomainFile()', set), join(b, 'param/param.json'));
-  assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-delay')`, set), join(a, '3/omx-plugins/plugins/omx-delay.json'));
-  assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-comp')`, set), join(b, '3/omx-plugins/plugins/omx-comp.json'));
+  assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-delay')`, set), join(a, 'omx-plugins/plugins/omx-delay.json'));
+  assert.equal(lookup(`v.installedDescriptorFile('omx-plugins/omx-comp')`, set), join(b, 'omx-plugins/plugins/omx-comp.json'));
   assert.deepEqual(lookup('[...v.standardUnits()]', set), [['dB', { symbol: 'dB', dimension: 'gain' }], ['Hz', { symbol: 'Hz', dimension: 'frequency' }]]);
 });
 
@@ -106,7 +106,7 @@ test('omx-panel vocabulary reads each source where the lookup puts it, and fails
   assert.match(r.stdout, /^ok   meanings 2 from /m);
   assert.match(r.stdout, new RegExp(`^ok   param-units 3 units from ${join(dir, 'param/param.json')}$`, 'm'));
   assert.match(r.stdout, new RegExp(`^ok   clap-encoded 3 units from ${join(dir, 'param/param.json')}$`, 'm'));
-  assert.match(r.stdout, new RegExp(`^ok   descriptor omx-plugins/omx-delay 3 controls from ${join(dir, '3/omx-plugins/plugins/omx-delay.json')}$`, 'm'));
+  assert.match(r.stdout, new RegExp(`^ok   descriptor omx-plugins/omx-delay 3 controls from ${join(dir, 'omx-plugins/plugins/omx-delay.json')}$`, 'm'));
   const missing = command(['omx-plugins/omx-nothing'], set);
   assert.equal(missing.status, 1);
   assert.match(missing.stdout, /^FAIL descriptor omx-plugins\/omx-nothing vocabulary: no descriptor omx-plugins\/omx-nothing is installed/m);
@@ -145,12 +145,11 @@ test('a package reached through a symlink is read like one installed in place', 
   const roles = { OMX_PLUGINS_ROLE_MEANINGS: { kind: 'roleMeanings', roles: { threshold: { role: 'threshold', meaning: 'threshold' } } } };
   const installed = contractDir({ 'omx-plugins': { 'role-meanings.json': roles, 'plugins/omx-delay.json': DESCRIPTOR } });
   const composed = scratch(join(tmpdir(), 'omx-panel-composed-'));
-  mkdirSync(join(composed, '3'));
-  for (const pkg of ['omx-plugins']) symlinkSync(join(installed, '3', pkg), join(composed, '3', pkg));
+  for (const pkg of ['omx-plugins']) symlinkSync(join(installed, pkg), join(composed, pkg));
   // the role meanings read through the composed directory, not from a file $OMX_ROLE_MEANINGS names (CI sets it)
   const set = { OMX_CONTRACT_PATH: composed, PKG_CONFIG: NO_PKG_CONFIG, OMX_ROLE_MEANINGS: '' };
   assert.deepEqual(lookup('[...v.roleMeanings().keys()]', set), ['threshold']);
-  assert.deepEqual(lookup('v.installedDescriptorFiles()', set), [join(composed, '3/omx-plugins/plugins/omx-delay.json')]);
+  assert.deepEqual(lookup('v.installedDescriptorFiles()', set), [join(composed, 'omx-plugins/plugins/omx-delay.json')]);
 });
 
 test('an install with omx-contract-data and no omx-contract.pc reads its schema from the default directory', { skip: !existsSync('/usr/share/omx-contract/omx-contract.schema.json') && 'omx-contract-data is not installed' }, () => {
@@ -159,17 +158,17 @@ test('an install with omx-contract-data and no omx-contract.pc reads its schema 
   assert.match(r.stdout, /^ok   meanings \d+ from \/usr\/share\/omx-contract\/omx-contract\.schema\.json$/m);
 });
 
-test('omx-panel descriptors --installed lists each installed descriptor, whatever the contract major', () => {
+test('omx-panel descriptors --installed lists each installed descriptor, and none under a schema-major level', () => {
   const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   const put = (rel) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
     return join(dir, rel);
   };
-  const a = put('7/omx-plugins/plugins/omx-delay.json');
-  const b = put('7/omx-dsp/plugins/omx-eq.json');
-  put('7/omx-dsp/formats/lv2.json');
-  const old = put('3/omx-plugins/plugins/omx-delay.json');
+  const a = put('omx-plugins/plugins/omx-delay.json');
+  const b = put('omx-dsp/plugins/omx-eq.json');
+  put('omx-dsp/formats/lv2.json');
+  const old = put('3/omx-plugins/plugins/omx-comp.json');
   const r = spawnSync(process.execPath, [join(ROOT, 'dist/bin/omx-panel.mjs'), 'descriptors', '--installed'], { encoding: 'utf8', env: envOf({ OMX_CONTRACT_PATH: dir }) });
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(r.stdout.split('\n').filter(Boolean), [b, a].sort());
@@ -180,7 +179,7 @@ test('omx-panel descriptors --installed lists each installed descriptor, whateve
 test('a reader that stops early ends the listing quietly: exit 0, no stack trace (#42)', () => {
   const dir = scratch(join(tmpdir(), 'omx-panel-contract-'));
   for (let i = 0; i < 3000; i++) {
-    const rel = `7/omx-plugins/plugins/omx-plugin-with-a-long-name-${i}.json`;
+    const rel = `omx-plugins/plugins/omx-plugin-with-a-long-name-${i}.json`;
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), JSON.stringify(DESCRIPTOR));
   }

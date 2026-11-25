@@ -17,7 +17,7 @@
  *     PARAM_UNITS_CLAP_ENCODED, of the same domain, holds its id (the ids org.openmixer.param-contract/1 encodes;
  *     omx-contract-data from 3.22.0, V23d P2). omx-panel reads no code sheet, no plugin-hostd table and nothing of
  *     omx-clap;
- *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
+ *   - the descriptors a package installs, `<contractdir>/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
  * The contract directories are `$OMX_CONTRACT_PATH` (a `:` list, the first that holds a package wins), else
@@ -56,9 +56,9 @@ export function contractDirs() {
   return [pkgVariable('omx-contract', 'contractdir') ?? DEFAULT_CONTRACTDIR];
 }
 
-/** The directory `<contractdir>/3/<package>` of the first contract directory that holds it, or undefined. */
+/** The directory `<contractdir>/<package>` of the first contract directory that holds it, or undefined. */
 export function packageDir(pkg) {
-  return contractDirs().map((d) => join(d, '3', pkg)).find((d) => existsSync(d));
+  return contractDirs().map((d) => join(d, pkg)).find((d) => existsSync(d));
 }
 
 /** This tree's contract directory (the source tree's and dist/'s `contract.d`, when there is one). */
@@ -127,10 +127,9 @@ const isDir = (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory()
 function contractFiles() {
   const files = [];
   for (const dir of contractDirs()) {
-    const major = join(dir, '3');
-    if (!existsSync(major)) continue;
-    for (const pkg of readdirSync(major)) {
-      const at = join(major, pkg);
+    if (!existsSync(dir)) continue;
+    for (const pkg of readdirSync(dir)) {
+      const at = join(dir, pkg);
       if (!isDir(at)) continue;
       for (const f of readdirSync(at)) if (f.endsWith('.json')) files.push(join(at, f));
     }
@@ -210,18 +209,17 @@ export const clapEncoded = once(() => {
 export const servedUnit = (id) => clapEncoded().has(id);
 
 /** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:
- * `<contractdir>/3/<package>/plugins/<name>.json`. */
+ * `<contractdir>/<package>/plugins/<name>.json`. */
 export function installedDescriptorFile(ref) {
   const m = /^([a-z0-9][a-z0-9.+-]*)\/([A-Za-z0-9._-]+)$/.exec(ref);
   if (!m) throw new Error(`vocabulary: '${ref}' is not <package>/<name>`);
-  const file = contractDirs().map((d) => join(d, '3', m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
+  const file = contractDirs().map((d) => join(d, m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
   if (!file) throw new Error(`vocabulary: no descriptor ${ref} is installed (in ${contractDirs().join(':')})`);
   return file;
 }
 
-/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<major>/<package>/plugins/*.json`,
- * whatever majors are installed. A `<package>/<name>` installed under several majors or directories is listed once,
- * from the highest major of the first contract directory that holds it. */
+/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<package>/plugins/*.json`. A
+ * `<package>/<name>` installed under several contract directories is listed once, from the first that holds it. */
 export function installedDescriptorFiles() {
   const names = (dir, keep) => {
     try {
@@ -232,13 +230,11 @@ export function installedDescriptorFiles() {
   };
   const seen = new Map();
   for (const d of contractDirs()) {
-    const majors = names(d, (name, at) => isDir(at) && /^[0-9]+$/.test(name)).sort((a, b) => Number(b) - Number(a));
-    for (const major of majors) {
-      for (const pkg of names(join(d, major), (name, at) => isDir(at))) {
-        for (const f of names(join(d, major, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
-          const ref = `${pkg}/${f}`;
-          if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
-        }
+    // a directory named by a number is the schema-major level of before: no reader looks under it (docs/contract-dir.md)
+    for (const pkg of names(d, (name, at) => isDir(at) && !/^[0-9]+$/.test(name))) {
+      for (const f of names(join(d, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
+        const ref = `${pkg}/${f}`;
+        if (!seen.has(ref)) seen.set(ref, join(d, pkg, 'plugins', f));
       }
     }
   }

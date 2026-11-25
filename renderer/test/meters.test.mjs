@@ -33,7 +33,7 @@ const pc = (variable, pkg = 'omxdsp') => execFileSync('pkg-config', [`--variable
 function lawFall() {
   const defs = readFileSync(join(pc('includedir'), 'omxdsp', 'omxdsp_definitions.h'), 'utf8');
   const fall = Number(/#define OMX_METER_VIEW_FALL_DB_PER_SECOND ([0-9.]+)/.exec(defs)[1]);
-  const file = join(pc('contractdir', 'omx-contract'), '3', 'omx-dsp', 'primitives', 'meter.json');
+  const file = join(pc('contractdir', 'omx-contract'), 'omx-dsp', 'primitives', 'meter.json');
   assert.ok(existsSync(file), `omx-dsp's contract data names ${file}`);
   assert.equal(fall, JSON.parse(readFileSync(file, 'utf8')).METER_VIEW.value.fallDbPerSecond, 'the header is the file\'s value');
   return fall;

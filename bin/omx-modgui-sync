@@ -121,7 +121,7 @@ case ":$LV2_PATH:" in
 	*) echo "omx-modgui-sync: note: $MODGUI_DIR is not on LV2_PATH; MOD-UI shows these GUIs once it is" >&2 ;;
 esac
 
-# The descriptors packages installed, one file per line: omx-panel knows where and which contract major
+# The descriptors packages installed, one file per line: omx-panel knows where
 installed_list=$(omx-panel descriptors --installed) || {
 	echo "omx-modgui-sync: omx-panel descriptors --installed failed" >&2
 	exit 1
