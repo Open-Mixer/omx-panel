@@ -243,6 +243,13 @@ function timeGeometry(pts, stems, ix, iy, iw, ih, s) {
  * mapping of renderer/src/view.c `draw_curve`, operation for operation (an eq_response on a log frequency axis with the dB symmetric about 0
  * to the next 6 dB; a transfer_curve on linear dB, input and output on one span), so the two rasterisers draw one stroke.
  */
+/**
+ * A mark is held inside the plot: a band whose frequency or depth lies off the axes sits on the plot's edge, the rule the renderer
+ * draws by (renderer/src/view.c hold()). Every MOD GUI mark is placed through curveGeometry, so the PNG face and the template's SVG
+ * hold it alike; renderer/test/mark-hold.test.mjs holds the two faces' pixels equal for an off-axis mark.
+ */
+export const holdInPlot = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
 export function curveGeometry(curve, kind, cw, ch, s) {
   const pts = curve?.points ?? [], stems = curve?.stems ?? [];
   const ix = 5 * s, iy = 5 * s, iw = cw - 10 * s, ih = ch - 10 * s - 12 * s;
@@ -263,7 +270,10 @@ export function curveGeometry(curve, kind, cw, ch, s) {
     axis = [ix, iy + ih, ix + iw, iy];
   }
   const at = (xv, yv) => [ix + (((eq ? Math.log10(xv) : xv) - x0) / (x1 - x0)) * iw, iy + ih - ((yv - lo) / (hi - lo)) * ih];
-  const marks = eq ? (curve.marks ?? []).map((m) => ({ at: at(m.freq, m.depthDb), letter: ORIGIN_LETTER[m.origin] ?? '?' })) : [];
+  const marks = eq ? (curve.marks ?? []).map((m) => {
+    const [x, y] = at(m.freq, m.depthDb);
+    return { at: [holdInPlot(x, ix, ix + iw), holdInPlot(y, iy, iy + ih)], letter: ORIGIN_LETTER[m.origin] ?? '?' };
+  }) : [];
   return { axis, poly: pts.map((p) => at(p.x, p.y)), marks };
 }
 
