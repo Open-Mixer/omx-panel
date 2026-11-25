@@ -6,6 +6,17 @@ omx-panel (0.17.0) unstable; urgency=medium
 
  -- Pau Aliagas <linuxnow@gmail.com>  Tue, 24 Nov 2026 12:00:00 +0100
 
+omx-panel (0.16.2) unstable; urgency=medium
+
+  * Fix: the units a control can serve are read from PARAM_UNITS_CLAP_ENCODED
+    of omx-contract's param domain. omx-contract 3.22.0 no longer installs
+    param-contract.json, so 0.16.1's `vocabulary` and `describe` refused
+    to run with it (#256). The role table names 3.22.0's ids: coef, dBPerOct
+    and dBPerS (it named x, dB-oct and dB-s).
+  * The dependency on omx-contract-data states no version.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Wed, 25 Nov 2026 09:00:00 +0000
+
 omx-panel (0.16.1) unstable; urgency=medium
 
   * Fix: the installed tools check in override_dh_auto_install reads the

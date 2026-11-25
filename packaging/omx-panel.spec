@@ -348,10 +348,18 @@ English source sentence.
 # END langpacks
 
 %changelog
-* Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
+* Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
 - Chain 3: V23d P2, a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED
   holds its id (omx-contract-data 3.22.0); the #170 consumers, coef is the plain
   multiplier in the role table.
+
+* Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.2-1
+- Fix: the units a control can serve are read from PARAM_UNITS_CLAP_ENCODED of
+  omx-contract's param domain. omx-contract 3.22.0 no longer installs
+  param-contract.json, so 0.16.1's `vocabulary` and `describe` refused
+  to run with it (#256). The role table names 3.22.0's ids: coef, dBPerOct
+  and dBPerS (it named x, dB-oct and dB-s).
+- The dependency on omx-contract-data states no version.
 
 * Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.1-1
 - Fix: %check runs from the release tarball, which has no .git: the guard

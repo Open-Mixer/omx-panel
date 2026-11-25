@@ -44,7 +44,7 @@ test('a width control carries its width, bass-mono and bass-mono frequency roles
   assert.deepEqual(description.roles.map((r) => [r.role, r.symbol]).sort(), [['bass_mono', 'bassMono'], ['bass_mono_freq', 'bassMonoHz'], ['width', 'widthPct']]);
 });
 
-test('a balancer carries its amount, range, speed and slope roles: dB/oct is served (omx-contract 3.21.0 codes dbPerOct)', () => {
+test('a balancer carries its amount, range, speed and slope roles: dB/oct is served (PARAM_UNITS_CLAP_ENCODED holds dBPerOct)', () => {
   const balancer = descriptor('urn:test:balancer', [
     travel('amountPct', 'Amount', 'percent', 0, 100, 0), travel('rangeDb', 'Range', 'dB', 1, 12, 3),
     travel('speedDbPerS', 'Speed', 'dB', 0.1, 6, 0.5), travel('slopeDbOct', 'Slope', 'dBPerOct', -6, 0, -3),
