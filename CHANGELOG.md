@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- The knob pointer is read on the knob face it is carved into (#244). A floor's ground may be a key a finish sets
+  (`--knob-face`) as well as a ground role, measured on that key in every finish of the console's pin;
+  `--knob-pointer`'s floor is 3:1 on `--knob-face`, no longer on `--surface-3`, the page around the knob. The cream
+  default clears it on the aluminium, graphite and black faces, and a host whose light page keeps the cream pointer is
+  no longer refused.
 - 0.16.2: the units a control can serve are read from `PARAM_UNITS_CLAP_ENCODED` of omx-contract's param domain;
   omx-contract 3.22.0 no longer installs `param-contract.json` (#256). The role table names 3.22.0's ids: `coef`,
   `dBPerOct` and `dBPerS` (it named `x`, `dB-oct` and `dB-s`). A descriptor's unit is read by its symbol, as before; `x`
