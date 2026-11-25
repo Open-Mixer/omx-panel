@@ -51,3 +51,14 @@ test('the sabotage arm: a planted omx-plugins descriptor demand is caught', () =
   const planted = script() + '\nexpect "the descriptor omx-plugins/omx-delay" "x"\n';
   assert.match(planted, /omx-plugins\//, 'the plant did not land');
 });
+
+// omx-panel requires omx-panel-contract at its own version (packaging/omx-panel.spec, debian/control). On a version bump
+// the channel holds only the previous one, so the requirement is satisfied by the contract package this build made, the
+// check's second argument, installed in the same transaction, never asked of the channel (omx-panel#257: both runtime
+// install cells were red with "the channel satisfies no 'omx-panel-contract >= 0.16.2-1.fc45'").
+test('a requirement on the contract package is satisfied by the one this build made, installed with omx-panel', () => {
+  const s = script();
+  assert.match(s, /^OWN=\$\(/m, 'the check does not read the contract package\'s own name');
+  assert.match(s, /\[ "\$name" = "\$OWN" \]/, 'a requirement on the contract package is asked of the channel');
+  assert.match(s, /install -y -q[^\n]*"\$PKG" "\$CPKG"/, 'omx-panel is not installed with the contract package this build made');
+});

@@ -10,13 +10,14 @@
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
 #   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
-#   4. `omx-panel vocabulary` reads the meanings, plugin-hostd's LV2 table and the param-contract units from
+#   4. `omx-panel vocabulary` reads the meanings, the standard units and the served units (omx-contract's param domain) from
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
 #   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
 #   6. the installed tools load and run (tools/installed-tools-check.sh): @openmixer/omx-contract resolves.
 #
 # The check judges only what omx-panel itself ships. The panel domain is the omx-panel-contract package's: that package,
-# the second argument, is installed after omx-panel, and every file of it under /usr/share/omx-contract/contract.d is
+# the second argument, is installed with omx-panel (omx-panel requires it at its own version, which the channel holds
+# only once this version is released, so that requirement is met by the package this build made), and every file of it under /usr/share/omx-contract/contract.d is
 # listed by its own file list and must be installed; a contract package that lists none fails, and a panel domain file in
 # omx-panel itself is a second copy and fails.
 # No descriptor of another package is demanded here: a package that ships its own descriptors checks them itself.
@@ -78,6 +79,8 @@ case "$PKG" in
 esac
 
 shipped_files=$(shipped)
+# the contract package this build made: omx-panel's requirement on it is met by this file, not asked of the channel
+OWN=$(case "$FORMAT" in rpm) rpm -qp --qf '%{NAME}' "$CPKG" ;; deb) dpkg-deb -f "$CPKG" Package ;; esac)
 
 # 1. what the package itself asks for
 bad=$(printf '%s\n' "$reqs" "$weak" | awk '{print $1}' | grep -E -- "$DEVEL" || true)
@@ -89,7 +92,9 @@ have=() missing=()
 while IFS= read -r req; do
   [ -n "$req" ] || continue
   name=$(echo "$req" | awk '{print $1}')
-  if published "$req"; then
+  if [ "$name" = "$OWN" ]; then
+    pass "$FORMAT: '$req' is met by $(basename "$CPKG"), made by this build"
+  elif published "$req"; then
     listed "$name" && fail "$name is published: remove it from NOT_YET_PUBLISHED"
     have+=("$name")
   elif listed "$name"; then
@@ -103,16 +108,16 @@ done <<< "$reqs"
 # 2. the install, weak dependencies off
 before=$(installed)
 if [ ${#missing[@]} -eq 0 ]; then
-  if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$PKG" >/dev/null 2>&1
-  else apt-get install -y -q --no-install-recommends "$PKG" >/dev/null; fi
-  pass "$FORMAT: installed through the resolver, every dependency from the channel"
+  if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$PKG" "$CPKG" >/dev/null 2>&1
+  else apt-get install -y -q --no-install-recommends "$PKG" "$CPKG" >/dev/null; fi
+  pass "$FORMAT: installed through the resolver with $(basename "$CPKG"), every other dependency from the channel"
 else
   if [ "$FORMAT" = rpm ]; then
     dnf install -y -q --setopt=install_weak_deps=False "${have[@]}" >/dev/null 2>&1
-    rpm -i --nodeps "$PKG"
+    rpm -i --nodeps "$PKG" "$CPKG"
   else
     apt-get install -y -q --no-install-recommends "${have[@]}" >/dev/null
-    dpkg -i --force-depends "$PKG" >/dev/null
+    dpkg -i --force-depends "$PKG" "$CPKG" >/dev/null
   fi
   unverified+=("the dependency on ${missing[*]}: not published, so the package was installed without it")
 fi
@@ -121,7 +126,7 @@ echo "added: $(echo $added)"
 bad=$(echo "$added" | grep -E -- "$DEVEL" || true)
 [ -z "$bad" ] && pass "$FORMAT: the install adds no development package" || fail "$FORMAT: the install adds $(echo $bad)"
 
-# 2b. the panel domain is omx-panel-contract's, installed after omx-panel: the list is that package's own, so it cannot
+# 2b. the panel domain is omx-panel-contract's, installed with omx-panel: the list is that package's own, so it cannot
 # drift from what it installs; omx-panel itself ships no panel domain file (a second copy)
 copy=$(in_panel)
 [ -z "$copy" ] && pass "$FORMAT: omx-panel ships no panel domain file of its own" \
@@ -176,7 +181,7 @@ expect() { grep -qE "$2" <<< "$out" && pass "omx-panel vocabulary: $1" || fail "
 expect "the contract directory is $CONTRACTDIR" "^ok   contractdir $CONTRACTDIR\$"
 expect "the meanings from omx-contract-data's schema" '^ok   meanings [1-9][0-9]* from /usr/share/omx-contract/omx-contract\.schema\.json$'
 expect "the standard units from omx-contract's param domain" "^ok   param-units [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
-expect "the param-contract units from the contract directory" "^ok   param-contract [1-9][0-9]* units from $CONTRACTDIR/3/omx-contract/param-contract\\.json\$"
+expect "the served units from omx-contract's param domain" "^ok   clap-encoded [1-9][0-9]* units from $CONTRACTDIR/param/param\\.json\$"
 
 # 5. the curve function: node_modules/@openmixer/omx-dsp is a link to omx-dsp-wasm's files, and answers one curve
 if listed omx-dsp-wasm; then
