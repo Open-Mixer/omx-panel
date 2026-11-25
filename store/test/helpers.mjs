@@ -39,6 +39,8 @@ export function contractDir(dir, { formats = ['clap', 'lv2'] } = {}) {
   writeFileSync(join(dir, 'plugin-db', 'plugin-db.json'), JSON.stringify({
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: 'https://openmixer.org/contract/plugin-db',
+    // the format a domain document states (omx-contract docs/contract-dir.md): the one the panel domain beside it states
+    'x-omx-contract': JSON.parse(readFileSync(join(ROOT, 'contract.d', 'panel', 'panel.json'), 'utf8'))['x-omx-contract'],
     info: { title: 'The plugin-db fixture', version: '1.0.0', 'x-owner': 'plugin-db', 'x-stability': 'experimental' },
     components: { schemas: { PLUGIN_DB_ADDRESS_FORMATS: { description: 'The address formats.', 'x-since': '1.0.0', oneOf: formats.map(word) } } },
   }, null, 2));
