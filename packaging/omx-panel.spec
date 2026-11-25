@@ -21,7 +21,7 @@ BuildRequires: nodejs >= 18
 # the vendored tarball (tools/vendored-source.sh), which holds them; the build still runs npm itself
 BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, the standard units of its param domain (from 3.21.0) and
-# the param-contract unit sheet (OMX_PARAM_CONTRACT_UNITS, from 3.6.0);
+# the units the param-contract extension serves (PARAM_UNITS_CLAP_ENCODED, from 3.22.0);
 # nothing of omx-plugins, which builds with this package, and nothing of plugin-hostd or omx-clap (sorting pass P1, P2)
 BuildRequires: omx-contract-data >= 3.21.0
 # %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
