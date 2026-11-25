@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+- The documents omx-panel owns have types, rendered from one schema each (docs/shapes.md; omx-panel#52, the typed-contracts
+  spec's lane S2): `shapes/gestures`, `gesture_io`, `look_role` and `code` as TypeScript interfaces
+  (`@openmixer/omx-panel/shapes/<name>`) and Python `TypedDict`s with a `Literal` for the gesture words, inputs and widgets
+  (`omx_panel.shapes.<name>`, the new package python3-omx-panel on RPM and DEB). omx-contract's own generators render them;
+  the renders are committed and `make shapes-check` holds them. `test/host_reads.py` imports the words instead of reading
+  the JSON. `test/shapes.test.mjs`.
+
 - `describe` refuses an override family that is no word of `PANEL_FAMILIES` (#199, ruling Z1 of omx-contract#161):
   `panel.describe.family-unknown`, naming the plugin and the family, and the panel is `none`, as for a family the
   controls do not back. omx-contract's override schema takes any identifier as a family; the words are the panel

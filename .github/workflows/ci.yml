@@ -68,6 +68,27 @@ jobs:
       - id: handback-install
         name: Install the build and the validator's dependency
         run: npm ci
+      # the shapes' two generators are omx-contract's, at the commit of its shapes facility (omx-contract#69): its tree with
+      # `npm ci` (json-schema-to-typescript at its exact pin) and a venv holding datamodel-code-generator at its exact pin
+      - id: handback-shapes-tool
+        name: The shape generators (docs/shapes.md), at omx-contract's pins
+        env:
+          OMX_CONTRACT_SHAPES_REF: 608ce65cb73aa9d7fe0ed4a39363c237200305f1
+        run: |
+          set -euo pipefail
+          dnf install -y --setopt=install_weak_deps=False python3-pip
+          tree="$RUNNER_TEMP/omx-contract-shapes"
+          git init -q "$tree"
+          git -C "$tree" fetch -q --depth 1 https://github.com/Open-Mixer/omx-contract.git "$OMX_CONTRACT_SHAPES_REF"
+          git -C "$tree" checkout -q FETCH_HEAD
+          (cd "$tree" && npm ci --no-audit --no-fund)
+          python3 -m venv "$RUNNER_TEMP/shapes-venv"
+          "$RUNNER_TEMP/shapes-venv/bin/pip" install -q -r "$tree/tools/shapes-requirements.txt"
+          echo "OMX_CONTRACT_TREE=$tree" >> "$GITHUB_ENV"
+          echo "OMX_DATAMODEL_CODEGEN=$RUNNER_TEMP/shapes-venv/bin/datamodel-codegen" >> "$GITHUB_ENV"
+      - id: handback-shapes
+        name: The committed shape renders are the render of the shapes, by the pinned generators (docs/shapes.md)
+        run: make shapes-check
       - id: handback-test
         name: Tests over the built tree (the layout, the MOD GUI, the look, the skin facts and schema, the importer, the command)
         env:

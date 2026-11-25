@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store console-map
+.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store console-map shapes shapes-check install-python
 
 all: build
 
@@ -33,7 +33,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
-check: build spdx public-sources look copies gestures codes group-words console-map
+check: build spdx public-sources look copies gestures codes group-words console-map shapes-check
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -72,6 +72,22 @@ group-words:
 # docs/modgui.md's map table is what tools/look/console-map.json gives, printed by tools/console-map-render.mjs (#69).
 console-map:
 	node tools/console-map-render.mjs --check
+
+# The document shapes (docs/shapes.md): shapes/<name>.schema.json rendered to a TypeScript interface set and to Python
+# TypedDicts by omx-contract's own `render --shapes` and its two pinned generators, never written by hand. The renders are
+# COMMITTED (test/golden/ts/shapes, share/omx-panel); a consumer reads them and runs no generator. `make shapes` writes them,
+# `make shapes-check` holds the committed files to a fresh render byte for byte (CI runs it). The generators run from an
+# omx-contract tree (OMX_CONTRACT_TREE, default ../omx-contract) with its `npm ci` done and `pip install -r
+# tools/shapes-requirements.txt` (or OMX_DATAMODEL_CODEGEN naming the command).
+OMX_CONTRACT_TREE ?= ../omx-contract
+SHAPES_RENDER = node $(OMX_CONTRACT_TREE)/bin/omx-contract.mjs render --shapes --shapes-dir $(CURDIR)/shapes
+shapes:
+	$(SHAPES_RENDER) --target ts --out test/golden/ts
+	$(SHAPES_RENDER) --target py --out share/omx-panel
+
+shapes-check:
+	$(SHAPES_RENDER) --target ts --out test/golden/ts --check
+	$(SHAPES_RENDER) --target py --out share/omx-panel --check
 
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
@@ -150,6 +166,17 @@ install-store:
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
+
+# The Python shapes as the package omx_panel (omx_panel.shapes.<name>, docs/shapes.md): the files share/omx-panel/ holds,
+# installed under PYTHONDIR, where this python3 keeps pure modules under PREFIX; a package build names its own (the spec's
+# python3_sitelib, Debian's dist-packages)
+PYTHONDIR = $(shell python3 -c 'import sysconfig; print(sysconfig.get_path("purelib", vars={"base": "$(PREFIX)"}))')
+
+install-python:
+	install -d $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes
+	install -m 0644 python/omx_panel/__init__.py $(DESTDIR)$(PYTHONDIR)/omx_panel/__init__.py
+	install -m 0644 python/omx_panel/shapes/__init__.py $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes/__init__.py
+	for f in share/omx-panel/omx_contract_*_shape.py; do n=$$(basename "$$f" _shape.py | sed 's/^omx_contract_//'); install -m 0644 "$$f" $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes/$$n.py || exit 1; done
 
 # The panel and gestures domains (docs/contract-domains.md), as they are, by omx-contract's one domain installer: the loader
 # reads $(CONTRACTDIR)/panel/panel.json and its catalogs/, and $(CONTRACTDIR)/gestures/gestures.json.

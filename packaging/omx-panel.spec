@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-# the build runs with --nodeps, without systemd-rpm-macros: the unit directory is then the one it defines
+# the build runs with --nodeps, without systemd-rpm-macros and python3-devel: the unit directory and the Python module
+# directory are then the ones it defines
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 %{!?_presetdir:%global _presetdir %{_prefix}/lib/systemd/system-preset}
+# likewise python3-devel's macro: where this python3 keeps pure modules
+%{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
 Version: 0.17.0
@@ -16,6 +19,7 @@ URL: https://github.com/Open-Mixer/omx-panel
 Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires: make
+BuildRequires: python3-devel
 BuildRequires: sed
 BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
@@ -145,6 +149,18 @@ The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
 omx-panel-store pkg-config file and the store's DDL (panel.sql), to build
 against the descriptions store.
 
+%package -n python3-omx-panel
+Summary: omx-panel's document shapes for Python: import omx_panel.shapes.gestures and the others
+BuildArch: noarch
+Requires: python3
+
+%description -n python3-omx-panel
+The Python package omx_panel: omx_panel.shapes.<name> holds the typed dictionaries
+of the documents omx-panel owns (the gesture declaration with its words, inputs and
+widgets, the gesture run's control, event and answer, a look role, a refusal code),
+generated from the schemas the omx-panel package ships, so a Python consumer imports
+the words instead of restating them.
+
 %prep
 %autosetup
 
@@ -162,6 +178,8 @@ make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCL
 make install-base DESTDIR=%{buildroot} DATADIR=%{_datadir}
 # the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5): the preset says so
 install -D -m 0644 systemd/80-omx-panel.preset %{buildroot}%{_presetdir}/80-omx-panel.preset
+
+make install-python DESTDIR=%{buildroot} PYTHONDIR=%{python3_sitelib}
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
@@ -209,6 +227,10 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 %{omx_contract_domain_dir}/panel/
 %dir %{_includedir}/omxdomain
 %{_includedir}/omxdomain/panel_codes.h
+
+%files -n python3-omx-panel
+%license LICENSE
+%{python3_sitelib}/omx_panel/
 
 %files -n omx-panel-render
 %license LICENSE

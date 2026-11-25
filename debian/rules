@@ -27,6 +27,8 @@ endif
 
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/omx-panel -- PREFIX=/usr BINDIR=/usr/bin DATADIR=/usr/share UNITDIR=/usr/lib/systemd/system SYSCONFDIR=/etc
+	# the Python shapes, omx_panel.shapes.<name>, in their own package
+	$(MAKE) install-python DESTDIR=$(CURDIR)/debian/python3-omx-panel PREFIX=/usr PYTHONDIR=/usr/lib/python3/dist-packages
 	# the renderer's shared library, header, link and pkg-config file, split by debian/libomx-panel-render*.install
 	$(MAKE) install-renderer DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include BINDIR=/usr/bin DATADIR=/usr/share
 	# the descriptions store: library, development files and command, split by debian/libomx-panel-store*.install and

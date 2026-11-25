@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/schema/omx-panel/shapes/gestures.schema.json",
+  "title": "Gestures",
+  "description": "Every surface moves a panel's controls with these gestures, declared once; each surface maps its own inputs onto them. tools/gestures.mjs is the reference every surface is checked against; docs/panel-gestures.md explains the table. The timings, the thresholds and the table live here and nowhere else in the repo.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1,
+      "description": "The version of this declaration's form: 1."
+    },
+    "title": {
+      "type": "string",
+      "description": "The declaration's name."
+    },
+    "description": {
+      "type": "string",
+      "description": "What the declaration is and where its reference and its explanation live."
+    },
+    "timings": {
+      "$ref": "#/$defs/Timings"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/Thresholds"
+    },
+    "words": {
+      "$ref": "#/$defs/Words"
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Every input the table may name, in the declared order.",
+      "items": {
+        "$ref": "#/$defs/Input"
+      }
+    },
+    "table": {
+      "$ref": "#/$defs/Table"
+    },
+    "paint": {
+      "$ref": "#/$defs/Paint"
+    },
+    "codes": {
+      "type": "object",
+      "title": "Codes",
+      "description": "The refusal codes a gesture run answers, each by its name (GESTURE_READ_ONLY ...) with its sentence in English.",
+      "properties": {
+        "GESTURE_READ_ONLY": {
+          "type": "string",
+          "description": "The sentence of GESTURE_READ_ONLY."
+        },
+        "GESTURE_CONTROL_OWNED": {
+          "type": "string",
+          "description": "The sentence of GESTURE_CONTROL_OWNED."
+        },
+        "GESTURE_NO_DEFAULT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NO_DEFAULT."
+        },
+        "GESTURE_NOT_IN_TABLE": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NOT_IN_TABLE."
+        },
+        "GESTURE_HOLD_SHORT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_HOLD_SHORT."
+        },
+        "GESTURE_HOLD_BELOW_FLOOR": {
+          "type": "string",
+          "description": "The sentence of GESTURE_HOLD_BELOW_FLOOR."
+        },
+        "GESTURE_NO_TARGET": {
+          "type": "string",
+          "description": "The sentence of GESTURE_NO_TARGET."
+        },
+        "GESTURE_PAINT_REQUIRED_ON_TOUCH": {
+          "type": "string",
+          "description": "The sentence of GESTURE_PAINT_REQUIRED_ON_TOUCH."
+        },
+        "GESTURE_BAD_SETTING": {
+          "type": "string",
+          "description": "The sentence of GESTURE_BAD_SETTING."
+        },
+        "GESTURE_BAD_INPUT": {
+          "type": "string",
+          "description": "The sentence of GESTURE_BAD_INPUT."
+        }
+      },
+      "required": [
+        "GESTURE_READ_ONLY",
+        "GESTURE_CONTROL_OWNED",
+        "GESTURE_NO_DEFAULT",
+        "GESTURE_NOT_IN_TABLE",
+        "GESTURE_HOLD_SHORT",
+        "GESTURE_HOLD_BELOW_FLOOR",
+        "GESTURE_NO_TARGET",
+        "GESTURE_PAINT_REQUIRED_ON_TOUCH",
+        "GESTURE_BAD_SETTING",
+        "GESTURE_BAD_INPUT"
+      ],
+      "additionalProperties": false
+    },
+    "exceptions": {
+      "type": "array",
+      "description": "The section exceptions layered on the table; none today.",
+      "items": {
+        "$ref": "#/$defs/Exception"
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "title",
+    "description",
+    "timings",
+    "thresholds",
+    "words",
+    "inputs",
+    "table",
+    "paint",
+    "codes",
+    "exceptions"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Word": {
+      "type": "string",
+      "enum": [
+        "drag",
+        "fine",
+        "step",
+        "second",
+        "reset",
+        "more",
+        "select",
+        "toggle",
+        "paint"
+      ],
+      "description": "A gesture word: what an input does to a control. Each is declared in `words` with its meaning, in this order."
+    },
+    "Input": {
+      "type": "string",
+      "enum": [
+        "tap",
+        "doubleTap",
+        "longPress",
+        "drag",
+        "dragFine",
+        "wheel",
+        "wheelCoarse",
+        "detent",
+        "detentCoarse",
+        "encoder3",
+        "arrow",
+        "arrowCoarse",
+        "arrowSecond",
+        "backspace",
+        "pinch",
+        "sweep"
+      ],
+      "description": "An input a surface maps onto the gestures, by the name every surface shares (a tap, a wheel notch, an encoder detent, an arrow key)."
+    },
+    "Widget": {
+      "type": "string",
+      "enum": [
+        "knob",
+        "fader",
+        "switch",
+        "selector",
+        "xy",
+        "meter",
+        "display",
+        "curve",
+        "bar",
+        "handle"
+      ],
+      "description": "A widget a control is drawn with, by the names a panel description uses: the standard widgets of panel.schema.json plus the `bar` and `handle` of a group."
+    },
+    "Timing": {
+      "type": "object",
+      "title": "Timing",
+      "description": "One timing: its default in milliseconds, and for the safety hold the floor a surface may not go below.",
+      "properties": {
+        "default": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The declared default, in milliseconds."
+        },
+        "floor": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The least a surface may set; a surface may lengthen a timing and never shorten one below its floor. Absent: no floor."
+        },
+        "description": {
+          "type": "string",
+          "description": "What the timing decides, as the gesture reference quotes it."
+        }
+      },
+      "required": [
+        "default",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "Timings": {
+      "type": "object",
+      "title": "Timings",
+      "description": "The timings a surface runs with, each declared once here and nowhere else in the repository.",
+      "properties": {
+        "longPressMs": {
+          "$ref": "#/$defs/Timing"
+        },
+        "doubleTapMs": {
+          "$ref": "#/$defs/Timing"
+        },
+        "palmGuardMs": {
+          "$ref": "#/$defs/Timing"
+        },
+        "safetyHoldMs": {
+          "$ref": "#/$defs/Timing"
+        },
+        "claimMs": {
+          "$ref": "#/$defs/Timing"
+        }
+      },
+      "required": [
+        "longPressMs",
+        "doubleTapMs",
+        "palmGuardMs",
+        "safetyHoldMs",
+        "claimMs"
+      ],
+      "additionalProperties": false
+    },
+    "Thresholds": {
+      "type": "object",
+      "title": "Thresholds",
+      "description": "The numeric thresholds of the gestures, declared once.",
+      "properties": {
+        "dragStartPx": {
+          "type": "number",
+          "description": "The distance in pixels a press must move before it is a drag; up to it the press is a tap candidate."
+        },
+        "fineRatio": {
+          "type": "number",
+          "description": "The fraction of the drag's travel a fine drag moves the value by."
+        },
+        "stepFraction": {
+          "type": "number",
+          "description": "One step as a fraction of the normalised travel when the control declares no step."
+        },
+        "coarseSteps": {
+          "type": "integer",
+          "description": "The number of steps a coarse input moves."
+        },
+        "defaultTravelPx": {
+          "type": "number",
+          "description": "The drag travel in pixels of a control that declares none."
+        }
+      },
+      "required": [
+        "dragStartPx",
+        "fineRatio",
+        "stepFraction",
+        "coarseSteps",
+        "defaultTravelPx"
+      ],
+      "additionalProperties": false
+    },
+    "Words": {
+      "type": "object",
+      "title": "Words",
+      "description": "The gesture words, each with its meaning in one sentence, in the declared order.",
+      "properties": {
+        "drag": {
+          "type": "string",
+          "description": "The meaning of the word `drag`."
+        },
+        "fine": {
+          "type": "string",
+          "description": "The meaning of the word `fine`."
+        },
+        "step": {
+          "type": "string",
+          "description": "The meaning of the word `step`."
+        },
+        "second": {
+          "type": "string",
+          "description": "The meaning of the word `second`."
+        },
+        "reset": {
+          "type": "string",
+          "description": "The meaning of the word `reset`."
+        },
+        "more": {
+          "type": "string",
+          "description": "The meaning of the word `more`."
+        },
+        "select": {
+          "type": "string",
+          "description": "The meaning of the word `select`."
+        },
+        "toggle": {
+          "type": "string",
+          "description": "The meaning of the word `toggle`."
+        },
+        "paint": {
+          "type": "string",
+          "description": "The meaning of the word `paint`."
+        }
+      },
+      "required": [
+        "drag",
+        "fine",
+        "step",
+        "second",
+        "reset",
+        "more",
+        "select",
+        "toggle",
+        "paint"
+      ],
+      "additionalProperties": false
+    },
+    "WidgetRow": {
+      "type": "object",
+      "title": "WidgetRow",
+      "description": "One widget's row of the table: the word each input it takes means on it. An input absent from the row does nothing on this widget.",
+      "properties": {
+        "tap": {
+          "$ref": "#/$defs/Word"
+        },
+        "doubleTap": {
+          "$ref": "#/$defs/Word"
+        },
+        "longPress": {
+          "$ref": "#/$defs/Word"
+        },
+        "drag": {
+          "$ref": "#/$defs/Word"
+        },
+        "dragFine": {
+          "$ref": "#/$defs/Word"
+        },
+        "wheel": {
+          "$ref": "#/$defs/Word"
+        },
+        "wheelCoarse": {
+          "$ref": "#/$defs/Word"
+        },
+        "detent": {
+          "$ref": "#/$defs/Word"
+        },
+        "detentCoarse": {
+          "$ref": "#/$defs/Word"
+        },
+        "encoder3": {
+          "$ref": "#/$defs/Word"
+        },
+        "arrow": {
+          "$ref": "#/$defs/Word"
+        },
+        "arrowCoarse": {
+          "$ref": "#/$defs/Word"
+        },
+        "arrowSecond": {
+          "$ref": "#/$defs/Word"
+        },
+        "backspace": {
+          "$ref": "#/$defs/Word"
+        },
+        "pinch": {
+          "$ref": "#/$defs/Word"
+        },
+        "sweep": {
+          "$ref": "#/$defs/Word"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Table": {
+      "type": "object",
+      "title": "Table",
+      "description": "The table: for each widget, its row of input to word.",
+      "properties": {
+        "knob": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "fader": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "switch": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "selector": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "xy": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "meter": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "display": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "curve": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "bar": {
+          "$ref": "#/$defs/WidgetRow"
+        },
+        "handle": {
+          "$ref": "#/$defs/WidgetRow"
+        }
+      },
+      "required": [
+        "knob",
+        "fader",
+        "switch",
+        "selector",
+        "xy",
+        "meter",
+        "display",
+        "curve",
+        "bar",
+        "handle"
+      ],
+      "additionalProperties": false
+    },
+    "Paint": {
+      "type": "object",
+      "title": "Paint",
+      "description": "Whether a bar group's paint gesture is required or optional, by pointer type: required on touch, optional with a mouse.",
+      "properties": {
+        "touch": {
+          "type": "string",
+          "enum": [
+            "required",
+            "optional"
+          ],
+          "description": "Painting with a touch."
+        },
+        "mouse": {
+          "type": "string",
+          "enum": [
+            "required",
+            "optional"
+          ],
+          "description": "Painting with a mouse."
+        }
+      },
+      "required": [
+        "touch",
+        "mouse"
+      ],
+      "additionalProperties": false
+    },
+    "Exception": {
+      "type": "object",
+      "title": "Exception",
+      "description": "A section's exception layered on the table: in the named section, this widget's input means another word.",
+      "properties": {
+        "section": {
+          "type": "string",
+          "description": "The panel section the exception applies to."
+        },
+        "widget": {
+          "$ref": "#/$defs/Widget"
+        },
+        "input": {
+          "$ref": "#/$defs/Input"
+        },
+        "word": {
+          "$ref": "#/$defs/Word"
+        }
+      },
+      "required": [
+        "section",
+        "widget",
+        "input",
+        "word"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
