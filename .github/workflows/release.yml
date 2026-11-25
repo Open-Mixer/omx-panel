@@ -159,7 +159,7 @@ jobs:
       same-pass: ${{ inputs.same_pass || needs.samepass.outputs.list }}
       staged: ${{ inputs.staged == true }}
       package-name: omx-panel
-      binary-names: omx-panel libomx-panel-render0 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
+      binary-names: omx-panel libomx-panel-render1 libomx-panel-render-dev libomx-panel-store0 libomx-panel-store-dev omx-panel-store omx-panel-contract
       publish: ${{ github.event_name == 'push' || inputs.publish == true }}
       republish: ${{ inputs.republish == true }}
       dependencies: ''

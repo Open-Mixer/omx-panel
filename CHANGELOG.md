@@ -4,6 +4,15 @@
 
 ## Unreleased
 
+- **ABI break: the renderer's library is `libomx-panel-render.so.1`** (#240). The spectrum takes both taps and the console's
+  modes: `omx_panel_view_set_spectrum(view, index, hz, pre_db, post_db, peak_db, n, mode, delta, db_min, db_max, grid_db)`,
+  `mode` an `omx_panel_tap_mode_t` (`OMX_PANEL_TAP_PRE`, `OMX_PANEL_TAP_POST`, `OMX_PANEL_TAP_BOTH`), a tap the mode does not
+  show NULL, `delta` (omx-dsp's wedges between the taps) only with both; it was `(view, index, hz, db, peak_db, n, db_min,
+  db_max, grid_db)`. PRE is drawn as a dim reference line, POST filled; with the delta both are full-strength lines and
+  nothing is filled. The soname moves from `.so.0` to `.so.1` and the symbol version from `OMX_PANEL_RENDER_0` to
+  `OMX_PANEL_RENDER_1`; the DEB library package is `libomx-panel-render1` (was `libomx-panel-render0`), the RPM
+  `omx-panel-render` carries the `.so.1`. No `.so.0` is kept: a surface that loads the `.so.0` or calls the old
+  `set_spectrum` moves with this release.
 - The knob pointer is read on the knob face it is carved into (#244). A floor's ground may be a key a finish sets
   (`--knob-face`) as well as a ground role, measured on that key in every finish of the console's pin;
   `--knob-pointer`'s floor is 3:1 on `--knob-face`, no longer on `--surface-3`, the page around the knob. The cream

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
  * The shared library exports the C API of include/omx_panel_render.h and nothing else: each function by name
  * (test/shared.test.mjs holds the list to the header). */
-OMX_PANEL_RENDER_0 {
+OMX_PANEL_RENDER_1 {
   global:
     omx_gesture_close;
     omx_gesture_open;
