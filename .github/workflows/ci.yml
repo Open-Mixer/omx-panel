@@ -47,10 +47,18 @@ jobs:
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
-          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
+          # a pull request into devel builds against the staging channel (devel -> staging -> prod,
+          # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
+          case $EVENT:$BASE in
+            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          esac
       - name: Install the real MOD bundles the importer proof reads
         # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
         # bundle reads them where they are installed, and no MOD file is copied into this tree.
@@ -116,10 +124,18 @@ jobs:
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
-          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
+          # a pull request into devel builds against the staging channel (devel -> staging -> prod,
+          # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
+          case $EVENT:$BASE in
+            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          esac
       - uses: actions/checkout@v4
       - name: The tree the tests read
         run: npm ci && make
@@ -177,10 +193,18 @@ jobs:
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
-          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
+          # a pull request into devel builds against the staging channel (devel -> staging -> prod,
+          # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
+          case $EVENT:$BASE in
+            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          esac
       - uses: actions/checkout@v4
       - name: The tree and the renderer
         run: npm ci && make && make renderer
@@ -228,10 +252,18 @@ jobs:
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
-          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
+          # a pull request into devel builds against the staging channel (devel -> staging -> prod,
+          # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
+          case $EVENT:$BASE in
+            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          esac
       - name: pugl and nanovg, from their packaging
         uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
         with:
@@ -504,10 +536,18 @@ jobs:
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
       # plugin-hostd-protocol#27: a stale staged contract package outranked the channel)
       - name: Every omx package comes from the channel
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
-          if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi
+          # a pull request into devel builds against the staging channel (devel -> staging -> prod,
+          # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
+          case $EVENT:$BASE in
+            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          esac
       - uses: Open-Mixer/.github/.github/actions/langpacks@openmixer-v1
         with:
           name: omx-panel
