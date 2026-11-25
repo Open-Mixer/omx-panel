@@ -3,7 +3,7 @@
   "$id": "https://openmixer.org/contract/gestures",
   "info": {
     "title": "The gesture vocabulary: the words, timings, thresholds and table every surface moves a panel's controls with",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -11,7 +11,7 @@
     "schemas": {
       "GESTURES_HEAD": {
         "description": "The declaration's own heading: its schema number, its title and its description, as schema/gestures.json opens.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -22,7 +22,7 @@
       },
       "GESTURES_TIMINGS": {
         "description": "The timings, in milliseconds: each a default and a description, the safety hold also a floor a surface may not go below.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -51,7 +51,7 @@
       },
       "GESTURES_THRESHOLDS": {
         "description": "The thresholds: the drag start in pixels, the fine ratio, the step fraction, the coarse steps and the default travel in pixels.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -64,7 +64,7 @@
       },
       "GESTURES_WORDS": {
         "description": "The gesture words, in their declared order: what a surface does with an input the table maps to the word.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "drag",
@@ -133,7 +133,7 @@
       },
       "GESTURES_INPUTS": {
         "description": "The inputs a surface maps onto the gesture words, in their declared order.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -159,7 +159,7 @@
       },
       "GESTURES_TABLE": {
         "description": "What each widget does with each input: the word of GESTURES_WORDS. The widget keys are PANEL_STANDARD_WIDGETS of the panel domain, and bar and handle.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -255,7 +255,7 @@
       },
       "GESTURES_PAINT": {
         "description": "Whether a sweep that paints bars is required or optional, by pointer type.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -265,7 +265,7 @@
       },
       "GESTURES_CODES": {
         "description": "The refusal codes of a gesture, each naming the rule that refused.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "panel.gesture.read-only",
@@ -361,7 +361,7 @@
       },
       "GESTURES_EXCEPTIONS": {
         "description": "The section exceptions layered on the table: a section, a widget, an input and the word that replaces the table's.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
