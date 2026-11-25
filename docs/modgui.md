@@ -65,6 +65,11 @@ value clears on the grounds it is drawn on, and one default. The defaults are th
 default: the dark theme, the orange accent, the aluminium finish, the vintage style, which the file names as its
 `look`. Each default is the value the console's `tokens.css` resolves for that token at that look.
 
+A ground is a ground role, or a key a finish sets (`--knob-face`). A role drawn on the hardware is read on the
+hardware, so such a floor is measured on that key in every finish of the console's pin, not on the page around it.
+`--knob-pointer`'s floor is 3:1 on `--knob-face`: the pointer is carved into the knob's face, and on a light page it
+keeps its cream on the dark metal.
+
 `tools/look.json` is the one public source of the vintage tokens. `tools/look.mjs` writes it from the role file,
 every role at its default and the font, and the renderer's role list into `renderer/src/look_roles.h`;
 `omx-panel look --check` refuses either when it is not what the role file gives. The package carries it as

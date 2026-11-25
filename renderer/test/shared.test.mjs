@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * The shared library (build/libomx-panel-render.so.0, what a surface loads at run time) exports every function its two headers
+ * The shared library (build/libomx-panel-render.so.1, what a surface loads at run time) exports every function its two headers
  * declare (omx_panel_render.h, omx_panel_gesture.h) and nothing else, under its soname. An arm drops a function from the export
  * map and the first check goes red; an arm exports `*` and the second does. abi/omx_panel_gesture.abi lists the gesture unit's
  * symbols with their version and prototype: it is held to the header and to the library both ways.
@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 const HERE = new URL('..', import.meta.url).pathname;
-const SO = join(HERE, 'build', 'libomx-panel-render.so.0');
+const SO = join(HERE, 'build', 'libomx-panel-render.so.1');
 
 const header = (name, prefix) => [...readFileSync(join(HERE, 'include', name), 'utf8').matchAll(new RegExp(`\\b(${prefix}[a-z_]+)\\s*\\(`, 'g'))].map((m) => m[1]);
 const gestureDeclared = header('omx_panel_gesture.h', 'omx_gesture_');
@@ -71,8 +71,8 @@ test('every public symbol of the gesture header is documented, each parameter an
   }
 });
 
-test('the soname is libomx-panel-render.so.0', () => {
+test('the soname is libomx-panel-render.so.1', () => {
   // readelf translates its labels ('Library soname') under the caller's locale: read them in C
   const dyn = execFileSync('readelf', ['-d', SO], { encoding: 'utf8', env: { ...process.env, LC_ALL: 'C' } });
-  assert.match(dyn, /\(SONAME\)\s+Library soname: \[libomx-panel-render\.so\.0\]/);
+  assert.match(dyn, /\(SONAME\)\s+Library soname: \[libomx-panel-render\.so\.1\]/);
 });

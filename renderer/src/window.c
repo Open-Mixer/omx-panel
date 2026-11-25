@@ -92,6 +92,26 @@ static void nvg_fill_under(void *ctx, const double *xs, const double *ys, size_t
   }
 }
 
+static void nvg_strip(void *ctx, double ax, double bx, double a0, double a1, double b0, double b1, omx_rgb rgb, double alpha) {
+  NVGcontext *vg = ((struct omx_panel_window *)ctx)->vg;
+  if (!(bx > ax) || !(alpha > 0)) return;
+  unsigned char a = (unsigned char)fmax(0, fmin(255, alpha * 255 + 0.5));
+  /* crossed segments make two triangles: each is filled on its own, so the winding never cancels */
+  double d0 = a1 - a0, d1 = b1 - b0;
+  nvgBeginPath(vg);
+  if (d0 * d1 < 0) {
+    double u = d0 / (d0 - d1), xm = ax + u * (bx - ax), ym = a0 + u * (b0 - a0);
+    nvgMoveTo(vg, (float)ax, (float)a0), nvgLineTo(vg, (float)xm, (float)ym), nvgLineTo(vg, (float)ax, (float)a1), nvgClosePath(vg);
+    nvgMoveTo(vg, (float)xm, (float)ym), nvgLineTo(vg, (float)bx, (float)b0), nvgLineTo(vg, (float)bx, (float)b1), nvgClosePath(vg);
+  } else {
+    nvgMoveTo(vg, (float)ax, (float)a0), nvgLineTo(vg, (float)bx, (float)b0), nvgLineTo(vg, (float)bx, (float)b1);
+    nvgLineTo(vg, (float)ax, (float)a1), nvgClosePath(vg);
+  }
+  nvgPathWinding(vg, NVG_SOLID);
+  nvgFillColor(vg, nvgRGBA(rgb.c[0], rgb.c[1], rgb.c[2], a));
+  nvgFill(vg);
+}
+
 static void nvg_text(void *ctx, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   NVGcontext *vg = ((struct omx_panel_window *)ctx)->vg;
   if (!n) return;
@@ -123,7 +143,7 @@ static void expose(struct omx_panel_window *w) {
   if (!w->vg) return;
   nvgBeginFrame(w->vg, (float)w->w, (float)w->h, 1);
   /* no scene callback: the window's NanoVG backend does not paint the look's scenes yet, so the knob is the flat one */
-  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_fill_under, nvg_text, NULL};
+  const omx_draw d = {w, nvg_round_rect, nvg_disc, nvg_segment, nvg_fill_under, nvg_strip, nvg_text, NULL};
   omx_panel_view_paint(w->view, w->w, w->h, w->scale, &d);
   nvgEndFrame(w->vg);
   if (w->read) {

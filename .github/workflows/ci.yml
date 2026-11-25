@@ -350,7 +350,7 @@ jobs:
             cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
               ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-descriptions-[0-9]*.rpm out/'
-      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API (tools/render-package-check.sh)
+      # the renderer's library package carries libomx-panel-render.so.1 with its SONAME and C API (tools/render-package-check.sh)
       - name: The renderer's library in its RPMs
         run: |
           docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
@@ -414,15 +414,15 @@ jobs:
             # channel, and dpkg-buildpackage checks them (no -d)
             apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
             DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck
-            cp /b/omx-panel_*.deb /b/libomx-panel-render0_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
+            cp /b/omx-panel_*.deb /b/libomx-panel-render1_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
               /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /b/omx-panel-descriptions_*.deb /w/out/'
-      # the renderer's library package carries libomx-panel-render.so.0 with its SONAME and C API, and the check is red
+      # the renderer's library package carries libomx-panel-render.so.1 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
         run: |
           docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
             apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
-            tools/render-package-check.sh --self-test out/libomx-panel-render0_*.deb out/omx-panel_*_all.deb'
+            tools/render-package-check.sh --self-test out/libomx-panel-render1_*.deb out/omx-panel_*_all.deb'
       # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
       # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
       - name: The descriptions store in its DEBs

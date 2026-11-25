@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { checkRoles, contrast, emitLook, emitRoleHeader, loadRoles, LOOK_JSON, ROLE_HEADER, ROLES_JSON } from '../tools/look.mjs';
+import { FINISH_KEYS, loadPin } from '../tools/look-pin.mjs';
 import { emitStylesheet, generateModgui, loadLook, renderFaderFilm, renderFilm, resolvePanel } from '../tools/modgui-gen.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -93,6 +94,25 @@ test('a host table is held to the same floors: every role valued, a missing one 
   assert.match(checkRoles(doc, values).join('\n'), /--origin-room-mode has no #rrggbb value/);
 });
 
+test('a floor on a key a finish sets is measured in every finish of the pin; a key no finish sets is no ground', () => {
+  const pin = loadPin();
+  const pointer = role(doc, '--knob-pointer').default;
+  assert.ok(FINISH_KEYS.includes('--knob-face'));
+  for (const [fn, fin] of Object.entries(pin.finish)) assert.ok(contrast(pointer, fin['--knob-face']) >= 3, `the pointer on the ${fn} knob face`);
+  // SABOTAGE: the pointer valued as the graphite face is red on that finish, by name, and on no other ground.
+  const face = pin.finish.graphite['--knob-face'];
+  const sunk = clone();
+  role(sunk, '--knob-pointer').default = face;
+  const faults = checkRoles(sunk).filter((f) => f.startsWith('--knob-pointer'));
+  assert.ok(faults.some((f) => f === `--knob-pointer ${face} measures 1.00:1 on --knob-face ${face} (the graphite finish), under its 3:1 floor`), faults.join('\n'));
+  // a host table that values no finish key is measured on the pin's finishes
+  const values = Object.fromEntries(sunk.roles.map((r) => [r.name, r.default]));
+  assert.match(checkRoles(sunk, values).join('\n'), /--knob-pointer \S+ measures 1\.00:1 on --knob-face \S+ \(the graphite finish\)/);
+  const nowhere = clone();
+  role(nowhere, '--knob-pointer').floor.on = ['--knob-glow'];
+  assert.match(checkRoles(nowhere).join('\n'), /--knob-pointer's floor is on --knob-glow, which is no ground role and no key a finish sets/);
+});
+
 test('tools/look.json is the role defaults and the font, and nothing else; a moved default moves it', () => {
   assert.equal(emitLook(doc), readFileSync(LOOK_JSON, 'utf8'));
   const tokens = JSON.parse(readFileSync(LOOK_JSON, 'utf8')).tokens;
@@ -119,7 +139,7 @@ test('the knob pointer and the curve stroke are roles: what each colours, its fa
   const pointer = role(doc, '--knob-pointer'), stroke = role(doc, '--curve-stroke');
   assert.equal(pointer?.family, 'fixed', 'the pointer does not follow the accent');
   assert.match(pointer?.draws ?? '', /\bpointer\b/);
-  assert.ok(pointer?.floor?.on.includes('--surface-3'), 'the pointer is read on the knob\'s body');
+  assert.deepEqual(pointer?.floor?.on, ['--knob-face'], 'the pointer is read on the knob face it is carved into, never on the page around it');
   assert.equal(stroke?.family, 'accent');
   assert.match(stroke?.draws ?? '', /\bcurve\b.*\bstroke\b|\bstroke\b.*\bcurve\b/);
   assert.ok(stroke?.floor?.on.includes('--surface-3'), 'the stroke is read on the curve\'s frame');

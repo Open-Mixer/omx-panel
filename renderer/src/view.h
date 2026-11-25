@@ -7,6 +7,7 @@
 #define OMX_PANEL_VIEW_H
 
 #include <omxdomain/panel_codes.h>
+#include <omxdsp/analysis/omx_rta_bands.h>
 #include <omxdsp/mix/omx_meter_view.h>
 
 #include "draw.h"
@@ -73,10 +74,14 @@ typedef struct {
   double *mark_freq, *mark_depth;
   char *mark_letter;
   size_t nmarks;
-  /* the spectrum a host hands an eq_response (omx_panel_view_set_spectrum): its bands' centres, levels and peaks in dBFS
-   * (-INFINITY for silence) on the level window [spec_min, spec_max] with a graticule line every spec_grid; none by default */
-  double *spec_hz, *spec_db, *spec_peak;
+  /* the spectrum a host hands an eq_response (omx_panel_view_set_spectrum): its bands' centres, the levels of the taps its mode
+   * shows (NULL for one it does not) and the filled tap's peaks in dBFS (-INFINITY for silence), on the level window
+   * [spec_min, spec_max] with a graticule line every spec_grid; with the delta, omx-dsp's wedges between the taps; none by default */
+  double *spec_hz, *spec_pre, *spec_post, *spec_peak;
   size_t nspec;
+  int spec_mode, spec_delta;
+  struct omx_rta_wedge *spec_wedges;
+  size_t nwedges;
   double spec_min, spec_max, spec_grid;
 } display;
 
@@ -122,7 +127,7 @@ typedef struct {
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk, deltaBoost, deltaCut;
   /* what the look's style (looks[style] of look.json) sets over the roles, as the MOD GUI face wears it (tools/modgui-gen.mjs
    * faceColours): the enclosure, the head plate, the head's rule and lamp, the screens, a pressed key, the screws, and each text's ink */
   omx_rgb enclosure, head, rule, lamp, screen, pressed, screws, screwSlot, tBrand, tLabel, tSection, tControl, tValue, tKey, tScreen, tScreenDim;

@@ -52,13 +52,13 @@ Description: omx-panel's document shapes for Python
  role, a refusal code), generated from the schemas the omx-panel package ships,
  so a Python consumer imports the words instead of restating them.
 
-Package: libomx-panel-render0
+Package: libomx-panel-render1
 Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, omx-panel (= ${source:Version})
 Description: omx-panel renderer, a library that draws a panel into a pixel buffer
- libomx-panel-render.so.0 draws a panel description in the omx look into a CPU
+ libomx-panel-render.so.1 draws a panel description in the omx look into a CPU
  pixel buffer and answers input with the one gesture vocabulary. A surface
  loads it at run time (Zynthian's panel view); its look, geometry and fonts
  are omx-panel's.
@@ -67,7 +67,7 @@ Package: libomx-panel-render-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libomx-panel-render0 (= ${binary:Version}), libcjson-dev, ${misc:Depends}
+Depends: libomx-panel-render1 (= ${binary:Version}), libcjson-dev, ${misc:Depends}
 Description: omx-panel renderer, development files
  The headers omx_panel_render.h and omx_panel_gesture.h, the
  libomx-panel-render.so link and the omx-panel-render pkg-config file, to

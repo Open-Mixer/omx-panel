@@ -39,6 +39,9 @@ void omx_paint(omx_canvas *c, double bx0, double by0, double bx1, double by1, om
  * of y0..y1 (flat beyond), laid at `alpha`; supersampled as the shapes are. */
 void omx_fill_under(omx_canvas *c, const double *xs, const double *ys, size_t n, double base_y, double y0, double y1, const double *t,
                     const omx_rgb *stops, size_t nstops, double alpha);
+/** The strip between the segment (ax, a0)-(bx, b0) and the segment (ax, a1)-(bx, b1) over [ax, bx], in `rgb` laid at `alpha`;
+ * supersampled as the shapes are. */
+void omx_strip(omx_canvas *c, double ax, double bx, double a0, double a1, double b0, double b1, omx_rgb rgb, double alpha);
 
 /* ------------------------------------------------------------------------------------- text */
 

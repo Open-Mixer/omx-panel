@@ -7,7 +7,7 @@ compare document's format, slots and ring bound through `omx-panel compare descr
 holds. Nothing of either is restated here: the words are the generated omx_panel.shapes.gestures.Word (#52: the module
 python3-omx-panel installs, rendered from shapes/gestures.schema.json), the compare values from the module.
 
-  OMX_PANEL_RENDER_LIB  the shared library (default this tree's renderer/build/libomx-panel-render.so.0)
+  OMX_PANEL_RENDER_LIB  the shared library (default this tree's renderer/build/libomx-panel-render.so.1)
   OMX_PANEL             the command (default node bin/omx-panel.mjs of this tree)
 Set both to an installed package's to read that package.
 """
@@ -22,7 +22,7 @@ import typing
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LIB = os.environ.get("OMX_PANEL_RENDER_LIB") or os.path.join(ROOT, "renderer", "build", "libomx-panel-render.so.0")
+LIB = os.environ.get("OMX_PANEL_RENDER_LIB") or os.path.join(ROOT, "renderer", "build", "libomx-panel-render.so.1")
 CMD = shlex.split(os.environ.get("OMX_PANEL") or "node %s" % shlex.quote(os.path.join(ROOT, "bin", "omx-panel.mjs")))
 
 

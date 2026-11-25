@@ -96,7 +96,7 @@ copies:
 
 # The panel renderer, C (docs/renderer.md): its own Makefile. Its check reads the built tree, so `make` first. WINDOW=1
 # adds the window (pugl, NanoVG); its tests want a display (xvfb-run). The packages ship the shared library alone
-# (omx-panel-render, libomx-panel-render0) and its header, .so link and pkg-config file (-devel, -dev): install-renderer
+# (omx-panel-render, libomx-panel-render1) and its header, .so link and pkg-config file (-devel, -dev): install-renderer
 # installs those, never the static library or the command.
 WINDOW ?= 0
 renderer:

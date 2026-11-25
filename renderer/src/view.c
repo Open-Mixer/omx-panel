@@ -189,6 +189,7 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
       {"--border-strong", &v->col.rim}, {"--ink", &v->col.ink},       {"--ink-dim", &v->col.inkDim},
       {"--accent", &v->col.accent},   {"--knob-pointer", &v->col.pointer},   {"--curve-stroke", &v->col.curve},
       {"--meter-green", &v->col.meterGreen}, {"--meter-amber", &v->col.meterAmber}, {"--meter-red", &v->col.meterRed},
+      {"--eq-delta-boost", &v->col.deltaBoost}, {"--eq-delta-cut", &v->col.deltaCut},
   };
   if (!cJSON_IsObject(tok)) {
     fail(err, n, "look: no tokens object%s%s", NULL, NULL);
@@ -692,7 +693,8 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
     free(v->controls[i].symbol), free(v->controls[i].label), free(v->controls[i].text), free(v->controls[i].gov), free(v->controls[i].bar);
   for (size_t i = 0; i < v->ndisplays; i++) free(v->displays[i].basis), free(v->displays[i].x), free(v->displays[i].y), free(v->displays[i].mark_freq), free(v->displays[i].mark_depth), free(v->displays[i].mark_letter),
                                                free(v->displays[i].stem_x), free(v->displays[i].stem_y), free(v->displays[i].stem_shade), free(v->displays[i].stem_letter),
-                                               free(v->displays[i].spec_hz), free(v->displays[i].spec_db), free(v->displays[i].spec_peak);
+                                               free(v->displays[i].spec_hz), free(v->displays[i].spec_pre), free(v->displays[i].spec_post),
+                                               free(v->displays[i].spec_peak), free(v->displays[i].spec_wedges);
   for (size_t i = 0; i < v->nmeters; i++) free(v->meters[i].symbol), free(v->meters[i].label), free(v->meters[i].unit);
   free(v->meters);
   for (size_t k = 0; k < v->nmatrices; k++) {
@@ -855,28 +857,60 @@ bool omx_panel_view_set_stems(omx_panel_view_t *v, uint32_t index, const double 
   return true;
 }
 
-bool omx_panel_view_set_spectrum(omx_panel_view_t *v, uint32_t index, const double *hz, const double *db, const double *peak_db, uint32_t n,
-                                 double db_min, double db_max, double grid_db) {
+/* A copy of `n` levels, or NULL for none given; each finite or silence (-INFINITY), else *bad is set. */
+static double *levels_copy(const double *src, uint32_t n, int *bad) {
+  if (!src || !n) return NULL;
+  for (uint32_t k = 0; k < n; k++)
+    if (!(isfinite(src[k]) || src[k] == -INFINITY)) {
+      *bad = 1;
+      return NULL;
+    }
+  double *out = malloc(n * sizeof *out);
+  if (!out) *bad = 1;
+  else memcpy(out, src, n * sizeof *out);
+  return out;
+}
+
+bool omx_panel_view_set_spectrum(omx_panel_view_t *v, uint32_t index, const double *hz, const double *pre_db, const double *post_db,
+                                 const double *peak_db, uint32_t n, omx_panel_tap_mode_t mode, bool delta, double db_min,
+                                 double db_max, double grid_db) {
   if (!v || index >= v->ndisplays || v->displays[index].section < 0 || !v->displays[index].log_x) return false;
   if (!isfinite(db_min) || !isfinite(db_max) || !isfinite(grid_db) || !(db_min < db_max) || !(grid_db > 0)) return false;
-  if (n && (!hz || !db || !peak_db)) return false;
-  /* a level is finite or silence (-INFINITY); a centre is above zero and above the one before */
+  if (mode != OMX_PANEL_TAP_PRE && mode != OMX_PANEL_TAP_POST && mode != OMX_PANEL_TAP_BOTH) return false;
+  if (delta && mode != OMX_PANEL_TAP_BOTH) return false;
+  const int show_pre = mode != OMX_PANEL_TAP_POST, show_post = mode != OMX_PANEL_TAP_PRE;
+  if (n && (!hz || !peak_db || (show_pre && !pre_db) || (show_post && !post_db))) return false;
+  /* a centre is above zero and above the one before */
   for (uint32_t k = 0; k < n; k++)
-    if (!(hz[k] > 0) || !isfinite(hz[k]) || (k && !(hz[k] > hz[k - 1])) || !(isfinite(db[k]) || db[k] == -INFINITY) ||
-        !(isfinite(peak_db[k]) || peak_db[k] == -INFINITY))
-      return false;
-  display *d = &v->displays[index];
-  double *nh = NULL, *nd = NULL, *np = NULL;
-  if (n) {
-    nh = malloc(n * sizeof *nh), nd = malloc(n * sizeof *nd), np = malloc(n * sizeof *np);
-    if (!nh || !nd || !np) {
-      free(nh), free(nd), free(np);
-      return false;
-    }
-    memcpy(nh, hz, n * sizeof *nh), memcpy(nd, db, n * sizeof *nd), memcpy(np, peak_db, n * sizeof *np);
+    if (!(hz[k] > 0) || !isfinite(hz[k]) || (k && !(hz[k] > hz[k - 1]))) return false;
+  int bad = 0;
+  double *nh = NULL, *npre = levels_copy(show_pre ? pre_db : NULL, n, &bad), *npost = levels_copy(show_post ? post_db : NULL, n, &bad),
+         *np = levels_copy(peak_db, n, &bad);
+  struct omx_rta_wedge *nw = NULL;
+  size_t nwedges = 0;
+  if (!bad && n) {
+    nh = malloc(n * sizeof *nh);
+    if (!nh) bad = 1;
+    else memcpy(nh, hz, n * sizeof *nh);
   }
-  free(d->spec_hz), free(d->spec_db), free(d->spec_peak);
-  d->spec_hz = nh, d->spec_db = nd, d->spec_peak = np, d->nspec = n;
+  /* the delta is omx-dsp's: POST - PRE per band, a wedge per neighbouring pair past the deadband, its sign and its strength */
+  if (!bad && delta && n >= 2) {
+    struct omx_rta_band *pb = malloc(n * sizeof *pb), *qb = malloc(n * sizeof *qb);
+    double *diff = malloc(n * sizeof *diff);
+    nw = malloc((n - 1) * sizeof *nw);
+    if (!pb || !qb || !diff || !nw) bad = 1;
+    for (uint32_t k = 0; !bad && k < n; k++) pb[k] = (struct omx_rta_band){hz[k], npre[k], -INFINITY}, qb[k] = (struct omx_rta_band){hz[k], npost[k], -INFINITY};
+    if (!bad) nwedges = omx_rta_band_delta(pb, qb, n, diff, nw);
+    free(pb), free(qb), free(diff);
+  }
+  if (bad) {
+    free(nh), free(npre), free(npost), free(np), free(nw);
+    return false;
+  }
+  display *d = &v->displays[index];
+  free(d->spec_hz), free(d->spec_pre), free(d->spec_post), free(d->spec_peak), free(d->spec_wedges);
+  d->spec_hz = nh, d->spec_pre = npre, d->spec_post = npost, d->spec_peak = np, d->nspec = n;
+  d->spec_mode = (int)mode, d->spec_delta = delta && n >= 2, d->spec_wedges = nw, d->nwedges = nwedges;
   d->spec_min = db_min, d->spec_max = db_max, d->spec_grid = grid_db;
   return true;
 }
@@ -1124,12 +1158,22 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
  * leaves its frame by more than the letter over the disc (BLEED_DISPLAY). */
 static double hold(double v, double lo, double hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+/* A colour `a` of the way from `under` to `rgb`: a stroke laid at an alpha over the plot's body. */
+static omx_rgb over(omx_rgb under, omx_rgb rgb, double a) {
+  omx_rgb o;
+  for (int j = 0; j < 3; j++) o.c[j] = (uint8_t)fmax(0, fmin(255, floor(under.c[j] + (rgb.c[j] - under.c[j]) * a + 0.5)));
+  return o;
+}
+
 /* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (its scene
- * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
- * from the top and a label on each line inside the window; under it the trace's area to the foot in the meter gradient (red at
- * the top, amber at 0.18, green from 0.5 down) at 0.34, then the trace, a clip tick at the top over each band whose peak reaches
- * the top, then the curve, a gain parked with 0 dB at the window's middle, and its marks on the same axis. A silent band
- * (-INFINITY) is drawn as nothing: the trace and its area break there. */
+ * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line
+ * every grid_db from the top and a label on each line inside the window. Then the taps as the console's modes draw them: PRE or
+ * POST alone is its trace's area to the foot in the meter gradient (red at the top, amber at 0.18, green from 0.5 down) at 0.34
+ * and its trace; BOTH is PRE as a dim reference line (the dim ink at 0.7, thinner) under POST filled so; with the delta the two
+ * are full-strength lines (PRE in the dim ink, POST in the accent) with no area, and over them each wedge of omx-dsp's delta in
+ * the boost or the cut role at 45 % to 90 % with its strength. A clip tick at the top over each band whose peak (the filled
+ * tap's) reaches the top, then the curve, a gain parked with 0 dB at the window's middle, and its marks on the same axis. A
+ * silent band (-INFINITY) is drawn as nothing: a trace and its area break there, and no wedge crosses it. */
 static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double ix, double iy, double iw,
                           double ih, double s, const palette *col) {
   const double lo = c->spec_min, hi = c->spec_max, mid = (lo + hi) / 2;
@@ -1152,16 +1196,35 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   }
   static const double stop_t[4] = {0, 0.18, 0.5, 1};
   const omx_rgb stops[4] = {col->meterRed, col->meterAmber, col->meterGreen, col->meterGreen};
+  const double full = fmax(0.75, 0.75 * s), thin = fmax(0.5, 0.5 * s);
+  const double *filled = c->spec_mode == OMX_PANEL_TAP_PRE ? c->spec_pre : c->spec_post;
   double *xs = malloc(c->nspec * sizeof *xs), *ys = malloc(c->nspec * sizeof *ys);
-  for (size_t k = 0; xs && ys && k < c->nspec;) {
-    size_t m = 0;
-    for (; k < c->nspec && isfinite(c->spec_db[k]); k++) xs[m] = AX(c->spec_hz[k]), ys[m] = AY(c->spec_db[k]), m++;
-    if (m >= 2) {
-      d->fill_under(d->ctx, xs, ys, m, iy + ih, iy, iy + ih, stop_t, stops, 4, 0.34);
-      for (size_t j = 1; j < m; j++) d->segment(d->ctx, xs[j - 1], ys[j - 1], xs[j], ys[j], fmax(0.75, 0.75 * s), col->accent);
-    }
-    if (k < c->nspec && !isfinite(c->spec_db[k])) k++;
+  /* one tap's trace, broken at silence: its area when `area`, then its line */
+#define TRACE(levels, area, hw, rgb)                                                                                                \
+  for (size_t k = 0; xs && ys && k < c->nspec;) {                                                                                  \
+    size_t m = 0;                                                                                                                  \
+    for (; k < c->nspec && isfinite((levels)[k]); k++) xs[m] = AX(c->spec_hz[k]), ys[m] = AY((levels)[k]), m++;                   \
+    if (m >= 2) {                                                                                                                  \
+      if (area) d->fill_under(d->ctx, xs, ys, m, iy + ih, iy, iy + ih, stop_t, stops, 4, 0.34);                                    \
+      for (size_t j = 1; j < m; j++) d->segment(d->ctx, xs[j - 1], ys[j - 1], xs[j], ys[j], (hw), (rgb));                          \
+    }                                                                                                                              \
+    if (k < c->nspec && !isfinite((levels)[k])) k++;                                                                               \
   }
+  if (c->spec_delta) {
+    TRACE(c->spec_pre, 0, full, col->inkDim);
+    TRACE(c->spec_post, 0, full, col->accent);
+    for (size_t w = 0; w < c->nwedges; w++) {
+      const struct omx_rta_wedge *e = &c->spec_wedges[w];
+      const size_t k = e->band;
+      const double alpha = floor(45 + 45 * e->strength + 0.5) / 100;
+      d->strip(d->ctx, AX(c->spec_hz[k]), AX(c->spec_hz[k + 1]), AY(c->spec_pre[k]), AY(c->spec_post[k]), AY(c->spec_pre[k + 1]),
+               AY(c->spec_post[k + 1]), e->boost ? col->deltaBoost : col->deltaCut, alpha);
+    }
+  } else {
+    if (c->spec_mode == OMX_PANEL_TAP_BOTH) TRACE(c->spec_pre, 0, thin, over(col->body, col->inkDim, 0.7));
+    TRACE(filled, 1, full, col->accent);
+  }
+#undef TRACE
   free(xs), free(ys);
   for (size_t k = 0; k < c->nspec; k++)
     if (c->spec_peak[k] >= hi) d->round_rect(d->ctx, AX(c->spec_hz[k]) - 1.5 * s, iy, 3 * s, 4 * s, 0, col->meterRed);
@@ -1483,6 +1546,9 @@ static void cpu_fill_under(void *c, const double *xs, const double *ys, size_t n
   omx_fill_under(c, xs, ys, n, base_y, y0, y1, t, stops, nstops, alpha);
 }
 static void cpu_scene(void *c, omx_scene *sc, double ox, double oy, double k, double angle) { omx_scene_paint(c, sc, ox, oy, k, angle); }
+static void cpu_strip(void *c, double ax, double bx, double a0, double a1, double b0, double b1, omx_rgb rgb, double alpha) {
+  omx_strip(c, ax, bx, a0, a1, b0, b1, rgb, alpha);
+}
 static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double x, double y, double px, omx_rgb rgb, omx_align a) {
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }
@@ -1539,7 +1605,8 @@ static uint64_t sig_display(const display *c) {
   h = mix(h, c->stem_letter ? c->stem_letter : "", c->stem_letter ? c->nstems : 0);
   h = mix_arr(h, c->mark_freq, c->nmarks), h = mix_arr(h, c->mark_depth, c->nmarks);
   h = mix(h, c->mark_letter ? c->mark_letter : "", c->mark_letter ? c->nmarks : 0);
-  h = mix_arr(h, c->spec_hz, c->nspec), h = mix_arr(h, c->spec_db, c->nspec), h = mix_arr(h, c->spec_peak, c->nspec);
+  h = mix_arr(h, c->spec_hz, c->nspec), h = mix_arr(h, c->spec_pre, c->nspec), h = mix_arr(h, c->spec_post, c->nspec);
+  h = mix_arr(h, c->spec_peak, c->nspec), h = mix(h, &c->spec_mode, sizeof c->spec_mode), h = mix(h, &c->spec_delta, sizeof c->spec_delta);
   h = mix_num(h, c->spec_min), h = mix_num(h, c->spec_max), h = mix_num(h, c->spec_grid);
   return h;
 }
@@ -1624,7 +1691,7 @@ static bool paint_rect(const omx_panel_view_t *v, const omx_panel_buffer_t *b, c
   for (uint32_t y = r->y; y < r->y + r->height; y++) memset(b->pixels + (size_t)y * b->stride + (size_t)r->x * 4, 0, (size_t)r->width * 4);
   int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
   omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra, (int)r->x, (int)r->y, (int)(r->x + r->width), (int)(r->y + r->height)};
-  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text, cpu_scene};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_strip, cpu_text, cpu_scene};
   int clip[4] = {cv.cx0, cv.cy0, cv.cx1, cv.cy1};
   if (!omx_panel_view_paint_clip(v, b->width, b->height, b->scale, &d, whole ? NULL : clip)) return false;
   premultiply(b, r);
