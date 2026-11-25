@@ -27,7 +27,7 @@ test('the check takes the contract package and reads the panel\'s contract files
   assert.match(s, /rpm -qpl "\$CPKG"/, 'the RPM file list is not read from the contract package');
   assert.match(s, /dpkg-deb -c "\$CPKG"/, 'the DEB file list is not read from the contract package');
   assert.match(s, /\/usr\/share\/omx-contract\/contract\.d\//, 'the shipped list is not limited to the contract directory');
-  assert.match(s, /install -y -q[^\n]*"\$CPKG"/, 'the contract package is not installed');
+  assert.match(s, /install-under-test\.sh" "\$CPKG"/, 'the contract package is not installed');
 });
 
 test('a panel domain file in omx-panel itself is a second copy and fails', () => {
