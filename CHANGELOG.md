@@ -13,7 +13,11 @@
   `OMX_PANEL_RENDER_1`; the DEB library package is `libomx-panel-render1` (was `libomx-panel-render0`), the RPM
   `omx-panel-render` carries the `.so.1`. No `.so.0` is kept: a surface that loads the `.so.0` or calls the old
   `set_spectrum` moves with this release.
-
+- 0.16.2: the units a control can serve are read from `PARAM_UNITS_CLAP_ENCODED` of omx-contract's param domain;
+  omx-contract 3.22.0 no longer installs `param-contract.json` (#256). The role table names 3.22.0's ids: `coef`,
+  `dBPerOct` and `dBPerS` (it named `x`, `dB-oct` and `dB-s`). A descriptor's unit is read by its symbol, as before; `x`
+  is no symbol of 3.22.0, so a control that states it takes no role. The dependency on
+  `omx-contract-data` states no version (no hand-kept floor).
 - The page cut has no screen of zero visible items: a page whose every slot is blank (on the Easy pages, hidden by the
   values, empty cells, a declared page naming none) is not cut (#175). A repeated-group instance longer than the page
   keeps its first `perPage` places as its screen, and each place past them is a row of the aligned matrix, after the
