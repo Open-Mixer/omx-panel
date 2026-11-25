@@ -23,7 +23,7 @@ BuildRequires: npm
 # %%check reads the installed vocabulary: omx-contract's schema, the standard units of its param domain (from 3.21.0) and
 # the units the param-contract extension serves (PARAM_UNITS_CLAP_ENCODED, from 3.22.0);
 # nothing of omx-plugins, which builds with this package, and nothing of plugin-hostd or omx-clap (sorting pass P1, P2)
-BuildRequires: omx-contract-data >= 3.21.0
+BuildRequires: omx-contract-data
 # %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
 BuildRequires: plugin-db-contract >= 0.5.0
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
@@ -56,7 +56,7 @@ BuildRequires: sqlite-devel >= 3.38.0
 
 Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and standard units (its param domain) from the contract directory it installs
-Requires: omx-contract-data >= 3.21.0
+Requires: omx-contract-data
 # the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
 Requires: omx-panel-contract >= %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
@@ -299,6 +299,7 @@ English source sentence.
   param-contract.json, so 0.16.1's `vocabulary` and `describe` refused
   to run with it (#256). The role table names 3.22.0's ids: coef, dBPerOct
   and dBPerS (it named x, dB-oct and dB-s).
+- The dependency on omx-contract-data states no version.
 
 * Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.1-1
 - Fix: %check runs from the release tarball, which has no .git: the guard
