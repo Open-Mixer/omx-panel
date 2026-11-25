@@ -153,7 +153,7 @@ bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffe
 ```
 
 A view is made from four inputs held in memory: the description, the look, the geometry and the font
-bytes. `create_from_files` reads them from a description file and omx-panel's tools directory (the
+bytes. `create_from_data` reads the description from memory (a plugin's own, generated into its binary) and the rest the same way; `create_from_files` reads them from a description file and omx-panel's tools directory (the
 installed `share/omx-panel/tools`, or the source tree's `tools/`). Nothing else is read from disk, so a
 plugin can embed the four and draw with no file at all.
 
@@ -384,8 +384,11 @@ a switch, a meter's fill) must be in the same place within 1 px and of about the
 the cell must cover the same extent within 2 px. Block by block, the image must have the same mean colour,
 within 20 in a channel for 97 in 100 blocks.
 
-Next: `clap.gui` (embedded when the host gives a parent, floating otherwise; X11 first, Wayland when there
-is a desktop to prove it on), and redrawing only what changed.
+A window takes the pointer, the wheel and the keys the gesture vocabulary reads: `omx_panel_window_set_input` hands each, in the panel's
+logical px, to a function the caller gives (a left press, move and release; a scroll step; Backspace and the arrows), and the window
+redraws after it. The binding of those events to a plugin's parameters is the ui library's (`docs/plugin-ui.md`).
+
+Next: Wayland when there is a desktop to prove it on, and redrawing only what changed.
 
 ## Dependencies
 

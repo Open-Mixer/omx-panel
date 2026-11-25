@@ -629,14 +629,16 @@ static char *slurp(const char *path, size_t *size) {
   return buf;
 }
 
-omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+/* The description as text and the look, geometry, font and gestures from `data_dir`: what create_from_files reads, for a host that holds
+ * the description in memory (a plugin's own, generated into its binary). */
+omx_panel_view_t *omx_panel_view_create_from_data(const char *desc, const char *data_dir, char *err, size_t n) {
   char look_path[4096], geom_path[4096], font_path[4096], gest_path[4096];
   snprintf(look_path, sizeof look_path, "%s/look.json", data_dir);
   snprintf(geom_path, sizeof geom_path, "%s/look/geometry.json", data_dir);
   omx_panel_view_t *v = NULL;
   size_t font_size = 0;
-  char *desc = slurp(description_path, NULL), *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
-  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); goto out; }
+  char *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
+  if (!desc) { fail(err, n, "no description%s%s", NULL, NULL); goto out; }
   if (!look) { fail(err, n, "cannot read %s%s", look_path, NULL); goto out; }
   if (!geom) { fail(err, n, "cannot read %s%s", geom_path, NULL); goto out; }
   {
@@ -664,7 +666,15 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
   omx_panel_sources_t s = {desc, look, geom, (const uint8_t *)font, font_size, gest};
   v = omx_panel_view_create(&s, err, n);
 out:
-  free(desc), free(look), free(geom), free(font), free(gest);
+  free(look), free(geom), free(font), free(gest);
+  return v;
+}
+
+omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+  char *desc = slurp(description_path, NULL);
+  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); return NULL; }
+  omx_panel_view_t *v = omx_panel_view_create_from_data(desc, data_dir, err, n);
+  free(desc);
   return v;
 }
 

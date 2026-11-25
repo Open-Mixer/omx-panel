@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+ * The ui library exports the C API of include/omx_panel_ui.h and nothing else (test/ui.test.mjs holds the list to the header). */
+OMX_PANEL_UI_0 {
+  global:
+    omx_panel_ui_*;
+  local:
+    *;
+};

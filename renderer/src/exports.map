@@ -12,6 +12,7 @@ OMX_PANEL_RENDER_0 {
     omx_panel_view_count;
     omx_panel_view_clear_clip;
     omx_panel_view_create;
+    omx_panel_view_create_from_data;
     omx_panel_view_create_from_files;
     omx_panel_view_destroy;
     omx_panel_view_draw;
