@@ -47,7 +47,7 @@ test('eq marks at a fractional scale and with one rectangle allowed', () => {
 test('the eq spectrum: levels, silent bands, peaks at the top, with the curve and marks over it', () => {
   const f = bare(fixture('eq-marks'));
   const hz = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-  const spec = (db, peak) => ({ hz, db, peak, dbMin: -90, dbMax: 0, gridDb: 18 });
+  const spec = (db, peak) => ({ hz, post: db, peak, mode: 'post', dbMin: -90, dbMax: 0, gridDb: 18 });
   const out = steps(f.description, f.state, [
     { curves: { 0: CURVE } },
     { spectrum: { 0: spec(hz.map((_, i) => -60 + 4 * i), hz.map((_, i) => -50 + 5 * i)) } },
