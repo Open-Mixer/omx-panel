@@ -22,6 +22,7 @@
  * A band shape no parameter selects is the `shape` of its `band_freq` role; a `band_type` role carries `shapes` where
  * the choice's labels are read (`shapesOf`): the curve function receives shapes, never a label to parse.
  */
+import { unitIdOf } from './vocabulary.mjs';
 
 /** The band shapes a curve function knows, and `-` for a choice value that is none of them. */
 export const SHAPES = ['off', 'bell', 'lowshelf', 'highshelf', 'highpass', 'lowpass', 'notch'];
@@ -63,7 +64,11 @@ const holdsEdge = (text, e, sep) => new RegExp(e.words.filter((w) => w.length > 
 /** The label of a control: its name, else its label, else its symbol. */
 const nameOf = (c) => c.name ?? c.label ?? '';
 const symbolOf = (c) => c.symbol ?? (typeof c.id === 'string' ? c.id : Number.isInteger(c.id) ? `p${c.id}` : nameOf(c));
-const unitOf = (c) => (c.travel?.unit ?? '').toLowerCase();
+/** A control's unit as its standard id (PARAM_UNITS of omx-contract's param domain, read through tools/vocabulary.mjs,
+ * #251): the one list, no spelling of its own; a unit the list lacks keeps its own text. */
+const unitOf = (c) => { const u = c.travel?.unit ?? ''; return unitIdOf(u) ?? u; };
+/** Whether a control's unit is the standard unit spelled `symbol` ("Hz", "dB", "oct"). */
+const unitIs = (c, symbol) => unitOf(c) === unitIdOf(symbol);
 
 /** What a band is keyed by: the symbol, or for a CLAP parameter, whose id is a number and says nothing of its band, its name
  * ("Band 1 Frequency" and "Band 1 Gain" are one band, p7 and p8 are not). */
@@ -79,25 +84,24 @@ const isGlobalGain = (h) => /(gain|level)/.test(h) && /\b(in|out|input|output|ma
 export const statesMeaning = (c) => typeof c.meaning === 'string' && c.meaning !== '' && c.meaning !== 'unknown';
 
 /** A Q no band runs on: not in octaves, its travel reaching down to zero and coming up there. */
-const degenerateQ = (c) => unitOf(c) !== 'oct' && typeof c.travel?.min === 'number' && c.travel.min <= 0 && typeof c.travel?.default === 'number' && c.travel.default <= 0;
+const degenerateQ = (c) => !unitIs(c, 'oct') && typeof c.travel?.min === 'number' && c.travel.min <= 0 && typeof c.travel?.default === 'number' && c.travel.default <= 0;
 
 /** The band role a control plays, from its metadata alone; null for a control that is not a band control. */
 export function bandRoleOf(c) {
   if (c.hidden || c.readonly || statesMeaning(c)) return null;
   const h = hay(c);
   const sym = symbolOf(c).toLowerCase();
-  const unit = unitOf(c);
   const choice = c.kind === 'choice';
   const R = EQ_WORDS.roles;
   if (isGlobalGain(h)) return null;
   if (c.kind === 'travel') {
-    if (unit === 'hz' || holdsWord(h, R.freq) || /^f[ _]?\d+$/.test(sym) || /^f[lh]$/.test(sym)) return 'freq';
+    if (unitIs(c, 'Hz') || holdsWord(h, R.freq) || /^f[ _]?\d+$/.test(sym) || /^f[lh]$/.test(sym)) return 'freq';
   }
   const F = EQ_WORDS.fallback;
   if (choice && holdsWord(h, [...R.type, ...F.type])) return 'type';
   if (c.kind === 'travel') {
-    if (unit === 'db' || holdsWord(h, R.gain) || /^g[ _]?\d+$/.test(sym) || /^boost[lh]$/.test(sym)) return 'gain';
-    if (holdsWord(h, [...R.q, ...F.q]) || /^q[ _]?\d+$|^bw\d*$/.test(h) || unit === 'oct') return degenerateQ(c) ? null : 'q';
+    if (unitIs(c, 'dB') || holdsWord(h, R.gain) || /^g[ _]?\d+$/.test(sym) || /^boost[lh]$/.test(sym)) return 'gain';
+    if (holdsWord(h, [...R.q, ...F.q]) || /^q[ _]?\d+$|^bw\d*$/.test(h) || unitIs(c, 'oct')) return degenerateQ(c) ? null : 'q';
   }
   if (c.kind === 'toggle' || choice || /\b(active|enable|on|section|sec|bypass)\b/.test(h) || holdsEdge(h, edgeShape('highpass'), '') || holdsEdge(h, edgeShape('lowpass'), '')) return 'enable';
   return null;
@@ -162,7 +166,7 @@ export function shapesOf(c) {
 /** The standard unit id a gain is read in: dB, or a linear factor, the curve's coef (a range that stays above zero; a
  * curve term is a descriptor word, so its descriptor-scope id, %4). */
 function gainToken(c) {
-  if (unitOf(c) === 'db') return 'dB';
+  if (unitIs(c, 'dB')) return 'dB';
   return typeof c.travel?.min === 'number' && c.travel.min > 0 ? 'coef' : 'dB';
 }
 
@@ -207,7 +211,7 @@ export function inferBands(controls) {
     // a shape no parameter selects is the band_freq role's own
     roles.push({ role: 'band_freq', index, symbol: symbolOf(b.freq), unit: 'Hz', ...(b.type ? {} : { shape: b.shape }), ...mark });
     if (b.gain) roles.push({ role: 'band_gain', index, symbol: symbolOf(b.gain), unit: gainToken(b.gain), ...mark });
-    if (b.q) roles.push({ role: 'band_q', index, symbol: symbolOf(b.q), unit: unitOf(b.q) === 'oct' ? 'oct' : 'none', ...mark });
+    if (b.q) roles.push({ role: 'band_q', index, symbol: symbolOf(b.q), unit: unitIs(b.q, 'oct') ? 'oct' : 'none', ...mark });
     if (b.enable) roles.push({ role: 'band_on', index, symbol: symbolOf(b.enable), unit: 'none', ...mark });
     if (b.type) {
       const shapes = shapesOf(b.type);
