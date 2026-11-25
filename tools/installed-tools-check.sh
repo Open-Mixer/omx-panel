@@ -15,7 +15,7 @@
 #
 # tools/installed-tools-check.sh <pkgdir> <staged contract dir>: in a package build. The tools open the panel domain when
 # they load, and a build host has no omx-panel-contract installed: the domain is the one the same build staged
-# (%{buildroot}%{omx_contract_domain_dir} in %check, debian/tmp/usr/share/omx-contract/contract.d in debian/rules). It
+# (%{buildroot}%{omx_contract_dir} in %check, debian/tmp/usr/share/omx-contract/contract.d in debian/rules). It
 # goes first on the tools' OMX_CONTRACT_PATH, before the installed contract directory (omx-contract's, where the param
 # domain and the packages' contract data are). v0.16.0's deb build ran without it, and every tool that opens the panel
 # domain refused (#208). With no second argument the tools read the installed domain, as on a host.

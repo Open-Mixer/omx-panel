@@ -110,10 +110,10 @@ test('the domain and its codes header ship alone in omx-panel-contract: noarch i
   assert.match(spec, /^%package contract$/m);
   const contractPkg = spec.slice(spec.indexOf('%package contract'));
   assert.match(contractPkg.slice(0, contractPkg.indexOf('%description contract')), /^BuildArch:\s+noarch$/m);
-  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_domain_dir\}\/panel\/$/m);
+  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_dir\}\/panel\/$/m);
   const main = spec.indexOf('\n%files\n') + 1;
   const mainFiles = spec.slice(main, spec.indexOf('\n%files ', main));
-  assert.doesNotMatch(mainFiles, /contract\.d|omx_contract_domain_dir/, 'the main package still lists the domain');
+  assert.doesNotMatch(mainFiles, /contract\.d|omx_contract_dir/, 'the main package still lists the domain');
   const control = read('debian/control');
   assert.match(control, /^Package: omx-panel-contract\nArchitecture: all$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));

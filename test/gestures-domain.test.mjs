@@ -136,7 +136,7 @@ test('(c) a domain with one timing changed renders a different schema file, so t
 
 test('packaging: omx-panel-contract ships the gestures domain beside the panel domain, in the rpm and the deb', () => {
   const spec = read('packaging/omx-panel.spec');
-  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_domain_dir\}\/gestures\/$/m);
+  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_dir\}\/gestures\/$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));
   assert.ok(lines.includes('usr/share/omx-contract/contract.d/gestures/') && lines.includes('usr/share/omx-contract/contract.d/panel/'), lines.join(' | '));
   assert.match(read('Makefile'), /install-contract-dir\.sh|OMX_CONTRACT_INSTALLER[^\n]*--domain contract\.d\/gestures|--domain contract\.d\/gestures/);

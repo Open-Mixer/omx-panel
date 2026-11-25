@@ -52,7 +52,7 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
-# %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
+# %%{omx_contract_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
 BuildRequires: omx-contract-devel
 BuildRequires: libomx-domain-devel
 BuildRequires: pkgconfig(omxdsp)
@@ -185,7 +185,7 @@ make install-python DESTDIR=%{buildroot} PYTHONDIR=%{python3_sitelib}
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 # the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules,
 # and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
-tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_domain_dir}
+tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_dir}
 
 # the unit follows its preset on a first install (enabled), is disabled on erase, and an upgrade starts nothing
 %post
@@ -223,8 +223,8 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 
 %files contract
 %license LICENSE
-%{omx_contract_domain_dir}/gestures/
-%{omx_contract_domain_dir}/panel/
+%{omx_contract_dir}/gestures/
+%{omx_contract_dir}/panel/
 %dir %{_includedir}/omxdomain
 %{_includedir}/omxdomain/panel_codes.h
 
