@@ -172,6 +172,17 @@ export const standardUnits = once(() => {
  * symbol such as `%` is display, never a descriptor's word). */
 export const unitIdOf = (unit) => (standardUnits().has(unit) ? unit : undefined);
 
+/** plugin-db's mapping of the LV2 units to the standard ids, `<contractdir>/lv2/lv2.json`, LV2_UNIT_IDS: each word is a
+ * standard id, and the LV2 term it stands for is the `x-term` of its `x-from` (`hz` -> `Hz`, `pc` -> `percent`):
+ * `Map<term, id>`. */
+export const lv2UnitIds = once(() => {
+  const file = contractDirs().map((d) => join(d, 'lv2', 'lv2.json')).find((f) => existsSync(f));
+  if (!file) throw new Error(`vocabulary: plugin-db's lv2 domain (lv2/lv2.json) is not installed in ${contractDirs().join(':')}: install plugin-db-contract`);
+  const words = JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.LV2_UNIT_IDS?.oneOf;
+  if (!Array.isArray(words)) throw new Error(`vocabulary: ${file} declares no LV2_UNIT_IDS`);
+  return new Map(words.flatMap((w) => (w['x-from'] ?? []).filter((f) => typeof f['x-term'] === 'string').map((f) => [f['x-term'], w.const])));
+});
+
 /** The display spelling of a unit, what a face shows a person: its standard id's `x-symbol` (`percent` -> `%`, `none` ->
  * ``), or the unit as written when PARAM_UNITS holds no such id (a scanned plugin's own text). */
 export const unitSymbolOf = (unit) => standardUnits().get(unit)?.symbol ?? unit ?? '';

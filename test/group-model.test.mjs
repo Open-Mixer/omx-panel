@@ -68,7 +68,7 @@ function bands(n, stems, over = () => ({})) {
   for (let i = 1; i <= n; i++) for (const [s, extra] of Object.entries(stems)) out.push(c(`b${i}_${s}`, `Band ${i} ${s[0].toUpperCase()}${s.slice(1)}`, out.length, { ...extra, ...over(i, s) }));
   return out;
 }
-const EQ = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, q: { min: 0.1, max: 10 } };
+const EQ = { on: { kind: 'toggle' }, freq: { unit: 'Hz', min: 20, max: 20000 }, gain: { unit: 'dB', min: -18, max: 18 }, q: { min: 0.1, max: 10 } };
 const only = (controls) => {
   const { groups } = inferGroupModel(controls);
   assert.equal(groups.length, 1, JSON.stringify(groups));
@@ -96,7 +96,7 @@ test('S4: kind, unit and range mismatches are refused, each by its code; a frequ
 });
 
 test('one-parameter: one repeated control per instance is a row, not a matrix', () => {
-  assert.equal(only(bands(4, { gain: { unit: 'db' } })).reason, 'one-parameter');
+  assert.equal(only(bands(4, { gain: { unit: 'dB' } })).reason, 'one-parameter');
 });
 
 test('index-gap: instance numbers 1, 2, 4 are refused', () => {
@@ -136,19 +136,19 @@ test('L2: an EQ of more rows than bands is still columns, its bands low to high'
 });
 
 test('L4: another repeat is columns when its instances are at least its rows, else rows', () => {
-  const four = { threshold: { unit: 'db' }, ratio: {} };
+  const four = { threshold: { unit: 'dB' }, ratio: {} };
   assert.equal(matrixOf(only(bands(2, four))).orientation, 'columns');
   assert.equal(matrixOf(only(bands(3, { ...four, attack: { unit: 'ms' }, release: { unit: 'ms' } }))).orientation, 'rows');
 });
 
 test('matrixOf refuses a list: a surface never draws a guessed matrix', () => {
-  assert.throws(() => matrixOf(only(bands(4, { gain: { unit: 'db' } }))), /not a repeated group/);
+  assert.throws(() => matrixOf(only(bands(4, { gain: { unit: 'dB' } }))), /not a repeated group/);
 });
 
 // ---- the rulings of the review of omx-panel#63 ----
 
 test('S5: a stem held by all but one instance is a row with an empty cell; a crossover that names two numbers is not one', () => {
-  const taps = [...bands(3, { gain: { unit: 'db' }, pan: {} }), c('b2_time', 'Band 2 Time', 90), c('b3_time', 'Band 3 Time', 91)];
+  const taps = [...bands(3, { gain: { unit: 'dB' }, pan: {} }), c('b2_time', 'Band 2 Time', 90), c('b3_time', 'Band 3 Time', 91)];
   const g = only(taps);
   assert.equal(g.kind, 'repeated');
   const m = matrixOf(g);
@@ -157,30 +157,30 @@ test('S5: a stem held by all but one instance is a row with an empty cell; a cro
   assert.deepEqual(m.cells[at], [null, 'b2_time', 'b3_time']);
   assert.deepEqual(g.parameters, []);
   // between four bands, three crossovers: each names two numbers, so none is one band's own
-  const split = [...bands(4, { gain: { unit: 'db' }, pan: {} }), c('x1', 'Split 1/2', 90), c('x2', 'Split 2/3', 91), c('x3', 'Split 3/4', 92)];
+  const split = [...bands(4, { gain: { unit: 'dB' }, pan: {} }), c('x1', 'Split 1/2', 90), c('x2', 'Split 2/3', 91), c('x3', 'Split 3/4', 92)];
   const h = only(split);
   assert.deepEqual(h.parameters, ['x1', 'x2', 'x3']);
   assert.deepEqual(matrixOf(h).rows.map((r) => r.label), ['Gain', 'Pan']);
   // held by two of four instances is no row
-  const few = [...bands(4, { gain: { unit: 'db' }, pan: {} }), c('b1_time', 'Band 1 Time', 90), c('b2_time', 'Band 2 Time', 91)];
+  const few = [...bands(4, { gain: { unit: 'dB' }, pan: {} }), c('b1_time', 'Band 1 Time', 90), c('b2_time', 'Band 2 Time', 91)];
   assert.deepEqual(only(few).parameters, ['b1_time', 'b2_time']);
 });
 
 test('S8: a role a control\'s words claim wins over one its unit claims; the unit stands where no word claims it', () => {
-  const dyn = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, q: { min: 0.1, max: 10 }, threshold: { unit: 'db', min: -60, max: 0 }, range: { unit: 'db', min: -24, max: 12 } };
+  const dyn = { on: { kind: 'toggle' }, freq: { unit: 'Hz', min: 20, max: 20000 }, gain: { unit: 'dB', min: -18, max: 18 }, q: { min: 0.1, max: 10 }, threshold: { unit: 'dB', min: -60, max: 0 }, range: { unit: 'dB', min: -24, max: 12 } };
   const g = only(bands(3, dyn));
   const m = matrixOf(g);
   assert.deepEqual(m.rows.map((r) => r.key), ['freq', 'gain', 'q', 'b#_threshold', 'b#_range']);
   assert.deepEqual(m.cells[1], ['b1_gain', 'b2_gain', 'b3_gain']);
-  const trim = only(bands(3, { on: { kind: 'toggle' }, freq: dyn.freq, q: dyn.q, trim: { unit: 'db', min: -18, max: 18 } }));
+  const trim = only(bands(3, { on: { kind: 'toggle' }, freq: dyn.freq, q: dyn.q, trim: { unit: 'dB', min: -18, max: 18 } }));
   assert.deepEqual(matrixOf(trim).rows.map((r) => r.key), ['freq', 'gain', 'q']);
 });
 
 test('S8: only a real EQ band claims the eq family; a compressor band with a Mode, an imager band with a Width, keep their own stems', () => {
   const on = { kind: 'toggle' };
-  const hz = { unit: 'hz', min: 20, max: 20000 };
-  const comp = only(bands(3, { on, freq: hz, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
-  const imager = only(bands(3, { on, freq: hz, amount: { unit: 'db', min: -18, max: 18 }, width: { min: 0, max: 2 } }));
+  const hz = { unit: 'Hz', min: 20, max: 20000 };
+  const comp = only(bands(3, { on, freq: hz, threshold: { unit: 'dB', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  const imager = only(bands(3, { on, freq: hz, amount: { unit: 'dB', min: -18, max: 18 }, width: { min: 0, max: 2 } }));
   for (const g of [comp, imager]) {
     assert.equal(g.kind, 'repeated');
     assert.equal(g.family, null, 'no eq family');
@@ -190,7 +190,7 @@ test('S8: only a real EQ band claims the eq family; a compressor band with a Mod
 });
 
 test('S8: a fallback type beside a dynamics word is no EQ: a dynamic-EQ-shaped compressor band keeps its stems; fil4 stays an EQ', () => {
-  const band = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
+  const band = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'Hz', min: 20, max: 20000 }, gain: { unit: 'dB', min: -18, max: 18 }, threshold: { unit: 'dB', min: -60, max: 0 }, ratio: { min: 1, max: 20 }, mode: { kind: 'choice', options: 3 } }));
   assert.equal(band.kind, 'repeated');
   assert.equal(band.family, null, 'freq, gain, threshold, ratio, mode is a compressor band');
   assert.ok(band.rows.every((r) => r.key.includes('#')), `rows keep their stems: ${band.rows.map((r) => r.key)}`);
@@ -199,9 +199,9 @@ test('S8: a fallback type beside a dynamics word is no EQ: a dynamic-EQ-shaped c
 });
 
 test('S8: a fallback Q or type beside a dynamics word, abbreviated or not, is no EQ (Freq, Gain, Thresh, Comp, Mode; Freq, Gain, Bandwidth, Threshold, Ratio)', () => {
-  const base = { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 } };
-  const abbreviated = only(bands(3, { ...base, thresh: { unit: 'db', min: -60, max: 0 }, comp: { min: 0, max: 1 }, mode: { kind: 'choice', options: 3 } }));
-  const dynamicEq = only(bands(3, { ...base, bandwidth: { min: 0.1, max: 4 }, threshold: { unit: 'db', min: -60, max: 0 }, ratio: { min: 1, max: 20 } }));
+  const base = { on: { kind: 'toggle' }, freq: { unit: 'Hz', min: 20, max: 20000 }, gain: { unit: 'dB', min: -18, max: 18 } };
+  const abbreviated = only(bands(3, { ...base, thresh: { unit: 'dB', min: -60, max: 0 }, comp: { min: 0, max: 1 }, mode: { kind: 'choice', options: 3 } }));
+  const dynamicEq = only(bands(3, { ...base, bandwidth: { min: 0.1, max: 4 }, threshold: { unit: 'dB', min: -60, max: 0 }, ratio: { min: 1, max: 20 } }));
   for (const g of [abbreviated, dynamicEq]) {
     assert.equal(g.kind, 'repeated');
     assert.equal(g.family, null);
@@ -209,13 +209,13 @@ test('S8: a fallback Q or type beside a dynamics word, abbreviated or not, is no
 });
 
 test('S8: a band control named Comp beside a fallback Q (Freq, Gain, Bandwidth, Comp) is no EQ', () => {
-  const g = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'hz', min: 20, max: 20000 }, gain: { unit: 'db', min: -18, max: 18 }, bandwidth: { min: 0.1, max: 4 }, comp: { min: 0, max: 1 } }));
+  const g = only(bands(3, { on: { kind: 'toggle' }, freq: { unit: 'Hz', min: 20, max: 20000 }, gain: { unit: 'dB', min: -18, max: 18 }, bandwidth: { min: 0.1, max: 4 }, comp: { min: 0, max: 1 } }));
   assert.equal(g.family, null);
 });
 
 test('P2: only an indexed repeat no declared group holds gives port groups; declared instances and a repeat inside a declared group give none', () => {
   const on = { kind: 'toggle' };
-  const stems = { on, freq: { unit: 'hz', min: 20, max: 20000 }, level: { unit: 'db', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
+  const stems = { on, freq: { unit: 'Hz', min: 20, max: 20000 }, level: { unit: 'dB', min: -18, max: 18 }, ratio: { min: 1, max: 20 } };
   const indexed = inferGroupModel(bands(3, stems));
   assert.deepEqual(instanceGroups(indexed).map((g) => g.symbol), ['band_1', 'band_2', 'band_3']);
   const declared = bands(3, stems).map((x) => ({ ...x, path: ['Bands', x.name.split(' ').slice(0, 2).join(' ')] }));
@@ -231,8 +231,8 @@ test('S9: every control opening with an edge word is taken from any list group, 
   const f = (symbol, name, index, extra = {}) => c(symbol, name, index, { path: ['Filters'], ...extra });
   const controls = [
     f('filterOn', 'Filters', 0, { kind: 'toggle' }),
-    f('hpfOn', 'HPF', 1, { kind: 'toggle' }), f('hpfFreq', 'HPF Freq', 2, { unit: 'hz', min: 20, max: 1000 }), f('hpfSlope', 'HPF Slope', 3, { kind: 'choice', options: 2 }),
-    f('lpfOn', 'LPF', 4, { kind: 'toggle' }), f('lpfFreq', 'LPF Freq', 5, { unit: 'hz', min: 1000, max: 20000 }),
+    f('hpfOn', 'HPF', 1, { kind: 'toggle' }), f('hpfFreq', 'HPF Freq', 2, { unit: 'Hz', min: 20, max: 1000 }), f('hpfSlope', 'HPF Slope', 3, { kind: 'choice', options: 2 }),
+    f('lpfOn', 'LPF', 4, { kind: 'toggle' }), f('lpfFreq', 'LPF Freq', 5, { unit: 'Hz', min: 1000, max: 20000 }),
     ...bands(3, EQ).map((x) => ({ ...x, index: x.index + 10, path: ['EQ'] })),
   ];
   const { groups } = inferGroupModel(controls);
@@ -261,7 +261,7 @@ test('S10: a repeated group\'s count is its own whole-number travel, 1..instance
 });
 
 test('L6: only the first `count` instances are drawn, no gap, the edges always; the heads carry their ordinal', () => {
-  const g = only([...bands(4, EQ), c('bandCount', 'Bands', 100, { min: 1, max: 4, integer: true }), c('hpf_freq', 'HPF Freq', 101, { unit: 'hz', min: 20, max: 1000 })]);
+  const g = only([...bands(4, EQ), c('bandCount', 'Bands', 100, { min: 1, max: 4, integer: true }), c('hpf_freq', 'HPF Freq', 101, { unit: 'Hz', min: 20, max: 1000 })]);
   assert.deepEqual(matrixOf(g).columns.map((x) => x.key), ['hpf', '#1', '#2', '#3', '#4']);
   const two = matrixOf(g, { values: { bandCount: 2 } });
   assert.deepEqual(two.columns.map((x) => x.label), ['HPF', 'Band 1', 'Band 2']);
@@ -271,7 +271,7 @@ test('L6: only the first `count` instances are drawn, no gap, the edges always; 
 
 test('L7: rows align across bands, a missing control an empty cell; the columns fill the width; one knob selects the column', async () => {
   const { visibleColumns, selectedColumn, servedMatrix } = await import('../dist/tools/group-model.mjs');
-  const g = only([...bands(3, EQ), c('hpf_freq', 'HPF Freq', 100, { unit: 'hz', min: 20, max: 1000 }), c('hpf_on', 'HPF', 101, { kind: 'toggle' })]);
+  const g = only([...bands(3, EQ), c('hpf_freq', 'HPF Freq', 100, { unit: 'Hz', min: 20, max: 1000 }), c('hpf_on', 'HPF', 101, { kind: 'toggle' })]);
   const m = matrixOf(g);
   const gain = m.rows.findIndex((r) => r.key === 'gain');
   const freq = m.rows.findIndex((r) => r.key === 'freq');
