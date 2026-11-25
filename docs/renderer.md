@@ -469,7 +469,7 @@ under the SIL Open Font Licence, as the MOD GUI already ships it (`tools/fonts/I
 
 **Ruled 2026-11-24 (#185, #186, #187).** pugl and NanoVG are channel layers with floors, never `pinned-rpms`: each is
 published by the channel from Open-Mixer/.github's packaging (`packaging/pugl`, `packaging/nanovg`), built inside-out before
-omx-panel (openmixer-ops `library-chain.txt` gains the two rows ahead of omx-panel's), and read here by floor, `pugl-devel >=
+omx-panel (the release chain's order gains the two rows ahead of omx-panel's), and read here by floor, `pugl-devel >=
 0.5.9^20261102` and `nanovg-devel >= 0^20260219`, the versions those specs build. The `renderer-window` job installs them from
 the channel the day the channel serves them, and its `pinned-rpms` step goes. `libomx-panel-ui` is a binary package of
 omx-panel's own spec (`libomx-panel-ui` and `libomx-panel-ui-devel`, header `omx_panel_ui.h`), BuildRequires on those two

@@ -107,7 +107,7 @@ export function storePackagingErrors(root) {
   if (st['libomx-panel-store0'] && !/^Multi-Arch: same$/m.test(st['libomx-panel-store0'])) errors.push('debian/control: libomx-panel-store0 is not Multi-Arch: same');
   if (st['libomx-panel-store-dev'] && !/libomx-panel-store0 \(= \$\{binary:Version\}\)/.test(st['libomx-panel-store-dev']))
     errors.push('debian/control: libomx-panel-store-dev does not depend on libomx-panel-store0 at the same version');
-  // the domain package is this source's, so it is required at the version built with it (openmixer-ops#661)
+  // the domain package is this source's, so it is required at the version built with it
   for (const pkg of ['libomx-panel-store0', 'omx-panel-store']) {
     if (st[pkg] && !/omx-panel-contract \(= \$\{source:Version\}\)/.test(st[pkg])) errors.push(`debian/control: ${pkg} does not depend on omx-panel-contract (= \${source:Version})`);
   }
