@@ -57,7 +57,7 @@ UI_LIBS := $(B)/libomx-panel-window.a $(shell $(PKG_CONFIG) --libs $(WINDOW_DEPS
 UI_WINDOW_DRIVER := $(B)/ui_window_driver
 endif
 
-.PHONY: all check install clean
+.PHONY: all check install clean bench
 all: $(B)/libomx-panel-render.a $(B)/$(SONAME) $(B)/omx-panel-render $(B)/omx-panel-render.pc $(WINDOW_TARGETS) $(B)/$(UI_SONAME) $(B)/omx-panel-ui.pc
 
 $(B):
@@ -121,6 +121,15 @@ $(B)/scene_cache_driver: test/scene_cache_driver.c $(B)/libomx-panel-render.a sr
 
 check: all $(B)/gesture_driver $(B)/scene_driver $(B)/scene_cache_driver $(B)/ui_driver $(UI_WINDOW_DRIVER)
 	node --test test/*.test.mjs
+
+# the renderer's share of one drag frame, full draw against dirty draw, 1000 frames at 1024 x 416 (bench/dirty_frame.c):
+#   make -C renderer bench DESC=<layout.json> [DATA=<tools dir>] [CONTROL=<symbol>]
+DATA ?= ../tools
+$(B)/dirty_frame: bench/dirty_frame.c $(B)/libomx-panel-render.a include/omx_panel_render.h | $(B)
+	$(CC) $(CFLAGS) -o $@ $< $(B)/libomx-panel-render.a $(LDLIBS)
+bench: $(B)/dirty_frame
+	@test -n "$(DESC)" || { echo "make bench DESC=<layout.json>" >&2; exit 2; }
+	$(B)/dirty_frame $(DESC) $(DATA) $(CONTROL)
 
 install: all
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(BINDIR)

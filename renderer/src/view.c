@@ -678,9 +678,12 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
   return v;
 }
 
+static void redraw_free(omx_panel_view_t *v);
+
 void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
   omx_input_free(v->in);
+  redraw_free(v);
   omx_scene_free(v->knob_scene);
   free(v->gestures_json);
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]), free(v->section_keys ? v->section_keys[i] : NULL);
@@ -956,6 +959,7 @@ typedef struct {
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
   double *mtop;      /* one per section: where its matrix starts below the section's top, -1 for a section with none */
   box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
+  int ok;            /* 0: the layout could not be allocated, and nothing else of it is set */
 } laid;
 
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
@@ -963,7 +967,11 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
             calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}};
+            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}, 1};
+  if (!L.sections || !L.cx || !L.cy || !L.drawn || !L.curves || !L.mtop) {
+    free(L.sections), free(L.cx), free(L.cy), free(L.drawn), free(L.curves), free(L.mtop);
+    return (laid){0};
+  }
   for (size_t s = 0; s < v->nsections; s++) L.mtop[s] = -1;
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
@@ -1039,6 +1047,7 @@ static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), fre
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
   laid L = lay_out(v, v->row_controls);
+  if (!L.ok) return;
   if (w) *w = (uint32_t)ceil(L.w);
   if (h) *h = (uint32_t)ceil(L.h);
   lay_free(&L);
@@ -1111,6 +1120,10 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   free(cps);
 }
 
+/* A mark is held inside the plot: a band whose frequency or depth lies off the axes sits on the plot's edge, so what a display draws never
+ * leaves its frame by more than the letter over the disc (BLEED_DISPLAY). */
+static double hold(double v, double lo, double hi) { return v < lo ? lo : v > hi ? hi : v; }
+
 /* The spectrum a host set on an eq_response (omx_panel_view_set_spectrum), on the console analyser's axes (its scene
  * builder, line mode): x the log frequency axis the bands and the curve share, y the level window with ONE graticule, a line every grid_db
  * from the top and a label on each line inside the window; under it the trace's area to the foot in the meter gradient (red at
@@ -1155,7 +1168,7 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   for (size_t k = 1; k < c->n; k++)
     d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->curve);
   for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
-    double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
+    double qx = hold(AX(c->mark_freq[k]), ix, ix + iw), qy = AY(mid + c->mark_depth[k]);
     char one[2] = {c->mark_letter[k], 0};
     d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
     text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
@@ -1240,7 +1253,7 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
     /* the marks, on the log axis at the band's own depth: a disc and its planter's letter above */
     for (size_t k = 0; k < c->nmarks; k++) {
       double u = (log10(c->mark_freq[k]) - x0) / (x1 - x0);
-      double qx = ix + u * iw, qy = iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih;
+      double qx = hold(ix + u * iw, ix, ix + iw), qy = hold(iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih, iy, iy + ih);
       char one[2] = {c->mark_letter[k], 0};
       d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
       text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
@@ -1257,6 +1270,10 @@ static laid place(const omx_panel_view_t *v, uint32_t width, uint32_t height, do
   double k = -1;
   for (int per_row = v->row_controls; per_row >= 1; per_row--) {
     laid T = lay_out(v, per_row);
+    if (!T.ok) {
+      lay_free(&L);
+      return (laid){0};
+    }
     double kx = omx_round(T.w * scale) <= width ? 1 : width / (T.w * scale);
     double ky = omx_round(T.h * scale) <= height ? 1 : height / (T.h * scale);
     if (fmin(kx, ky) > k) {
@@ -1274,6 +1291,7 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint
   if (!v || index >= v->ncontrols || !shown(&v->controls[index]) || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   const box *sec = &L.sections[v->controls[index].section];
   rect[0] = (sec->x + L.cx[index]) * s, rect[1] = (sec->y + L.cy[index]) * s;
   rect[2] = v->g.cellW * s, rect[3] = v->g.cellH * s;
@@ -1285,6 +1303,7 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
   if (!v || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   for (size_t i = 0; i < v->ncontrols; i++) {
     shown_out[i] = shown(&v->controls[i]);
     if (!shown_out[i]) continue;
@@ -1319,13 +1338,25 @@ static void draw_meter(const omx_draw *d, omx_font *font, const geometry *g, con
   d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->tScreen);
 }
 
-void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
+/* How far a widget's own pixels can reach beyond the cell, the frame or the band they are laid in (anti-aliased edges, a glyph's overhang,
+ * a mark's letter above its disc), in logical px. A repaint clip reaches this far into the elements it is tested against, and the
+ * rectangle a changed element reports is grown by the same: one number for both, so a pixel the element drew is always repainted. */
+#define BLEED 4
+#define BLEED_DISPLAY 10
+
+/* Whether the box (device px) can reach into the clip (x0, y0, x1, y1, device px) from `bleed` px away; NULL clip is the whole buffer. */
+static int reaches(const int *clip, double x, double y, double w, double h, double bleed) {
+  return !clip || (x - bleed < clip[2] && x + w + bleed > clip[0] && y - bleed < clip[3] && y + h + bleed > clip[1]);
+}
+
+bool omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d, const int *clip) {
   const geometry *g = &v->g;
   const textsizes *T = &v->t;
   const palette *col = &v->col;
   omx_font *font = v->font;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
 
   /* the body is the style's enclosure, with its screws in the foot's corners; a style with a head plate sets it over the top */
   const plates *f = &v->plates;
@@ -1347,20 +1378,24 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
     if (f->rule) d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->rule);
     d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->lamp);
     double head_w = (L.w - 2 * g->pad - 24) * s;
-    text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->tBrand, OMX_ALIGN_LEFT);
-    text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->tLabel, OMX_ALIGN_LEFT);
+    if (reaches(clip, 0, 0, L.w * s, g->headH * s, BLEED * s)) {
+      text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->tBrand, OMX_ALIGN_LEFT);
+      text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->tLabel, OMX_ALIGN_LEFT);
+    }
   }
   for (size_t si = 0; si < v->nsections; si++) {
     if (!L.drawn[si]) continue;
     box sec = L.sections[si];
+    if (!reaches(clip, sec.x * s, sec.y * s, sec.w * s, sec.h * s, BLEED * s)) continue;
     if (f->sections) d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
          T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t m = 0; m < v->ndisplays; m++) {
       if (v->displays[m].section != (int)si) continue;
-      draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s,
-                 (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
+      double cy = (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s;
+      if (!reaches(clip, (sec.x + g->sectionPad) * s, cy, (sec.w - 2 * g->sectionPad) * s, g->curveH * s, BLEED_DISPLAY * s)) continue;
+      draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, cy, (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
     }
     /* a head-row cell with no control is its head's caption: the head's label in that cell's name place, a row of its own */
     const matrix *mx = matrix_of_section(v, si);
@@ -1380,6 +1415,7 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       const control *k = &v->controls[i];
       if (k->section != (int)si || !shown(k)) continue;
       double x = sec.x + L.cx[i], y = sec.y + L.cy[i];
+      if (!reaches(clip, x * s, y * s, g->cellW * s, g->cellH * s, BLEED * s)) continue;
       int reading = 0;
       switch (k->bar ? W_FADER : k->w) {
       case W_SWITCH:
@@ -1415,18 +1451,24 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
         text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->tValue, OMX_ALIGN_CENTRE);
     }
   }
-  if (v->nband) {
+  if (v->nband && reaches(clip, L.meters.x * s, L.meters.y * s, L.meters.w * s, L.meters.h * s, BLEED * s)) {
     box b = L.meters;
     if (f->sections) d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->word_meters, 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t k = 0; k < v->nmeters; k++) {
       if (!v->meters[k].in_band) continue;
-      draw_meter(d, font, g, T, &v->meters[k], v->word_unheld, (b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s,
-                 (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
+      double my = (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s;
+      if (!reaches(clip, (b.x + g->sectionPad) * s, my, (b.w - 2 * g->sectionPad) * s, g->meterH * s, BLEED * s)) continue;
+      draw_meter(d, font, g, T, &v->meters[k], v->word_unheld, (b.x + g->sectionPad) * s, my, (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
     }
   }
   lay_free(&L);
+  return true;
+}
+
+void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
+  omx_panel_view_paint_clip(v, width, height, scale, d, NULL);
 }
 
 omx_font *omx_panel_view_font(const omx_panel_view_t *v) { return v ? v->font : NULL; }
@@ -1445,22 +1487,291 @@ static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }
 
-bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
-  if (!v || !b || !b->pixels || !b->width || !b->height || b->stride < (uint64_t)b->width * 4 || !(b->scale > 0) ||
-      (unsigned)b->format > OMX_PANEL_PIXEL_BGRA8_STRAIGHT)
-    return false;
-  for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
-  int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
-  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra};
-  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text, cpu_scene};
-  omx_panel_view_paint(v, b->width, b->height, b->scale, &d);
-  /* drawn with straight alpha; a premultiplied buffer gets each colour times its alpha, rounded to the nearest */
-  if (b->format == OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
-    for (uint32_t y = 0; y < b->height; y++) {
-      uint8_t *p = b->pixels + (size_t)y * b->stride;
-      for (uint32_t x = 0; x < b->width; x++, p += 4)
-        if (p[3] != 255)
-          for (int k = 0; k < 3; k++) p[k] = (uint8_t)((p[k] * p[3] + 127) / 255);
+/* ------------------------------------------------------------------------------- what the last draw drew
+ * A draw into a buffer remembers, for each element of the panel (the head, each section, each control's cell, each display, the meters
+ * band and each meter in it), the box it filled and a signature of every value its drawing reads. The next draw into the same buffer
+ * compares them: an element whose box or signature changed is repainted (its old box too, where it moved), and nothing else is. */
+
+typedef struct {
+  double x, y, w, h; /* device px; w is 0 for an element not drawn */
+  double bleed;      /* how far its pixels reach beyond the box */
+  uint64_t sig;
+} elem;
+
+struct omx_redraw {
+  uint8_t *pixels;
+  uint32_t width, height, stride;
+  double scale;
+  int format;
+  double lw, lh, s; /* the panel's size at the last draw */
+  size_t n;
+  elem *el, *now; /* the last draw's elements, and room for the next draw's: one block, swapped each draw */
+  void *bx;       /* room for the boxes a draw collects (2 * n): in the same block */
+  void *block;
+};
+
+static uint64_t mix(uint64_t h, const void *p, size_t n) {
+  const uint8_t *b = p;
+  for (size_t i = 0; i < n; i++) h = (h ^ b[i]) * 1099511628211ull;
+  return h;
+}
+static uint64_t mix_str(uint64_t h, const char *t) { return mix(mix(h, t ? t : "", t ? strlen(t) + 1 : 1), "\0", 1); }
+static uint64_t mix_num(uint64_t h, double d) { return mix(h, &d, sizeof d); }
+static uint64_t mix_arr(uint64_t h, const double *a, size_t n) {
+  h = mix(h, &n, sizeof n);
+  return a && n ? mix(h, a, n * sizeof *a) : h;
+}
+
+static uint64_t sig_control(const control *k) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix(h, &k->w, sizeof k->w);
+  h = mix_str(h, k->label), h = mix_str(h, k->bar), h = mix_str(h, k->text);
+  h = mix_num(h, k->fraction);
+  h = mix(h, &k->at, sizeof k->at), h = mix(h, &k->count, sizeof k->count);
+  return h;
+}
+static uint64_t sig_display(const display *c) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix_str(h, c->basis);
+  h = mix(h, &c->log_x, sizeof c->log_x), h = mix(h, &c->symmetric, sizeof c->symmetric), h = mix(h, &c->time_x, sizeof c->time_x);
+  h = mix_arr(h, c->x, c->n), h = mix_arr(h, c->y, c->n);
+  h = mix_arr(h, c->stem_x, c->nstems), h = mix_arr(h, c->stem_y, c->nstems), h = mix_arr(h, c->stem_shade, c->nstems);
+  h = mix(h, c->stem_letter ? c->stem_letter : "", c->stem_letter ? c->nstems : 0);
+  h = mix_arr(h, c->mark_freq, c->nmarks), h = mix_arr(h, c->mark_depth, c->nmarks);
+  h = mix(h, c->mark_letter ? c->mark_letter : "", c->mark_letter ? c->nmarks : 0);
+  h = mix_arr(h, c->spec_hz, c->nspec), h = mix_arr(h, c->spec_db, c->nspec), h = mix_arr(h, c->spec_peak, c->nspec);
+  h = mix_num(h, c->spec_min), h = mix_num(h, c->spec_max), h = mix_num(h, c->spec_grid);
+  return h;
+}
+static uint64_t sig_meter(const meter *m) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix_str(h, m->label), h = mix_str(h, m->unit);
+  h = mix_num(h, m->min), h = mix_num(h, m->max), h = mix(h, &m->has, sizeof m->has);
+  h = mix_num(h, m->fill), h = mix_num(h, m->marker);
+  return h;
+}
+
+/* The elements of the panel as it would be drawn now at scale s, in a fixed order: the head, the sections, the controls, the displays, the
+ * meters band, the meters. */
+static size_t elem_count(const omx_panel_view_t *v) { return 2 + v->nsections + v->ncontrols + v->ndisplays + v->nmeters; }
+
+static void elements(const omx_panel_view_t *v, const laid *L, double s, elem *out) {
+  const geometry *g = &v->g;
+  size_t at = 0;
+  uint64_t head = mix_str(mix_str(14695981039346656037ull, v->brand), v->name);
+  out[at++] = (elem){0, 0, L->w * s, g->headH * s, BLEED * s, head};
+  for (size_t si = 0; si < v->nsections; si++) {
+    box b = L->sections[si];
+    out[at++] = L->drawn[si] ? (elem){b.x * s, b.y * s, b.w * s, b.h * s, BLEED * s, mix_str(14695981039346656037ull, v->sections[si])}
+                             : (elem){0, 0, 0, 0, 0, 0};
+  }
+  size_t ctl0 = at;
+  at += v->ncontrols;
+  size_t disp0 = at;
+  at += v->ndisplays;
+  elem *band = &out[at++];
+  size_t met0 = at;
+  at += v->nmeters;
+  for (size_t i = 0; i < v->ncontrols; i++) {
+    const control *k = &v->controls[i];
+    if (!shown(k) || !L->drawn[k->section]) {
+      out[ctl0 + i] = (elem){0, 0, 0, 0, 0, 0};
+      continue;
     }
+    box sec = L->sections[k->section];
+    out[ctl0 + i] = (elem){(sec.x + L->cx[i]) * s, (sec.y + L->cy[i]) * s, g->cellW * s, g->cellH * s, BLEED * s, sig_control(k)};
+  }
+  for (size_t si = 0; si < v->nsections; si++) {
+    int row = 0;
+    for (size_t m = 0; m < v->ndisplays; m++) {
+      if (v->displays[m].section != (int)si) continue;
+      box sec = L->sections[si];
+      out[disp0 + m] = L->drawn[si] ? (elem){(sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row * (g->curveH + g->curveGap)) * s,
+                                             (sec.w - 2 * g->sectionPad) * s, g->curveH * s, BLEED_DISPLAY * s, sig_display(&v->displays[m])}
+                                    : (elem){0, 0, 0, 0, 0, 0};
+      row++;
+    }
+  }
+  for (size_t m = 0; m < v->ndisplays; m++)
+    if (v->displays[m].section < 0) out[disp0 + m] = (elem){0, 0, 0, 0, 0, 0};
+  *band = v->nband ? (elem){L->meters.x * s, L->meters.y * s, L->meters.w * s, L->meters.h * s, BLEED * s, mix(14695981039346656037ull, &v->nband, sizeof v->nband)}
+                   : (elem){0, 0, 0, 0, 0, 0};
+  int row = 0;
+  for (size_t k = 0; k < v->nmeters; k++) {
+    if (!v->meters[k].in_band) {
+      out[met0 + k] = (elem){0, 0, 0, 0, 0, 0};
+      continue;
+    }
+    box b = L->meters;
+    out[met0 + k] = (elem){(b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s, (b.w - 2 * g->sectionPad) * s,
+                           g->meterH * s, BLEED * s, sig_meter(&v->meters[k])};
+  }
+}
+
+static void premultiply(const omx_panel_buffer_t *b, const omx_panel_rect_t *r) {
+  if (b->format != OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED && b->format != OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED) return;
+  for (uint32_t y = r->y; y < r->y + r->height; y++) {
+    uint8_t *p = b->pixels + (size_t)y * b->stride + (size_t)r->x * 4;
+    for (uint32_t x = 0; x < r->width; x++, p += 4)
+      if (p[3] != 255)
+        for (int k = 0; k < 3; k++) p[k] = (uint8_t)((p[k] * p[3] + 127) / 255);
+  }
+}
+
+/* Clear a rectangle to transparent and draw the panel into it, as a full draw draws that part: drawn with straight alpha, then a
+ * premultiplied buffer gets each colour times its alpha, rounded to the nearest. */
+static bool paint_rect(const omx_panel_view_t *v, const omx_panel_buffer_t *b, const omx_panel_rect_t *r, int whole) {
+  for (uint32_t y = r->y; y < r->y + r->height; y++) memset(b->pixels + (size_t)y * b->stride + (size_t)r->x * 4, 0, (size_t)r->width * 4);
+  int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
+  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra, (int)r->x, (int)r->y, (int)(r->x + r->width), (int)(r->y + r->height)};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_text, cpu_scene};
+  int clip[4] = {cv.cx0, cv.cy0, cv.cx1, cv.cy1};
+  if (!omx_panel_view_paint_clip(v, b->width, b->height, b->scale, &d, whole ? NULL : clip)) return false;
+  premultiply(b, r);
+  return true;
+}
+
+static bool valid_buffer(const omx_panel_buffer_t *b) {
+  return b && b->pixels && b->width && b->height && b->stride >= (uint64_t)b->width * 4 && b->scale > 0 &&
+         (unsigned)b->format <= OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
+}
+
+/* Forget what the buffer holds: the next draw into it is a whole one. */
+static void redraw_free(omx_panel_view_t *v) {
+  if (v->rd) free(v->rd->block), free(v->rd);
+  v->rd = NULL;
+}
+
+typedef struct { int x0, y0, x1, y1; } ibox;
+
+/* Remember what is now on the buffer: its identity, the panel's size and every element. The memory it needs is taken here, once, so a
+ * draw into the same buffer allocates nothing of its own; short of memory the view forgets, and the next draw is a whole one. */
+static void remember(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
+  size_t n = elem_count(v);
+  double s;
+  laid L = place(v, b->width, b->height, b->scale, &s);
+  struct omx_redraw *r = L.ok ? calloc(1, sizeof *r) : NULL;
+  if (r) r->block = malloc(2 * n * sizeof(elem) + 2 * n * sizeof(ibox));
+  if (!r || !r->block) {
+    if (r) free(r);
+    redraw_free(v);
+    lay_free(&L);
+    return;
+  }
+  redraw_free(v);
+  v->rd = r;
+  r->n = n, r->el = r->block, r->now = r->el + n, r->bx = r->now + n;
+  elements(v, &L, s, r->el);
+  r->pixels = b->pixels, r->width = b->width, r->height = b->height, r->stride = b->stride, r->scale = b->scale, r->format = (int)b->format;
+  r->lw = L.w, r->lh = L.h, r->s = s;
+  lay_free(&L);
+}
+
+bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
+  if (!v || !valid_buffer(b)) return false;
+  omx_panel_rect_t all = {0, 0, b->width, b->height};
+  if (!paint_rect(v, b, &all, 1)) {
+    redraw_free(v); /* the buffer was cleared and not drawn: it holds no draw to repaint over */
+    return false;
+  }
+  remember(v, b);
+  return true;
+}
+
+
+static int boxes_meet(const ibox *a, const ibox *b) { return a->x0 < b->x1 && b->x0 < a->x1 && a->y0 < b->y1 && b->y0 < a->y1; }
+static void box_cover(ibox *a, const ibox *b) {
+  if (b->x0 < a->x0) a->x0 = b->x0;
+  if (b->y0 < a->y0) a->y0 = b->y0;
+  if (b->x1 > a->x1) a->x1 = b->x1;
+  if (b->y1 > a->y1) a->y1 = b->y1;
+}
+static long box_area(const ibox *a) { return (long)(a->x1 - a->x0) * (a->y1 - a->y0); }
+
+/* Merge boxes that meet, until none do. */
+static size_t merge_meeting(ibox *bx, size_t n) {
+  for (int again = 1; again;) {
+    again = 0;
+    for (size_t i = 0; i < n && !again; i++)
+      for (size_t j = i + 1; j < n; j++)
+        if (boxes_meet(&bx[i], &bx[j])) {
+          box_cover(&bx[i], &bx[j]);
+          bx[j] = bx[--n];
+          again = 1;
+          break;
+        }
+  }
+  return n;
+}
+
+/* Merge boxes that meet; then, past `cap`, the pair that grows the covering area least (and what that makes meet) until `cap` remain. */
+static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
+  n = merge_meeting(bx, n);
+  while (n > cap) {
+    size_t bi = 0, bj = 1;
+    long best = -1;
+    for (size_t i = 0; i < n; i++)
+      for (size_t j = i + 1; j < n; j++) {
+        ibox u = bx[i];
+        box_cover(&u, &bx[j]);
+        long grow = box_area(&u) - box_area(&bx[i]) - box_area(&bx[j]);
+        if (best < 0 || grow < best) best = grow, bi = i, bj = j;
+      }
+    box_cover(&bx[bi], &bx[bj]);
+    bx[bj] = bx[--n];
+    n = merge_meeting(bx, n);
+  }
+  return n;
+}
+
+static void add_box(ibox *bx, size_t *n, const elem *e, const omx_panel_buffer_t *b) {
+  if (!(e->w > 0) || !(e->h > 0)) return;
+  ibox r = {(int)floor(e->x - e->bleed), (int)floor(e->y - e->bleed), (int)ceil(e->x + e->w + e->bleed), (int)ceil(e->y + e->h + e->bleed)};
+  if (r.x0 < 0) r.x0 = 0;
+  if (r.y0 < 0) r.y0 = 0;
+  if (r.x1 > (int)b->width) r.x1 = (int)b->width;
+  if (r.y1 > (int)b->height) r.y1 = (int)b->height;
+  if (r.x1 > r.x0 && r.y1 > r.y0) bx[(*n)++] = r;
+}
+
+bool omx_panel_view_draw_dirty(omx_panel_view_t *v, const omx_panel_buffer_t *b, omx_panel_rect_t *rects, size_t cap, size_t *count) {
+  if (!v || !valid_buffer(b) || !rects || !count || !cap) return false;
+  struct omx_redraw *r = v->rd;
+  double s;
+  laid L = place(v, b->width, b->height, b->scale, &s);
+  /* a full draw stands for a layout that could not be made (short of memory), as for the cases the header names */
+  int full = !L.ok || !r || r->n != elem_count(v) || r->pixels != b->pixels || r->width != b->width || r->height != b->height ||
+             r->stride != b->stride || r->scale != b->scale || r->format != (int)b->format || r->lw != L.w || r->lh != L.h || r->s != s;
+  if (full) {
+    lay_free(&L);
+    if (!omx_panel_view_draw(v, b)) return false;
+    rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+    *count = 1;
+    return true;
+  }
+  size_t n = r->n;
+  elem *now = r->now;
+  ibox *bx = r->bx;
+  elements(v, &L, s, now);
+  lay_free(&L);
+  size_t nb = 0;
+  for (size_t i = 0; i < n; i++)
+    if (now[i].sig != r->el[i].sig || now[i].x != r->el[i].x || now[i].y != r->el[i].y || now[i].w != r->el[i].w || now[i].h != r->el[i].h) {
+      add_box(bx, &nb, &r->el[i], b);
+      add_box(bx, &nb, &now[i], b);
+    }
+  nb = merge_boxes(bx, nb, cap);
+  for (size_t i = 0; i < nb; i++) {
+    rects[i] = (omx_panel_rect_t){(uint32_t)bx[i].x0, (uint32_t)bx[i].y0, (uint32_t)(bx[i].x1 - bx[i].x0), (uint32_t)(bx[i].y1 - bx[i].y0)};
+    if (!paint_rect(v, b, &rects[i], 0)) { /* cannot happen after place() answered, but a repaint that did not finish is made whole */
+      redraw_free(v);
+      if (!omx_panel_view_draw(v, b)) return false;
+      rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+      *count = 1;
+      return true;
+    }
+  }
+  r->now = r->el, r->el = now;
+  *count = nb;
   return true;
 }

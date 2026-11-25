@@ -114,6 +114,7 @@
     "./schema/skin-package.schema.json": "./dist/schema/skin-package.schema.json",
     "./schema/panel.schema.json": "./dist/schema/panel.schema.json",
     "./look-roles.json": "./dist/schema/look-roles.json",
+    "./frame-budget.json": "./dist/schema/frame-budget.json",
     "./look.json": "./dist/tools/look.json",
     "./gestures/scripts.json": "./dist/fixtures/gestures/scripts.json",
     "./control-kind": {

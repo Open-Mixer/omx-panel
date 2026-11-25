@@ -30,6 +30,9 @@ typedef struct omx_draw {
 
 /* The panel through `d`, laid out for a box of width x height device px at `scale`. */
 void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d);
+/* The same, repainting only what can reach the clip (x0, y0, x1, y1 in device px; NULL for the whole panel): the elements it cannot reach are
+ * not drawn at all, the others are drawn whole and the backend's own clip cuts them. */
+bool omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d, const int *clip);
 omx_font *omx_panel_view_font(const omx_panel_view_t *v);
 /* The font file's bytes, as loaded. */
 const uint8_t *omx_font_bytes(const omx_font *f, size_t *size);

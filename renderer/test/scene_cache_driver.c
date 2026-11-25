@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
     }
     for (size_t i = 0; i < sizeof angles / sizeof *angles; i++) {
       for (int rep = 0; rep < 2; rep++) {
-        omx_canvas ca = {a, w, h, (size_t)w * 4, 0}, cb = {b, w, h, (size_t)w * 4, 0};
+        omx_canvas ca = {a, w, h, (size_t)w * 4, 0, 0, 0, w, h}, cb = {b, w, h, (size_t)w * 4, 0, 0, 0, w, h};
         memcpy(a, base, n); memcpy(b, base, n);
         omx_scene_set_cache(s, 0);
         omx_scene_paint(&ca, s, ox, oy, k, angles[i]);

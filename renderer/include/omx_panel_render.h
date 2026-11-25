@@ -189,6 +189,28 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, u
  * size, a stride under four bytes a pixel, a scale that is not positive, a format that is not one). */
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
 
+/** A rectangle of a buffer, in device px: `width` x `height` from (`x`, `y`) at the buffer's top-left. */
+typedef struct omx_panel_rect {
+  uint32_t x, y, width, height;
+} omx_panel_rect_t;
+
+/** Draw only what changed since the last draw into this buffer, and say where. The buffer must be the one the last draw of this
+ * view went into, still holding that draw: the view repaints the rectangles it reports (each cleared to transparent and drawn again, as
+ * a full draw draws them) and leaves every other byte as it is, so the pixels equal a full draw of the same state.
+ * What marks a rectangle is a change of what the view would draw there: a control's reading or text, a meter's bar or marker, a
+ * display's points, stems, marks or spectrum, the title, a governing value that shows or hides a control (the cell that moved or
+ * went, as it was and as it is). One changed control reports its own cell and nothing else; nothing changed reports none.
+ *
+ * A full draw stands for the first frame, a buffer that is not the last draw's (another address, size, stride, scale or pixel
+ * format), a resize, and a panel whose overall size changed: the whole buffer is then drawn and reported as one rectangle. A host
+ * that did not keep the last draw's bytes calls omx_panel_view_draw, which always draws the whole buffer.
+ *
+ * Up to `cap` rectangles are written to `rects` (cap >= 1); a draw with more changes than that reports their covering rectangles
+ * (merged, never dropped). `*count` is how many were written. False, drawing nothing, for a buffer omx_panel_view_draw refuses, a
+ * NULL `rects` or `count`, or a `cap` of 0. */
+bool omx_panel_view_draw_dirty(omx_panel_view_t *view, const omx_panel_buffer_t *buffer, omx_panel_rect_t *rects, size_t cap,
+                               size_t *count);
+
 /* ------------------------------------------------------------------------------------------------- input
  * One gesture vocabulary (one-panel spec 7.8, docs/panel-gestures.md, schema/gestures.json): the renderer maps a pointer, a wheel,
  * an encoder detent or a key onto it and answers each call with the control, its value, and the gesture's begin and end. It reads

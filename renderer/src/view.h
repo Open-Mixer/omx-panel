@@ -158,6 +158,7 @@ struct omx_panel_view {
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */
+  struct omx_redraw *rd; /* view.c: what the last draw into a buffer drew, to say what the next must repaint; NULL until one */
 };
 
 
