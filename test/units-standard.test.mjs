@@ -8,7 +8,7 @@
 // (a) golden: a descriptor unit's id, the role table's ids, the level units by dimension; (c) a temporary contract
 // directory whose param domain has no dBu: a dBu control has no unit id and a read-only one is no level meter.
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -16,6 +16,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { contractDirs } from '../dist/tools/vocabulary.mjs';
 import { ROLES } from '../dist/tools/role-table.mjs';
+import { treeGrep } from './tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PD = join(ROOT, 'dist/tools/panel-description.mjs');
@@ -65,18 +66,17 @@ test('(c) a param domain with no dBu: a dBu unit has no id and a read-only dBu c
   assert.deepEqual(answers(['dBu'], { OMX_CONTRACT_PATH: [dir, ...contractDirs()].join(':') }), [[null, 'display']]);
 });
 
-/** The lines of this tree (or of `root`) that name plugin-hostd's LV2 table or its package: code, packaging, CI, docs. */
+const HOSTD_NAMES = /PLUGIN_HOSTD_LV2_MAP|PLUGIN_HOSTD_TABLES|plugin-hostd-contract/;
+const HOSTD_PATHS = ['tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', 'debian/rules', '.github', 'BUILDING.md', 'README.md', 'docs', 'man'];
+
+/** The lines of this tree (or of `root`) that name plugin-hostd's LV2 table or its package: code, packaging, CI, docs.
+ * Read from the files (tree-grep.mjs), not by git grep: a package build (rpmbuild's %check, a `git archive` tree) has
+ * no .git, and the guard holds there too (#207). */
 function hostdNames(root = ROOT) {
-  let out = '';
-  try {
-    out = execFileSync('git', ['grep', '-n', '-e', 'PLUGIN_HOSTD_LV2_MAP', '-e', 'PLUGIN_HOSTD_TABLES', '-e', 'plugin-hostd-contract',
-      '--', 'tools', 'src', 'bin', 'lib', 'Makefile', 'debian/control', 'debian/rules', '.github', 'BUILDING.md', 'README.md', 'docs', 'man'], { cwd: root, encoding: 'utf8' });
-  } catch (e) {
-    assert.equal(e.status, 1, e.stderr);
-  }
+  const out = treeGrep(root, HOSTD_NAMES, HOSTD_PATHS);
   // the spec's package sections (its %changelog is history)
   const spec = readFileSync(join(root, 'packaging/omx-panel.spec'), 'utf8').split('\n%changelog')[0];
-  return out + (/PLUGIN_HOSTD_LV2_MAP|PLUGIN_HOSTD_TABLES|plugin-hostd-contract/.test(spec) ? 'packaging/omx-panel.spec: names plugin-hostd\n' : '');
+  return out + (HOSTD_NAMES.test(spec) ? 'packaging/omx-panel.spec: names plugin-hostd\n' : '');
 }
 
 test('(3) no file reads plugin-hostd\'s LV2 table or names its package, docs and CI included', () => {
@@ -93,9 +93,8 @@ test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
   }
   const f = join(dir, '.github/workflows/release.yml');
   writeFileSync(f, `${readFileSync(f, 'utf8')}# plugin-hostd-contract\n`);
-  execFileSync('git', ['init', '-q', dir]);
-  execFileSync('git', ['-C', dir, 'add', '.']);
-  assert.match(hostdNames(dir), /release\.yml:.*plugin-hostd-contract/);
+  // the scratch tree has no .git, as a package build's has none: the guard reads it all the same
+  assert.match(hostdNames(dir), /release\.yml:\d+:.*plugin-hostd-contract/);
 });
 
 // V23d, P2 (omx-panel#162): a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED (its param domain, the ids
