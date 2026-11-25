@@ -103,7 +103,7 @@ test('(3) arm: plugin-hostd-contract planted in release.yml is seen', (t) => {
 // LV2 term, nothing of omx-clap.
 test('(a) a standard unit the param-contract extension encodes takes its role; one it does not encode takes none', () => {
   assert.deepEqual(answers(['dB', '%', 'x', 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB/s', 'dB/oct', '']).map(([id]) => id),
-    ['dB', 'percent', null, 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dB-s', 'dB-oct', 'none']);
+    ['dB', 'percent', null, 'coef', 'st', 'cents', 'dBFS', 'LUFS', 'dBu', 'dBTP', 'LU', 'dBPerS', 'dBPerOct', 'none']);
 });
 
 test('(c) omx-contract\'s served set decides: a PARAM_UNITS_CLAP_ENCODED with no LUFS leaves LUFS unserved', (t) => {

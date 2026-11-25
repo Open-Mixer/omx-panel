@@ -189,8 +189,8 @@ export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
 /** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
  * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
- * three omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
-const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', x: 'coef', 'dB-oct': 'db' });
+ * two omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
+const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', dBPerOct: 'db' });
 function curveUnitOf(id) {
   const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
   if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);

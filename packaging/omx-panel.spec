@@ -4,7 +4,7 @@
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
 
 Name: omx-panel
-Version: 0.16.1
+Version: 0.16.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -293,6 +293,13 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.2-1
+- Fix: the units a control can serve are read from PARAM_UNITS_CLAP_ENCODED of
+  omx-contract's param domain. omx-contract 3.22.0 no longer installs
+  param-contract.json, so 0.16.1's `vocabulary` and `describe` refused
+  to run with it (#256). The role table names 3.22.0's ids: coef, dBPerOct
+  and dBPerS (it named x, dB-oct and dB-s).
+
 * Tue Nov 24 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.1-1
 - Fix: %check runs from the release tarball, which has no .git: the guard
   against plugin-hostd's LV2 table reads the files itself (#207). The installed
