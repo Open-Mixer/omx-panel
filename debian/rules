@@ -23,7 +23,7 @@ override_dh_auto_build:
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
+	OMX_PANEL_SHAPES=packaged OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 endif
 
 override_dh_auto_install:
