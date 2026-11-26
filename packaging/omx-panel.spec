@@ -183,7 +183,7 @@ install -D -m 0644 systemd/80-omx-panel.preset %{buildroot}%{_presetdir}/80-omx-
 make install-python DESTDIR=%{buildroot} PYTHONDIR=%{python3_sitelib}
 
 %check
-OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
+OMX_PANEL_SHAPES=packaged OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 # the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules,
 # and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
 tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_dir}

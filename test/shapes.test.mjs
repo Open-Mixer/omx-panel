@@ -110,8 +110,11 @@ const PY = join(ROOT, 'share/omx-panel');
 const CONTRACT = process.env.OMX_CONTRACT_TREE || join(ROOT, '..', 'omx-contract');
 const hasTool = existsSync(join(CONTRACT, 'bin/omx-contract.mjs')) && existsSync(join(CONTRACT, 'node_modules/json-schema-to-typescript'))
   && spawnSync(process.env.OMX_DATAMODEL_CODEGEN || 'datamodel-codegen', ['--version']).status === 0;
-// no generator here is a skip on a developer's desk and a RED in CI: a render nothing checks is the drift this holds
-const arm = (name, fn) => test(name, { skip: !hasTool && !process.env.CI && 'no omx-contract tree with its generators (OMX_CONTRACT_TREE, OMX_DATAMODEL_CODEGEN)' }, fn);
+// no generator here is a skip on a developer's desk and a RED in CI: a render nothing checks is the drift this holds.
+// A package build (%check, dh_auto_test) says OMX_PANEL_SHAPES=packaged: it has no generator tree, and ci.yml and the
+// release proof run these against the pinned generators before any package is built.
+const packaged = process.env.OMX_PANEL_SHAPES === 'packaged';
+const arm = (name, fn) => test(name, { skip: !hasTool && (!process.env.CI || packaged) && 'no omx-contract tree with its generators (OMX_CONTRACT_TREE, OMX_DATAMODEL_CODEGEN)' }, fn);
 const render = (target, out, shapesDir, extra = []) => spawnSync('node', [join(CONTRACT, 'bin/omx-contract.mjs'), 'render', '--shapes', '--shapes-dir', shapesDir, '--target', target, '--out', out, ...extra], { encoding: 'utf8' });
 const scratch = () => mkdtempSync(join(tmpdir(), 'omx-panel-shapes-'));
 
@@ -256,4 +259,13 @@ test('the release proof runs the shape generators at ci.yml\'s pin: the two OMX_
   const pin = (f) => readFileSync(join(ROOT, '.github/workflows', f), 'utf8').match(/OMX_CONTRACT_SHAPES_REF: ([0-9a-f]{40})/)?.[1];
   assert.ok(pin('ci.yml'), 'ci.yml names no OMX_CONTRACT_SHAPES_REF');
   assert.equal(pin('release.yml'), pin('ci.yml'));
+});
+
+test('a package build skips the shape renders by name, and the release proof still runs them', () => {
+  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
+  const rules = readFileSync(join(ROOT, 'debian/rules'), 'utf8');
+  assert.match(spec, /^OMX_PANEL_SHAPES=packaged .*make test$/m);
+  assert.match(rules, /^\tOMX_PANEL_SHAPES=packaged .*make test$/m);
+  const proof = readFileSync(join(ROOT, '.github/workflows/release.yml'), 'utf8');
+  assert.doesNotMatch(proof, /OMX_PANEL_SHAPES/, 'the release proof must run the shape renders, not skip them');
 });
