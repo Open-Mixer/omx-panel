@@ -105,7 +105,7 @@ jobs:
       # npm ci installs the build's tools; the twins the cases read (omx-dsp's curve, omx-contract) are then linked to the
       # channel's packages, not the registry's: a devel run's are staged and not on npm (npm publishes from a tag only)
       - run: npm ci
-      - run: make link-packaged
+      - run: make link-packaged PREFIX=/usr DATADIR=/usr/share
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
