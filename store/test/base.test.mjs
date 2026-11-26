@@ -5,7 +5,7 @@
  * <file>` derives each input's entry and `omx-panel-store build` writes them. Reproducible: two builds of the same
  * inputs, in two directories, give the same sorted dump and the same bytes. The file is layer 0 with `built_from`, page
  * size 4096, a DELETE journal and the schema's user_version, and the reader reads each entry from it, the LV2 input
- * with the groups the complement infers over its TTL. `built_from` comes from BUILT_FROM, else git, else the build is
+ * with the groups the complement infers over its TTL. `built_from` comes from BUILT_FROM.txt, else git, else the build is
  * refused by name.
  */
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ import { contract, descriptorOf, FIXTURES, OMX_PANEL, sourceOf, TRIPLE, bundle }
 const BUILT = 'b'.repeat(40);
 const COMP = JSON.parse(readFileSync(join(FIXTURES, 'descriptors', 'scanned-clap-omx-comp.json'), 'utf8'));
 
-/** An inputs directory: triplePara (its bundle, a scan's descriptor, a reference key) and omx comp (CLAP), and BUILT_FROM. */
+/** An inputs directory: triplePara (its bundle, a scan's descriptor, a reference key) and omx comp (CLAP), and BUILT_FROM.txt. */
 function inputs(t, { builtFrom = BUILT } = {}) {
   const d = tmp(t, 'omx-panel-base-');
   const lv2 = join(d, 'lv2');
@@ -36,7 +36,7 @@ function inputs(t, { builtFrom = BUILT } = {}) {
   mkdirSync(comp, { recursive: true });
   writeFileSync(join(comp, 'key.json'), JSON.stringify({ sha256: hex('c'), format: 'clap', uri: COMP.plugin.id }));
   cpSync(join(FIXTURES, 'descriptors', 'scanned-clap-omx-comp.json'), join(comp, 'descriptor.json'));
-  if (builtFrom !== null) writeFileSync(join(root, 'BUILT_FROM'), `${builtFrom}\n`);
+  if (builtFrom !== null) writeFileSync(join(root, 'BUILT_FROM.txt'), `${builtFrom}\n`);
   return { d, root, in: join(root, 'inputs'), contract: contract(join(d, 'contract.d')), lane };
 }
 
@@ -101,7 +101,7 @@ test('the reader reads the base: the LV2 input with the complement\'s groups, th
   assert.equal(existsSync(user), false);
 });
 
-test('built_from: a BUILT_FROM of 40 hex digits is taken; an unsubstituted one outside git is refused by name', (t) => {
+test('built_from: a BUILT_FROM.txt of 40 hex digits is taken; an unsubstituted one outside git is refused by name', (t) => {
   const w = inputs(t, { builtFrom: '$Format:%H$' });
   const f = join(w.d, 'out', 'panel.sqlite');
   const r = base(w, f);
@@ -110,9 +110,9 @@ test('built_from: a BUILT_FROM of 40 hex digits is taken; an unsubstituted one o
   assert.equal(existsSync(f), false, 'nothing written');
 });
 
-test('the tree\'s base inputs: BUILT_FROM is substituted by git archive (export-subst), and the inputs directory exists', () => {
+test('the tree\'s base inputs: BUILT_FROM.txt is substituted by git archive (export-subst), and the inputs directory exists', () => {
   const root = join(dirname(CMD), '..', '..');
-  assert.equal(readFileSync(join(root, 'base', 'BUILT_FROM'), 'utf8').trim(), '$Format:%H$');
-  assert.match(readFileSync(join(root, '.gitattributes'), 'utf8'), /^base\/BUILT_FROM export-subst$/m);
+  assert.equal(readFileSync(join(root, 'base', 'BUILT_FROM.txt'), 'utf8').trim(), '$Format:%H$');
+  assert.match(readFileSync(join(root, '.gitattributes'), 'utf8'), /^base\/BUILT_FROM\.txt export-subst$/m);
   assert.ok(existsSync(join(root, 'base', 'inputs')));
 });
