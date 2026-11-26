@@ -251,3 +251,9 @@ test('both distributions build python3-omx-panel from the one Makefile target, a
   assert.match(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /^check: .*\bshapes-check\b/m);
   assert.match(readFileSync(join(ROOT, '.github/workflows/ci.yml'), 'utf8'), /make shapes-check/);
 });
+
+test('the release proof runs the shape generators at ci.yml\'s pin: the two OMX_CONTRACT_SHAPES_REF move together', () => {
+  const pin = (f) => readFileSync(join(ROOT, '.github/workflows', f), 'utf8').match(/OMX_CONTRACT_SHAPES_REF: ([0-9a-f]{40})/)?.[1];
+  assert.ok(pin('ci.yml'), 'ci.yml names no OMX_CONTRACT_SHAPES_REF');
+  assert.equal(pin('release.yml'), pin('ci.yml'));
+});
