@@ -86,7 +86,7 @@ jobs:
 
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False omx-contract-data plugin-db-contract
+          dnf install -y --setopt=install_weak_deps=False omx-contract-data plugin-db-contract omx-dsp-wasm
           # the panel domain's checks, as in ci.yml: omx-contract (validate, fmt), its domain installer (omx-contract-devel)
           # and the C loader's omx-domain command (libomx-domain-devel), at the floor the data package names
           dnf install -y --setopt=install_weak_deps=False omx-contract omx-contract-devel libomx-domain-devel
@@ -102,8 +102,10 @@ jobs:
         run: |
           dnf copr enable -y ycollet/audinux
           dnf install -y --setopt=install_weak_deps=False caps-lv2
-      # npm ci installs omx-dsp (package.json's @openmixer/omx-dsp), the curve the cases read, as in ci.yml
+      # npm ci installs the build's tools; the twins the cases read (omx-dsp's curve, omx-contract) are then linked to the
+      # channel's packages, not the registry's: a devel run's are staged and not on npm (npm publishes from a tag only)
       - run: npm ci
+      - run: make link-packaged
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:

@@ -14,6 +14,7 @@ include /usr/share/dpkg/architecture.mk
 # tarball (tools/vendored-source.sh) already holds them, for a build with no registry
 override_dh_auto_build:
 	test -d node_modules || npm ci --no-audit --no-fund
+	$(MAKE) link-packaged PREFIX=/usr DATADIR=/usr/share
 	dh_auto_build
 	$(MAKE) -C renderer WINDOW=0 PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include DATADIR=/usr/share
 	$(MAKE) -C store PREFIX=/usr LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH) INCLUDEDIR=/usr/include

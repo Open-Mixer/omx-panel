@@ -166,6 +166,7 @@ the words instead of restating them.
 
 %build
 test -d node_modules || npm ci --no-audit --no-fund
+make link-packaged PREFIX=%{_prefix} DATADIR=%{_datadir}
 %make_build
 %make_build -C renderer WINDOW=0 PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} DATADIR=%{_datadir}
 %make_build -C store PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir}

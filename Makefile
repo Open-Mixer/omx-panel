@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store console-map shapes shapes-check install-python
+.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store console-map shapes shapes-check install-python link-packaged
 
 all: build
 
@@ -38,6 +38,16 @@ check: build spdx public-sources look copies gestures codes group-words console-
 
 test:
 	npm test
+
+# The tree reads the twins the channel installs, never the registry's copy npm ci fetched: node_modules/@openmixer/omx-dsp
+# and node_modules/@openmixer/omx-contract become links to omx-dsp-wasm's and omx-contract's directories, as the installed
+# package links them (install-base). A devel wave stages versions the registry has not got (npm publishes from a tag only).
+link-packaged:
+	@install -d node_modules/@openmixer; \
+	for p in omx-dsp:$(DATADIR)/omx-dsp omx-contract:$(OMX_CONTRACT_LIB); do n=$${p%%:*}; d=$${p#*:}; \
+	  test -f $$d/package.json || { echo "link-packaged: no $$n at $$d: install its package" >&2; exit 1; }; \
+	  rm -rf node_modules/@openmixer/$$n; ln -sfn $$d node_modules/@openmixer/$$n; \
+	  echo "link-packaged: @openmixer/$$n -> $$d ($$(node -p "require('$$d/package.json').version"))"; done
 
 OPENMIXER_DOTGITHUB ?= ../openmixer-dotgithub
 
