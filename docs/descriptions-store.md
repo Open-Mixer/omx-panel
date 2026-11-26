@@ -533,7 +533,7 @@ only: no environment variable is read.
 plugin its bundle's TTL), running the same derivation per input. It follows the qualification store's migration rules
 (its section 5): a new file each run, inputs in byte order of their paths, rows in a fixed order, `journal_mode`
 `DELETE`, `page_size` 4096, `VACUUM`, `user_version` last, written to a temporary file and renamed only when complete;
-row-identical everywhere and byte-identical with the same SQLite; `built_from` from git or a substituted `BUILT_FROM`
+row-identical everywhere and byte-identical with the same SQLite; `built_from` from git or a substituted `BUILT_FROM.txt`
 file, refused as `built-from-unknown` when neither. The package `omx-panel-descriptions` is noarch: a key carries its
 binary's hash, so one file serves every architecture. Its inputs (the reference sets' descriptors and TTL) live with the base package's build in omx-panel (section 14, 2).
 
@@ -548,7 +548,7 @@ Ruled with lane 5 (2026-11-24), the builder and the package:
 - **An input** is a directory under `base/inputs/`: `key.json` (`{ sha256, format, uri }`, the key of the reference
   set's binary), `descriptor.json`, and for an LV2 plugin `bundle/` (its manifest and TTL: the groups are the
   complement's verdict over it and the source its hash). Inputs are read in byte order of their names.
-- **`built_from`** is `base/BUILT_FROM` when it holds 40 hex digits (`$Format:%H$`, substituted by `git archive` through
+- **`built_from`** is `base/BUILT_FROM.txt` when it holds 40 hex digits (`$Format:%H$`, substituted by `git archive` through
   `export-subst`), else `git rev-parse HEAD` of the inputs' tree, else the build is refused `built-from-unknown`.
 - **This lane ships `base/inputs/` empty.** An empty base is a base: the store opens, and the generators and plugin-hostd
   read it. The reference sets' inputs arrive with their sets (lanes 15 and 16).

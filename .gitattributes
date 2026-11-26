@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 # the commit the base was built from, substituted by git archive (docs/descriptions-store.md 6)
-base/BUILT_FROM export-subst
+base/BUILT_FROM.txt export-subst

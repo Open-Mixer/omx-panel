@@ -5,7 +5,7 @@
  * (docs/descriptions-store.md section 6, lane 5). Each input directory (in byte order of its name) holds `key.json`
  * ({ sha256, format, uri }: the reference set's binary), `descriptor.json`, and for an LV2 plugin `bundle/` (its manifest
  * and TTL). Each entry is the one derivation every producer makes (`deriveEntry`), its source the store's hash of the
- * input as installed; the entries go to `omx-panel-store build`, which writes the file. `built_from` is the BUILT_FROM
+ * input as installed; the entries go to `omx-panel-store build`, which writes the file. `built_from` is the BUILT_FROM.txt
  * beside the inputs when `git archive` substituted it, else the commit git says the inputs are at, else the build is
  * refused `built-from-unknown`.
  */
@@ -17,9 +17,9 @@ import { readInstalledBundle } from './lv2-complement.mjs';
 
 const COMMIT = /^[0-9a-f]{40}$/;
 
-/** The commit the inputs were built from: BUILT_FROM (substituted by git archive), else git's HEAD, else a refusal. */
+/** The commit the inputs were built from: BUILT_FROM.txt (substituted by git archive), else git's HEAD, else a refusal. */
 export function builtFrom(inDir, env = process.env) {
-  const file = join(dirname(inDir), 'BUILT_FROM');
+  const file = join(dirname(inDir), 'BUILT_FROM.txt');
   const stated = existsSync(file) ? readFileSync(file, 'utf8').trim() : '';
   if (COMMIT.test(stated)) return stated;
   const git = spawnSync('git', ['-C', inDir, 'rev-parse', 'HEAD'], { encoding: 'utf8', env });
