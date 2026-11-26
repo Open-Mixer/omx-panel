@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The installed package is the node package its `package.json` describes (#272). `make install` copies `dist/` whole into
+  `/usr/share/omx-panel`, but installed the source `package.json`, whose every export and bin named `./dist/...`, a path
+  the RPM and the DEB never carried: a consumer that links `node_modules/@openmixer/omx-panel` to the installed tree
+  (openmixer's server build) stopped at `Cannot find module @openmixer/omx-panel/store-entry`. The installed
+  `package.json` (tools/installed-package-json.mjs) names the installed files, the same export names as the npm package;
+  `test/installed-exports.test.mjs` runs `make install DESTDIR=...` and finds every export target and the bin there.
 - **ABI break: the renderer's library is `libomx-panel-render.so.1`** (#240). The spectrum takes both taps and the console's
   modes: `omx_panel_view_set_spectrum(view, index, hz, pre_db, post_db, peak_db, n, mode, delta, db_min, db_max, grid_db)`,
   `mode` an `omx_panel_tap_mode_t` (`OMX_PANEL_TAP_PRE`, `OMX_PANEL_TAP_POST`, `OMX_PANEL_TAP_BOTH`), a tap the mode does not
