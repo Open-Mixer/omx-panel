@@ -46,7 +46,7 @@ case "$PKG" in
     installed() { rpm -qa --qf '%{NAME}\n' | sort; }
     published() { [ -n "$(dnf -q repoquery --latest-limit=1 --whatprovides "$1" 2>/dev/null)" ]; }
     stand_in_of() { echo "${1%-contract}-devel"; }
-    unpack() { (cd "$2" && dnf -q download "$1" >/dev/null 2>&1) && (cd / && rpm2cpio "$2"/*.rpm | cpio -idm --quiet "./usr/share/omx-contract/contract.d/3/$3/*"); }
+    unpack() { (cd "$2" && dnf -q download "$1" >/dev/null 2>&1) && (cd / && rpm2cpio "$2"/*.rpm | cpio -idm --quiet "./usr/share/omx-contract/contract.d/$3/*"); }
     dnf install -y -q --setopt=install_weak_deps=False cpio >/dev/null 2>&1
     dnf -q makecache >/dev/null 2>&1
     reqs=$(rpm -qp --requires "$PKG" | grep -v -e '^rpmlib(' -e '^/' -e '^config(' | sed 's/ *$//')
@@ -69,7 +69,7 @@ case "$PKG" in
       fi
     }
     stand_in_of() { echo "${1%-contract}-dev"; }
-    unpack() { (cd "$2" && apt-get download -q "$1" >/dev/null 2>&1 && dpkg-deb --fsys-tarfile ./*.deb | tar -x -C / "./usr/share/omx-contract/contract.d/3/$3"); }
+    unpack() { (cd "$2" && apt-get download -q "$1" >/dev/null 2>&1 && dpkg-deb --fsys-tarfile ./*.deb | tar -x -C / "./usr/share/omx-contract/contract.d/$3"); }
     reqs=$(dpkg-deb -f "$PKG" Depends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$')
     weak=$(dpkg-deb -f "$PKG" Recommends | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' || true)
     shipped() { dpkg-deb -c "$CPKG" | awk '{print $NF}' | sed 's|^\.||' | grep -E '^/usr/share/omx-contract/contract\.d/' | grep -v '/$' || true; }
@@ -147,8 +147,8 @@ stand_in() {
   tmp=$(mktemp -d)
   unpack "$from" "$tmp" "$owner"
   rm -rf "$tmp"
-  [ -d "$CONTRACTDIR/3/$owner" ] || { fail "no $CONTRACTDIR/3/$owner in $from"; return; }
-  unverified+=("$1 delivering $CONTRACTDIR/3/$owner: unpacked from $from's payload")
+  [ -d "$CONTRACTDIR/$owner" ] || { fail "no $CONTRACTDIR/$owner in $from"; return; }
+  unverified+=("$1 delivering $CONTRACTDIR/$owner: unpacked from $from's payload")
 }
 for m in "${missing[@]}"; do stand_in "$m"; done
 

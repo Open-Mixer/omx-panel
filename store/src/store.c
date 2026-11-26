@@ -22,7 +22,6 @@
 
 #define READER_BUSY_MS 250
 #define WRITER_BUSY_MS 5000
-#define PLUGIN_DB_FLOOR "1.0.0"   /* the plugin-db domain that publishes PLUGIN_DB_ADDRESS_FORMATS */
 
 enum { LAYER_BASE = 0, LAYER_SYSTEM = 1, LAYER_USER = 2 };
 static const char *const LAYER_NAME[3] = { "base", "system", "user" };
@@ -59,7 +58,7 @@ static const struct { const char *tbl, *col, *domain, *item; } WORD_CHECKS[] = {
 static const char *const CODES[] = {
     [OMX_PANEL_STORE_ABSENT] = "panel-store.absent", [OMX_PANEL_STORE_UNREADABLE] = "panel-store.unreadable",
     [OMX_PANEL_STORE_NOT_A_STORE] = "panel-store.not-a-store", [OMX_PANEL_STORE_SCHEMA_MISMATCH] = "panel-store.schema-mismatch",
-    [OMX_PANEL_STORE_SCHEMA_OTHER] = "panel-store.schema-other", [OMX_PANEL_STORE_DOMAIN_TOO_OLD] = "panel-store.domain-too-old",
+    [OMX_PANEL_STORE_SCHEMA_OTHER] = "panel-store.schema-other",
     [OMX_PANEL_STORE_WORD_UNKNOWN] = "panel-store.word-unknown", [OMX_PANEL_STORE_HOT_JOURNAL] = "panel-store.hot-journal",
     [OMX_PANEL_STORE_BUSY] = "panel-store.busy", [OMX_PANEL_STORE_ENTRY_INVALID] = "panel-store.entry-invalid",
 };
@@ -92,7 +91,7 @@ static int from_sqlite(int rc) {
 }
 
 static int from_loader(int rc) {
-    return rc == OMX_CONTRACT_CODE_PACKAGE_TOO_OLD ? OMX_PANEL_STORE_DOMAIN_TOO_OLD : OMX_PANEL_STORE_LOADER_BASE + rc;
+    return OMX_PANEL_STORE_LOADER_BASE + rc;
 }
 
 const char *omx_panel_store_message(const omx_panel_store *s) { return s ? s->msg : ""; }
@@ -178,12 +177,12 @@ static int identifier(const char *s) {
 typedef struct { char name[64]; omx_domain *d; } dom_t;
 #define MAXDOM 8
 
-static int open_domain(const char *dir, const char *name, const char *floor, omx_domain **d, omx_panel_store_error *err) {
+static int open_domain(const char *dir, const char *name, omx_domain **d, omx_panel_store_error *err) {
     omx_domain_error de;
-    int rc = dir ? omx_domain_open_at(dir, name, floor, d, &de) : omx_domain_open(name, floor, d, &de);
+    int rc = dir ? omx_domain_open_at(dir, name, NULL, d, &de) : omx_domain_open(name, NULL, d, &de);
     if (rc) {
         int st = from_loader(rc);
-        refuse(NULL, err, st, "domain %s at or above %s: %s", name, floor, de.message);
+        refuse(NULL, err, st, "domain %s: %s", name, de.message);
         if (err && st >= OMX_PANEL_STORE_LOADER_BASE) err->code = de.code;
         return st;
     }
@@ -197,18 +196,18 @@ static dom_t *find_domain(dom_t *doms, int n, const char *name) {
     return NULL;
 }
 
-/* the domains a file was checked against, each opened at the version recorded; then every word of the checked columns */
+/* the domains a file was checked against, each opened as installed (the version recorded is what wrote the file, never a floor); then every word of the checked columns */
 static int check_file_words(const file_t *f, const char *dir, int check_words, omx_panel_store *s, omx_panel_store_error *err) {
     dom_t doms[MAXDOM];
     int nd = 0, st = 0, rc;
     sqlite3_stmt *q = NULL;
-    rc = sqlite3_prepare_v2(f->db, "SELECT domain, version FROM store_domain ORDER BY domain", -1, &q, NULL);
+    rc = sqlite3_prepare_v2(f->db, "SELECT domain FROM store_domain ORDER BY domain", -1, &q, NULL);
     if (rc != SQLITE_OK) return refuse(s, err, from_sqlite(rc), "%s: store_domain: %s", f->path, sqlite3_errmsg(f->db));
     while ((rc = sqlite3_step(q)) == SQLITE_ROW && nd < MAXDOM) {
-        const char *name = (const char *)sqlite3_column_text(q, 0), *ver = (const char *)sqlite3_column_text(q, 1);
+        const char *name = (const char *)sqlite3_column_text(q, 0);
         omx_panel_store_error e2;
         doms[nd].d = NULL;
-        st = open_domain(dir, name, ver, &doms[nd].d, &e2);
+        st = open_domain(dir, name, &doms[nd].d, &e2);
         if (st) { refuse(s, err, st, "%s: %s", f->path, e2.message); if (err) err->code = e2.code; break; }
         snprintf(doms[nd].name, sizeof doms[nd].name, "%s", name);
         nd++;
@@ -645,6 +644,24 @@ static int mkdir_p(const char *path) {
 }
 
 /* the layer's file, written whole beside its place and linked into it: a reader never sees half a layer */
+/* A new store's schema and its fixed rows in `db`: store_info of `layer` (`built_from` for the base, else NULL), the
+ * domains, the word checks. The user_version is set after, by the caller: last, once the file is whole. */
+static int init_db(sqlite3 *db, int layer, const char *built_from) {
+    char sql[512];
+    if (exec(db, "PRAGMA page_size = 4096") != SQLITE_OK || exec(db, "PRAGMA journal_mode = DELETE") != SQLITE_OK || exec(db, "BEGIN") != SQLITE_OK
+        || exec(db, OMX_PANEL_STORE_DDL) != SQLITE_OK) return -1;
+    if (built_from) snprintf(sql, sizeof sql, "INSERT INTO store_info VALUES (1, %d, 'omx-panel.panel-description/1', '%s')", layer, built_from);
+    else snprintf(sql, sizeof sql, "INSERT INTO store_info VALUES (1, %d, 'omx-panel.panel-description/1', NULL)", layer);
+    if (exec(db, sql) != SQLITE_OK) return -1;
+    snprintf(sql, sizeof sql, "INSERT INTO store_domain VALUES ('panel', '%s'), ('plugin-db', '%s')", OMX_PANEL_STORE_PANEL_VERSION, OMX_PANEL_STORE_PLUGIN_DB_VERSION);
+    if (exec(db, sql) != SQLITE_OK) return -1;
+    for (size_t i = 0; i < NWORD_CHECKS; i++) {
+        snprintf(sql, sizeof sql, "INSERT INTO word_check VALUES ('%s', '%s', '%s', '%s')", WORD_CHECKS[i].tbl, WORD_CHECKS[i].col, WORD_CHECKS[i].domain, WORD_CHECKS[i].item);
+        if (exec(db, sql) != SQLITE_OK) return -1;
+    }
+    return exec(db, "COMMIT") == SQLITE_OK ? 0 : -1;
+}
+
 static int create_layer(omx_panel_store *s, const char *path, int layer, omx_panel_store_error *err) {
     char *tmp = NULL;
     if (mkdir_p(path) != 0) return refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: cannot create its directory: %s", path, strerror(errno));
@@ -654,17 +671,8 @@ static int create_layer(omx_panel_store *s, const char *path, int layer, omx_pan
     int rc = sqlite3_open_v2(tmp, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     int st = 0;
     if (rc != SQLITE_OK) { st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: cannot create: %s", tmp, sqlite3_errstr(rc)); goto done; }
-    char sql[512];
-    if (exec(db, "PRAGMA journal_mode = DELETE") != SQLITE_OK || exec(db, "BEGIN") != SQLITE_OK || exec(db, OMX_PANEL_STORE_DDL) != SQLITE_OK) goto failed;
-    snprintf(sql, sizeof sql, "INSERT INTO store_info VALUES (1, %d, 'omx-panel.panel-description/1', NULL)", layer);
-    if (exec(db, sql) != SQLITE_OK) goto failed;
-    snprintf(sql, sizeof sql, "INSERT INTO store_domain VALUES ('panel', '%s'), ('plugin-db', '%s')", OMX_PANEL_STORE_PANEL_VERSION, PLUGIN_DB_FLOOR);
-    if (exec(db, sql) != SQLITE_OK) goto failed;
-    for (size_t i = 0; i < NWORD_CHECKS; i++) {
-        snprintf(sql, sizeof sql, "INSERT INTO word_check VALUES ('%s', '%s', '%s', '%s')", WORD_CHECKS[i].tbl, WORD_CHECKS[i].col, WORD_CHECKS[i].domain, WORD_CHECKS[i].item);
-        if (exec(db, sql) != SQLITE_OK) goto failed;
-    }
-    if (exec(db, "COMMIT") != SQLITE_OK) goto failed;
+    char sql[64];
+    if (init_db(db, layer, NULL) != 0) goto failed;
     snprintf(sql, sizeof sql, "PRAGMA user_version = %d", OMX_PANEL_STORE_SCHEMA_VERSION);
     if (exec(db, sql) != SQLITE_OK) goto failed;
     sqlite3_close(db);
@@ -707,10 +715,10 @@ int omx_panel_store_writer_open_at(const char *path, int layer, const char *cont
         else st = check_file_words(&f, s->contract_dir, 0, s, err);
     }
     if (!st) {
-        /* the domains a put checks its words against, at the versions the layer holds them */
+        /* the domains a put checks its words against, as installed */
         omx_panel_store_error e2;
-        st = open_domain(s->contract_dir, "panel", OMX_PANEL_STORE_PANEL_VERSION, &s->dom_panel, &e2);
-        if (!st) st = open_domain(s->contract_dir, "plugin-db", PLUGIN_DB_FLOOR, &s->dom_plugindb, &e2);
+        st = open_domain(s->contract_dir, "panel", &s->dom_panel, &e2);
+        if (!st) st = open_domain(s->contract_dir, "plugin-db", &s->dom_plugindb, &e2);
         if (st) { refuse(s, err, st, "%s", e2.message); if (err) err->code = e2.code; }
     }
     if (!st) exec(s->w, "PRAGMA foreign_keys = ON");
@@ -882,6 +890,86 @@ int omx_panel_store_put(omx_panel_store *w, const omx_panel_store_key *k, const 
     if (st) exec(db, "ROLLBACK");
     free(body_text); free(groups_text);
     cJSON_Delete(j);
+    return st;
+}
+
+int omx_panel_store__keys(omx_panel_store *w, void (*each)(const char *, const char *, const char *, void *), void *ctx, omx_panel_store_error *err) {
+    sqlite3_stmt *q;
+    w->msg[0] = 0;
+    if (!w->w) return refuse(w, err, OMX_PANEL_STORE_NOT_A_STORE, "not a writer");
+    int rc = sqlite3_prepare_v2(w->w, "SELECT sha256, format, uri FROM plugin ORDER BY sha256, format, uri", -1, &q, NULL);
+    while (rc == SQLITE_OK && (rc = sqlite3_step(q)) == SQLITE_ROW) {
+        each((const char *)sqlite3_column_text(q, 0), (const char *)sqlite3_column_text(q, 1), (const char *)sqlite3_column_text(q, 2), ctx);
+        rc = SQLITE_OK;
+    }
+    if (rc == SQLITE_DONE) rc = SQLITE_OK;
+    sqlite3_finalize(q);
+    return rc == SQLITE_OK ? 0 : refuse(w, err, from_sqlite(rc), "%s: %s", w->wpath, sqlite3_errmsg(w->w));
+}
+
+/* ---- the base (section 6): the derived entries written into a new file, in key order, renamed into place when whole */
+
+static int key_cmp(const void *a, const void *b) {
+    const cJSON *x = *(const cJSON *const *)a, *y = *(const cJSON *const *)b;
+    for (const char *const *f = (const char *const[]){ "sha256", "format", "uri", NULL }; *f; f++) {
+        int c = strcmp(str_of(x, *f) ? str_of(x, *f) : "", str_of(y, *f) ? str_of(y, *f) : "");
+        if (c) return c;
+    }
+    return 0;
+}
+
+int omx_panel_store__build(const char *out, const char *built_from, const char *contract_dir, const char *entries_json, omx_panel_store_error *err) {
+    if (!is_hex(built_from, 40)) return refuse(NULL, err, OMX_PANEL_STORE_ENTRY_INVALID, "built_from %s is not a commit (40 lowercase hex digits)", built_from ? built_from : "(none)");
+    cJSON *all = cJSON_Parse(entries_json);
+    if (!cJSON_IsArray(all)) { cJSON_Delete(all); return refuse(NULL, err, OMX_PANEL_STORE_ENTRY_INVALID, "the entries are a JSON array of { sha256, format, uri, entry }"); }
+    int n = cJSON_GetArraySize(all);
+    const cJSON **items = calloc(n ? n : 1, sizeof *items);
+    int i = 0;
+    const cJSON *it;
+    cJSON_ArrayForEach(it, all) items[i++] = it;
+    qsort(items, n, sizeof *items, key_cmp);
+
+    omx_panel_store *s = calloc(1, sizeof *s);
+    s->rules = OMX_PANEL_RULES_VERSION;
+    s->contract_dir_own = dup_or_null(contract_dir);
+    s->contract_dir = s->contract_dir_own;
+    s->wlayer = LAYER_BASE;
+    int st = 0;
+    char *tmp = NULL;
+    if (mkdir_p(out) != 0) st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: cannot create its directory: %s", out, strerror(errno));
+    else if (asprintf(&tmp, "%s.build.%ld", out, (long)getpid()) < 0) st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "out of memory");
+    if (!st) {
+        unlink(tmp);
+        s->wpath = strdup(tmp);
+        int rc = sqlite3_open_v2(tmp, &s->w, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+        if (rc != SQLITE_OK || init_db(s->w, LAYER_BASE, built_from) != 0) st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: cannot create: %s", tmp, s->w ? sqlite3_errmsg(s->w) : sqlite3_errstr(rc));
+    }
+    if (!st) {
+        omx_panel_store_error e2;
+        st = open_domain(s->contract_dir, "panel", &s->dom_panel, &e2);
+        if (!st) st = open_domain(s->contract_dir, "plugin-db", &s->dom_plugindb, &e2);
+        if (st) { refuse(s, err, st, "%s", e2.message); if (err) err->code = e2.code; }
+    }
+    if (!st) exec(s->w, "PRAGMA foreign_keys = ON");
+    for (i = 0; !st && i < n; i++) {
+        const cJSON *e = cJSON_GetObjectItemCaseSensitive(items[i], "entry");
+        omx_panel_store_key k = { str_of(items[i], "sha256"), str_of(items[i], "format"), str_of(items[i], "uri") };
+        if (!k.sha256 || !k.format || !k.uri || !cJSON_IsObject(e)) { st = refuse(s, err, OMX_PANEL_STORE_ENTRY_INVALID, "entry %d is not { sha256, format, uri, entry }", i); break; }
+        char *text = cJSON_PrintUnformatted(e);
+        st = omx_panel_store_put(s, &k, text, err);
+        free(text);
+    }
+    if (!st) {
+        char sql[64];
+        snprintf(sql, sizeof sql, "PRAGMA user_version = %d", OMX_PANEL_STORE_SCHEMA_VERSION);
+        if (exec(s->w, "VACUUM") != SQLITE_OK || exec(s->w, sql) != SQLITE_OK) st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: %s", tmp, sqlite3_errmsg(s->w));
+    }
+    if (s->w) { sqlite3_close(s->w); s->w = NULL; }
+    if (!st && rename(tmp, out) != 0) st = refuse(s, err, OMX_PANEL_STORE_UNREADABLE, "%s: cannot put the base in place: %s", out, strerror(errno));
+    if (tmp) { if (st) unlink(tmp); free(tmp); }
+    free(items);
+    cJSON_Delete(all);
+    omx_panel_store_close(s);
     return st;
 }
 

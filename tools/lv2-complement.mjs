@@ -150,15 +150,18 @@ export function pluginTriples(bundle, uri) {
 // ---------------------------------------------------------------------------------------------------------------
 // Planning: the verdict per plugin, the versions, and whether the bundle is written or refused.
 
+/** Every value the plugin states for predicate `p` in the files lilv reads for it, each once. */
+function statedValues(bundle, uri, p) {
+  const vs = new Set();
+  for (const name of ['manifest.ttl', ...(bundle.seeAlso.get(uri) ?? [])]) {
+    for (const t of /** @type {TtlFile} */ (bundle.files.get(name)).triples) if (t.s.t === 'iri' && t.s.v === uri && t.p.v === p) vs.add(t.o.t === 'lit' ? t.o.v : termKey(t.o));
+  }
+  return [...vs];
+}
+
 /** lilv's reading of a plugin's version: both values present, else 0.0 (lilv/src/world.c get_version). */
 function versionOf(bundle, uri) {
-  const values = (p) => {
-    const vs = new Set();
-    for (const name of ['manifest.ttl', ...(bundle.seeAlso.get(uri) ?? [])]) {
-      for (const t of /** @type {TtlFile} */ (bundle.files.get(name)).triples) if (t.s.t === 'iri' && t.s.v === uri && t.p.v === p) vs.add(t.o.t === 'lit' ? t.o.v : termKey(t.o));
-    }
-    return [...vs];
-  };
+  const values = (p) => statedValues(bundle, uri, p);
   const read = (field) => {
     const vs = values(`${LV2}${field}`);
     if (vs.length > 1) throw new Refusal('version-ambiguous', `${uri} states lv2:${field} ${vs.join(' and ')}`);
@@ -176,10 +179,15 @@ function versionOf(bundle, uri) {
   if (next.minor < installed.minor || (next.minor === installed.minor && next.micro <= installed.micro)) {
     throw new Refusal('version-not-newer', `${uri}: ${next.minor}.${next.micro} would not be newer than ${installed.minor}.${installed.micro}`);
   }
-  const binaries = values(`${LV2}binary`);
+  return { stated: { minor, micro }, installed, next, binary: binaryOf(bundle, uri) };
+}
+
+/** The plugin's one lv2:binary, as lilv reads it (an IRI); a Refusal when it states none or several. */
+export function binaryOf(bundle, uri) {
+  const binaries = statedValues(bundle, uri, `${LV2}binary`);
   if (binaries.length === 0) throw new Refusal('no-binary', `${uri} states no lv2:binary`);
   if (binaries.length > 1) throw new Refusal('binary-ambiguous', `${uri} states lv2:binary ${binaries.join(' and ')}`);
-  return { stated: { minor, micro }, installed, next, binary: binaries[0] };
+  return binaries[0];
 }
 
 /**
@@ -208,6 +216,21 @@ function withInstances(verdict, instances) {
 }
 
 /**
+ * The port-group verdict of one plugin of an installed bundle: the inference's, with the instance groups of its repeated
+ * groups. The one inference the complement writes and the descriptions store keeps (docs/descriptions-store.md 6).
+ * @param {InstalledBundle} bundle
+ * @param {string} uri
+ */
+export function verdictOf(bundle, uri) {
+  const triples = pluginTriples(bundle, uri);
+  const plugin = readPluginPorts(triples, uri);
+  // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
+  const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
+  const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
+  return withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances);
+}
+
+/**
  * @typedef {{ uri: string, verdict: any, version?: any }} PlannedPlugin
  * @typedef {{ bundle: InstalledBundle, plugins: PlannedPlugin[], write: boolean, refusal?: Refusal }} Plan
  */
@@ -216,18 +239,13 @@ function withInstances(verdict, instances) {
  * What to do with an installed bundle. `elsewhere(uri)` lists the other installed bundles declaring `uri` (a plugin
  * in two bundles is one lilv picks between by version; the restatement cannot say which it replaces).
  * @param {InstalledBundle} bundle
- * @param {{ elsewhere?: (uri: string) => string[] }} [options]
+ * `verdictOf(bundle, uri)` gives each plugin's verdict: the store's (describe-plugin.mjs `storeVerdicts`), else the rules'.
+ * @param {{ elsewhere?: (uri: string) => string[], verdictOf?: (bundle: InstalledBundle, uri: string) => any }} [options]
  * @returns {Plan}
  */
 export function planBundle(bundle, options = {}) {
-  const plugins = bundle.plugins.map((uri) => {
-    const triples = pluginTriples(bundle, uri);
-    const plugin = readPluginPorts(triples, uri);
-    // a group lists its ports in the bundle's port order, as lilv reads them: the instances' order of a screen is not it
-    const at = new Map(plugin.ports.map((p) => [p.symbol, p.index]));
-    const instances = instanceGroups(inferGroupModel(controlsOfLv2(triples, uri))).map((g) => ({ ...g, ports: [...g.ports].sort((a, b) => at.get(a) - at.get(b)) }));
-    return { uri, verdict: withInstances(inferGroups(plugin, readModguiLayout(triples, uri)), instances) };
-  });
+  const verdict = options.verdictOf ?? verdictOf;
+  const plugins = bundle.plugins.map((uri) => ({ uri, verdict: verdict(bundle, uri) }));
   const plan = { bundle, plugins, write: false };
   if (!plugins.some((p) => p.verdict.outcome === OUTCOME.grouped)) return plan;
   try {
@@ -462,19 +480,30 @@ export function markerText(plan, writer = writerId()) {
   const v = (x) => `${x.minor}.${x.micro}`;
   const lines = [plan.bundle.dir, `writer ${writer}`, `source-sha256 ${plan.bundle.hash}`];
   for (const p of plan.plugins) {
-    const what = p.verdict.outcome === OUTCOME.grouped ? `grouped ${p.verdict.groups.length}` : `restated ${p.verdict.outcome}`;
+    const what = p.verdict.outcome === OUTCOME.grouped ? `grouped ${p.verdict.groups.length} ${groupsDigest(p.verdict.groups)}` : `restated ${p.verdict.outcome}`;
     lines.push(`plugin ${p.uri} ${v(p.version.installed)} ${v(p.version.next)} ${what}`);
   }
   for (const f of [...plan.bundle.files.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) lines.push(`file ${f.name} ${sha256(f.bytes)}`);
   return `${lines.join('\n')}\n`;
 }
 
-/** A written bundle is up to date when its marker names the same installed bundle, writer and content hash. */
+/** What a marker names of the groups written: a digest of each group's symbol, name, priority, ports and node. */
+function groupsDigest(groups) {
+  return sha256(Buffer.from(JSON.stringify(groups.map((g) => [g.symbol, g.name, g.displayPriority, g.ports, g.node ?? null])))).slice(0, 16);
+}
+
+/**
+ * A written bundle is up to date when its marker names the same installed bundle, writer and content hash, and the same
+ * plugins with the same groups: a stored entry whose groups changed over the same TTL writes the bundle again.
+ */
 export function isFresh(outBundle, plan, writer = writerId()) {
   const marker = join(outBundle, MARKER);
   if (!existsSync(marker)) return false;
-  const [dir, w, h] = readFileSync(marker, 'utf8').split('\n');
-  return dir === plan.bundle.dir && w === `writer ${writer}` && h === `source-sha256 ${plan.bundle.hash}`;
+  const lines = readFileSync(marker, 'utf8').split('\n');
+  const [dir, w, h] = lines;
+  const plugins = (text) => text.split('\n').filter((l) => l.startsWith('plugin '));
+  return dir === plan.bundle.dir && w === `writer ${writer}` && h === `source-sha256 ${plan.bundle.hash}`
+    && JSON.stringify(plugins(lines.join('\n'))) === JSON.stringify(plugins(markerText(plan, writer)));
 }
 
 /**
@@ -575,8 +604,8 @@ export function installedBundles(lv2Path) {
  * the current rules. `check` writes and removes nothing and names each bundle of ours that is stale or out of date.
  * @returns {{ counts: Record<string, number>, refusals: Record<string, number> }}
  */
-export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false, verbose = false, only = [], log = () => {}, writer = writerId() }) {
-  const counts = { written: 0, replaced: 0, outOfDate: 0, fresh: 0, refused: 0, notOurs: 0, removed: 0, grouped: 0, nothingToDo: 0, noConfident: 0, unreadable: 0, plugins: 0 };
+export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false, verbose = false, only = [], log = () => {}, writer = writerId(), verdictOf: verdict }) {
+  const counts = { written: 0, replaced: 0, outOfDate: 0, fresh: 0, refused: 0, notOurs: 0, removed: 0, grouped: 0, nothingToDo: 0, noConfident: 0, unreadable: 0, plugins: 0, noEntry: 0 };
   const refusals = {};
   const noWrite = dryRun || check;
   // why an installed bundle has no complement this run: the removal names it
@@ -624,7 +653,7 @@ export function sync({ lv2Path, outDir, stateDir, dryRun = false, check = false,
     }
     let plan;
     try {
-      plan = planBundle(b, { elsewhere: (uri) => (declaredIn.get(uri) ?? []).filter((d) => d !== dir) });
+      plan = planBundle(b, { elsewhere: (uri) => (declaredIn.get(uri) ?? []).filter((d) => d !== dir), verdictOf: verdict });
     } catch (e) {
       if (!(e instanceof Refusal)) throw e;
       refuse(dir, e);
@@ -738,14 +767,15 @@ export function summary({ counts, refusals }, dryRun = false) {
   return `${counts.written} ${would('written', 'would be written')}${counts.replaced ? ` (${counts.replaced} ${would('replacing', 'would replace')} an out-of-date one)` : ''}, `
     + `${counts.fresh} up to date, ${counts.refused} refused${why ? ` (${why})` : ''}, `
     + `${counts.notOurs} not ours, ${counts.removed} ${would('removed', 'would be removed')}; plugins: ${counts.plugins} read, ${counts.grouped} grouped, `
-    + `${counts.nothingToDo} nothing to do, ${counts.noConfident} without a confident grouping`;
+    + `${counts.nothingToDo} nothing to do, ${counts.noConfident} without a confident grouping`
+    + `${counts.noEntry ? `, ${counts.noEntry} with no stored entry (inferred: no descriptor)` : ''}`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
 
 const USAGE = 'usage: lv2-complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose] [--log-prefix <name>]\n';
 
-function main(argv) {
+async function main(argv) {
   const opts = { only: [], dryRun: false, check: false, verbose: false, lv2Path: process.env.LV2_PATH, prefix: 'lv2-complement' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -780,7 +810,14 @@ function main(argv) {
   if (!opts.lv2Path.split(':').includes(outDir) && !opts.lv2Path.split(':').map((p) => resolve(p)).includes(outDir)) {
     say(`note: ${outDir} is not on the LV2 search list; lilv loads these bundles once it is`);
   }
-  const result = sync({ lv2Path: opts.lv2Path, outDir, stateDir: resolve(opts.state ?? tmpdir()), dryRun: opts.dryRun, check: opts.check, verbose: opts.verbose, only: opts.only, log: say });
+  // the store's verdicts (docs/descriptions-store.md 6); a dry run or a check reads them and writes no entry
+  const counts = { noEntry: 0 };
+  const { storeVerdicts } = await import('./describe-plugin.mjs');
+  const noWrite = opts.dryRun || opts.check;
+  const stored = storeVerdicts({ derive: !noWrite, onNoEntry: (uri, why) => { counts.noEntry++; say(`no stored entry for ${uri}, inferred from its TTL: ${why}`); } });
+  if (!stored) say('no descriptions store (no omx-panel-store, or no base): the groups are inferred, as before');
+  const result = sync({ lv2Path: opts.lv2Path, outDir, stateDir: resolve(opts.state ?? tmpdir()), dryRun: opts.dryRun, check: opts.check, verbose: opts.verbose, only: opts.only, log: say, verdictOf: stored ?? undefined });
+  result.counts.noEntry = counts.noEntry;
   say(summary(result, opts.dryRun || opts.check));
   if (opts.check) {
     const stale = result.counts.removed + result.counts.outOfDate;
@@ -789,4 +826,5 @@ function main(argv) {
   }
 }
 
+// not awaited: main imports describe-plugin.mjs, which imports this module, and a top-level await here would hold both
 if (isMain(import.meta.url)) main(process.argv.slice(2));

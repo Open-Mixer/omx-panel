@@ -74,7 +74,7 @@
     {
       "id": "screw",
       "console": "--screw: the panel's screw heads",
-      "modgui": ".omx-pedal::before and ::after",
+      "modgui": ".omx-pedal::before and ::after: 12 px heads in the foot's corners, with a slot",
       "tokens": [
         "finish:--screw",
         "finish:--knob-cap-hi",

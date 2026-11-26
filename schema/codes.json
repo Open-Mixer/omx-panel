@@ -1,6 +1,6 @@
 {
   "kind": "codes",
-  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.",
+  "doc": "The refusal codes omx-panel emits, by the code word a refusal carries, and the words its surfaces draw of their own (panel.label.*, by the key a description serves), each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.",
   "codes": {
     "skinOverrideInvalid": {
       "code": "panel.skin.override-invalid",
@@ -354,6 +354,114 @@
         "plugin",
         "message"
       ]
+    },
+    "panelFamilyUnknown": {
+      "code": "panel.describe.family-unknown",
+      "text": {
+        "en": "The override for {plugin} names the panel family {family}, which is not one; the panel is made with no family."
+      },
+      "args": [
+        "plugin",
+        "family"
+      ]
+    },
+    "meters": {
+      "code": "panel.label.meters",
+      "text": {
+        "en": "Meters"
+      },
+      "args": []
+    },
+    "more": {
+      "code": "panel.label.more",
+      "text": {
+        "en": "More"
+      },
+      "args": []
+    },
+    "unheld": {
+      "code": "panel.label.unheld",
+      "text": {
+        "en": "unheld"
+      },
+      "args": []
+    },
+    "gainReduction": {
+      "code": "panel.label.gain.reduction",
+      "text": {
+        "en": "Gain reduction"
+      },
+      "args": []
+    },
+    "readOnly": {
+      "code": "panel.gesture.read-only",
+      "text": {
+        "en": "A read-only control takes no gesture."
+      },
+      "args": []
+    },
+    "owned": {
+      "code": "panel.gesture.control-owned",
+      "text": {
+        "en": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused."
+      },
+      "args": []
+    },
+    "noDefault": {
+      "code": "panel.gesture.no-default",
+      "text": {
+        "en": "A reset on a control that declares no default."
+      },
+      "args": []
+    },
+    "notInTable": {
+      "code": "panel.gesture.not-in-table",
+      "text": {
+        "en": "The widget has no such input in the table."
+      },
+      "args": []
+    },
+    "holdShort": {
+      "code": "panel.gesture.hold-short",
+      "text": {
+        "en": "A control marked hold was released before the safety hold."
+      },
+      "args": []
+    },
+    "holdBelowFloor": {
+      "code": "panel.gesture.hold-below-floor",
+      "text": {
+        "en": "A safety hold shorter than the declared floor."
+      },
+      "args": []
+    },
+    "noTarget": {
+      "code": "panel.gesture.no-target",
+      "text": {
+        "en": "A step with no bar or handle member to take it."
+      },
+      "args": []
+    },
+    "paintRequired": {
+      "code": "panel.gesture.paint-required-on-touch",
+      "text": {
+        "en": "Painting is required on touch and cannot be turned off."
+      },
+      "args": []
+    },
+    "badSetting": {
+      "code": "panel.gesture.bad-setting",
+      "text": {
+        "en": "An unknown timing, or one not above zero."
+      },
+      "args": []
+    },
+    "badInput": {
+      "code": "panel.gesture.bad-input",
+      "text": {
+        "en": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number."
+      },
+      "args": []
     }
   }
 }

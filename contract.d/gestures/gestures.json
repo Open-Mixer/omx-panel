@@ -1,9 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openmixer.org/contract/gestures",
+  "x-omx-contract": "0.23",
   "info": {
     "title": "The gesture vocabulary: the words, timings, thresholds and table every surface moves a panel's controls with",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -11,7 +12,7 @@
     "schemas": {
       "GESTURES_HEAD": {
         "description": "The declaration's own heading: its schema number, its title and its description, as schema/gestures.json opens.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -22,7 +23,7 @@
       },
       "GESTURES_TIMINGS": {
         "description": "The timings, in milliseconds: each a default and a description, the safety hold also a floor a surface may not go below.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -51,7 +52,7 @@
       },
       "GESTURES_THRESHOLDS": {
         "description": "The thresholds: the drag start in pixels, the fine ratio, the step fraction, the coarse steps and the default travel in pixels.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -64,7 +65,7 @@
       },
       "GESTURES_WORDS": {
         "description": "The gesture words, in their declared order: what a surface does with an input the table maps to the word.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "drag",
@@ -133,7 +134,7 @@
       },
       "GESTURES_INPUTS": {
         "description": "The inputs a surface maps onto the gesture words, in their declared order.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -159,7 +160,7 @@
       },
       "GESTURES_TABLE": {
         "description": "What each widget does with each input: the word of GESTURES_WORDS. The widget keys are PANEL_STANDARD_WIDGETS of the panel domain, and bar and handle.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -255,7 +256,7 @@
       },
       "GESTURES_PAINT": {
         "description": "Whether a sweep that paints bars is required or optional, by pointer type.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {
@@ -265,83 +266,103 @@
       },
       "GESTURES_CODES": {
         "description": "The refusal codes of a gesture, each naming the rule that refused.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
-            "const": "GESTURE_READ_ONLY",
+            "const": "panel.gesture.read-only",
             "title": "readOnly",
             "description": "A read-only control takes no gesture.",
             "x-code": 0,
-            "x-text": "A read-only control takes no gesture."
+            "x-text": "A read-only control takes no gesture.",
+            "x-args": [],
+            "x-name": "GESTURE_READ_ONLY"
           },
           {
-            "const": "GESTURE_CONTROL_OWNED",
+            "const": "panel.gesture.control-owned",
             "title": "owned",
             "description": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused.",
             "x-code": 1,
-            "x-text": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused."
+            "x-text": "The control belongs to the pointer, or the stepper's claim, that has it; a later press is refused.",
+            "x-args": [],
+            "x-name": "GESTURE_CONTROL_OWNED"
           },
           {
-            "const": "GESTURE_NO_DEFAULT",
+            "const": "panel.gesture.no-default",
             "title": "noDefault",
             "description": "A reset on a control that declares no default.",
             "x-code": 2,
-            "x-text": "A reset on a control that declares no default."
+            "x-text": "A reset on a control that declares no default.",
+            "x-args": [],
+            "x-name": "GESTURE_NO_DEFAULT"
           },
           {
-            "const": "GESTURE_NOT_IN_TABLE",
+            "const": "panel.gesture.not-in-table",
             "title": "notInTable",
             "description": "The widget has no such input in the table.",
             "x-code": 3,
-            "x-text": "The widget has no such input in the table."
+            "x-text": "The widget has no such input in the table.",
+            "x-args": [],
+            "x-name": "GESTURE_NOT_IN_TABLE"
           },
           {
-            "const": "GESTURE_HOLD_SHORT",
+            "const": "panel.gesture.hold-short",
             "title": "holdShort",
             "description": "A control marked hold was released before the safety hold.",
             "x-code": 4,
-            "x-text": "A control marked hold was released before the safety hold."
+            "x-text": "A control marked hold was released before the safety hold.",
+            "x-args": [],
+            "x-name": "GESTURE_HOLD_SHORT"
           },
           {
-            "const": "GESTURE_HOLD_BELOW_FLOOR",
+            "const": "panel.gesture.hold-below-floor",
             "title": "holdBelowFloor",
             "description": "A safety hold shorter than the declared floor.",
             "x-code": 5,
-            "x-text": "A safety hold shorter than the declared floor."
+            "x-text": "A safety hold shorter than the declared floor.",
+            "x-args": [],
+            "x-name": "GESTURE_HOLD_BELOW_FLOOR"
           },
           {
-            "const": "GESTURE_NO_TARGET",
+            "const": "panel.gesture.no-target",
             "title": "noTarget",
             "description": "A step with no bar or handle member to take it.",
             "x-code": 6,
-            "x-text": "A step with no bar or handle member to take it."
+            "x-text": "A step with no bar or handle member to take it.",
+            "x-args": [],
+            "x-name": "GESTURE_NO_TARGET"
           },
           {
-            "const": "GESTURE_PAINT_REQUIRED_ON_TOUCH",
+            "const": "panel.gesture.paint-required-on-touch",
             "title": "paintRequired",
             "description": "Painting is required on touch and cannot be turned off.",
             "x-code": 7,
-            "x-text": "Painting is required on touch and cannot be turned off."
+            "x-text": "Painting is required on touch and cannot be turned off.",
+            "x-args": [],
+            "x-name": "GESTURE_PAINT_REQUIRED_ON_TOUCH"
           },
           {
-            "const": "GESTURE_BAD_SETTING",
+            "const": "panel.gesture.bad-setting",
             "title": "badSetting",
             "description": "An unknown timing, or one not above zero.",
             "x-code": 8,
-            "x-text": "An unknown timing, or one not above zero."
+            "x-text": "An unknown timing, or one not above zero.",
+            "x-args": [],
+            "x-name": "GESTURE_BAD_SETTING"
           },
           {
-            "const": "GESTURE_BAD_INPUT",
+            "const": "panel.gesture.bad-input",
             "title": "badInput",
             "description": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number.",
             "x-code": 9,
-            "x-text": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number."
+            "x-text": "Input neither reference can read: a control whose travel has no ends, an end not above the other, a log travel from zero, a negative step, a drawn length not above zero or a target with no size; an event with no time or no type of the six, a press without a position, id or pointer type, a notch count that is not a number.",
+            "x-args": [],
+            "x-name": "GESTURE_BAD_INPUT"
           }
         ]
       },
       "GESTURES_EXCEPTIONS": {
         "description": "The section exceptions layered on the table: a section, a widget, an input and the word that replaces the table's.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-kind": "sheet",
         "x-file": "gestures.json",
         "x-value": {

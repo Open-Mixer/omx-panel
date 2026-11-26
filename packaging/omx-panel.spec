@@ -1,10 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-# the build runs with --nodeps, without systemd-rpm-macros: the unit directory is then the one it defines
+# the build runs with --nodeps, without systemd-rpm-macros and python3-devel: the unit directory and the Python module
+# directory are then the ones it defines
 %{!?_unitdir:%global _unitdir %{_prefix}/lib/systemd/system}
+%{!?_presetdir:%global _presetdir %{_prefix}/lib/systemd/system-preset}
+# likewise python3-devel's macro: where this python3 keeps pure modules
+%{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.16.2
+Version: 0.17.0
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -15,6 +19,7 @@ URL: https://github.com/Open-Mixer/omx-panel
 Source0: %{url}/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires: make
+BuildRequires: python3-devel
 BuildRequires: sed
 BuildRequires: nodejs >= 18
 # npm ci fetches typescript (the build) and ajv (the validator, bundled below) from the registry, unless Source0 is
@@ -25,20 +30,20 @@ BuildRequires: npm
 # nothing of omx-plugins, which builds with this package, and nothing of plugin-hostd or omx-clap (sorting pass P1, P2)
 BuildRequires: omx-contract-data
 # %%check groups ports by what plugin-db's F1 mapping says an LV2 designation means (its lv2 domain, sorting pass P3)
-BuildRequires: plugin-db-contract >= 0.5.0
+BuildRequires: plugin-db-contract
 # %%check formats and validates the panel domain with omx-contract's CLI (omx-contract, /usr/lib/omx-contract/bin/omx-contract.mjs),
 # and reads omx-dsp's curve function from its packaged module (omx-dsp-wasm, noarch, /usr/share/omx-dsp/wasm/omx-dsp.wasm)
-BuildRequires: omx-contract >= 3.21.0
-BuildRequires: omx-dsp-wasm >= 0.34.0
+BuildRequires: omx-contract
+BuildRequires: omx-dsp-wasm
 # the tools' isMain: @openmixer/omx-contract/entry, reached through node_modules/@openmixer/omx-contract, a link to
 # /usr/lib/omx-contract
-Requires: omx-contract >= 3.21.0
+Requires: omx-contract
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
 # python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
 # does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
 # runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
 Recommends: python3-lilv
-Recommends: plugin-hostd >= 0.21.0
+Recommends: plugin-hostd
 # %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
@@ -47,10 +52,10 @@ BuildRequires: systemd-rpm-macros
 BuildRequires: gcc
 BuildRequires: pkgconfig(libcjson)
 # the panel domain is installed by omx-contract's domain installer (install-contract-dir.sh --domain) into
-# %%{omx_contract_domain_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
-BuildRequires: omx-contract-devel >= 3.21.0
-BuildRequires: libomx-domain-devel >= 3.21.0
-BuildRequires: pkgconfig(omxdsp) >= 0.34.0
+# %%{omx_contract_dir}; %%check validates and formats it with omx-contract and opens it with omx-domain
+BuildRequires: omx-contract-devel
+BuildRequires: libomx-domain-devel
+BuildRequires: pkgconfig(omxdsp)
 # the descriptions store (store/Makefile): SQLite at its floor (STRICT, json_valid), cJSON and libomx-domain above
 BuildRequires: sqlite-devel >= 3.38.0
 
@@ -58,11 +63,11 @@ Requires: nodejs >= 18
 # the layout reads omx-contract's meanings and standard units (its param domain) from the contract directory it installs
 Requires: omx-contract-data
 # the tools read their panel words (families, widgets, display kinds and sources, placements) from the panel domain
-Requires: omx-panel-contract >= %{version}-%{release}
+Requires: omx-panel-contract = %{version}-%{release}
 # the port-group inference reads plugin-db's F1 mapping of the LV2 designations (its lv2 domain)
-Requires: plugin-db-contract >= 0.5.0
+Requires: plugin-db-contract
 # the MOD GUI's curves: omx-dsp's loadCurve, reached through node_modules/@openmixer/omx-dsp, a link to the files it installs
-Requires: omx-dsp-wasm >= 0.34.0
+Requires: omx-dsp-wasm
 Provides: bundled(nodejs-ajv)
 
 %description
@@ -112,7 +117,9 @@ build against the omx-panel renderer and its gesture reference.
 %package -n omx-panel-store
 Summary: The descriptions store of panel descriptions: its library and its command
 # the store checks its words against the panel domain at open and at put
-Requires: omx-panel-contract >= %{version}-%{release}
+Requires: omx-panel-contract = %{version}-%{release}
+# without a base the store answers absent and its readers infer: the base package makes it a store
+Recommends: omx-panel-descriptions
 
 %description -n omx-panel-store
 libomx-panel-store.so.0 reads and writes the descriptions store: the base, the
@@ -120,17 +127,39 @@ system layer and the user layer of panel.sqlite, merged in that order of
 precedence. The command omx-panel-store gets, puts and removes an entry and
 checks the layers; omx-panel's tools and the console's server call it.
 
+%package -n omx-panel-descriptions
+Summary: The base of the descriptions store: panel descriptions of the reference plugin sets
+BuildArch: noarch
+
+%description -n omx-panel-descriptions
+The base of the descriptions store, /usr/share/omx/panel/panel.sqlite: each
+reference plugin's panel description and port groups, derived once, keyed by
+its binary's SHA-256, read below the system and user layers. One file serves
+every architecture.
+
 %package -n omx-panel-store-devel
 Summary: Header, link, pkg-config file and schema of the descriptions store
 Requires: omx-panel-store%{?_isa} = %{version}-%{release}
 Requires: sqlite-devel >= 3.38.0
 Requires: pkgconfig(libcjson)
-Requires: libomx-domain-devel >= 3.21.0
+Requires: libomx-domain-devel
 
 %description -n omx-panel-store-devel
 The header omx-panel/omx_panel_store.h, the libomx-panel-store.so link, the
 omx-panel-store pkg-config file and the store's DDL (panel.sql), to build
 against the descriptions store.
+
+%package -n python3-omx-panel
+Summary: omx-panel's document shapes for Python: import omx_panel.shapes.gestures and the others
+BuildArch: noarch
+Requires: python3
+
+%description -n python3-omx-panel
+The Python package omx_panel: omx_panel.shapes.<name> holds the typed dictionaries
+of the documents omx-panel owns (the gesture declaration with its words, inputs and
+widgets, the gesture run's control, event and answer, a look role, a refusal code),
+generated from the schemas the omx-panel package ships, so a Python consumer imports
+the words instead of restating them.
 
 %prep
 %autosetup
@@ -140,17 +169,33 @@ test -d node_modules || npm ci --no-audit --no-fund
 %make_build
 %make_build -C renderer WINDOW=0 PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} DATADIR=%{_datadir}
 %make_build -C store PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir}
+make base
 
 %install
 %make_install PREFIX=%{_prefix} BINDIR=%{_bindir} DATADIR=%{_datadir} UNITDIR=%{_unitdir} SYSCONFDIR=%{_sysconfdir}
 make install-renderer DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir}
 make install-store DESTDIR=%{buildroot} PREFIX=%{_prefix} LIBDIR=%{_libdir} INCLUDEDIR=%{_includedir} BINDIR=%{_bindir} DATADIR=%{_datadir} MANDIR=%{_mandir}
+make install-base DESTDIR=%{buildroot} DATADIR=%{_datadir}
+# the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5): the preset says so
+install -D -m 0644 systemd/80-omx-panel.preset %{buildroot}%{_presetdir}/80-omx-panel.preset
+
+make install-python DESTDIR=%{buildroot} PYTHONDIR=%{python3_sitelib}
 
 %check
 OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contract.mjs make test
 # the tools as installed load and run: their @openmixer/omx-contract resolves through the package's own node_modules,
 # and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
-tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_domain_dir}
+tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_dir}
+
+# the unit follows its preset on a first install (enabled), is disabled on erase, and an upgrade starts nothing
+%post
+%{?systemd_post:%systemd_post omx-panel-sync.service}
+
+%preun
+%{?systemd_preun:%systemd_preun omx-panel-sync.service}
+
+%postun
+%{?systemd_postun:%systemd_postun omx-panel-sync.service}
 
 %files
 %license LICENSE
@@ -158,15 +203,16 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 %{_bindir}/omx-panel
 %{_bindir}/omx-modgui-sync
 %{_bindir}/omx-complement-sync
+%{_bindir}/omx-panel-sync
 %{_mandir}/man1/omx-panel.1*
 %{_mandir}/man1/omx-modgui-sync.1*
 %{_mandir}/man1/omx-complement-sync.1*
-# installed, never enabled: no preset names them; `systemctl enable omx-modgui-sync` (omx-complement-sync) is the choice
-%{_unitdir}/omx-modgui-sync.service
-%{_unitdir}/omx-complement-sync.service
+%{_mandir}/man1/omx-panel-sync.1*
+# the one pass's unit, enabled by default by the preset; nothing depends on it (`systemctl disable omx-panel-sync` is the choice)
+%{_unitdir}/omx-panel-sync.service
+%{_presetdir}/80-omx-panel.preset
 %dir %{_unitdir}/plugin-qualify-sync.service.d/
-%{_unitdir}/plugin-qualify-sync.service.d/omx-modgui-sync.conf
-%{_unitdir}/plugin-qualify-sync.service.d/omx-complement-sync.conf
+%{_unitdir}/plugin-qualify-sync.service.d/omx-panel-sync.conf
 %dir %{_sysconfdir}/omx/
 %config(noreplace) %{_sysconfdir}/omx/modgui-sync.conf
 %{_datadir}/omx-panel/
@@ -177,10 +223,14 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 
 %files contract
 %license LICENSE
-%{omx_contract_domain_dir}/gestures/
-%{omx_contract_domain_dir}/panel/
+%{omx_contract_dir}/gestures/
+%{omx_contract_dir}/panel/
 %dir %{_includedir}/omxdomain
 %{_includedir}/omxdomain/panel_codes.h
+
+%files -n python3-omx-panel
+%license LICENSE
+%{python3_sitelib}/omx_panel/
 
 %files -n omx-panel-render
 %license LICENSE
@@ -197,6 +247,11 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 %{_libdir}/libomx-panel-store.so.0
 %{_bindir}/omx-panel-store
 %{_mandir}/man1/omx-panel-store.1*
+
+%files -n omx-panel-descriptions
+%license LICENSE
+%dir %{_datadir}/omx/panel/
+%{_datadir}/omx/panel/panel.sqlite
 
 %files -n omx-panel-store-devel
 %{_libdir}/libomx-panel-store.so
@@ -293,6 +348,11 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
+- Chain 3: V23d P2, a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED
+  holds its id (omx-contract-data 3.22.0); the #170 consumers, coef is the plain
+  multiplier in the role table.
+
 * Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.16.2-1
 - Fix: the units a control can serve are read from PARAM_UNITS_CLAP_ENCODED of
   omx-contract's param domain. omx-contract 3.22.0 no longer installs

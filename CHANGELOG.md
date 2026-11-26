@@ -18,6 +18,140 @@
   `--knob-pointer`'s floor is 3:1 on `--knob-face`, no longer on `--surface-3`, the page around the knob. The cream
   default clears it on the aluminium, graphite and black faces, and a host whose light page keeps the cream pointer is
   no longer refused.
+
+- The documents omx-panel owns have types, rendered from one schema each (docs/shapes.md; omx-panel#52, the typed-contracts
+  spec's lane S2): `shapes/gestures`, `gesture_io`, `look_role` and `code` as TypeScript interfaces
+  (`@openmixer/omx-panel/shapes/<name>`) and Python `TypedDict`s with a `Literal` for the gesture words, inputs and widgets
+  (`omx_panel.shapes.<name>`, the new package python3-omx-panel on RPM and DEB). omx-contract's own generators render them;
+  the renders are committed and `make shapes-check` holds them. `test/host_reads.py` imports the words instead of reading
+  the JSON. `test/shapes.test.mjs`.
+
+- `describe` refuses an override family that is no word of `PANEL_FAMILIES` (#199, ruling Z1 of omx-contract#161):
+  `panel.describe.family-unknown`, naming the plugin and the family, and the panel is `none`, as for a family the
+  controls do not back. omx-contract's override schema takes any identifier as a family; the words are the panel
+  domain's, read from it. The panel domain is 1.4.0.
+
+- `@openmixer/omx-panel/store-entry` exports the store codec (`storedOf`, `entryOf`, `withStoredGroups`): a Node.js
+  client of the descriptions store (section 5, "The doors": the console's server) reads an `omx-panel-store get --json`
+  answer through the one `storedOf` and cuts it with `describeFromStored` (`./describe`), and keeps no copy of the codec.
+
+- `omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <file>] [--remote <file>] [--pages [--per-page
+  N]]` (#220): describe's output cut from a descriptions-store entry, for a client that is not Node.js (Zynthian's
+  engine). The answer `omx-panel-store get --json` prints is read by `storedOf` and cut by `describeFromStored`: a
+  derived entry prints byte for byte what `describe --descriptor` prints, an edited one prints the edit. It reads no
+  descriptor, and `--layout` beside it is a usage error: an entry holds no layout, so the drawn view stays derived. A
+  refused entry prints its code and exits 1.
+
+- The descriptions store's base is built and packaged (#168, descriptions store lane 5): `omx-panel base --in
+  base/inputs --out <file>` derives each input and `omx-panel-store build` writes the file reproducibly (key order,
+  page size 4096, VACUUM, user_version last, renamed when whole; byte-identical across builds with the same SQLite).
+  `built_from` is `base/BUILT_FROM`, substituted by `git archive`, else git's HEAD, else refused. The new noarch package
+  `omx-panel-descriptions` holds `/usr/share/omx/panel/panel.sqlite`; `omx-panel-store` recommends it. The inputs are
+  empty for now: an empty base is a base.
+
+- The generators read the descriptions store and `omx-panel-sync` is the one pass (#167, descriptions store lane 4).
+  `omx-complement-sync` writes the groups the store holds (each plugin's entry from `describe --plugin --store`),
+  never an inference of a stored key; with no store, or no base, it infers as before and says so. `omx-panel-sync`
+  stores each installed LV2 plugin's entry once, prunes the entries of plugins no longer installed from the layer it
+  writes (`omx-panel-store list`), then runs `omx-complement-sync` and `omx-modgui-sync`; it never runs `systemctl`.
+  `omx-panel-sync.service` replaces `omx-modgui-sync.service` and `omx-complement-sync.service` (and one drop-in their
+  two) and is ENABLED by default where systemd exists; nothing depends on it. A complement bundle's marker names its
+  groups, so a stored edit over the same TTL writes it again.
+
+- `omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store` (#166, descriptions store
+  lane 3): one plugin's entry in the descriptions store. The store is asked first and an entry any layer holds is
+  printed, nothing written; else the description is derived over the port groups the LV2 complement infers for that one
+  plugin (`verdictOf`, the function the complement runs per plugin), written to the layer of the effective uid and read
+  back. `tools/store-entry.mjs` is the one codec between `describeStored` and the store (a CLAP id stored as its decimal
+  text). `omx-panel-store rules` prints `OMX_PANEL_RULES_VERSION`.
+
+- The renderer wears the look's style whole (#123): under the vintage style a panel is the MOD GUI's vintage face, pixel
+  for pixel: the cream enclosure with its radius, the head plate, the screws, no section plates, the dark keys and
+  screens, the lamp and each text in the look's own ink, beside the vintage knob. Every value is `looks[style]` of
+  `look.json`, read by the face's rule (a token's first colour, a role in braces, `none` for a thing not drawn). A host
+  that passes its own look with a `style` must set every token the face wears, or the renderer refuses it by the
+  token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
+  move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
+
+- The rules the JavaScript tools and the C renderer both apply are listed in docs/renderer.md ("The rules both languages
+  apply", #76), each held by a vector both suites read: the visible columns, now with the drawn heads at a set count
+  (`visible-columns.json` gains `count` entries), and the visibility rule (`test/fixtures/rules/visible-when.json`, new).
+
+- The EQ band matrix (#97): a CLAP name that carries a second number beside its band's ("Band 3 Gain 2", "Band 3 2nd
+  Order") joins its band, the band's number being the one position that varies across the controls of that shape; a grid
+  where both vary is still `two-indices` (docs/group-model.md S3). A control only one band has ("Band 3 Drive") is paged
+  after the matrix, never on a screen before the high-pass (P1). Edges named in another language are ruled to come from a
+  descriptor word (S9), tracked by #205 and omx-contract#208.
+
+- A choice's unit is the descriptor's (#68): `panelLayout` reads omx-contract's descriptor `choiceUnits` (a choice control's
+  name to its unit), so the served description, the MOD GUI's curve and every host read the one unit the plugin declares.
+  The panel block's `choiceUnits` is retired: `schema/panel.schema.json` drops its `$defs.choiceUnits`, and `panelLayout`
+  refuses a `choiceUnits` option by name. A plugin that declared its slope's unit in its panel block declares it in its
+  descriptor.
+
+- The map table of `docs/modgui.md` ("The map: the console's vintage, element by element") is printed from
+  `tools/look/console-map.json` by `tools/console-map-render.mjs` (#69), between two marker comments; `--check`,
+  `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not what the map gives. The first
+  print found the `screw` row edited in the document and not in the map; the map now carries the document's cell.
+
+- `omx_gesture_run` costs time in proportion to the script's length (#105): the events were read by indexing cJSON's
+  list from its head once per event, so a script of 40000 wheel events cost 22.4 s where 5000 cost 0.11 s. They are now
+  walked once: 0.26 s against 0.03 s, held by `renderer/test/gesture-c-cost.test.mjs` (eight times the events, at most
+  sixteen times the time).
+
+- The gesture refusal codes are in the one codes sheet (ruled omx-panel#106): each `GESTURE_*` name has its code word
+  `panel.gesture.<kebab>`, declared once in the gestures domain (`const` the word, `x-name` the name), rendered into
+  `schema/codes.json` and, from `contract.d/gestures/catalogs/<lang>.json`, into every `catalogs/<lang>.json`.
+  `GESTURE_CODE_WORDS` (tools/gestures.mjs) maps a name to its word and a `GestureError` carries it as `word`; the
+  reference and the C unit still answer the `GESTURE_*` name.
+
+- The served matrix opens with its head row (docs/group-model.md L3, ruled omx-panel#121): a band's name and on/off head
+  its column on the MOD GUI face and in the renderer, which refuses a head row that is not the first. A consumer that read
+  the head row as the last (the console's processing view, Zynthian's builder) reads `rows[0]`. A parameter row whose cell
+  holds another parameter carries `labels`, one per head (ruled omx-panel#122): an EQ edge's slope in the gain row is
+  captioned Slope on every surface, never Gain.
+
+- A face without a head (#94): `omx_panel_view_set_head(view, false)` (a new function of libomx-panel-render.so.0, a
+  minor addition; the command's state file says `"head": false`) draws no head, the sections start at `pad` and the face
+  is `sectionTop - pad` (36 px) shorter, so a host drawing one control per view gets the control, its label and its value.
+  Held to a golden image of a one-control description at 1x and 2x.
+
+- The kind of a scanned control is one rule, omx-panel's (`docs/control-kind.md`, #153): an enumeration is a choice,
+  else lv2:toggled is a toggle, else a stepped control of exactly the two positions 0 and 1 is a toggle, else a travel
+  with its scale. `tools/control-kind.mjs` (`@openmixer/omx-panel/control-kind`) is the rule and
+  `schema/control-kind-vectors.json` with its schema the 28 vectors every reader is held to (both exported by name).
+  The group inference's LV2 port reader and the group model over a descriptor apply it: an `lv2:integer` 0..1 port and
+  a stepped 0..1 travel with no step were travels there and are toggles.
+
+- The gesture parity scripts live in `fixtures/gestures/scripts.json`, the shipped fixtures, no longer under `test/`:
+  the export `@openmixer/omx-panel/gestures/scripts.json` keeps its name and resolves to
+  `dist/fixtures/gestures/scripts.json`, and a test refuses an export backed by a test path (#101). An installed reader
+  finds them at `<datadir>/omx-panel/fixtures/gestures/scripts.json`.
+
+- The renderer wears the look's style whole (#123): under the vintage style a panel is the MOD GUI's vintage face, pixel
+  for pixel: the cream enclosure with its radius, the head plate, the screws, no section plates, the dark keys and
+  screens, the lamp and each text in the look's own ink, beside the vintage knob. Every value is `looks[style]` of
+  `look.json`, read by the face's rule (a token's first colour, a role in braces, `none` for a thing not drawn). A host
+  that passes its own look with a `style` must set every token the face wears, or the renderer refuses it by the
+  token's name; a look that names no style is drawn from the roles, as before. The console style's picture does not
+  move. docs/renderer.md "What it draws"; `renderer/test/vintage-face.test.mjs`.
+
+- A meter's clip lamp and its unheld caption (#13). A meter of the band whose description says `clip: true` wears a lamp at its
+  frame's top right, lit by omx-dsp's clip word (`omx_meter_view_clip`, kept lit until `omx_meter_view_clip_clear`) and held to
+  omx-dsp's clip vector; a meter without one never lights. New C API beside `omx_panel_view_set_meter`:
+  `omx_panel_view_set_clip`, `omx_panel_view_clear_clip`, `omx_panel_view_meter_clip`; the command's meter readings take
+  `clip` and `clear`. An unheld meter's caption says so. The MOD GUI's frames and face draw the same lamp and caption, and
+  `meter-surfaces` measures the lamp on the renderer, the MOD GUI in Chromium and Tk. The four meters goldens carry the lamp.
+- The vintage look's needle dials wear the clip lamp (#218). Vintage, the MOD GUI's default, hides the meter frames and shows
+  the dials, so the frame's lamp was never seen there: a dial whose meter has a clip word now wears a period peak lamp in its
+  top right corner, a round jewel in a dark ring, dark as the look's unlit lamp (`--led-off`) and lit the meter red by the same
+  `omx-clip-lit` class while the clip word is; a dial whose meter has none wears no lamp. `meter-surfaces --look vintage` (a
+  second step of CI's job) holds each dial's lamp to the renderer's, lit or dark at every tick, its edges within 1 px of its
+  place. No golden moves: the renderer and the face draw frames in every look.
+- The words a surface draws of its own have keys: the panel domain's `PANEL_LABELS` (domain 1.3.0) holds `Meters`, `More`,
+  `unheld` and `Gain reduction` with their keys (`panel.label.*`), rendered into `schema/codes.json` and the six catalogs, and a
+  layout and a description serve them in `words`. The renderer, the MOD GUI, the skin package and the layout spell none of them.
+
 - 0.16.2: the units a control can serve are read from `PARAM_UNITS_CLAP_ENCODED` of omx-contract's param domain;
   omx-contract 3.22.0 no longer installs `param-contract.json` (#256). The role table names 3.22.0's ids: `coef`,
   `dBPerOct` and `dBPerS` (it named `x`, `dB-oct` and `dB-s`). A descriptor's unit is read by its symbol, as before; `x`
@@ -91,6 +225,10 @@
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
 - 0.16.1: the v0.16.0 release run built no package. rpmbuild's %check runs `make test` in the release tarball, which has no .git, and the guard against plugin-hostd's LV2 table ran `git grep`; it now reads the files itself (#207). The deb build's installed tools check ran the staged lv2-complement, modgui-gen and modgui-import, which refused to load: a build host has no omx-panel-contract installed. `tools/installed-tools-check.sh` now takes the build's staged contract directory as a second argument, and debian/rules and %check pass it (#208). Floors unchanged.
+
+- 0.17.0: chain 3's release, delivered with omx-contract 3.22.0 and omx-dsp 0.34.1 and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.22.0, omx-dsp-wasm >= 0.34.1. V23d P2: a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED holds its id; the #170 consumers, `coef` the plain multiplier in the role table. The MOD GUI generator sends omx-dsp's curve the standard unit ids themselves (`Hz`, `dB`, `percent`; a filter slope's `dBPerOct` as `dB`), the words omx-dsp 0.34.1's curve takes (omx-dsp#122), where it sent a lower-case copy 0.34.1 refuses. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm.
+
+- 0.17.0: C2 and chain 3's content, delivered with omx-contract 3.22.0 and omx-dsp 0.34.1 and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.22.0, omx-dsp-wasm >= 0.34.1. A descriptor's unit is a `PARAM_UNITS` id (`percent`, `none`, `dBPerOct`, `dBPerS`), never its display spelling: `tools/vocabulary.mjs` keys the standard units by id, `unitIdOf` accepts only an id, `unitSymbolOf` gives the `x-symbol` a person sees, and `noUnitId` (the id whose symbol is empty, read from the contract) is the unit of a toggle or a choice. The role table's slope and speed units are `dBPerOct` and `dBPerS`. A face shows the symbol: the MOD GUI scribble's `data-unit` and value text, the meter caption the renderer draws and describe's `unitText` (`percent` shows `%`); `none` counts as no stated unit, as `""` did. The MOD GUI generator sends omx-dsp's curve the standard unit ids themselves (`Hz`, `dB`, `percent`; a filter slope's `dBPerOct` as `dB`), the words omx-dsp 0.34.1's curve takes (omx-dsp#122), where it sent a lower-case copy 0.34.1 refuses. From chain 3: V23d P2, a unit is served when omx-contract's `PARAM_UNITS_CLAP_ENCODED` holds its id; the #170 consumers, `coef` is the plain multiplier in the role table. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm (Open-Mixer/plugin-hostd#215).
 
 - 0.16.0: the sorting pass (V1, V2, V3, V4, V22 and V23d), delivered with omx-contract 3.21.0, omx-dsp 0.34.0, plugin-db 0.5.0 and plugin-hostd 0.21.0, and floored at them (floors only, no ceiling): omx-contract, omx-contract-data, omx-contract-devel and libomx-domain-devel >= 3.21.0, omx-dsp-wasm and omx-dsp-devel >= 0.34.0, plugin-db-contract >= 0.5.0, plugin-hostd >= 0.21.0 (recommended). Units: dB/oct and dB/s are served, the vendor-block codes omx-contract 3.21.0's sheet gives dbPerOct and dbPerS (clap#163), beside dBTP and LU; the utility family gains the roles `speed` and `slope`, so omx-balancer's four controls all take a role. The npm range on `@openmixer/omx-contract` and `@openmixer/omx-dsp` stays at the published 3.20.2 and 0.33.0 until this delivery is on npm.
 

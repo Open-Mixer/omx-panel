@@ -35,7 +35,7 @@ export const ROLES = {
   pitch: { shift: ['st', 'cents'], fine: ['cents'], ...WET },
   // omx-plugins' trim (gain), width (width, pseudo-stereo, bass mono), balancer (amount, range) and clipper (drive, ceiling,
   // softness, speed, slope): one role per control they declare whose unit a token serves. The balancer's speed is declared in
-  // dB or dB/s, its slope in dB/oct (omx-contract's dBPerS and dBPerOct).
+  // dB or dBPerS, its slope in dBPerOct (omx-contract's PARAM_UNITS ids).
   utility: { gain: DB, width: PLAIN, pseudo: CHOICE, pseudo_time: ['ms'], bass_mono: CHOICE, bass_mono_freq: FREQ, amount: PLAIN, range: DB, drive: DB, ceiling: LVL, softness: PLAIN, speed: ['dB', 'dBPerS'], slope: ['dBPerOct'] },
 };
 

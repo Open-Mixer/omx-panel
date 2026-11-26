@@ -159,10 +159,10 @@ test('a plugin format that plugin-db does not publish is word-unknown: the forma
   assert.match(r.stderr, /plugin\.format/);
 });
 
-test('a domain older than the store was checked against is domain-too-old', (t) => {
+test('a store written against a newer domain opens: the recorded version is no floor, the words decide', (t) => {
   const p = places(t);
   mkStore(p.base, { layer: 0, entries: [entry()], panel: '9.0.0' });
-  assert.equal(get(p, entry()).code, 'panel-store.domain-too-old');
+  assert.equal(get(p, entry()).status, 0);
 });
 
 test('the files are unchanged by reads: the base byte for byte, its directory as it was, no journal beside any layer', (t) => {

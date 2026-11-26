@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { GESTURE_CODE_WORDS } from '../dist/tools/gestures.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TOOL = join(ROOT, 'tools/codes-render.mjs');
@@ -35,23 +36,29 @@ const GOLDEN = {
   'catalogs/it.json': 'd878a12812e110373249a0212cc7042101e9ce90909f59ffe5cd4fbc8ad75d6e',
   'catalogs/pt.json': 'c13d85c49d9d10d96582665c60848a408112306b6d4518a7140ebf6c520c0ae8',
 };
+/** The panel's own words (PANEL_LABELS, panel.label.*) joined the sheet after the move (omx-panel#13), and the sheet's doc line says
+ * so: the move's golden reads the codes it moved, so both are left out of it here. */
+const GOLDEN_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
 /** The codes the domain gained after the move, by code word; a new code joins this list in the commit that adds it. */
 const ADDED = new Set([
   'panel.skin.override-refused', // omx-panel#14, domain 1.3.0: override-invalid's facts with the reason word
   'panel.skin.entry-missing', // omx-panel#14, domain 1.3.0: a view or modgui entry not in the package
+  'panel.describe.family-unknown', // omx-panel#199, domain 1.4.0: an override family that is no panel family
 ]);
+// the panel's codes only: the gesture codes joined the sheet after the move (#106) and are held by their own test below
+const panelOnly = (codes) => Object.fromEntries(Object.entries(codes).filter(([k, v]) => !(v.code ?? k).startsWith('panel.gesture.') && !ADDED.has(v.code ?? k) && !(v.code ?? k).startsWith('panel.label.')));
 const canonical = (f, j) => (f.startsWith('catalogs/')
-  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(j.messages).filter(([c]) => !ADDED.has(c)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
-  : { ...j, codes: Object.fromEntries(Object.entries(j.codes).filter(([, c]) => !ADDED.has(c.code))) });
+  ? { kind: j.kind, lang: j.lang, owner: j.owner, messages: Object.fromEntries(Object.entries(panelOnly(j.messages)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) }
+  : { ...j, doc: GOLDEN_DOC, codes: panelOnly(j.codes) });
 
 const render = (env = {}) => import(`${TOOL}?${Date.now()}`).then((m) => m.renderAll(env.dir));
 
-test('(a) the domain holds the 34 codes: 7 skin (#14\'s two last), 11 MOD GUI (the skin\'s MOD GUI licence last), 16 describe', () => {
+test('(a) the domain holds the 35 codes: 7 skin (#14\'s two last), 11 MOD GUI (the skin\'s MOD GUI licence last), 17 describe (#199\'s last)', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'contract.d/panel/panel.json'), 'utf8')).components.schemas;
   assert.equal(s.PANEL_SKIN_CODES?.oneOf.length, 7);
-  assert.deepEqual(s.PANEL_SKIN_CODES.oneOf.slice(5).map((w) => w.const), [...ADDED]);
+  assert.deepEqual([...s.PANEL_SKIN_CODES.oneOf.slice(5), ...s.PANEL_DESCRIBE_CODES.oneOf.slice(16)].map((w) => w.const), [...ADDED]);
   assert.equal(s.PANEL_MODGUI_CODES?.oneOf.length, 11);
-  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 16);
+  assert.equal(s.PANEL_DESCRIBE_CODES?.oneOf.length, 17);
 });
 
 test('(a) the render from the domain is the sheet and the six catalogs\' messages before the move', async () => {
@@ -76,6 +83,7 @@ test('(c) a temporary contract directory decides the render: a changed sentence 
   const dir = mkdtempSync(join(tmpdir(), 'omx-panel-v3-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   cpSync(join(ROOT, 'contract.d/panel'), join(dir, 'panel'), { recursive: true });
+  cpSync(join(ROOT, 'contract.d/gestures'), join(dir, 'gestures'), { recursive: true });
   const f = join(dir, 'panel/panel.json');
   const doc = JSON.parse(readFileSync(f, 'utf8'));
   const m = doc.components.schemas.PANEL_MODGUI_CODES;
@@ -86,4 +94,33 @@ test('(c) a temporary contract directory decides the render: a changed sentence 
   const r = spawnSync(process.execPath, [TOOL, '--check', '--contract-dir', dir], { encoding: 'utf8' });
   assert.equal(r.status, 1, 'the files are still taken for the render of a domain without panel.modgui.not-found');
   for (const lang of LANGS) assert.ok(!files[`catalogs/${lang}.json`].includes('"panel.modgui.not-found"'), lang);
+});
+
+// omx-panel#106: the gesture refusal codes (GESTURES_CODES of the gestures domain, the list schema/gestures.json's `codes`
+// holds them to) are in the one sheet, in its shape, and in every language's catalog, as the panel's codes are: each under
+// its code word panel.gesture.<kebab> (ruled 2026-11-24, docs/panel-gestures.md), the GESTURE_* name staying the units'.
+const wordOf = (name) => `panel.gesture.${name.replace(/^GESTURE_/, '').toLowerCase().replaceAll('_', '-')}`;
+
+test('(#106) every gesture refusal code is in the sheet under its code word with the domain\'s sentence, and in every catalog', () => {
+  const held = JSON.parse(readFileSync(join(ROOT, 'schema/gestures.json'), 'utf8')).codes;
+  const sheet = Object.values(JSON.parse(readFileSync(join(ROOT, 'schema/codes.json'), 'utf8')).codes);
+  const byCode = new Map(sheet.map((e) => [e.code, e]));
+  assert.ok(Object.keys(held).length > 0);
+  for (const [name, sentence] of Object.entries(held)) {
+    const code = wordOf(name);
+    assert.deepEqual(byCode.get(code)?.text, { en: sentence }, `${name} is not in schema/codes.json as ${code} with its sentence`);
+    for (const lang of LANGS) {
+      const m = JSON.parse(readFileSync(join(ROOT, `catalogs/${lang}.json`), 'utf8')).messages[code];
+      assert.ok(m?.text, `catalogs/${lang}.json has no ${code}`);
+    }
+  }
+  assert.deepEqual(sheet.filter((e) => e.code.startsWith('panel.gesture.')).map((e) => e.code), Object.keys(held).map(wordOf), 'the sheet holds a gesture code gestures.json does not');
+  assert.ok(sheet.every((e) => !e.code.startsWith('GESTURE_')), 'a GESTURE_* name is no code word of the sheet');
+});
+
+test('(#106) the gestures domain declares each code word once (const), beside the GESTURE_* name it maps (x-name)', () => {
+  const words = JSON.parse(readFileSync(join(ROOT, 'contract.d/gestures/gestures.json'), 'utf8')).components.schemas.GESTURES_CODES.oneOf;
+  for (const w of words) assert.equal(w.const, wordOf(w['x-name']), w['x-name']);
+  assert.deepEqual(GESTURE_CODE_WORDS, Object.fromEntries(words.map((w) => [w['x-name'], w.const])), 'the reference\'s words are the domain\'s');
+  assert.equal(new Set(words.map((w) => w.const)).size, words.length);
 });

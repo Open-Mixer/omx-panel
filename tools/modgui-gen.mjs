@@ -38,7 +38,7 @@ import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
 import { parseTurtle } from './turtle-read.mjs';
-import { installedDescriptorFile, unitIdOf } from './vocabulary.mjs';
+import { installedDescriptorFile, unitIdOf, unitSymbolOf } from './vocabulary.mjs';
 import { isMain } from '@openmixer/omx-contract/entry';
 
 export { LOOK_JSON };
@@ -89,7 +89,7 @@ export function travelOf(c) {
     const at = c.ids.indexOf(c.default);
     return { kind: 'integer', min: points[0].value, max: points[points.length - 1].value, def: at >= 0 ? c.values[at] : c.default, points };
   }
-  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default, unit: c.travel.unit };
+  if (c.kind === 'travel') return { ...(c.travel.step === 1 ? { kind: 'integer' } : {}), min: c.travel.min, max: c.travel.max, def: c.travel.default, unit: unitSymbolOf(c.travel.unit) };
   return undefined;
 }
 
@@ -162,13 +162,10 @@ export class NothingToDraw extends Error {
  * draws its frame and word; its stems and envelope are the renderer's (omx_panel_view_set_stems) until the twin answers the kind. */
 const CURVES = ['eq_response', 'transfer_curve', 'time_response'];
 
-/** The floor of the omx-dsp release that exports `loadCurve` (the curve function as WebAssembly), declared in package.json. */
-const DSP_FLOOR = '>=0.33.0';
-
 /**
  * The curve function of omx-dsp, `@openmixer/omx-dsp`: its WebAssembly module (`loadCurve`, async) loaded once, here, so the
  * generator stays synchronous to use; never vendored. omx-dsp is a plain dependency: a MOD GUI drawn without its curves would be a
- * false green, so a tree that cannot load it refuses to load this generator, naming the package and its floor.
+ * false green, so a tree that cannot load it refuses to load this generator, naming the package.
  */
 const DSP = await (async () => {
   try {
@@ -177,7 +174,7 @@ const DSP = await (async () => {
     const wasm = await readFile(new URL('wasm/omx-dsp.wasm', import.meta.resolve('@openmixer/omx-dsp/package.json')));
     return { curve: await loadCurve(wasm), words: CURVE_WORDS };
   } catch (err) {
-    throw new Error(`omx-panel's MOD GUI generator needs @openmixer/omx-dsp ${DSP_FLOOR} (its loadCurve): ${err instanceof Error ? err.message : err}. Install it; there is no generator without its curves.`, { cause: err });
+    throw new Error(`omx-panel's MOD GUI generator needs @openmixer/omx-dsp (its loadCurve): ${err instanceof Error ? err.message : err}. Install it; there is no generator without its curves.`, { cause: err });
   }
 })();
 /** The rate a static curve is computed at, and the grid it is sampled on. */
@@ -187,12 +184,12 @@ export const ORIGIN_LETTER = Object.freeze({ 'fbs-fixed': 'F', 'fbs-live': 'F', 
 /** A delay tap's leg as the letter above its stem: a tap that lands on both legs carries none. */
 export const LEG_LETTER = Object.freeze({ both: ' ', left: 'L', right: 'R' });
 
-/** omx-dsp's curve term words keep their own spelling in this pass (omx-dsp's CURVE_UNITS, DSP.words.units; its read of the
- * standard ids is omx-dsp's M2, later): a role's standard id (tools/role-table.mjs) is that word in lower case, but for the
- * two omx-dsp spells otherwise. An id with no omx-dsp word is refused by name. */
-const DSP_UNIT_WORD = Object.freeze({ percent: 'pc', dBPerOct: 'db' });
+/** omx-dsp's curve term units are the standard ids themselves (omx-dsp's CURVE_UNITS, DSP.words.units: the PARAM_UNITS id is
+ * the wire word, never a lower-case copy, omx-dsp#122): a role's standard id (tools/role-table.mjs) is sent as it is, but for
+ * a filter slope's dBPerOct, which the curve reads as the dB of a slope. An id the curve does not take is refused by name. */
+const DSP_UNIT_WORD = Object.freeze({ dBPerOct: 'dB' });
 function curveUnitOf(id) {
-  const word = DSP_UNIT_WORD[id] ?? String(id).toLowerCase();
+  const word = DSP_UNIT_WORD[id] ?? String(id);
   if (!DSP.words.units.includes(word)) throw new Error(`modgui-gen: omx-dsp's curve takes no unit for the standard unit ${id}`);
   return word;
 }
@@ -246,6 +243,13 @@ function timeGeometry(pts, stems, ix, iy, iw, ih, s) {
  * mapping of renderer/src/view.c `draw_curve`, operation for operation (an eq_response on a log frequency axis with the dB symmetric about 0
  * to the next 6 dB; a transfer_curve on linear dB, input and output on one span), so the two rasterisers draw one stroke.
  */
+/**
+ * A mark is held inside the plot: a band whose frequency or depth lies off the axes sits on the plot's edge, the rule the renderer
+ * draws by (renderer/src/view.c hold()). Every MOD GUI mark is placed through curveGeometry, so the PNG face and the template's SVG
+ * hold it alike; renderer/test/mark-hold.test.mjs holds the two faces' pixels equal for an off-axis mark.
+ */
+export const holdInPlot = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
 export function curveGeometry(curve, kind, cw, ch, s) {
   const pts = curve?.points ?? [], stems = curve?.stems ?? [];
   const ix = 5 * s, iy = 5 * s, iw = cw - 10 * s, ih = ch - 10 * s - 12 * s;
@@ -266,7 +270,10 @@ export function curveGeometry(curve, kind, cw, ch, s) {
     axis = [ix, iy + ih, ix + iw, iy];
   }
   const at = (xv, yv) => [ix + (((eq ? Math.log10(xv) : xv) - x0) / (x1 - x0)) * iw, iy + ih - ((yv - lo) / (hi - lo)) * ih];
-  const marks = eq ? (curve.marks ?? []).map((m) => ({ at: at(m.freq, m.depthDb), letter: ORIGIN_LETTER[m.origin] ?? '?' })) : [];
+  const marks = eq ? (curve.marks ?? []).map((m) => {
+    const [x, y] = at(m.freq, m.depthDb);
+    return { at: [holdInPlot(x, ix, ix + iw), holdInPlot(y, iy, iy + ih)], letter: ORIGIN_LETTER[m.origin] ?? '?' };
+  }) : [];
   return { axis, poly: pts.map((p) => at(p.x, p.y)), marks };
 }
 
@@ -343,10 +350,10 @@ export function shapeDeclared(declared, tier, where) {
     kept = kept.map((s) => ({ ...s, controls: s.controls.filter((c) => (tiers[c] ?? 'advanced') === 'easy' || (dropped.add(c), false)) })).filter((s) => s.controls.length > 0);
   }
   const without = (o) => (o === undefined ? undefined : Object.fromEntries(Object.entries(o).filter(([k]) => !dropped.has(k))));
-  const { tiers: _t, choiceUnits: _u, ...rest } = declared;
+  const { tiers: _t, ...rest } = declared;
   const panel = { ...rest, sections: kept, ...(declared.visibleWhen ? { visibleWhen: without(declared.visibleWhen) } : {}), ...(declared.widgets ? { widgets: without(declared.widgets) } : {}) };
   const layoutPanel = { ...rest, sections: declared.sections.map(({ edges: _e, ...s }) => s) };
-  return { panel, layoutPanel, bands, choiceUnits: declared.choiceUnits ?? {} };
+  return { panel, layoutPanel, bands };
 }
 
 /** The panel of a descriptor, resolved: each section with its controls, each control its descriptor control's
@@ -357,7 +364,6 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   if (!uri) throw new Error(`modgui-gen: '${plugin.id}' states no LV2 URI; a MOD GUI belongs to an LV2 bundle`);
   const shaped = declared ? shapeDeclared(declared, tier, `modgui-gen: '${stem}'`) : null;
   declared = shaped?.layoutPanel;
-  const choiceUnits = shaped?.choiceUnits ?? {};
   let panel;
   try {
     panel = panelOf(descriptor, shaped?.panel, wantEasyFirst);
@@ -398,7 +404,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       const q = travelOf(c);
       if (!q) throw new Error(`modgui-gen: '${symbol}' is not a declared control input with a travel`);
       const widget = widgetFor(panel, symbol, q);
-      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: c.travel?.unit ?? '', ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
+      return { symbol, name: c.name, widget, min: q.min, max: q.max, def: q.def, unit: unitSymbolOf(c.travel?.unit), ...(widget === 'selector' ? { options: optionsOf(q), span: selectorSpan(optionsOf(q)) } : {}), ...(shaped?.bands[symbol] ? { band: shaped.bands[symbol] } : {}), ...shownBy(symbol) };
     }),
   })).filter((s, i) => s.controls.length > 0 || panel.sections[i].controls.length === 0);
   sections.splice(0, sections.length, ...withRepeats(descriptor, declared, sections));
@@ -406,16 +412,19 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
   if (sections.length === 0 || sections[0].controls.length === 0) throw new NothingToDraw(`modgui-gen: '${stem}' has no control to draw`);
   // the static curve of each display, at the come-up values, by omx-dsp's twin (spec §7.4, Q6)
   if (sections.some((sec) => sec.displays.length > 0)) {
-    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     for (const sec of sections) for (const dsp of sec.displays) dsp.curve = staticCurve(descriptor, x, dsp);
   }
   // the meters of the panel description (contract 7.9) that are no control of a section: a static frame with the description's
   // range, in a band below the sections (a live MOD GUI meter waits for its own spec). A foreign meter that is a control stays one.
-  let meters = [];
+  // Each carries the description's clip word and hold: a clip word is a lamp at the frame's top right, an unheld meter's caption
+  // says so in the panel's own word; the band's title is the panel's word too (the layout's `words`, PANEL_LABELS)
+  let meters = [], words = null;
   try {
-    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true, choiceUnits } : { derive: true });
+    const x = panelLayout(descriptor, declared ? { panel: declared, derive: true } : { derive: true });
     const symbols = new Set(x.controls.map((c) => c.symbol));
-    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: m.unit, min: m.min, max: m.max, kind: m.kind }));
+    words = x.words;
+    meters = x.meters.filter((m) => !symbols.has(m.symbol)).map((m) => ({ symbol: m.symbol, label: m.label, unit: unitSymbolOf(m.unit), min: m.min, max: m.max, kind: m.kind, clip: m.clip === true, held: m.held === true, unheld: m.held === true ? null : x.words.unheld.label }));
   } catch (err) {
     // a refusal of the layout carries its code and leaves no meter to draw; anything else (plugin-hostd's LV2 table not
     // installed) would write a MOD GUI that silently lacks its meters
@@ -441,7 +450,7 @@ export function resolvePanel(descriptor, { panel: declared, stem, easyFirst: wan
       });
     }
   }
-  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, skipped };
+  return { uri, stem, name: plugin.name, brand: plugin.vendor || plugin.name || stem, family: panel.family, sections, meters, words, skipped };
 }
 
 /**
@@ -465,11 +474,12 @@ export function withRepeats(descriptor, declared, sections) {
     const homeSection = out[placed.home];
     // the served matrix, the description's: a count a visibleWhen rule governs is not served, its instances stay on the face
     const matrix = servedMatrix(g, { governs: (sym) => Boolean(drawn.get(sym)?.visibleWhen), title: homeSection.label, countDefault: count?.def ?? null });
-    // the controls the matrix places at the drawn heads, each named by its row (a head toggle by its head); an instance the
+    // the controls the matrix places at the drawn heads, each named by its row, or by the row's `labels` where the cell is
+    // another parameter (an edge's slope, omx-panel#122; a head toggle by its head); an instance the
     // count leaves out is not on the face
     const placedControls = drawnHeads(matrix).flatMap((h) => matrix.rows.flatMap((r, li) => {
       const sym = matrix.cells[li][h];
-      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.label }] : [];
+      return sym ? [{ ...drawn.get(sym), name: r.head ? matrix.heads[h].label : r.labels?.[h] ?? r.label }] : [];
     }));
     const merged = { key: homeSection.key, label: matrix.title, displays: [placed.home, ...placed.folded].flatMap((i) => out[i].displays), controls: [...g.parameters.map((sym) => drawn.get(sym)), ...placedControls], matrix };
     // the one section merge: a folded section's displays went to the matrix's, a donor keeps what the group left it
@@ -482,7 +492,7 @@ export function withRepeats(descriptor, declared, sections) {
 }
 
 /**
- * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the last), every
+ * A matrix section's grid, read off the served matrix: the drawn heads, each row at its place (the head row the first), every
  * control at its cell; a head-row cell with no control is the head's caption, in a row of its own.
  */
 function matrixCells(s, top) {
@@ -569,7 +579,7 @@ export function layout(panel) {
   let band = null;
   if (meters.length > 0) {
     const h = g.sectionTitleH + meters.length * (g.meterH + g.meterGap) + g.sectionPad / 2;
-    band = { x: g.pad, y: bottom + g.sectionGap, w: sectionW, h, meters };
+    band = { x: g.pad, y: bottom + g.sectionGap, w: sectionW, h, meters, title: panel.words.meters.label };
     bottom = band.y + h;
   }
   return { w: sectionW + 2 * g.pad, h: bottom + g.pad, sections, band };
@@ -718,8 +728,20 @@ export function valueText(k) {
   return k.unit ? `${n} ${k.unit}` : n;
 }
 
-/** A meter's caption: the label, then the description's range with its unit. */
-export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}`;
+/** A meter's caption: the label, then the description's range with its unit, then the panel's word for an unheld meter. */
+export const meterCaption = (m) => `${m.label}  ${m.min} to ${m.max} ${m.unit}${m.unheld ? `  ${m.unheld}` : ''}`;
+/** A meter's clip lamp in its face, in px from the face's outer top left at scale 1: a square of geometry.meterLamp, 5 px in from the
+ * right and 3 px down inside the face's `border` (px). A frame's rim is 1 px, so its lamp is 6 px in and 4 px down (the renderer's
+ * draw_meter places it the same); a needle dial's border is its look's bezel (vuFaces). */
+export const meterLamp = (frameW, border = 1) => ({ x: frameW - border - 5 - GEOMETRY.meterLamp, y: border + 3, size: GEOMETRY.meterLamp });
+/** The width in px of a look's needle-dial bezel, its --vu-bezel border (`3px solid ...`). */
+const bezelOf = (look) => Number(/^(\d+(?:\.\d+)?)px\b/.exec(look.depth['--vu-bezel'] ?? '')?.[1] ?? 0);
+/** The needle dials of a meters band as the template places them, in px from the band's top left: the band's meters side by side,
+ * each as tall as the band's rows; given a look, each with its bezel as `border` (the place is every look's, the bezel its own). */
+export function vuFaces(band, look) {
+  const g = GEOMETRY, n = band.meters.length, dw = Math.floor((band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap;
+  return band.meters.map((m, i) => ({ symbol: m.symbol, x: g.sectionPad + i * dw, y: g.sectionTitleH, w: dw - 4, h: dh, ...(look ? { border: bezelOf(look) } : {}) }));
+}
 
 /** The face at `scale`, every control at its declared default. */
 export function renderFace(lay, look, scale) {
@@ -811,12 +833,19 @@ export function renderFace(lay, look, scale) {
   if (lay.band) {
     const b = lay.band;
     if (look.depth['--section-bg'] !== 'none') roundRect(c, b.x * s, b.y * s, b.w * s, b.h * s, g.sectionRadius * s, hexOf(look, lay.stem, '--section-bg'));
-    drawText(c, font, fitText(font, 'METERS', TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
+    drawText(c, font, fitText(font, b.title.toUpperCase(), TEXT.small * s, (b.w - 2 * g.sectionPad) * s), (b.x + g.sectionPad) * s, (b.y + TEXT.sectionBase) * s, TEXT.small * s, tx.section);
     b.meters.forEach((m, row) => {
       const mx = (b.x + g.sectionPad) * s, my = (b.y + g.sectionTitleH + row * (g.meterH + g.meterGap)) * s, mw = (b.w - 2 * g.sectionPad) * s, mh = g.meterH * s;
       roundRect(c, mx, my, mw, mh, Math.min(4, mh / 4), col.rim);
       roundRect(c, mx + 1, my + 1, mw - 2, mh - 2, Math.min(3, mh / 4), col.screen);
-      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s), mx + 6 * s, my + 12 * s, TEXT.small * s, tx.screenDim);
+      const lamp = g.meterLamp * s;
+      drawText(c, font, fitText(font, meterCaption(m), TEXT.small * s, mw - 12 * s - (m.clip ? lamp + 4 * s : 0)), mx + 6 * s, my + 12 * s, TEXT.small * s, tx.screenDim);
+      // a meter with a clip word: its lamp, dark until a clip (the face has no reading)
+      if (m.clip) {
+        const lx = mx + mw - 6 * s - lamp, ly = my + 4 * s;
+        roundRect(c, lx, ly, lamp, lamp, 2 * s, col.rim);
+        roundRect(c, lx + s, ly + s, lamp - 2 * s, lamp - 2 * s, s, col.screen);
+      }
     });
   }
 
@@ -973,9 +1002,9 @@ export function emitTemplate(panel, lay, source, lookName = DEFAULT_LOOK) {
 ${s.displays.map((dsp, m) => `            <div class="omx-curve" data-kind="${dsp.kind}" data-basis="${dsp.basis}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + m * (g.curveH + g.curveGap)}px;width:${s.w - 2 * g.sectionPad}px;height:${g.curveH}px">${plot(dsp, s.w - 2 * g.sectionPad)}<span class="omx-curve-caption">${dsp.basis}</span></div>\n`).join('')}${s.controls.map(control).join('\n')}${(s.captions ?? []).map((h) => `\n            <div class="omx-colhead" data-mx-dy="${h.mxdy}" style="left:${h.x}px;top:${h.y}px">${esc(h.text)}</div>`).join('')}
         </div>`).join('\n') + (lay.band ? `
         <div class="omx-section omx-meters" style="left:${lay.band.x}px;top:${lay.band.y}px;width:${lay.band.w}px;height:${lay.band.h}px">
-            <h2 class="omx-section-title">Meters</h2>
-${lay.band.meters.map((m, i) => { const n = lay.band.meters.length, dw = Math.floor((lay.band.w - 2 * g.sectionPad) / n), dh = n * (g.meterH + g.meterGap) - g.meterGap, rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" style="left:${g.sectionPad + i * dw}px;top:${g.sectionTitleH}px;width:${dw - 4}px;height:${dh}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span><div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
-${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span></div>`).join('\n')}
+            <h2 class="omx-section-title">${esc(lay.band.title)}</h2>
+${lay.band.meters.map((m, i) => { const f = vuFaces(lay.band)[i], rev = VU.reversed[m.kind] === true, kind = VU.tauMs[m.kind] === undefined ? 'level' : m.kind; return `            <div class="omx-vu" data-vu data-vu-symbol="${m.symbol}" data-kind="${m.kind}" data-min="${m.min}" data-max="${m.max}" data-angle-min="${VU.angleMin}" data-angle-max="${VU.angleMax}" data-tau="${VU.tauMs[kind]}" data-step="${VU.stepMs}" data-reversed="${rev ? 1 : 0}" data-clip="${m.clip ? 1 : 0}" style="left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px"><div class="omx-vu-zone"></div><span class="omx-vu-caption">${esc(meterCaption(m))}</span>${m.clip ? '<span class="omx-vu-clip"></span>' : ''}<div class="omx-vu-needle" style="transform:rotate(${rev ? VU.angleMax : VU.angleMin}deg)"></div><div class="omx-vu-pivot"></div></div>`; }).join('\n')}
+${lay.band.meters.map((m, row) => `            <div class="omx-meter-frame" data-symbol="${m.symbol}" data-min="${m.min}" data-max="${m.max}" data-unit="${esc(m.unit)}" data-clip="${m.clip ? 1 : 0}" data-held="${m.held ? 1 : 0}" style="left:${g.sectionPad}px;top:${g.sectionTitleH + row * (g.meterH + g.meterGap)}px;width:${lay.band.w - 2 * g.sectionPad}px;height:${g.meterH}px"><span class="omx-meter-caption">${esc(meterCaption(m))}</span>${m.clip ? '<span class="omx-meter-clip"></span>' : ''}</div>`).join('\n')}
         </div>` : '');
   const jacks = (dir) => ['audio', 'midi', 'cv'].map((kind) => `        {{#effect.ports.${kind}.${dir}}}
         <div class="mod-${dir} mod-${dir}-disconnected" title="{{name}}" mod-role="${dir}-${kind}-port" mod-port-symbol="{{symbol}}">
@@ -1070,10 +1099,16 @@ ${P} .omx-vu-zone { position: absolute; left: 0; right: 0; bottom: 0; top: 0; ba
 ${P} .omx-vu-needle { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 78%; margin-left: -1px; background: ${tok['--surface']}; transform-origin: 50% 100%; border-radius: 1px; }
 ${P} .omx-vu-pivot { position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: ${tok['--surface']}; }
 ${P} .omx-vu-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-control')}; white-space: nowrap; }
+${P} .omx-vu[data-clip="1"] .omx-vu-caption { right: ${5 + g.meterLamp + 4}px; overflow: hidden; }
+${P} .omx-vu-clip { position: absolute; right: 5px; top: 3px; box-sizing: border-box; width: ${g.meterLamp}px; height: ${g.meterLamp}px; border-radius: 50%; border: 1px solid ${tok['--border-strong']}; background: ${D('--led-off')}; }
+${P} .omx-vu-clip.omx-clip-lit { background: ${tok['--meter-red']}; box-shadow: 0 0 4px 1px ${tok['--meter-red']}; }
 ${look.name === 'vintage' ? `${P} .omx-meter-frame { display: none; }
 ${P} .omx-vu { display: block; }
 ` : ''}` : ''}${(panel.meters ?? []).length > 0 ? `${P} .omx-meter-frame { position: absolute; box-sizing: border-box; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ${P} .omx-meter-caption { position: absolute; left: 6px; top: 3px; font-size: 10px; color: ${D('--t-screen-dim')}; white-space: nowrap; overflow: hidden; }
+${P} .omx-meter-frame[data-clip="1"] .omx-meter-caption { right: ${6 - 1 + g.meterLamp + 4}px; }
+${P} .omx-meter-clip { position: absolute; right: ${6 - 1}px; top: ${4 - 1}px; box-sizing: border-box; width: ${g.meterLamp}px; height: ${g.meterLamp}px; border: 1px solid ${tok['--border-strong']}; border-radius: 2px; background: ${D('--screen-bg')}; }
+${P} .omx-meter-clip.omx-clip-lit { background: ${tok['--meter-red']}; }
 ` : ''}${draws(panel, 'display') ? `${P} .omx-display-image { box-sizing: border-box; width: ${g.selectorW}px; height: ${g.selectorH}px; margin: ${g.selectorTop}px auto ${g.knob + g.knobTop - g.selectorTop - g.selectorH}px; border: 1px solid ${tok['--border-strong']}; border-radius: 4px; background: ${D('--screen-bg')};${decl('box-shadow', D('--screen-shadow'))} }
 ` : ''}`;
 }

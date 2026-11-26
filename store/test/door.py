@@ -36,8 +36,12 @@ def contract(d):
     shutil.copytree(os.path.join(ROOT, "contract.d", "panel"), os.path.join(d, "panel"))
     os.makedirs(os.path.join(d, "plugin-db"))
     words = [{"const": w, "title": w, "description": w, "x-code": i, "x-text": w} for i, w in enumerate(["clap", "lv2"])]
+    # the format a domain document states (omx-contract docs/contract-dir.md): the one the panel domain beside it states
+    with open(os.path.join(ROOT, "contract.d", "panel", "panel.json")) as f:
+        fmt = json.load(f)["x-omx-contract"]
     with open(os.path.join(d, "plugin-db", "plugin-db.json"), "w") as f:
         json.dump({"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://openmixer.org/contract/plugin-db",
+                   "x-omx-contract": fmt,
                    "info": {"title": "fixture", "version": "1.0.0", "x-owner": "plugin-db", "x-stability": "experimental"},
                    "components": {"schemas": {"PLUGIN_DB_ADDRESS_FORMATS": {"description": "d", "x-since": "1.0.0", "oneOf": words}}}}, f)
 
@@ -132,7 +136,8 @@ class test_the_store_codes_are_the_domains(unittest.TestCase):
         return [w["const"] for w in sorted(words, key=lambda w: w["x-code"])]
 
     def library_words(self):
-        return [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+        words = [door._text(door._l().omx_panel_store_code(s)) for s in range(self.ABSENT, self.ENTRY_INVALID + 1)]
+        return [w for w in words if w]  # a status whose code was retired (7) answers none
 
     def test_each_status_code_is_the_domain_word(self):
         self.assertEqual(self.library_words(), self.domain_words())

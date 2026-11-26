@@ -11,7 +11,7 @@ omx-panel modgui --descriptor <file> | --installed <package>/<name>
 ```
 
 - `--descriptor` names a descriptor file; `--installed omx-plugins/omx-delay` reads the one a package installed into
-  omx-contract's contract directory (`<contractdir>/3/<package>/plugins/<name>.json`).
+  omx-contract's contract directory (`<contractdir>/<package>/plugins/<name>.json`).
 - `--panel` names a JSON file holding the declared panel: `family`, `sections` (each `key`, `label`, `controls` by
   symbol) and, optionally, `widgets` (symbol to `knob`, `fader`, `switch` or `selector`, the list in
   `schema/panel.schema.json`) and `easy` (the controls of the Easy face); or the panel the plugin serves, as
@@ -100,8 +100,8 @@ role. There is no stand-in: a look without `--knob-pointer` or `--curve-stroke` 
 place. No surface spells a colour, and every token a surface reads is a role (`test/look-roles.test.mjs`). The
 package also exports the role file, as `@openmixer/omx-panel/look-roles.json`.
 
-The knob is still drawn flat (rim, body, pointer): the metal face, rim and relief the vintage style names are not
-drawn yet.
+The C renderer wears the look's style as this face does (docs/renderer.md "What it draws"): under the vintage style
+its panel is this face, pixel for pixel.
 
 ## The test
 
@@ -134,7 +134,8 @@ network, and the release check runs `node tools/look-pin.mjs --check <tokens.css
 (re-pin with `--write`, then `node tools/look.mjs`).
 
 The value of a control is shown in a scribble strip, `mod-role="input-control-value"` bound to the port: mod-ui writes the port's
-value into it and the template carries no value text; the unit (from the descriptor) is its `data-unit`. A selector's own value
+value into it and the template carries no value text; the unit is its `data-unit`, spelled for a person: the `x-symbol` of the
+descriptor's unit id in omx-contract's PARAM_UNITS (`percent` shows `%`, `none` shows nothing). A selector's own value
 element is bound the same way.
 
 The knob film strips of `vintage` and `3d` are generated from one drawing each: the vintage knob's is a scene in `tools/look.json` (`drawings`, written there from `schema/modgui-looks.json`, the only copy of that drawing), the 3d knob's `tools/look/knob-3d.svg`: 65
@@ -143,15 +144,25 @@ with `tools/raster.mjs`, the generator's own byte-deterministic rasteriser, so t
 tools/look-contrast.mjs` prints the contrast of every text pair of every look; `console` and `3d` never fall below the flat look's,
 `vintage` clears 4.5:1 on every pair.
 
+**Ruled 2026-11-24 (#70): one home for the shared resources and for the shots.** The resources every bundle wears (the
+pinned serif in `tools/fonts/` with its licence, the look's script and stylesheet parts in `tools/look/`) have one home, this
+repository's `tools/`; each generated bundle carries a copy made from it at generation time, because a MOD GUI bundle is
+self-contained (MOD-UI serves a bundle's files from its own `modgui:resourcesDirectory`, and a bundle is copied to a device on
+its own). A font update or a look change is one change here and a regeneration. The MOD GUI screenshots have one home,
+`docs/shots/` here (its README says how each was taken); omx-plugins links to them and keeps no copy of its own.
+
 ## The map: the console's vintage, element by element
 
 The owner's rule: any vintage look goes into mod-ui, so the `vintage` look draws each console element in the console's own
-tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed); `test/modgui-console-map.test.mjs` holds
+tokens. `tools/look/console-map.json` is the MAP (the table below is it, printed by `node tools/console-map-render.mjs`: an edit
+to the table is made in the map, and `make console-map` and `test/console-map-render.test.mjs` are red on a table that is not
+what the map gives); `test/modgui-console-map.test.mjs` holds
 every row to it: each token a row lists is in the pin, is named as a placeholder (`{console:--x}` or `{finish:--x}`) in the look
 token or the drawing the row names, and is worn as the pinned value in `tools/look.json`; and a value moved in a `tokens.css` goes
 red in the drift check, token by token. A row marked "the owner's mock" is not a console element (the cream enclosure, the label
 plate, the red LED) and reads no pinned token. Those rows are the ONLY place a vintage token may hold a colour literal: the rows' `via` lists name them, and `test/modgui-no-retyped-look.test.mjs` refuses a `#rrggbb` anywhere else.
 
+<!-- the map table: printed from tools/look/console-map.json by tools/console-map-render.mjs, do not edit by hand -->
 | Row | Console element | MOD GUI element | Pinned tokens |
 |---|---|---|---|
 | `knob-cap` | the console's Encoder .cap: a radial cap-hi to face gradient | knob film strip, the domed cap (the knob-vintage drawing of tools/look.json) | `finish:--knob-cap-hi`, `finish:--knob-face` |
@@ -176,6 +187,7 @@ plate, the red LED) and reads no pinned token. Those rows are the ONLY place a v
 | `enclosure` | none: the owner's mock, a cream enamel enclosure with a light-to-dark body gradient | .omx-pedal body | none (the owner's mock) |
 | `label-plate` | none: the owner's mock, the dark label plate and its serif title | .omx-head and .omx-label | none (the owner's mock) |
 | `bypass-led` | none: the owner's mock, the red bypass LED | .omx-bypass-light | none (the owner's mock) |
+<!-- end of the map table -->
 
 **What the pin keeps** (`tools/look/console-vintage.json`, read from `tokens.css` at one commit with its sha-256, by
 `node tools/look-pin.mjs --write <tokens.css> <commit>`, verified by `--check` and `$OPENMIXER_TOKENS_CSS` in the test): the glass, its
@@ -243,6 +255,18 @@ and the ballistics, `tauMs` per meter kind: a level needle rises and falls like 
 (`value += (target - value) * (1 - exp(-dt / tau))`, stepped by the script on a timer), and the gain-reduction needle is REVERSED: it rests at
 the right (0 dB) and swings left as the gain is reduced. The needle is a DOM transform; no port is written.
 
+**The clip lamp on a dial** (omx-panel#218). The vintage look hides the frames, so a frame's clip lamp is never seen there: a dial whose
+meter has a clip word (`clip: true` in the description) wears its own, a period peak lamp. It is a round jewel of `meterLamp` px in a ring
+of the strong border, set in the dial's top right corner where a VU meter's peak lamp sits, at the frame lamp's place measured inside
+the face's border: 5 px in from the right and 3 px down inside the bezel (`meterLamp(w, border)`, the dials' places and bezels
+`vuFaces`). Dark, it is the look's unlit lamp (`--led-off`, the unlit lens the bypass lamp wears); lit, it is the meter red, the
+frame lamp's colour, glowing. The lamp follows the clip word as the frame's does: the same `omx-clip-lit` class, set
+while omx-dsp's clip word is (lit by a clip, kept lit until cleared), and a dial whose meter has no clip word wears none. The
+caption keeps clear of it, as the frame's does. Ruling (#218): the renderer and Tk draw the description's frames in every look (the
+description carries no dial and the renderer's style picks only its knob), so the vintage leg of `meter-surfaces` holds the dial's
+lamp to the renderer's frame lamp by what they share: lit or dark at every tick, and each lamp's edges against its own face's
+declared place.
+
 ## Tiers and edge bands
 
 A plugin declares each control's tier in its panel block, `tiers` (symbol to `easy` or `advanced`; a control that names none is
@@ -256,5 +280,7 @@ as its first band and its low-pass as its last, `[HPF] [Band 1..N] [LPF]`, each 
 controls. Only the drawing moves: the audio order is the plugin's, and an `Order` control the plugin declares (set advanced) shows
 it. The section's curve carries the filters' roll-off when the panel's `roles` bind `hpf_freq`/`hpf_slope` and `lpf_freq`/`lpf_slope`
 (omx-dsp's twin draws them in the response).
-A slope that is a choice (12 or 24) has no unit in a descriptor: the panel declares it, `choiceUnits` (symbol to unit, `dB/oct` or `dB` for a slope), the
-panel description's own extras shape, and the MOD GUI passes it to the twin, so the choice is a valid slope term (`test/modgui-choice-units.test.mjs`).
+A slope that is a choice (12 or 24) takes its unit from the descriptor's `choiceUnits` (omx-contract: a choice control's name to
+its unit, `dBPerOct` or `dB` for a slope), declared once by the plugin, so the panel description, the MOD GUI and every host read the
+one unit and the twin takes the choice as a slope term (`test/modgui-choice-units.test.mjs`). A panel block declares no unit
+(#68): the schema has no `choiceUnits` word, and `panelLayout` refuses an option of that name.

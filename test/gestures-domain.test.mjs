@@ -83,7 +83,7 @@ test('(b) the domain holds the words, the codes and the sheets, and renders the 
   assert.deepEqual(words.map((w) => w.const), GOLDEN.words);
   assert.deepEqual(words.map((w) => w.description), Object.values(GESTURES.words));
   const codes = doc.components.schemas.GESTURES_CODES.oneOf;
-  assert.deepEqual(codes.map((c) => c.const), GOLDEN.codes);
+  assert.deepEqual(codes.map((c) => c['x-name']), GOLDEN.codes);
   assert.deepEqual(codes.map((c) => c.description), Object.values(GESTURES.codes));
   const { renderGestures } = await import('../tools/gestures-render.mjs');
   assert.equal(renderGestures(doc), read('schema/gestures.json'));
@@ -136,7 +136,7 @@ test('(c) a domain with one timing changed renders a different schema file, so t
 
 test('packaging: omx-panel-contract ships the gestures domain beside the panel domain, in the rpm and the deb', () => {
   const spec = read('packaging/omx-panel.spec');
-  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_domain_dir\}\/gestures\/$/m);
+  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_dir\}\/gestures\/$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));
   assert.ok(lines.includes('usr/share/omx-contract/contract.d/gestures/') && lines.includes('usr/share/omx-contract/contract.d/panel/'), lines.join(' | '));
   assert.match(read('Makefile'), /install-contract-dir\.sh|OMX_CONTRACT_INSTALLER[^\n]*--domain contract\.d\/gestures|--domain contract\.d\/gestures/);

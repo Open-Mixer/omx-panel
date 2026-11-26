@@ -15,6 +15,7 @@ typedef struct omx_canvas {
   int w, h;
   size_t stride;
   int bgra; /* 1: B, G, R, A in memory; 0: R, G, B, A */
+  int cx0, cy0, cx1, cy1; /* the clip, in px: nothing is drawn outside it (the whole buffer: 0, 0, w, h) */
 } omx_canvas;
 
 typedef struct omx_rgb {

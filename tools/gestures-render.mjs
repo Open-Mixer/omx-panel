@@ -32,7 +32,9 @@ export function declarationOf(doc) {
   const items = doc?.components?.schemas ?? {};
   const item = (name) => items[name] ?? refuse(`GESTURES: the item ${name} is missing`);
   const sheet = (name) => item(name)['x-value'] ?? refuse(`${name}: no x-value`);
-  const wordsOf = (name) => Object.fromEntries((item(name).oneOf ?? refuse(`${name}: no words`)).map((w) => [w.const, w.description]));
+  // a word keyed by its const; a code by its x-name, the GESTURE_* name the units answer (its const is the code word of
+  // schema/codes.json, panel.gesture.<kebab>: docs/panel-gestures.md, omx-panel#106)
+  const wordsOf = (name) => Object.fromEntries((item(name).oneOf ?? refuse(`${name}: no words`)).map((w) => [w['x-name'] ?? w.const, w.description]));
   const head = sheet(SHEETS.head);
   const out = {
     schema: head.schema, title: head.title, description: head.description,

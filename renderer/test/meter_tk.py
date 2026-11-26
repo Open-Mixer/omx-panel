@@ -8,7 +8,9 @@ grabbed from the X display as raw RGBA for the measuring side to read.
 job.json (written by meter-surfaces.mjs): the panel's size, each meter's frame (panel px at 1x), range and kind, the look's
 colours, the stream's ticks, and the path of omx-dsp's view-law vectors. The marker is a Python copy of omx_meter_view_step,
 read against omx-dsp's golden fall vectors before anything is drawn (contract 7.9: a copy of the law is held by omx-dsp's
-vectors). Writes <out-dir>/tk-<k>.rgba per tick and <out-dir>/tk.json ({w, h, ticks}).
+vectors). A meter with a clip word wears its lamp at the frame's top right, lit by the clip word: a Python copy of
+omx_meter_view_clip and omx_meter_view_clip_clear (a tick's clear first, then its clip), read against omx-dsp's clip vector.
+Writes <out-dir>/tk-<k>.rgba per tick and <out-dir>/tk.json ({w, h, ticks}).
 """
 import json
 import os
@@ -29,6 +31,28 @@ def view_step(state, fill, dt_s, fall_db_per_s, floor_db):
         state["peak"] = f
         state["elapsed"] = 0.0
     return m
+
+
+def view_clip(lit, clip, clear):
+    """omx_meter_view_clip_clear when cleared, then omx_meter_view_clip: lit by a clip, kept lit until a clear."""
+    return (lit and not clear) or clip
+
+
+def check_clip_vectors(path):
+    """The clip vector of omx-dsp's meter-view.json, tick by tick: the copy is the law."""
+    n = 0
+    for c in json.load(open(path))["cases"]:
+        if c["set"] != "clip":
+            continue
+        lit = False
+        for k, want in enumerate(c["lit"]):
+            lit = view_clip(lit, bool(c["clip"][k]), bool(c["clear"][k]))
+            if lit != bool(want):
+                sys.exit(f"meter_tk: the Python copy of the clip word differs from omx-dsp's clip vector at tick {k}")
+            n += 1
+    if n == 0:
+        sys.exit("meter_tk: no clip vector read")
+    return n
 
 
 def check_vectors(path):
@@ -59,7 +83,7 @@ def fraction(m, value):
 def main():
     job = json.load(open(sys.argv[1]))
     out = sys.argv[2]
-    checked = check_vectors(job["vectors"])
+    checked = check_vectors(job["vectors"]) + check_clip_vectors(job["vectors"])
     fall = job["law"]["fallDbPerSecond"]
     col = job["colours"]
     root = tk.Tk()
@@ -76,12 +100,20 @@ def main():
         cv.create_rectangle(x + 1, y + 1, x + w - 1, y + h - 1, fill=col["body"], outline="")
         bar = cv.create_rectangle(0, 0, 0, 0, fill=col["accent"], outline="", state="hidden")
         mark = cv.create_rectangle(0, 0, 0, 0, fill=col["ink"], outline="", state="hidden")
-        items[m["symbol"]] = (bar, mark, {"peak": 0.0, "elapsed": 0.0})
+        lamp = None
+        if m["clip"]:
+            size, lx, ly = job["lamp"], x + w - 6 - job["lamp"], y + 4
+            cv.create_rectangle(lx, ly, lx + size, ly + size, fill=col["rim"], outline="")
+            lamp = cv.create_rectangle(lx + 1, ly + 1, lx + size - 1, ly + size - 1, fill=col["body"], outline="")
+        items[m["symbol"]] = (bar, mark, {"peak": 0.0, "elapsed": 0.0, "lit": False}, lamp)
     root.update()
     ox, oy = cv.winfo_rootx(), cv.winfo_rooty()
     for k, tick in enumerate(job["ticks"]):
         for m in job["meters"]:
-            bar, mark, st = items[m["symbol"]]
+            bar, mark, st, lamp = items[m["symbol"]]
+            if lamp is not None:
+                st["lit"] = view_clip(st["lit"], m["symbol"] in tick.get("clip", []), m["symbol"] in tick.get("clear", []))
+                cv.itemconfigure(lamp, fill=col["red"] if st["lit"] else col["body"])
             x, y, w, h = m["x"], m["y"], m["w"], m["h"]
             inner = w - 4
             f = fraction(m, tick["values"][m["symbol"]])

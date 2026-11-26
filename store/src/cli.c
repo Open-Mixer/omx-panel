@@ -16,9 +16,12 @@
     "usage: omx-panel-store get --sha256 H --format F --uri U --source H [--rules N] --json\n" \
     "       omx-panel-store put --sha256 H --format F --uri U       (the entry as JSON on stdin)\n" \
     "       omx-panel-store remove --sha256 H --format F --uri U\n" \
+    "       omx-panel-store list                                    (the keys of the layer of the effective uid)\n" \
+    "       omx-panel-store build --out F --built-from C [--contract-dir D]   (the base, from [{sha256, format, uri, entry}] on stdin)\n" \
     "       omx-panel-store check\n" \
     "       omx-panel-store source --format lv2|clap --path P\n" \
     "       omx-panel-store places --production user|system\n" \
+    "       omx-panel-store rules                                   (OMX_PANEL_RULES_VERSION: the rules an entry is put with)\n" \
     "  places: [--scope user|system] [--base F] [--system F] [--user F] [--contract-dir D]\n" \
     "          (else OMX_PANEL_STORE_BASE, _SYSTEM, _USER, OMX_CONTRACT_PATH, then the installed places)\n" \
     "  exit: 0, 1 with the code on stderr, 2 on usage\n"
@@ -26,7 +29,7 @@
 static int usage(void) { fputs(USAGE, stderr); return 2; }
 
 typedef struct {
-    const char *sha256, *format, *uri, *source, *path, *scope, *base, *system, *user, *contract, *production;
+    const char *sha256, *format, *uri, *source, *path, *scope, *base, *system, *user, *contract, *production, *out, *built_from;
     int rules, json;
 } opts_t;
 
@@ -48,6 +51,8 @@ static int parse(int argc, char **argv, opts_t *o) {
         else if (!strcmp(a, "--user")) o->user = v;
         else if (!strcmp(a, "--contract-dir")) o->contract = v;
         else if (!strcmp(a, "--production")) o->production = v;
+        else if (!strcmp(a, "--out")) o->out = v;
+        else if (!strcmp(a, "--built-from")) o->built_from = v;
         else if (!strcmp(a, "--rules")) o->rules = atoi(v);
         else return -1;
     }
@@ -125,6 +130,10 @@ static void print_entry(const omx_panel_store_entry *e) {
     cJSON_Delete(o);
 }
 
+static void print_key(const char *sha256, const char *format, const char *uri, void *ctx) {
+    (void)ctx;
+    printf("%s\t%s\t%s\n", sha256, format, uri);
+}
 static char *slurp_stdin(void) {
     size_t cap = 1 << 16, n = 0, r;
     char *b = malloc(cap + 1);
@@ -148,6 +157,21 @@ int main(int argc, char **argv) {
         puts(hex);
         return 0;
     }
+    if (!strcmp(cmd, "rules")) {
+        /* the one place a derivation outside C reads the reader's rules version from (docs/descriptions-store.md 5) */
+        if (argc != 2) return usage();
+        printf("%d\n", OMX_PANEL_RULES_VERSION);
+        return 0;
+    }
+    if (!strcmp(cmd, "build")) {
+        /* the base from the derived entries on stdin (docs/descriptions-store.md 6); the base builder reads no variable
+         * but the contract directory's, as every door of the command does */
+        if (!o.out || !o.built_from) return usage();
+        char *in = slurp_stdin();
+        int rc = omx_panel_store__build(o.out, o.built_from, or_env(o.contract, "OMX_CONTRACT_PATH"), in, &err);
+        free(in);
+        return rc ? fail(rc, &err) : 0;
+    }
     if (!strcmp(cmd, "places")) {
         if (!o.production || (strcmp(o.production, "user") && strcmp(o.production, "system"))) return usage();
         char *b, *s, *u;
@@ -161,7 +185,7 @@ int main(int argc, char **argv) {
         free(t); cJSON_Delete(j); free(b); free(s); free(u);
         return 0;
     }
-    int writer = !strcmp(cmd, "put") || !strcmp(cmd, "remove");
+    int writer = !strcmp(cmd, "put") || !strcmp(cmd, "remove") || !strcmp(cmd, "list");
     if (strcmp(cmd, "get") && strcmp(cmd, "check") && !writer) return usage();
     char *base, *system, *user;
     const char *contract;
@@ -177,6 +201,18 @@ int main(int argc, char **argv) {
         omx_panel_store_close(s);
         puts("ok");
         return 0;
+    }
+    if (!strcmp(cmd, "list")) {
+        /* the keys of the layer of the effective uid; a layer not made yet holds none, and is not made by a list */
+        int root = geteuid() == 0;
+        const char *path = root ? system : user;
+        if (!path || access(path, F_OK)) return 0;
+        omx_panel_store *w;
+        rc = omx_panel_store_writer_open_at(path, root ? 1 : 2, contract, &w, &err);
+        if (rc) return fail(rc, &err);
+        rc = omx_panel_store__keys(w, print_key, NULL, &err);
+        omx_panel_store_close(w);
+        return rc ? fail(rc, &err) : 0;
     }
     if (!o.sha256 || !o.format || !o.uri) return usage();
     omx_panel_store_key key = { o.sha256, o.format, o.uri };

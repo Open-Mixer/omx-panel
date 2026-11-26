@@ -1,3 +1,11 @@
+omx-panel (0.17.0) unstable; urgency=medium
+
+  * Chain 3: V23d P2, a unit is served when omx-contract's
+    PARAM_UNITS_CLAP_ENCODED holds its id (omx-contract-data 3.22.0); the
+    #170 consumers, coef is the plain multiplier in the role table.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Tue, 24 Nov 2026 12:00:00 +0100
+
 omx-panel (0.16.2) unstable; urgency=medium
 
   * Fix: the units a control can serve are read from PARAM_UNITS_CLAP_ENCODED

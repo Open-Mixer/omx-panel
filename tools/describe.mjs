@@ -33,18 +33,20 @@
  *   `pagesOf`, the one cut (`perPage`, the surface's width, left out eight; `remote`, the host's declared remote-controls pages).
  */
 import { applySkinOverride } from '../src/skin-package.js';
+import { nameTokens } from './group-infer.mjs';
 import { controlsOfDescriptor, inferGroupModel, matrixInstances, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { inferBands } from './meaning-infer.mjs';
-import { DISPLAY_AXES, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
+import { DISPLAY_AXES, PANEL_LABELS, FamilyNotBacked, NoControls, BarsRefused, FAMILIES, familyOf, GROUP, INSTANCE, keyOf, pagesOf, PLACE, ROW, panelFingerprint, panelLayout, requiredRolesMapped, unitToken } from './panel-description.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES } from './role-table.mjs';
-import { panelCodes } from './vocabulary.mjs';
+import { panelCodes, unitSymbolOf } from './vocabulary.mjs';
 
 /** The refusal codes of the derivation, beside the layout's and the bar rule's: the panel domain's PANEL_DESCRIBE_CODES. */
 const CODE = panelCodes('PANEL_DESCRIBE_CODES');
 export const DESCRIBE_CODES = Object.freeze({
   noControls: CODE.panelNoControls,
   familyNotBacked: CODE.panelFamilyNotBacked,
+  familyUnknown: CODE.panelFamilyUnknown,
   layoutInvalid: CODE.panelLayoutInvalid,
   overrideUnavailable: CODE.panelOverrideUnavailable,
   overrideRefused: CODE.panelOverrideRefused,
@@ -159,7 +161,7 @@ export function servedParamOf(c, { factor = false } = {}) {
     return { kind: 'number', symbol, name, unit: 'none', scale: 'stepped', step: 1, min, max, default: Math.min(max, Math.max(min, Math.round(fallback))), ...(enumLabels ? { enumLabels } : {}) };
   }
   const t = c.travel;
-  const stated = t.unit && t.unit !== 'unknown';
+  const stated = t.unit && t.unit !== 'unknown' && t.unit !== 'none';
   const token = factor && !stated ? 'coef' : unitToken(t.unit);
   const stepped = t.scale === 'stepped' || (t.step ?? 0) >= 1;
   // log over a floor at or below zero is served linear (contract.override.scale-floor)
@@ -168,7 +170,7 @@ export function servedParamOf(c, { factor = false } = {}) {
   const at = typeof t.default === 'number' && t.default >= t.min && t.default <= t.max ? t.default : t.min;
   return {
     kind: 'number', symbol, name, unit: token ?? 'none',
-    ...(token === undefined && t.unit && t.unit !== 'unknown' ? { unitText: t.unit } : {}),
+    ...(token === undefined && stated ? { unitText: unitSymbolOf(t.unit) } : {}),
     scale, step: stepped ? Math.max(1, t.step ?? 1) : 0, min: t.min, max: t.max,
     default: stepped ? Math.min(t.max, Math.max(t.min, Math.round(at))) : at,
   };
@@ -218,6 +220,12 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
       const r = applyOverride(descriptor, overrides, {});
       effective = r.descriptor;
       userFamily = r.family;
+      // a family that is no word of PANEL_FAMILIES is refused by name and the panel is `none` (#199): omx-contract's
+      // override schema takes any identifier, the words are the panel domain's
+      if (userFamily !== undefined && !FAMILIES.includes(userFamily)) {
+        refusals.push(refuse(DESCRIBE_CODES.familyUnknown, { plugin, family: userFamily }));
+        userFamily = 'none';
+      }
       for (const x of r.refused ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideRefused, { plugin, layer: x.layer, name: x.name, message: x.message }));
       for (const x of r.dropped ?? []) refusals.push(refuse(DESCRIBE_CODES.overrideDropped, { plugin, layer: x.layer, control: x.control, name: x.name, message: x.message }));
     }
@@ -251,7 +259,7 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
       // a declared panel's family, or a user's override over it, is applied as the layout applies it
       layout = tryDeclared(() => panelLayout(effective, { ...options, panel: userFamily === undefined ? panel : { ...panel, family: userFamily }, derive: true }));
     } else if (userFamily !== undefined) {
-      const family = FAMILIES.includes(userFamily) ? userFamily : 'none';
+      const family = userFamily;
       const inferred = family === 'eq' ? inferBands(effective.controls) : null;
       const { needs } = familyOf(effective.controls, family);
       layout = tryDeclared(() => {
@@ -290,7 +298,8 @@ function derive(descriptor, { overrides = [], applyOverride, panel, ns, where } 
     sections: layout.sections.map((s) => ({ key: s.key, labelKey: s.labelKey ?? '', label: s.label, ...(s.bars ? { bars: s.bars } : {}) })),
     controls: [...layout.controls.map((c) => ({ symbol: served(c.symbol), section: c.sectionKey, widget: c.widget, labelKey: c.labelKey ?? '', label: c.label, visibleWhen: visibleWhen(c) })), ...textControls],
     // the meters (contract 7.9): a meter control each, in the descriptor's order. Facts of the view, never ballistics.
-    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
+    // unitText is the unit as a person reads it, its x-symbol: the caption a renderer draws (the unit stays the id)
+    meters: layout.meters.map((m) => ({ symbol: m.symbol, section: m.sectionKey, kind: m.kind, measurement: m.measurement, unit: m.unit, unitText: unitSymbolOf(m.unit), min: m.min, max: m.max, channels: m.channels, held: m.held, clip: m.clip, labelKey: m.labelKey ?? '', label: m.label })),
     roles: layout.roles.map((r) => {
       const { role, index } = r;
       return { role, index, symbol: served(r.symbol), unit: r.token ?? unitToken(r.unit) ?? 'none', ...(r.shape ? { shape: r.shape } : {}), ...(r.shapes ? { shapes: r.shapes } : {}), ...(r.inferred ? { inferred: true } : {}) };
@@ -352,7 +361,9 @@ function axisFault(d, i) {
 /** The skin, then the matrices over the sections as the skin left them, then the pages: the one tail of a description. */
 function finish(stored, { skin, perPage, remote }) {
   const refusals = [];
-  let description = stored.body;
+  // the words a surface draws of its own (PANEL_LABELS: the meters band's title, the word a meter that holds nothing between reads
+  // says, a skin's last section), each with its key: the panel domain's, never the stored body's, so an older entry serves them
+  let description = { ...stored.body, words: PANEL_LABELS };
   // each display's axis is a PANEL_DISPLAY_AXES word (a stored body may be a person's edit): one that is not refuses the entry by
   // name, and none is inferred from the kind
   const badAxis = description.displays.map((d, i) => axisFault(d, i)).find(Boolean);
@@ -452,7 +463,7 @@ function mergeLayout(layout, placed, keep, matrix, titled) {
 function textOnlyLayout(descriptor) {
   return {
     origin: descriptor.origin, family: 'none', sections: [{ key: 'controls', labelKey: 'section.controls', label: 'Controls' }],
-    controls: [], roles: [], unpublished: [], displays: [], defaults: [], ports: { inputs: [], outputs: [], sidechain: false, notes: false }, easy: [], meters: [], meterRefusals: [],
+    controls: [], roles: [], unpublished: [], displays: [], defaults: [], ports: { inputs: [], outputs: [], sidechain: false, notes: false }, easy: [], meters: [], meterRefusals: [], words: PANEL_LABELS,
   };
 }
 
@@ -479,8 +490,9 @@ function pagesOfDescription(description, stored, { perPage, remote }) {
  * section that carries a `matrix`, each head is one instance (`GROUP`, `INSTANCE`) in `matrixInstances`'s order, HPF first
  * and LPF last, and holds its `slots`: a place the head has no control at is a blank slot (`param: null`), so slot `k` of
  * every instance's screen is the same parameter; each slot carries its place (`PLACE`) and the matrix row it is (`ROW`), so
- * the cut can put the places past a page on the matrix's row screens. The section's own controls (the count, an EQ's master on) come before the
- * instances. Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
+ * the cut can put the places past a page on the matrix's row screens. The section's own controls that print no number (the count, an
+ * EQ's master on) come before the instances; one that prints a number is one band's and no row of the group (a "Band 3 Drive"), and
+ * comes after them, so no screen ahead of the high-pass holds it and the walk stays HPF, the bands, LPF (#97). Sections apart, the order of the array is not read, so the controls are sorted by (section, rank).
  */
 function byInstance(sections, controls) {
   const bySymbol = new Map(controls.map((c) => [c.symbol, c]));
@@ -503,5 +515,9 @@ function byInstance(sections, controls) {
     }));
   });
   const own = controls.filter((c) => !placed.has(c.symbol));
-  return sections.flatMap((_, at) => [...own.filter((c) => c.section === at), ...(instances.get(at) ?? [])]);
+  const banded = (c) => instances.has(c.section) && nameTokens(c.label).some((t) => /^\d+$/.test(t));
+  return sections.flatMap((_, at) => {
+    const mine = own.filter((c) => c.section === at);
+    return [...mine.filter((c) => !banded(c)), ...(instances.get(at) ?? []), ...mine.filter(banded)];
+  });
 }

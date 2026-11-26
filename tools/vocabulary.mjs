@@ -10,13 +10,14 @@
  *     packages declare in their contract directories (omx-contract docs/contract-dir.md, "A package's role meanings";
  *     omx-plugins-contract installs omx-plugins'; `$OMX_ROLE_MEANINGS`, a `:` list of files holding such items, stands
  *     in), never a list of this package's own;
- *   - the units: a descriptor unit (its symbol, `%`, `dB/oct`, `""`) is read as its standard id, the word of omx-contract's
- *     PARAM_UNITS whose `x-symbol` it is, with its `x-dimension` (the param domain, `<contractdir>/param/param.json`,
+ *   - the units: a descriptor unit is a standard id, the const of a word of omx-contract's PARAM_UNITS (`percent`,
+ *     `none`, `dBPerOct`), with its `x-dimension`; its `x-symbol` (`%`, `""`, `dB/oct`) is the display spelling only,
+ *     what a face shows a person (C2, plugin-hostd#215 D1/D2; the param domain, `<contractdir>/param/param.json`,
  *     installed by omx-contract-data from 3.21.0; sorting pass rows P1, M4). A unit is served when omx-contract's
  *     PARAM_UNITS_CLAP_ENCODED, of the same domain, holds its id (the ids org.openmixer.param-contract/1 encodes;
  *     omx-contract-data from 3.22.0, V23d P2). omx-panel reads no code sheet, no plugin-hostd table and nothing of
  *     omx-clap;
- *   - the descriptors a package installs, `<contractdir>/3/<package>/plugins/<name>.json` (omx-plugins-contract
+ *   - the descriptors a package installs, `<contractdir>/<package>/plugins/<name>.json` (omx-plugins-contract
  *     installs omx-plugins').
  *
  * The contract directories are `$OMX_CONTRACT_PATH` (a `:` list, the first that holds a package wins), else
@@ -55,9 +56,9 @@ export function contractDirs() {
   return [pkgVariable('omx-contract', 'contractdir') ?? DEFAULT_CONTRACTDIR];
 }
 
-/** The directory `<contractdir>/3/<package>` of the first contract directory that holds it, or undefined. */
+/** The directory `<contractdir>/<package>` of the first contract directory that holds it, or undefined. */
 export function packageDir(pkg) {
-  return contractDirs().map((d) => join(d, '3', pkg)).find((d) => existsSync(d));
+  return contractDirs().map((d) => join(d, pkg)).find((d) => existsSync(d));
 }
 
 /** This tree's contract directory (the source tree's and dist/'s `contract.d`, when there is one). */
@@ -126,10 +127,9 @@ const isDir = (path) => statSync(path, { throwIfNoEntry: false })?.isDirectory()
 function contractFiles() {
   const files = [];
   for (const dir of contractDirs()) {
-    const major = join(dir, '3');
-    if (!existsSync(major)) continue;
-    for (const pkg of readdirSync(major)) {
-      const at = join(major, pkg);
+    if (!existsSync(dir)) continue;
+    for (const pkg of readdirSync(dir)) {
+      const at = join(dir, pkg);
       if (!isDir(at)) continue;
       for (const f of readdirSync(at)) if (f.endsWith('.json')) files.push(join(at, f));
     }
@@ -158,20 +158,40 @@ export function paramDomainFile() {
   return contractDirs().map((d) => join(d, 'param', 'param.json')).find((f) => existsSync(f));
 }
 
-/** The standard units, PARAM_UNITS of omx-contract's param domain: `Map<symbol, { id, dimension }>`. */
+/** The standard units, PARAM_UNITS of omx-contract's param domain, keyed by id (each word's const): `Map<id, { symbol, dimension }>`. */
 export const standardUnits = once(() => {
   const file = paramDomainFile();
-  if (!file) throw new Error(`vocabulary: omx-contract's param domain (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.21.0)`);
+  if (!file) throw new Error(`vocabulary: omx-contract's param domain (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data`);
   const words = JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.PARAM_UNITS?.oneOf;
   if (!Array.isArray(words)) throw new Error(`vocabulary: ${file} declares no PARAM_UNITS`);
-  return new Map(words.map((w) => [w['x-symbol'], { id: w.const, dimension: w['x-dimension'] }]));
+  return new Map(words.map((w) => [w.const, { symbol: w['x-symbol'], dimension: w['x-dimension'] }]));
 });
 
-/** A descriptor unit's standard id (`%` -> `percent`, `""` -> `none`), or undefined for a unit the list does not hold. */
-export const unitIdOf = (unit) => standardUnits().get(unit ?? '')?.id;
+/** A descriptor unit's standard id: the unit itself when PARAM_UNITS holds it (`percent`, `none`), else undefined (a
+ * symbol such as `%` is display, never a descriptor's word). */
+export const unitIdOf = (unit) => (standardUnits().has(unit) ? unit : undefined);
 
-/** The symbols of the standard units of `dimensions` (`['gain', 'level', 'loudness']` -> dB, dBFS, LUFS, dBTP, dBu, LU). */
-export const unitsOfDimensions = (dimensions) => [...standardUnits()].filter(([, u]) => dimensions.includes(u.dimension)).map(([symbol]) => symbol);
+/** plugin-db's mapping of the LV2 units to the standard ids, `<contractdir>/lv2/lv2.json`, LV2_UNIT_IDS: each word is a
+ * standard id, and the LV2 term it stands for is the `x-term` of its `x-from` (`hz` -> `Hz`, `pc` -> `percent`):
+ * `Map<term, id>`. */
+export const lv2UnitIds = once(() => {
+  const file = contractDirs().map((d) => join(d, 'lv2', 'lv2.json')).find((f) => existsSync(f));
+  if (!file) throw new Error(`vocabulary: plugin-db's lv2 domain (lv2/lv2.json) is not installed in ${contractDirs().join(':')}: install plugin-db-contract`);
+  const words = JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.LV2_UNIT_IDS?.oneOf;
+  if (!Array.isArray(words)) throw new Error(`vocabulary: ${file} declares no LV2_UNIT_IDS`);
+  return new Map(words.flatMap((w) => (w['x-from'] ?? []).filter((f) => typeof f['x-term'] === 'string').map((f) => [f['x-term'], w.const])));
+});
+
+/** The display spelling of a unit, what a face shows a person: its standard id's `x-symbol` (`percent` -> `%`, `none` ->
+ * ``), or the unit as written when PARAM_UNITS holds no such id (a scanned plugin's own text). */
+export const unitSymbolOf = (unit) => standardUnits().get(unit)?.symbol ?? unit ?? '';
+
+/** The id of "no unit", the standard unit whose display is nothing (its `x-symbol` is ""): what a control that states
+ * no unit of its own (a toggle, a choice) is read in. */
+export const noUnitId = () => [...standardUnits()].find(([, u]) => u.symbol === '')?.[0];
+
+/** The ids of the standard units of `dimensions` (`['gain', 'level', 'loudness']` -> dB, dBFS, LUFS, dBTP, dBu, LU). */
+export const unitsOfDimensions = (dimensions) => [...standardUnits()].filter(([, u]) => dimensions.includes(u.dimension)).map(([id]) => id);
 
 /** The units the param-contract extension serves are omx-contract's (V23d, P2): PARAM_UNITS_CLAP_ENCODED of its param
  * domain, a words item whose words are the standard ids org.openmixer.param-contract/1 encodes. */
@@ -181,7 +201,7 @@ export const CLAP_ENCODED_ITEM = 'PARAM_UNITS_CLAP_ENCODED';
 export const clapEncoded = once(() => {
   const file = paramDomainFile();
   const words = file ? JSON.parse(readFileSync(file, 'utf8'))?.components?.schemas?.[CLAP_ENCODED_ITEM]?.oneOf : undefined;
-  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data (>= 3.22.0)`);
+  if (!Array.isArray(words)) throw new Error(`vocabulary: omx-contract's ${CLAP_ENCODED_ITEM} (param/param.json) is not installed in ${contractDirs().join(':')}: install omx-contract-data`);
   return new Set(words.map((w) => w.const));
 });
 
@@ -189,18 +209,17 @@ export const clapEncoded = once(() => {
 export const servedUnit = (id) => clapEncoded().has(id);
 
 /** The descriptor file a package installed into omx-contract's contract directory, `<package>/<name>`:
- * `<contractdir>/3/<package>/plugins/<name>.json`. */
+ * `<contractdir>/<package>/plugins/<name>.json`. */
 export function installedDescriptorFile(ref) {
   const m = /^([a-z0-9][a-z0-9.+-]*)\/([A-Za-z0-9._-]+)$/.exec(ref);
   if (!m) throw new Error(`vocabulary: '${ref}' is not <package>/<name>`);
-  const file = contractDirs().map((d) => join(d, '3', m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
+  const file = contractDirs().map((d) => join(d, m[1], 'plugins', `${m[2]}.json`)).find((f) => existsSync(f));
   if (!file) throw new Error(`vocabulary: no descriptor ${ref} is installed (in ${contractDirs().join(':')})`);
   return file;
 }
 
-/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<major>/<package>/plugins/*.json`,
- * whatever majors are installed. A `<package>/<name>` installed under several majors or directories is listed once,
- * from the highest major of the first contract directory that holds it. */
+/** Every descriptor file installed under the contract directories, sorted: `<contractdir>/<package>/plugins/*.json`. A
+ * `<package>/<name>` installed under several contract directories is listed once, from the first that holds it. */
 export function installedDescriptorFiles() {
   const names = (dir, keep) => {
     try {
@@ -211,13 +230,11 @@ export function installedDescriptorFiles() {
   };
   const seen = new Map();
   for (const d of contractDirs()) {
-    const majors = names(d, (name, at) => isDir(at) && /^[0-9]+$/.test(name)).sort((a, b) => Number(b) - Number(a));
-    for (const major of majors) {
-      for (const pkg of names(join(d, major), (name, at) => isDir(at))) {
-        for (const f of names(join(d, major, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
-          const ref = `${pkg}/${f}`;
-          if (!seen.has(ref)) seen.set(ref, join(d, major, pkg, 'plugins', f));
-        }
+    // a directory named by a number is the schema-major level of before: no reader looks under it (docs/contract-dir.md)
+    for (const pkg of names(d, (name, at) => isDir(at) && !/^[0-9]+$/.test(name))) {
+      for (const f of names(join(d, pkg, 'plugins'), (name, at) => !isDir(at) && name.endsWith('.json'))) {
+        const ref = `${pkg}/${f}`;
+        if (!seen.has(ref)) seen.set(ref, join(d, pkg, 'plugins', f));
       }
     }
   }
@@ -236,3 +253,15 @@ export function panelCodes(item) {
   });
 }
 
+
+/**
+ * The words a panel surface draws of its own (the panel domain's PANEL_LABELS, omx-panel#13): `{ <title>: { labelKey, label } }`,
+ * the key the word (`panel.label.meters`) and the label its English sentence (x-text), from the first domain directory that
+ * holds panel/panel.json, as the loader opens it. A description serves them in `words`; no surface spells one.
+ */
+export function panelLabels() {
+  const words = openDomainAt(panelDomainDirs(), 'panel').words('PANEL_LABELS');
+  const file = panelDomainDirs().map((d) => join(d, 'panel', 'panel.json')).find((f) => existsSync(f));
+  const text = new Map(JSON.parse(readFileSync(file, 'utf8')).components.schemas.PANEL_LABELS.oneOf.map((w) => [w.const, w['x-text']]));
+  return Object.freeze(Object.fromEntries(words.map((w) => [w.title, Object.freeze({ labelKey: w.word, label: text.get(w.word) })])));
+}

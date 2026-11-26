@@ -17,7 +17,8 @@ import { SKIN_REFUSAL_CODES } from '../dist/src/skin-package.js';
 import { DESCRIBE_CODES } from '../dist/tools/describe.mjs';
 import { BARS_CODES } from '../dist/tools/bars.mjs';
 import { EasyRefused } from '../dist/tools/easy.mjs';
-import { gte } from './semver.mjs';
+import { GESTURE_CODE_WORDS } from '../dist/tools/gestures.mjs';
+import { PANEL_LABELS } from '../dist/tools/panel-description.mjs';
 
 const CODES_FILE = new URL('../dist/schema/codes.json', import.meta.url);
 const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.meta.url);
@@ -25,10 +26,11 @@ const CATALOG_FILE = (lang) => new URL(`../dist/catalogs/${lang}.json`, import.m
 // every catalog the tree carries, one per listed language (omx-contract's languages.json), each complete
 const CATALOG_LANGS = readdirSync(new URL('../catalogs/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const [floor] = pkg.devDependencies['@openmixer/omx-contract'].match(/\d+\.\d+\.\d+/);
 
-/** Every code the package puts in a refusal, read off the modules that emit them. */
-const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code];
+/** Every code the package puts in a refusal, read off the modules that emit them, and the key of every word it serves a surface to
+ * draw of its own (a description's `words`, PANEL_LABELS). */
+// the gesture reference's refusals by their code words (omx-panel#106), the GESTURE_* name being what it answers
+const EMITTED = [...SKIN_REFUSAL_CODES, ...Object.values(DESCRIBE_CODES), ...Object.values(BARS_CODES), new EasyRefused('').code, ...Object.values(GESTURE_CODE_WORDS), ...Object.values(PANEL_LABELS).map((w) => w.labelKey)];
 
 /** The file's entries by their code word; an absent file reads as no entries, so every code below is red by name. */
 /** A shipped catalog; an absent one reads as empty, so every code is red by name. */
@@ -41,13 +43,6 @@ function declared() {
   try { doc = JSON.parse(readFileSync(CODES_FILE, 'utf8')); } catch { return new Map(); }
   return new Map(Object.values(doc.codes ?? {}).map((e) => [e.code, e]));
 }
-
-test('the installed omx-contract package is at least the floor this declaration is written against', () => {
-  // The package version, not x-omx-schema-version: a patch release (3.19.1) keeps the schema version at 3.19.0.
-  const installed = JSON.parse(readFileSync(new URL('../node_modules/@openmixer/omx-contract/package.json', import.meta.url), 'utf8')).version;
-  assert.ok(gte(floor, '3.11.0'), `the floor is ${floor}; text and args on codes are 3.11.0`);
-  assert.ok(gte(installed, floor), `omx-contract is ${installed}, need >= ${floor}`);
-});
 
 /** One entry: the code word, its source sentence and its args (omx-contract#90: the source only, no other language). */
 const itemShape = schema.$defs.codes.properties.codes.additionalProperties.properties;

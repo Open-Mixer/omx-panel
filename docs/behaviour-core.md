@@ -289,7 +289,7 @@ One file: `vectors/behaviour.json` in this repository, owned by omx-panel, insta
 ```
 
 - Areas: `position`, `value`, `step`, `text`, `parse`, `meter`, `gesture`. The gesture cases are today's 20 scripts
-  (`test/fixtures/gestures/scripts.json`) moved in, with the 117 entries of `RULES` (`renderer/test/gesture-c.mjs`).
+  (`fixtures/gestures/scripts.json`) moved in, with the 117 entries of `RULES` (`renderer/test/gesture-c.mjs`).
 - Expected values are worked from the declaration and the law, never taken from the core, as `data/scale-vectors.json` is
   computed apart from its library. The scale law's own vectors stay omx-contract's; the core's suite also runs
   `share/omx-contract/scale-vectors.json` as it is.

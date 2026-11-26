@@ -32,6 +32,8 @@ struct omx_panel_window {
   uint32_t w, h;
   uint8_t *read; /* a frame to read back into, RGBA premultiplied, top row first; NULL when none is asked */
   int frames;
+  omx_panel_window_input_fn input;
+  void *input_user;
 };
 
 static NVGcolor colour(omx_rgb c) { return nvgRGB(c.c[0], c.c[1], c.c[2]); }
@@ -175,6 +177,55 @@ static PuglStatus on_event(PuglView *pv, const PuglEvent *e) {
   case PUGL_EXPOSE:
     expose(w);
     break;
+  case PUGL_BUTTON_PRESS:
+  case PUGL_BUTTON_RELEASE:
+    if (w->input && e->button.button == 0) {
+      omx_panel_event_t ev = {0};
+      ev.t_ms = e->button.time * 1000, ev.kind = e->type == PUGL_BUTTON_PRESS ? OMX_PANEL_EVENT_DOWN : OMX_PANEL_EVENT_UP;
+      ev.type = OMX_PANEL_POINTER_MOUSE, ev.x = e->button.x / w->scale, ev.y = e->button.y / w->scale, ev.control = -1;
+      w->input(w->input_user, &ev);
+      puglObscureView(pv);
+    }
+    break;
+  case PUGL_MOTION:
+    if (w->input) {
+      omx_panel_event_t ev = {0};
+      ev.t_ms = e->motion.time * 1000, ev.kind = OMX_PANEL_EVENT_MOVE, ev.type = OMX_PANEL_POINTER_MOUSE;
+      ev.x = e->motion.x / w->scale, ev.y = e->motion.y / w->scale, ev.fine = (e->motion.state & PUGL_MOD_SHIFT) != 0, ev.control = -1;
+      w->input(w->input_user, &ev);
+      puglObscureView(pv);
+    }
+    break;
+  case PUGL_SCROLL:
+    if (w->input && e->scroll.dy != 0) {
+      omx_panel_event_t ev = {0};
+      ev.t_ms = e->scroll.time * 1000, ev.kind = OMX_PANEL_EVENT_WHEEL, ev.type = OMX_PANEL_POINTER_MOUSE;
+      ev.x = e->scroll.x / w->scale, ev.y = e->scroll.y / w->scale, ev.n = e->scroll.dy > 0 ? 1 : -1;
+      ev.coarse = (e->scroll.state & PUGL_MOD_SHIFT) != 0, ev.control = -1;
+      w->input(w->input_user, &ev);
+      puglObscureView(pv);
+    }
+    break;
+  case PUGL_KEY_PRESS:
+    if (w->input) {
+      omx_panel_event_t ev = {0};
+      int ok = 1;
+      switch (e->key.key) {
+      case PUGL_KEY_BACKSPACE: ev.key = OMX_PANEL_KEY_BACKSPACE; break;
+      case PUGL_KEY_UP: ev.key = OMX_PANEL_KEY_UP; break;
+      case PUGL_KEY_DOWN: ev.key = OMX_PANEL_KEY_DOWN; break;
+      case PUGL_KEY_LEFT: ev.key = OMX_PANEL_KEY_LEFT; break;
+      case PUGL_KEY_RIGHT: ev.key = OMX_PANEL_KEY_RIGHT; break;
+      default: ok = 0;
+      }
+      if (ok) {
+        ev.t_ms = e->key.time * 1000, ev.kind = OMX_PANEL_EVENT_KEY, ev.type = OMX_PANEL_POINTER_MOUSE;
+        ev.shift = (e->key.state & PUGL_MOD_SHIFT) != 0, ev.control = -1;
+        w->input(w->input_user, &ev);
+        puglObscureView(pv);
+      }
+    }
+    break;
   default:
     break;
   }
@@ -231,6 +282,11 @@ void omx_panel_window_size(const omx_panel_window_t *w, uint32_t *width, uint32_
 }
 
 uintptr_t omx_panel_window_native(const omx_panel_window_t *w) { return w ? (uintptr_t)puglGetNativeView(w->pv) : 0; }
+
+void omx_panel_window_set_input(omx_panel_window_t *w, omx_panel_window_input_fn input, void *user) {
+  if (!w) return;
+  w->input = input, w->input_user = user;
+}
 
 void omx_panel_window_redraw(omx_panel_window_t *w) {
   if (w) puglObscureView(w->pv);

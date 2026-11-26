@@ -267,12 +267,6 @@
       "model": "lane-draft",
       "source": "98debebefb977b5d4704404f644c39dceb85c024492032d1ac7c9bf67871e3b5"
     },
-    "PANEL_STORE_CODES.panel-store.domain-too-old": {
-      "text": "Un dominio installato è più vecchio di quello con cui è stato controllato il deposito.",
-      "by": "machine",
-      "model": "lane-draft",
-      "source": "b6f217f98b6f7dd80da59171421bd6af7512a9dc882f8a4edd6b735d6a3e2f76"
-    },
     "PANEL_STORE_CODES.panel-store.word-unknown": {
       "text": "Una parola memorizzata non è in nessuno degli elementi con cui si controlla la colonna.",
       "by": "machine",
@@ -603,6 +597,12 @@
       "model": "draft-prose",
       "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
     },
+    "PANEL_DESCRIBE_CODES.panel.describe.family-unknown": {
+      "text": "La sostituzione per {plugin} indica la famiglia di pannelli {family}, che non esiste; il pannello viene creato senza famiglia.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
     "PANEL_DISPLAY_AXES.linear": {
       "text": "Un asse lineare: un livello in dB su un intervallo lineare.",
       "by": "machine",
@@ -620,6 +620,30 @@
       "by": "machine",
       "model": "lane-draft",
       "source": "46633ca72d9a1af20d0ea479e30cbe230a33da294832b58580df3aabae9b5d10"
+    },
+    "PANEL_LABELS.panel.label.meters": {
+      "text": "Indicatori",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "efd2ff93442f3220c980f7ce416e689ffd3b2553600cd9cf907fd90bbaac14c2"
+    },
+    "PANEL_LABELS.panel.label.more": {
+      "text": "Altro",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d47d7cb0e4f8fd2be5ee07826694c18917d83ca77d0a01698582d05f432db996"
+    },
+    "PANEL_LABELS.panel.label.unheld": {
+      "text": "senza tenuta",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "39c3ce2672020f54ec9b5c15d5aab45bd5a9efd2c5eeb4bccd4bb28c9489870a"
+    },
+    "PANEL_LABELS.panel.label.gain.reduction": {
+      "text": "Riduzione del guadagno",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d632dda56094e974face924283175f3344d7701f3582c48e7013c6bb1a6b374a"
     }
   }
 }

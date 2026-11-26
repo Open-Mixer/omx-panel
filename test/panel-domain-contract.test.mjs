@@ -17,7 +17,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { compareVersions, packagingFloor } from './packaging-floors.mjs';
 import { treeGrep } from './tree-grep.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -38,15 +37,13 @@ function run(argv, opts = {}) {
   return r;
 }
 
-test('the omx-contract CLI this suite runs is the package at or above the floor the spec states', () => {
+test('the omx-contract CLI this suite runs is the omx-contract package\'s', () => {
   const script = contractCli().find((a) => a.endsWith('.mjs'));
   assert.ok(script, `${contractCli().join(' ')} names no omx-contract.mjs: the version cannot be read`);
   const pkg = join(dirname(script), '..', 'package.json');
   assert.ok(existsSync(pkg), `${pkg} is absent: install omx-contract or name a checkout's CLI in OMX_CONTRACT_CLI`);
-  const { name, version } = JSON.parse(readFileSync(pkg, 'utf8'));
+  const { name } = JSON.parse(readFileSync(pkg, 'utf8'));
   assert.equal(name, '@openmixer/omx-contract', `${pkg} is not omx-contract's`);
-  const floor = packagingFloor('omx-contract');
-  assert.ok(compareVersions(version, floor) >= 0, `${script} is omx-contract ${version}, below the packages' floor ${floor}`);
 });
 
 test('the document conforms: its $schema, $id, owner and stability, every item prefixed PANEL_', () => {
@@ -94,9 +91,12 @@ test('make install-contract installs the domain as it is, by omx-contract\'s dom
   for (const c of readdirSync(join(DOMAIN, 'catalogs'))) {
     assert.equal(readFileSync(join(installed, 'catalogs', c), 'utf8'), readFileSync(join(DOMAIN, 'catalogs', c), 'utf8'), c);
   }
-  // the gestures domain is installed beside it, byte for byte (docs/contract-domains.md)
-  assert.deepEqual(readdirSync(join(dest, 'contract.d/gestures')), ['gestures.json']);
+  // the gestures domain is installed beside it, byte for byte, its catalogs with it (docs/contract-domains.md)
+  assert.deepEqual(readdirSync(join(dest, 'contract.d/gestures')).sort(), ['catalogs', 'gestures.json']);
   assert.equal(readFileSync(join(dest, 'contract.d/gestures/gestures.json'), 'utf8'), readFileSync(join(ROOT, 'contract.d/gestures/gestures.json'), 'utf8'));
+  for (const c of readdirSync(join(ROOT, 'contract.d/gestures/catalogs'))) {
+    assert.equal(readFileSync(join(dest, 'contract.d/gestures/catalogs', c), 'utf8'), readFileSync(join(ROOT, 'contract.d/gestures/catalogs', c), 'utf8'), c);
+  }
   const words = doc.components.schemas.PANEL_PLACEMENTS.oneOf.map((e) => e.const);
   const o = run([...command('OMX_DOMAIN_CLI', 'omx-domain'), 'panel', doc.info.version, 'PANEL_PLACEMENTS'], {
     env: { ...process.env, OMX_CONTRACT_PATH: join(dest, 'contract.d') },
@@ -110,10 +110,10 @@ test('the domain and its codes header ship alone in omx-panel-contract: noarch i
   assert.match(spec, /^%package contract$/m);
   const contractPkg = spec.slice(spec.indexOf('%package contract'));
   assert.match(contractPkg.slice(0, contractPkg.indexOf('%description contract')), /^BuildArch:\s+noarch$/m);
-  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_domain_dir\}\/panel\/$/m);
+  assert.match(spec, /^%files contract\n(?:.*\n)*?%\{omx_contract_dir\}\/panel\/$/m);
   const main = spec.indexOf('\n%files\n') + 1;
   const mainFiles = spec.slice(main, spec.indexOf('\n%files ', main));
-  assert.doesNotMatch(mainFiles, /contract\.d|omx_contract_domain_dir/, 'the main package still lists the domain');
+  assert.doesNotMatch(mainFiles, /contract\.d|omx_contract_dir/, 'the main package still lists the domain');
   const control = read('debian/control');
   assert.match(control, /^Package: omx-panel-contract\nArchitecture: all$/m);
   const lines = read('debian/omx-panel-contract.install').split('\n').filter((l) => l && !l.startsWith('#'));

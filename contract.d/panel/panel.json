@@ -1,9 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://openmixer.org/contract/panel",
+  "x-omx-contract": "0.23",
   "info": {
     "title": "The panel vocabulary: families, widgets, display kinds, display axes, display sources and placements of a panel",
-    "version": "1.3.0",
+    "version": "0.1.0",
     "x-owner": "omx-panel",
     "x-stability": "experimental"
   },
@@ -11,7 +12,7 @@
     "schemas": {
       "PANEL_FAMILIES": {
         "description": "The panel families of a plugin (omx-panel docs/panel-layout.md): the kind of processor its panel is laid out for. The words and their order are the contract; omx-panel's tools/panel-description.mjs FAMILIES and the skin package schema read them, and keep their code.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-why": "Panel families and widgets are declarations, so they live here (vocabulary-owner rule, FreeMixer/omx-contract#157).",
         "x-c-codes": true,
         "x-c-xmacro": true,
@@ -111,7 +112,7 @@
       },
       "PANEL_STANDARD_WIDGETS": {
         "description": "The standard widgets a panel picks from a descriptor and a representation (a skin) draws, in the order omx-panel's tools/panel-description.mjs STANDARD_WIDGETS lists them.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-c-codes": true,
         "x-c-xmacro": true,
         "oneOf": [
@@ -175,7 +176,7 @@
       },
       "PANEL_WIDGETS": {
         "description": "The widgets a declared panel may name for a control, and the extension serves (org.openmixer.panel-description/1): auto leaves the choice to the panel layout. The four others are the shared widgets of omx-panel's schema/panel.schema.json.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-c-codes": true,
         "x-c-xmacro": true,
         "oneOf": [
@@ -218,7 +219,7 @@
       },
       "PANEL_DISPLAY_KINDS": {
         "description": "The displays a declared panel may carry, and the extension serves (org.openmixer.panel-description/1), in the order of their codes: a panel description names a display by its place here. omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-why": "omx-clap-core restated these words by hand beside the families and widgets; a display kind is a declaration, so it lives here (vocabulary-owner rule).",
         "x-c-codes": true,
         "x-c-xmacro": true,
@@ -262,7 +263,7 @@
       },
       "PANEL_DISPLAY_SOURCES": {
         "description": "Where a panel description's display takes its data from, in the order of their codes (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-why": "omx-clap-core and omx-plugins restated these words by hand beside the families, widgets and display kinds; a display source is a declaration, so it lives here (vocabulary-owner rule).",
         "x-c-codes": true,
         "x-c-xmacro": true,
@@ -299,7 +300,7 @@
       },
       "PANEL_PLACEMENTS": {
         "description": "Where an instance sits, in the order of their codes: the clap.track-info/1 flags read as one value (org.openmixer.panel-description/1). omx-panel's tools/panel-description.mjs and omx-clap-core's panel tables read them, and keep their code.",
-        "x-since": "1.0.0",
+        "x-since": "0.1.0",
         "x-why": "omx-clap-core and omx-plugins restated these words by hand; a placement is a declaration, so it lives here (vocabulary-owner rule).",
         "x-c-codes": true,
         "x-c-xmacro": true,
@@ -336,7 +337,7 @@
       },
       "PANEL_STORE_CODES": {
         "description": "The refusals of the descriptions store's reader and writer (omx-panel docs/descriptions-store.md, section 5): each is the qualification store's code of the same name, with panel-store. for its prefix. The loader's own codes are passed through, not repeated here.",
-        "x-since": "1.1.0",
+        "x-since": "0.1.0",
         "x-c-codes": true,
         "oneOf": [
           {
@@ -375,45 +376,38 @@
             "x-text": "A store file is at another schema version than the reader's."
           },
           {
-            "const": "panel-store.domain-too-old",
-            "title": "domainTooOld",
-            "description": "an installed domain is older than the version a store was checked against",
-            "x-code": 5,
-            "x-text": "An installed domain is older than the one the store was checked against."
-          },
-          {
             "const": "panel-store.word-unknown",
             "title": "wordUnknown",
             "description": "a stored word is in none of the items its column is checked against",
-            "x-code": 6,
+            "x-code": 5,
             "x-text": "A stored word is in none of the items its column is checked against."
           },
           {
             "const": "panel-store.hot-journal",
             "title": "hotJournal",
             "description": "a layer has a hot journal: its writer stopped inside a transaction",
-            "x-code": 7,
+            "x-code": 6,
             "x-text": "A layer has a hot journal: its writer stopped inside a transaction."
           },
           {
             "const": "panel-store.busy",
             "title": "busy",
             "description": "a layer stayed locked past the busy timeout",
-            "x-code": 8,
+            "x-code": 7,
             "x-text": "A layer stayed locked past the timeout."
           },
           {
             "const": "panel-store.entry-invalid",
             "title": "entryInvalid",
             "description": "a put whose JSON is not an entry of the description schema, or whose words are not in their items",
-            "x-code": 9,
+            "x-code": 8,
             "x-text": "The entry is not an entry of the description schema, or holds a word its item lacks."
           }
         ]
       },
       "PANEL_DESCRIBE_CODES": {
         "description": "The refusals describe states for a plugin (omx-panel tools/describe.mjs DESCRIBE_CODES): a stored entry with no description names the one that refused it.",
-        "x-since": "1.1.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "panel.describe.no-controls",
@@ -595,12 +589,23 @@
               "plugin",
               "message"
             ]
+          },
+          {
+            "const": "panel.describe.family-unknown",
+            "title": "panelFamilyUnknown",
+            "description": "the family an override names is not a panel family",
+            "x-code": 16,
+            "x-text": "The override for {plugin} names the panel family {family}, which is not one; the panel is made with no family.",
+            "x-args": [
+              "plugin",
+              "family"
+            ]
           }
         ]
       },
       "PANEL_GROUP_OUTCOMES": {
         "description": "The verdict of the port-group inference (omx-panel docs/group-inference.md): what the rules decided for a plugin.",
-        "x-since": "1.1.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "nothing-to-do",
@@ -627,7 +632,7 @@
       },
       "PANEL_GROUP_REASONS": {
         "description": "Why the port-group inference left a plugin as it is (omx-panel docs/group-inference.md).",
-        "x-since": "1.1.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "no-controls",
@@ -682,7 +687,7 @@
       },
       "PANEL_GROUP_RULES": {
         "description": "The rule that made a port group (omx-panel docs/group-inference.md, in the order the rules run; instance for a group of a repeated instance).",
-        "x-since": "1.1.0",
+        "x-since": "0.1.0",
         "oneOf": [
           {
             "const": "own",
@@ -737,7 +742,7 @@
       },
       "PANEL_SKIN_CODES": {
         "description": "The refusals of a skin package (omx-panel docs/skin-package.md): what the skin host and omx-panel's validator say when a skin's override, API or view is refused, each with its English sentence and the placeholders it fills; the surfaces read schema/codes.json and catalogs/<lang>.json, rendered from here (tools/codes-render.mjs).",
-        "x-since": "1.2.0",
+        "x-since": "0.1.0",
         "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
         "oneOf": [
           {
@@ -816,7 +821,7 @@
       },
       "PANEL_MODGUI_CODES": {
         "description": "The refusals of the MOD GUI importer (omx-panel docs/modgui-import.md) and of a skin's MOD GUI script licence (panel.skin.modgui-licence), each with its English sentence and the placeholders it fills; rendered into schema/codes.json and catalogs/<lang>.json (tools/codes-render.mjs).",
-        "x-since": "1.2.0",
+        "x-since": "0.1.0",
         "x-why": "The codes sheet schema/codes.json was a hand file beside the domain: its codes are omx-panel's words, so they live in its domain (sorting pass row V3).",
         "oneOf": [
           {
@@ -933,7 +938,7 @@
       },
       "PANEL_DISPLAY_AXES": {
         "description": "The axis a panel description's display is drawn on (omx-panel docs/panel-layout.md \"Displays and their axis\"), in the order of their codes: describe serves it on every display as data, so no surface picks an axis by the display kind's name. omx-panel's tools/panel-description.mjs DISPLAY_AXES reads them, and the renderer reads the word.",
-        "x-since": "1.2.0",
+        "x-since": "0.1.0",
         "x-why": "The C renderer chose the log frequency axis by the display kind's name and a second client would have copied it; layout data comes via the description (owner ruling), so the axis is a word of the panel vocabulary.",
         "oneOf": [
           {
@@ -956,6 +961,45 @@
             "description": "x the time in ms from 0 to the content's end, y the level in dB from the floor, -60, to 0 or the next 6 dB above a level",
             "x-code": 2,
             "x-text": "A time axis: time in ms from 0, level in dB from the floor."
+          }
+        ]
+      },
+      "PANEL_LABELS": {
+        "description": "The words a panel surface draws of its own, not the plugin's: each key (the word) with its English sentence (x-text); rendered into schema/codes.json and catalogs/<lang>.json beside the codes (tools/codes-render.mjs), and served in a description's `words` (docs/panel-layout.md, \"Words\") so the renderer, the MOD GUI and every other surface draw the same text and a translation finds it by its key.",
+        "x-since": "0.1.0",
+        "x-why": "The renderer drew \"Meters\", the skin package \"More\" and the layout \"Gain reduction\" as literals in their code (omx-panel#13): a drawn word with no key cannot be translated, and two surfaces spelled it twice. Codes then catalogs (omx-contract#2).",
+        "oneOf": [
+          {
+            "const": "panel.label.meters",
+            "title": "meters",
+            "description": "The title of the meters band, the band below the sections where the meters that are no control of a section stand.",
+            "x-code": 0,
+            "x-text": "Meters",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.more",
+            "title": "more",
+            "description": "The title of the last section a skin adds for the parameters its sections name nowhere (docs/skin-package.md, sections).",
+            "x-code": 1,
+            "x-text": "More",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.unheld",
+            "title": "unheld",
+            "description": "Said after the range in the caption of a meter whose plugin holds nothing between reads (held: false).",
+            "x-code": 2,
+            "x-text": "unheld",
+            "x-args": []
+          },
+          {
+            "const": "panel.label.gain.reduction",
+            "title": "gainReduction",
+            "description": "The label of a dynamics family's gain-reduction bar, where the descriptor gives it none.",
+            "x-code": 3,
+            "x-text": "Gain reduction",
+            "x-args": []
           }
         ]
       }

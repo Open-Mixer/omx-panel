@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas
 /*
- * What the C gesture reference's tests share: the cases (the shipped scripted fixtures of test/fixtures/gestures/scripts.json,
+ * What the C gesture reference's tests share: the cases (the shipped scripted fixtures of fixtures/gestures/scripts.json,
  * and the rules of docs/panel-gestures.md each as a small control and script), the C driver's answers (build/gesture_driver,
  * renderer/test/gesture_driver.c over omx_gesture_run) and the JavaScript reference's (tools/gestures.mjs `runGesture`) in
  * one shape, so a test can hold the first to the second exactly.

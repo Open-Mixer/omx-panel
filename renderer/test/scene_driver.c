@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   omx_scene *s = root ? omx_scene_from_look(root, argv[2], argv[3], err, sizeof err) : NULL;
   if (!s) { fprintf(stderr, "scene_driver: %s\n", root ? err : "look.json is not JSON"); return 1; }
   int w = atoi(argv[8]), h = atoi(argv[9]);
-  omx_canvas c = {calloc((size_t)w * h * 4, 1), w, h, (size_t)w * 4, 0};
+  omx_canvas c = {calloc((size_t)w * h * 4, 1), w, h, (size_t)w * 4, 0, 0, 0, w, h};
   omx_scene_paint(&c, s, atof(argv[6]), atof(argv[7]), atof(argv[5]), atof(argv[4]));
   FILE *o = fopen(argv[10], "wb");
   if (!o || fwrite(c.px, 1, (size_t)w * h * 4, o) != (size_t)w * h * 4) { fprintf(stderr, "scene_driver: cannot write %s\n", argv[10]); return 2; }

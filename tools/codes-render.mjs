@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 /*
- * codes-render.mjs — schema/codes.json (the refusal codes omx-panel emits, omx-contract's codes shape) and
- * catalogs/<lang>.json (their sentences in each language) rendered from the panel domain: PANEL_SKIN_CODES,
- * PANEL_MODGUI_CODES and PANEL_DESCRIBE_CODES of contract.d/panel/panel.json (const the code, title its key, x-text its
- * English sentence, x-args its placeholders) and the domain's catalogs (sorting pass row V3). Neither file is written by
- * hand; the surfaces and the console read them as before.
+ * codes-render.mjs — schema/codes.json (the refusal codes omx-panel emits and the words its surfaces draw of their own, omx-contract's codes shape) and
+ * catalogs/<lang>.json (their sentences in each language) rendered from the two domains omx-panel owns: PANEL_SKIN_CODES,
+ * PANEL_MODGUI_CODES, PANEL_DESCRIBE_CODES and PANEL_LABELS of contract.d/panel/panel.json (sorting pass row V3), then GESTURES_CODES
+ * of contract.d/gestures/gestures.json (#106: a gesture refusal's const is its code word panel.gesture.<kebab>, its x-name the
+ * GESTURE_* name the units answer), each word's const the code, title its key, x-text its English sentence,
+ * x-args its placeholders, and each domain's catalogs. Neither file is written by hand; the surfaces and the console read
+ * them as before.
  *
  *   node tools/codes-render.mjs                              write schema/codes.json and catalogs/<lang>.json
- *   node tools/codes-render.mjs --check                      exit 1 when a file is not what the domain gives
- *   node tools/codes-render.mjs [--check] --contract-dir <d> read <d>/panel/ instead of this tree's contract.d/panel/
+ *   node tools/codes-render.mjs --check                      exit 1 when a file is not what the domains give
+ *   node tools/codes-render.mjs [--check] --contract-dir <d> read <d>/panel/ and <d>/gestures/ instead of this tree's
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -18,33 +20,45 @@ import { isMain } from '@openmixer/omx-contract/entry';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const CONTRACT_DIR = join(ROOT, 'contract.d');
-/** The items the sheet is made of, in the sheet's order. */
-export const SHEET_ITEMS = ['PANEL_SKIN_CODES', 'PANEL_MODGUI_CODES', 'PANEL_DESCRIBE_CODES'];
-const SHEET_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
+/** The items the sheet is made of, in the sheet's order, each with the domain that declares it. */
+export const SHEET_ITEMS = [
+  { domain: 'panel', item: 'PANEL_SKIN_CODES' },
+  { domain: 'panel', item: 'PANEL_MODGUI_CODES' },
+  { domain: 'panel', item: 'PANEL_DESCRIBE_CODES' },
+  { domain: 'panel', item: 'PANEL_LABELS' },
+  { domain: 'gestures', item: 'GESTURES_CODES' },
+];
+const SHEET_DOC = "The refusal codes omx-panel emits, by the code word a refusal carries, and the words its surfaces draw of their own (panel.label.*, by the key a description serves), each with its source sentence in English and the placeholders it may use (omx-contract's codes shape; translations are not here). Each language's sentences are in catalogs/<lang>.json, keyed by the code. The surfaces read both; no module repeats a sentence. A code is never reworded.";
 const OWNER = 'omx-panel';
 
 const text = (v) => `${JSON.stringify(v, null, 2)}\n`;
 
-/** Every rendered file of the domain at `dir` (a contract directory holding panel/): `{ <path in the tree>: <text> }`. */
+/** Every rendered file of the domains at `dir` (a contract directory holding panel/ and gestures/): `{ <path in the tree>: <text> }`. */
 export function renderAll(dir = CONTRACT_DIR) {
-  const domain = join(dir, 'panel');
-  const schemas = JSON.parse(readFileSync(join(domain, 'panel.json'), 'utf8')).components.schemas;
-  const words = SHEET_ITEMS.flatMap((item) => {
-    if (!schemas[item]) throw new Error(`codes-render: the panel domain at ${domain} has no ${item}`);
-    return schemas[item].oneOf.map((w) => ({ item, w }));
+  const schemas = {};
+  const words = SHEET_ITEMS.flatMap(({ domain, item }) => {
+    schemas[domain] ??= JSON.parse(readFileSync(join(dir, domain, `${domain}.json`), 'utf8')).components.schemas;
+    if (!schemas[domain][item]) throw new Error(`codes-render: the ${domain} domain at ${join(dir, domain)} has no ${item}`);
+    return schemas[domain][item].oneOf.map((w) => ({ domain, item, w }));
   });
   const codes = {};
-  for (const { w } of words) codes[w.title] = { code: w.const, text: { en: w['x-text'] }, ...(w['x-args'] ? { args: w['x-args'] } : {}) };
+  for (const { item, w } of words) {
+    if (w.title in codes) throw new Error(`codes-render: ${item}.${w.const} has the key '${w.title}' another code of the sheet has`);
+    codes[w.title] = { code: w.const, text: { en: w['x-text'] }, ...(w['x-args'] ? { args: w['x-args'] } : {}) };
+  }
   const out = { 'schema/codes.json': text({ kind: 'codes', doc: SHEET_DOC, codes }) };
-  for (const f of readdirSync(join(domain, 'catalogs')).filter((n) => n.endsWith('.json')).sort()) {
-    const cat = JSON.parse(readFileSync(join(domain, 'catalogs', f), 'utf8'));
+  // the languages are the panel domain's; every other domain of the sheet has a catalog for each of them
+  for (const f of readdirSync(join(dir, 'panel', 'catalogs')).filter((n) => n.endsWith('.json')).sort()) {
+    const cats = {};
+    const catalog = (domain) => (cats[domain] ??= JSON.parse(readFileSync(join(dir, domain, 'catalogs', f), 'utf8')));
+    const lang = catalog('panel').lang;
     const messages = {};
-    for (const { item, w } of words) {
-      const entry = cat.messages[`${item}.${w.const}`];
-      if (entry === undefined) throw new Error(`codes-render: the ${cat.lang} catalog of the panel domain has no ${item}.${w.const}`);
+    for (const { domain, item, w } of words) {
+      const entry = catalog(domain).messages[`${item}.${w.const}`];
+      if (entry === undefined) throw new Error(`codes-render: the ${lang} catalog of the ${domain} domain has no ${item}.${w.const}`);
       messages[w.const] = entry;
     }
-    out[`catalogs/${f}`] = text({ kind: 'catalog', lang: cat.lang, owner: OWNER, messages });
+    out[`catalogs/${f}`] = text({ kind: 'catalog', lang, owner: OWNER, messages });
   }
   return out;
 }
@@ -61,10 +75,10 @@ if (isMain(import.meta.url)) {
       }
     }).map(([f]) => f);
     if (stale.length) {
-      console.error(`codes-render: not what the panel domain gives: ${stale.join(', ')}: run node tools/codes-render.mjs, then commit`);
+      console.error(`codes-render: not what the domains give: ${stale.join(', ')}: run node tools/codes-render.mjs, then commit`);
       process.exit(1);
     }
-    console.log(`codes-render: schema/codes.json and ${Object.keys(files).length - 1} catalogs are what the panel domain gives`);
+    console.log(`codes-render: schema/codes.json and ${Object.keys(files).length - 1} catalogs are what the domains give`);
   } else {
     for (const [f, t] of Object.entries(files)) writeFileSync(join(ROOT, f), t);
     console.log(`codes-render: wrote ${Object.keys(files).join(', ')}`);

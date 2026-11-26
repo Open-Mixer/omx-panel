@@ -249,7 +249,7 @@ describe('the groups', () => {
     assert.equal(r.counts.written, 1);
     const written = join(root, 'out', outName(dir));
     const marker = readFileSync(join(written, MARKER), 'utf8');
-    assert.match(marker, /^plugin http:\/\/plugin\.org\.uk\/swh-plugins\/fourByFourPole 0\.0 0\.1 grouped 4$/m);
+    assert.match(marker, /^plugin http:\/\/plugin\.org\.uk\/swh-plugins\/fourByFourPole 0\.0 0\.1 grouped 4 [0-9a-f]{16}$/m);
     assert.match(marker, /^plugin http:\/\/plugin\.org\.uk\/swh-plugins\/autoPhaser 0\.0 0\.1 restated no-confident-grouping$/m);
     assert.match(marker, /^plugin http:\/\/plugin\.org\.uk\/swh-plugins\/lfoPhaser 0\.0 0\.1 restated nothing-to-do$/m);
     const t = parseTurtle(readFileSync(join(written, 'plugin.ttl'), 'utf8'), pathToFileURL(join(written, 'plugin.ttl')).href);
@@ -327,7 +327,8 @@ describe('the marker, and a second run', () => {
     assert.equal(lines[0], dir);
     assert.equal(lines[1], 'writer w1');
     assert.match(lines[2], /^source-sha256 [0-9a-f]{64}$/);
-    assert.equal(lines[3], 'plugin http://drobilla.net/plugins/mda/RezFilter 2.0 2.1 grouped 5');
+    // the groups written, named by a digest: a stored edit of them over the same TTL writes the bundle again
+    assert.match(lines[3], /^plugin http:\/\/drobilla\.net\/plugins\/mda\/RezFilter 2\.0 2\.1 grouped 5 [0-9a-f]{16}$/);
     assert.deepEqual(lines.slice(4).map((l) => l.split(' ').slice(0, 2).join(' ')), ['file RezFilter.ttl', 'file manifest.ttl']);
   });
 

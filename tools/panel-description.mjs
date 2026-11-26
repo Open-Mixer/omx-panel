@@ -23,7 +23,7 @@ import { barsOf } from './bars.mjs';
 import { shapesOf, statesMeaning } from './meaning-infer.mjs';
 import { declaredFromServed, isServedPanel } from './panel-served.mjs';
 import { INDEXED_ROLES, REQUIRED_ROLES, ROLES } from './role-table.mjs';
-import { meaningOfRole, panelCodes, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
+import { meaningOfRole, noUnitId, panelCodes, panelLabels, panelWords, servedUnit, unitIdOf, unitsOfDimensions } from './vocabulary.mjs';
 
 export const PANEL_ID = 'org.openmixer.panel-description/1';
 
@@ -86,6 +86,9 @@ export const DISPLAY_SOURCES = Object.freeze(panelWords('PANEL_DISPLAY_SOURCES')
  * an eq_response on a log frequency axis, a transfer_curve on linear dB, a time_response on a time axis in ms, a bar's fill a linear
  * fraction of its range. The layout serves it on every display as data, so no surface picks an axis by the kind's name. */
 export const DISPLAY_AXES = Object.freeze(panelWords('PANEL_DISPLAY_AXES'));
+/** The words a surface draws of its own, each a key of the panel domain's PANEL_LABELS with its English sentence (omx-panel#13):
+ * a layout serves them in `words`, so no surface spells "Meters", "More", "unheld" or "Gain reduction" in its code. */
+export const PANEL_LABELS = panelLabels();
 export const AXIS_OF_KIND = { gain_reduction_bar: 'linear', transfer_curve: 'linear', eq_response: 'log-frequency', meter: 'linear', time_response: 'time' };
 /** The origins a band may be planted under besides the operator's `user`: the closed set the console's band origins name. */
 export const BAND_ORIGINS = ['fbs-fixed', 'fbs-live', 'hrp', 'room-mode'];
@@ -224,16 +227,18 @@ function portsOf(ports = []) {
  * The panel of `descriptor`, of any origin. `panel` (a declaration's) gives the family, sections,
  * order, roles, widgets and graphs; with none, the sections are the controls' groups, the family the
  * one their meanings make and the roles the ones their meanings play. `ns` is the label-key namespace
- * (without one the label keys are null); `choiceUnits` and `byKind` are a declaration's extras.
+ * (without one the label keys are null); `byKind` is a declaration's extra. A choice's unit is the descriptor's own
+ * `choiceUnits` (omx-contract, by the control's name), declared once by the plugin: an option of that name is refused (#68).
  */
-export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, choiceUnits = {}, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false } = {}) {
+export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descriptor.plugin?.id}`, byKind = {}, family: forced, inferredRoles, completingRoles, derive = false, ...unknown } = {}) {
+  if ('choiceUnits' in unknown) throw new Error(`${where}: choiceUnits is the descriptor's (omx-contract choiceUnits, by the control's name), never a layout option`);
   // the panel a plugin serves (plugin-hostd-probe panel: omx-clap-scan's object, parameters by id) is read as the
   // declared form over this descriptor's keys (tools/panel-served.mjs, #43)
   if (panel && isServedPanel(panel)) panel = declaredFromServed(panel, descriptor, { where, keyOf, indexedRoles: INDEXED_ROLES });
   const all = descriptor.controls;
   const byKey = new Map(all.map((c, i) => [keyOf(c), i]));
   const control = (sym) => all[byKey.get(sym)];
-  const unitOf = (c) => c.travel?.unit ?? choiceUnits[keyOf(c)] ?? '';
+  const unitOf = (c) => c.travel?.unit ?? (c.kind === 'choice' ? descriptor.choiceUnits?.[c.name] : undefined) ?? noUnitId();
   const key = (k, what) => {
     if (!KEY.test(k) || k.length > KEY_MAX) throw new Error(`${where}: ${what} '${k}' is not a key of ${PANEL_ID} ([a-z][a-z0-9_]*, dotted, at most ${KEY_MAX} bytes)`);
     return k;
@@ -312,7 +317,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
     const token = rest.token ?? (/^(hpf|lpf)_slope$/.test(role) ? unitIdOf(unit) : undefined) ?? unitToken(unit);
     const plays = meaningOfRole(role);
     if (!table[role]) unpublished.push({ role, symbol: sym, why: `not a role of the ${family} family` });
-    else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit || 'no unit'}` });
+    else if (!table[role].includes(token)) unpublished.push({ role, symbol: sym, why: `the ${role} role takes ${table[role].join(', ')}, not ${unit && unit !== noUnitId() ? unit : 'no unit'}` });
     // a declared role over a control whose descriptor states another meaning (#43): the words disagree, and the role is named, not bound
     else if (declared && plays && statesMeaning(c) && c.meaning !== plays) unpublished.push({ role, symbol: sym, why: `the descriptor says it means ${c.meaning}, not ${plays}, the ${role} role's` });
     else {
@@ -453,7 +458,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   if (grAt >= 0 && ['dynamics', 'gate', 'limiter', 'deesser'].includes(family) && sections.length > 0) {
     const first = (REQUIRED_ROLES[family] ?? [])[0]?.map((role) => roles.find((r) => r.role === role && r.index === 0)).find(Boolean);
     const at = first ? (controls.find((c) => c.symbol === first.symbol)?.section ?? 0) : 0;
-    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key'), label: label('Gain reduction', 'gain reduction bar'), basis: 'modelled' });
+    displays.push({ kind: 'gain_reduction_bar', axis: AXIS_OF_KIND.gain_reduction_bar, section: at, sectionKey: sections[at].key, source: 'meters', meters: [grAt, null], curve: null, floor: null, labelKey: labelKey('display.gain_reduction_bar', 'display label key') ?? PANEL_LABELS.gainReduction.labelKey, label: label(PANEL_LABELS.gainReduction.label, 'gain reduction bar'), basis: 'modelled' });
   }
   // each meter's section: a foreign meter its control's; a descriptor meter the gain-reduction bar's, else the last section (the output end)
   const barAt = displays.find((d) => d.kind === 'gain_reduction_bar')?.section;
@@ -469,7 +474,7 @@ export function panelLayout(descriptor, { panel, ns, where = `descriptor ${descr
   }
   // The Easy face: a view of the panel, so it stays out of the canonical form and the fingerprint
   const easy = easyOf({ family, roles, controls }, { declared: panel?.easy ?? descriptor.easy, where });
-  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy, meters, meterRefusals };
+  return { origin: descriptor.origin, family, sections, controls, roles, unpublished, displays, defaults, ports: portsOf(descriptor.ports), easy, meters, meterRefusals, words: PANEL_LABELS };
 }
 
 /** The highest value a visibility mask has a bit for: the ABI's visible_mask is 64 bits. */

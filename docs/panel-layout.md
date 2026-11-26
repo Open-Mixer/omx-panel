@@ -115,9 +115,10 @@ the switch:
 - a choice is a stepped number over its values' span. It carries one label per integer of the span only when every value is an
   integer (a sparse one, FFT sizes 128..16384, labels each integer between, up to a 16-bit span); a choice whose values lie
   between integers (0, 0.5, 1) is served unlabelled, its default rounded to an integer inside the ends;
-- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `panel.describe.no-controls`, `panel.describe.family-not-backed`, `panel.describe.layout-invalid`, a bar group's
+- a gain the band inference reads as a linear factor (a range that stays above zero), its unit unstated, is served `coef`. A refusal is `{ code, args }`: `panel.describe.no-controls`, `panel.describe.family-not-backed`, `panel.describe.family-unknown`, `panel.describe.layout-invalid`, a bar group's
 `PANEL_BARS_*`, `PANEL_OVERRIDE_*`, `panel.describe.role-dropped`, `panel.describe.skin-dropped`. The description is `null` only where no panel can be
-made (no control, an invalid layout); a family the controls do not back is `none` with its refusal.
+made (no control, an invalid layout); a family the controls do not back is `none` with its refusal, and so is a family
+an override names that is no word of `PANEL_FAMILIES` (`panel.describe.family-unknown`, naming the plugin and the word).
 
 ### The family of a plugin that declares no panel
 
@@ -212,7 +213,10 @@ standard widgets, and a representation (a skin) draws it; the skins are not chos
 
 `describe` reads the descriptor's `meters` word (omx-contract, the first descriptor word for what a plugin publishes while it
 runs): each meter is a meter control in the description's `meters` list, in the descriptor's order, with
-`{ kind, measurement, unit, min, max, channels, symbol, held, clip }`.
+`{ kind, measurement, unit, unitText, min, max, channels, symbol, held, clip }`.
+
+- `unit` is the PARAM_UNITS id. `unitText` is that id's `x-symbol`, the unit as a person reads it: a renderer's caption
+  shows it (`percent` is shown as `%`), never the id.
 
 - `kind` is `level` or `gain-reduction`; a level's `measurement` is `peak`, `true-peak`, `lufs-m`, `lufs-s`, `lufs-i` or
   `lra` (units dBFS, dBTP, LUFS, LU), a gain reduction's is `gain-reduction` (dB). `rms`, `vu` and `ppm` are not words.
@@ -236,7 +240,20 @@ runs): each meter is a meter control in the description's `meters` list, in the 
 
 A meter that is no control of a section is drawn by a surface in a band below the sections: the renderer as a bar and a
 peak marker over the description's range (`omx_panel_view_set_meter`), the MOD GUI as a static frame with the range and the
-unit in its caption and no live meter yet.
+unit in its caption and no live meter yet. A meter with `clip: true` wears a clip lamp at its frame's top right on every
+surface, lit by omx-dsp's clip word (`omx_meter_view_clip`, kept lit until cleared); one without never lights one. An unheld
+meter's caption ends with the panel's word `words.unheld` (docs/renderer.md, "Meters").
+
+### Words
+
+A layout and a description serve `words`, the words a surface draws of its own rather than the plugin's: the panel domain's
+`PANEL_LABELS` (`contract.d/panel/panel.json`, since 1.3.0), each as `{ labelKey, label }`, the key and its English sentence,
+by the word's title: `meters` (the meters band's title), `more` (the title of the last section a skin adds for the parameters
+its sections name nowhere), `unheld` (said in an unheld meter's caption) and `gainReduction` (a gain-reduction bar's label
+where the descriptor gives none). The keys and sentences are rendered into `schema/codes.json` and every
+`catalogs/<lang>.json` beside the codes (`tools/codes-render.mjs`), so a surface translates a word by its key as it does a
+code. No surface spells one (`test/panel-labels.test.mjs` reads their code); `describe` adds them when it serves, never from a
+stored body, and they stay out of the canonical form and the fingerprint.
 
 What a face serves keeps the extension's widget enum: `knob`, `fader` and `switch` as they are, a
 `selector` as `auto` (a CLAP selector needs `CLAP_PARAM_IS_ENUM`, which the faces do not set).

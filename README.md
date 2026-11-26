@@ -31,8 +31,8 @@ Also on npm: `npm install @openmixer/omx-panel`.
 ## Start
 
 ```
-omx-modgui-sync                                   # a MOD GUI for every installed LV2 plugin without one
-sudo systemctl enable omx-modgui-sync             # and again after each plugin-qualify-sync scan
+omx-panel-sync                                    # each LV2 plugin's description stored, then its groups and MOD GUI
+omx-panel describe --plugin lv2:<uri> --store     # one plugin's entry in the descriptions store, derived once
 omx-panel modgui --descriptor <file> --out <bundle.lv2>
 ```
 

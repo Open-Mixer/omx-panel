@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmixer.org/schema/omx-panel/shapes/code.schema.json",
+  "type": "object",
+  "title": "PanelCode",
+  "description": "One refusal code of omx-panel (codes.json `codes`): the code word a refusal carries, its source sentence in English and the placeholders the sentence may use.",
+  "properties": {
+    "code": {
+      "type": "string",
+      "pattern": "^panel\\.[a-z]+(\\.[a-z-]+)+$",
+      "description": "The code word a refusal carries; never reworded."
+    },
+    "text": {
+      "type": "object",
+      "title": "CodeText",
+      "description": "The sentences by language; only the English source is here, the translations are the catalogs'.",
+      "properties": {
+        "en": {
+          "type": "string",
+          "description": "The English source sentence, with {placeholder} for each argument."
+        }
+      },
+      "required": [
+        "en"
+      ],
+      "additionalProperties": false
+    },
+    "args": {
+      "type": "array",
+      "description": "The placeholders the sentence may use, in the order a caller supplies them.",
+      "items": {
+        "type": "string",
+        "description": "A placeholder's name."
+      }
+    }
+  },
+  "required": [
+    "code",
+    "text",
+    "args"
+  ],
+  "additionalProperties": false
+}

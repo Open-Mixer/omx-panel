@@ -206,6 +206,96 @@
       "by": "machine",
       "model": "draft-prose",
       "source": "406ca3e45e0b28ac0f114ff40f296d6bc00bdf47eea22741e7c05665bde0b4b8"
+    },
+    "panel.describe.family-unknown": {
+      "text": "La substitution pour {plugin} nomme la famille de panneaux {family}, qui n'en est pas une ; le panneau est fait sans famille.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "96496d6fc9ddd052e2b2a3f4d25717362e495cec72e76561ec19c5e5fb2e6f83"
+    },
+    "panel.label.meters": {
+      "text": "Vumètres",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "efd2ff93442f3220c980f7ce416e689ffd3b2553600cd9cf907fd90bbaac14c2"
+    },
+    "panel.label.more": {
+      "text": "Plus",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d47d7cb0e4f8fd2be5ee07826694c18917d83ca77d0a01698582d05f432db996"
+    },
+    "panel.label.unheld": {
+      "text": "sans maintien",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "39c3ce2672020f54ec9b5c15d5aab45bd5a9efd2c5eeb4bccd4bb28c9489870a"
+    },
+    "panel.label.gain.reduction": {
+      "text": "Réduction de gain",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "d632dda56094e974face924283175f3344d7701f3582c48e7013c6bb1a6b374a"
+    },
+    "panel.gesture.read-only": {
+      "text": "Un contrôle en lecture seule n'accepte aucun geste.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "f97c076b01b3e90f20c1ec5d801c09c5fc5c5c9acf9ad7d91420b01821f14fe9"
+    },
+    "panel.gesture.control-owned": {
+      "text": "Le contrôle appartient au pointeur, ou à la prise du pas à pas, qui le tient ; un appui ultérieur est refusé.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "8081b8e79f7e0724effcb17723a5ba8f5f25c5de4f441f8f1571d9eda6b300ea"
+    },
+    "panel.gesture.no-default": {
+      "text": "Une réinitialisation sur un contrôle qui ne déclare aucune valeur par défaut.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "643188a4251b0a035b579bd6fdbde9437c498d2f3a8e9734c3fd27e5749c3079"
+    },
+    "panel.gesture.not-in-table": {
+      "text": "Le widget n'a pas cette entrée dans la table.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "ff909491d49fc442e3b9aacc4a6b6638e73e7bbacad395699cfabe27ead753f4"
+    },
+    "panel.gesture.hold-short": {
+      "text": "Un contrôle marqué maintien a été relâché avant le maintien de sécurité.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "89e31ee4a7ef5c9ebf188b0c1d2a3e272cc774a87d0df2ddf16c0f8b0c58933a"
+    },
+    "panel.gesture.hold-below-floor": {
+      "text": "Un maintien de sécurité plus court que le minimum déclaré.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "59fae1e49f35a53db18a09e1f750b5daab598068584479b585c8d9427c051f45"
+    },
+    "panel.gesture.no-target": {
+      "text": "Un pas sans barre ni membre de poignée pour le prendre.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "958f360c78fe4b2688e793363e86efbc616bcbf4b33a5c469af9b0f4b4e35b82"
+    },
+    "panel.gesture.paint-required-on-touch": {
+      "text": "Le balayage est obligatoire au toucher et ne peut pas être désactivé.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "7ae1671808b774711614d8240a75c859930aa8fd8a43e651f03b9d482f37499e"
+    },
+    "panel.gesture.bad-setting": {
+      "text": "Une temporisation inconnue, ou qui n'est pas supérieure à zéro.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "226df5d144430e5f7a390e0d9e45a24020541fc6f247a74149e1ad7277f750ea"
+    },
+    "panel.gesture.bad-input": {
+      "text": "Une entrée qu'aucune des deux références ne peut lire : un contrôle dont la course n'a pas d'extrémités, une extrémité qui ne dépasse pas l'autre, une course logarithmique depuis zéro, un pas négatif, une longueur dessinée non supérieure à zéro ou une cible sans taille ; un événement sans temps ou sans aucun des six types, un appui sans position, identifiant ou type de pointeur, un nombre de crans qui n'est pas un nombre.",
+      "by": "machine",
+      "model": "lane-draft",
+      "source": "87eb2d1171ef7282ab045ab52ec2fd6406682d516c4ea9cb5d86a015f52623cf"
     }
   }
 }

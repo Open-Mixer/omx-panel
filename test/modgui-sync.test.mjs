@@ -222,19 +222,75 @@ esac
   assert.match(r.run(['--check'], r.lv2).stdout, /^mod-ui: reads LV2_PATH and .*modgui is on it$/m);
 });
 
-test('the unit runs after plugin-qualify-sync once enabled, under limits, and there is no apt hook', () => {
-  const unit = readFileSync(join(ROOT, 'systemd/omx-modgui-sync.service'), 'utf8');
+test('one unit for the one pass, enabled by default where systemd exists, the old two gone (descriptions-store 10)', () => {
+  const units = readdirSync(join(ROOT, 'systemd')).filter((f) => f.endsWith('.service')).sort();
+  assert.deepEqual(units, ['omx-panel-sync.service']);
+  assert.deepEqual(readdirSync(join(ROOT, 'systemd', 'plugin-qualify-sync.service.d')).sort(), ['omx-panel-sync.conf']);
+  assert.match(readFileSync(join(ROOT, 'systemd/80-omx-panel.preset'), 'utf8'), /^enable omx-panel-sync\.service$/m, 'the preset enables it');
+  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
+  assert.match(spec, /^%\{_presetdir\}\/80-omx-panel\.preset$/m, 'the rpm ships the preset');
+  assert.match(spec, /^%\{\?systemd_post:%systemd_post omx-panel-sync\.service\}$/m, 'the rpm applies it on install');
+  const rules = readFileSync(join(ROOT, 'debian/rules'), 'utf8');
+  assert.match(rules, /^\tdh_installsystemd --no-start --no-stop-on-upgrade$/m, 'the DEB enables it and starts nothing');
+  const make = readFileSync(join(ROOT, 'Makefile'), 'utf8');
+  for (const f of ['bin/omx-panel-sync', 'man/omx-panel-sync.1', 'systemd/omx-panel-sync.service']) assert.ok(make.includes(f), `make install ships ${f}`);
+});
+
+test('the one pass\'s unit runs after plugin-qualify-sync, under limits, and there is no apt hook', () => {
+  const unit = readFileSync(join(ROOT, 'systemd/omx-panel-sync.service'), 'utf8');
+  assert.match(unit, /^ExecStart=\/usr\/bin\/omx-panel-sync$/m, 'the unit runs the one pass');
   assert.match(unit, /^After=.*\bplugin-qualify-sync\.service\b/m, 'it waits for the sync that writes its descriptors');
   assert.doesNotMatch(unit, /^WantedBy=.*\bplugin-qualify-sync\.service\b/m, 'a Wants resolved at the sync\'s start loses the run when two scans overlap (#61)');
   assert.match(unit, /^WantedBy=multi-user\.target$/m);
-  const dropin = readFileSync(join(ROOT, 'systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf'), 'utf8');
+  const dropin = readFileSync(join(ROOT, 'systemd/plugin-qualify-sync.service.d/omx-panel-sync.conf'), 'utf8');
   const post = dropin.match(/^ExecStartPost=-.*$/m)?.[0];
-  assert.ok(post, 'the drop-in queues the GUI sync after each scan, its failure ignored');
-  assert.ok(post.indexOf('systemctl is-enabled -q omx-modgui-sync.service') >= 0 && post.indexOf('is-enabled') < post.indexOf('systemctl start --no-block omx-modgui-sync.service'), 'it asks is-enabled before it starts');
-  assert.match(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-modgui-sync\.conf/, 'make install ships the drop-in');
-  assert.match(readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-modgui-sync\.conf/, 'the rpm lists it');
+  assert.ok(post, 'the drop-in queues the pass after each scan, its failure ignored');
+  assert.ok(post.indexOf('systemctl is-enabled -q omx-panel-sync.service') >= 0 && post.indexOf('is-enabled') < post.indexOf('systemctl start --no-block omx-panel-sync.service'), 'it asks is-enabled before it starts');
+  assert.match(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-panel-sync\.conf/, 'make install ships the drop-in');
+  assert.match(readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8'), /plugin-qualify-sync\.service\.d\/omx-panel-sync\.conf/, 'the rpm lists it');
   for (const limit of ['CPUQuota=', 'MemoryMax=', 'TasksMax=', 'IOSchedulingClass=idle', 'RestrictRealtime=yes', 'Nice=19']) assert.ok(unit.includes(limit), limit);
   assert.doesNotMatch(unit, /^WantedBy=.*\bdefault\.target\b/m);
   assert.equal(existsSync(join(ROOT, 'etc/apt')), false, 'the Debian-only apt hook is gone: the sync follows the standard triggers');
   assert.doesNotMatch(readFileSync(join(ROOT, 'Makefile'), 'utf8'), /apt/);
+});
+
+// -- the look: /etc/omx/modgui-look (MODGUI_LOOK_FILE) names the look of the bundles the sync writes (docs/modgui.md)
+const gainRig = () => {
+  const r = rig();
+  bundle(r.lv2, 'testgain', 'urn:test:gain', 'Test Gain');
+  descriptor(r.desc, 'testgain.json', 'urn:test:gain', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = d.controls.filter((c) => c.id === 'makeup');
+    d.plugin.name = 'Test Gain';
+  });
+  return r;
+};
+const faceOf = (r) => {
+  const [name] = r.bundles();
+  const dir = join(r.out, name, 'modgui');
+  return readdirSync(dir).filter((f) => /\.(css|html)$/.test(f)).sort().map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+};
+
+test('the look file names the look of the bundle: a changed look rewrites a fresh bundle, the unset look is the default', { skip }, () => {
+  const r = gainRig();
+  const file = join(r.dir, 'modgui-look');
+  const first = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file }); // no such file: the default look
+  assert.equal(first.status, 0, first.stdout + first.stderr);
+  const vintage = faceOf(r);
+  writeFileSync(file, 'console\n');
+  const second = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.equal(second.status, 0, second.stdout + second.stderr);
+  assert.match(second.stdout, /1 written, 0 up to date/, 'a bundle made under another look is not fresh');
+  assert.notEqual(faceOf(r), vintage, 'the console look is not the vintage one');
+  const third = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.match(third.stdout, /0 written, 1 up to date/, 'the same look is fresh');
+});
+
+test('a look the file names that omx-panel does not know is named in the summary and fails nothing', { skip }, () => {
+  const r = gainRig();
+  const file = join(r.dir, 'modgui-look');
+  writeFileSync(file, 'chrome\n');
+  const run = r.run(['--no-scan'], `${r.lv2}:${r.out}`, { MODGUI_LOOK_FILE: file });
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /no look 'chrome'/);
+  assert.match(run.stdout, /1 could not be drawn/);
 });

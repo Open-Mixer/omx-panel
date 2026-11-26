@@ -1,8 +1,5 @@
 {
   "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
-  "requires": {
-    "omx-contract-schema": ">= 3.0.0"
-  },
   "origin": "authored",
   "plugin": {
     "id": "org.openmixer.delay",
@@ -51,7 +48,7 @@
         "min": 0,
         "max": 0.99,
         "step": 0,
-        "unit": "",
+        "unit": "none",
         "default": 0.3,
         "scale": "linear"
       },
@@ -76,7 +73,7 @@
         "min": 0,
         "max": 1,
         "step": 0,
-        "unit": "",
+        "unit": "none",
         "default": 0.3,
         "scale": "linear"
       },
@@ -101,7 +98,7 @@
         "min": 0,
         "max": 1,
         "step": 0,
-        "unit": "",
+        "unit": "none",
         "default": 0.3,
         "scale": "linear"
       },

@@ -20,9 +20,9 @@ after(() => rmSync(work, { recursive: true, force: true }));
 function contractDir(packages) {
   const dir = mkdtempSync(join(work, 'c-'));
   for (const [pkg, name, roles] of packages) {
-    mkdirSync(join(dir, '3', pkg), { recursive: true });
+    mkdirSync(join(dir, pkg), { recursive: true });
     const rows = Object.fromEntries(Object.entries(roles).map(([role, meaning]) => [role, { role, meaning }]));
-    writeFileSync(join(dir, '3', pkg, 'role-meanings.json'), JSON.stringify({ [name]: { kind: 'roleMeanings', since: '1.0.0', roles: rows } }));
+    writeFileSync(join(dir, pkg, 'role-meanings.json'), JSON.stringify({ [name]: { kind: 'roleMeanings', since: '1.0.0', roles: rows } }));
   }
   return dir;
 }

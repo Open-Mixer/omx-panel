@@ -23,7 +23,7 @@ PKGDIR = $(DATADIR)/omx-panel
 OMX_CONTRACT_LIB ?= $(PREFIX)/lib/omx-contract
 VERSION := $(shell sed -n 's/^  "version": "\(.*\)",$$/\1/p' package.json)
 
-.PHONY: all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store
+.PHONY: base install-base all build check test spdx public-sources look copies gestures codes group-words install install-contract renderer renderer-check install-renderer test-host-reads store store-check install-store console-map shapes shapes-check install-python
 
 all: build
 
@@ -33,7 +33,7 @@ build:
 	npm run -s build
 
 # The example skin is valid against the schema, and look.json and the renderer's role list are what schema/look-roles.json gives.
-check: build spdx public-sources look copies gestures codes group-words
+check: build spdx public-sources look copies gestures codes group-words console-map shapes-check
 	node dist/bin/omx-panel.mjs validate examples/skins/org.example.plate
 
 test:
@@ -69,6 +69,26 @@ codes:
 group-words:
 	node tools/group-words-render.mjs --check
 
+# docs/modgui.md's map table is what tools/look/console-map.json gives, printed by tools/console-map-render.mjs (#69).
+console-map:
+	node tools/console-map-render.mjs --check
+
+# The document shapes (docs/shapes.md): shapes/<name>.schema.json rendered to a TypeScript interface set and to Python
+# TypedDicts by omx-contract's own `render --shapes` and its two pinned generators, never written by hand. The renders are
+# COMMITTED (test/golden/ts/shapes, share/omx-panel); a consumer reads them and runs no generator. `make shapes` writes them,
+# `make shapes-check` holds the committed files to a fresh render byte for byte (CI runs it). The generators run from an
+# omx-contract tree (OMX_CONTRACT_TREE, default ../omx-contract) with its `npm ci` done and `pip install -r
+# tools/shapes-requirements.txt` (or OMX_DATAMODEL_CODEGEN naming the command).
+OMX_CONTRACT_TREE ?= ../omx-contract
+SHAPES_RENDER = node $(OMX_CONTRACT_TREE)/bin/omx-contract.mjs render --shapes --shapes-dir $(CURDIR)/shapes
+shapes:
+	$(SHAPES_RENDER) --target ts --out test/golden/ts
+	$(SHAPES_RENDER) --target py --out share/omx-panel
+
+shapes-check:
+	$(SHAPES_RENDER) --target ts --out test/golden/ts --check
+	$(SHAPES_RENDER) --target py --out share/omx-panel --check
+
 # No tracked file is a copy of a film strip or a fixture omx-panel ships, with the check's own sabotage arms.
 copies:
 	node tools/copies-check.mjs --self-test
@@ -81,6 +101,24 @@ copies:
 WINDOW ?= 0
 renderer:
 	$(MAKE) -C renderer WINDOW=$(WINDOW)
+
+# The published reference: Open-Mixer/.github's docs-publish.yml runs this with DOCS_OUT, an empty absolute directory,
+# then renders the Markdown and the man pages and, at a release tag, publishes the tree under
+# https://www.openmixer.org/reference/omx-panel/<version>/. Only what the tree generates or keeps: the renderer's C API
+# reference doxygen renders with the Doxyfile the documentation gate reads (api/), the design pages of docs/ with their
+# shots, the man pages, README, BUILDING and LICENSE. The gate itself (doc-gate, against the base) is ci.yml's job docs.
+.PHONY: docs-site
+docs-site:
+	@case "$(DOCS_OUT)" in /*) ;; *) echo "docs-site: FAIL - DOCS_OUT '$(DOCS_OUT)' is not an absolute directory: name the directory the reference is written to" >&2; exit 1;; esac
+	rm -rf build/doxygen && mkdir -p build/doxygen
+	doxygen Doxyfile
+	@test -f build/doxygen/html/index.html || { echo "docs-site: FAIL - doxygen wrote no build/doxygen/html/index.html" >&2; exit 1; }
+	mkdir -p $(DOCS_OUT)/api $(DOCS_OUT)/docs $(DOCS_OUT)/man
+	cp -a build/doxygen/html/. $(DOCS_OUT)/api/
+	cp README.md BUILDING.md LICENSE $(DOCS_OUT)/
+	cp -a docs/. $(DOCS_OUT)/docs/
+	rm -f $(DOCS_OUT)/docs/doxygen-baseline.txt $(DOCS_OUT)/docs/doxygen-version.txt
+	cp man/*.1 $(DOCS_OUT)/man/
 
 # run in a private TMPDIR and fail on any scratch directory the tests leave there (#45)
 # the role vocabulary the layout reads: this tree's stand-in, as npm test reads it, unless the caller names one (docs/renderer.md)
@@ -106,12 +144,39 @@ store-check: build store
 # The packages ship the store (omx-panel-store and -devel; libomx-panel-store0, libomx-panel-store-dev and the command's
 # omx-panel-store): store/'s install, all of it: the library, its .so link, header and pkg-config file, the command and
 # its page, and the DDL as $(DATADIR)/omx-panel-store/panel.sql. Never the static library: it is not installed.
+# The descriptions store's base (docs/descriptions-store.md 6, lane 5): base/inputs/ derived by omx-panel base and written
+# by the store's command (built by make store) into base/build/panel.sqlite. The word checks read one contract directory:
+# base/build/contract.d holds the installed domains (BASE_CONTRACTDIR, omx-contract's contractdir: plugin-db's among
+# them) with this tree's panel domain in place of an installed one.
+BASE_CONTRACTDIR ?= $(shell pkg-config --variable=contractdir omx-contract 2>/dev/null)
+base: build store
+	rm -rf base/build
+	mkdir -p base/build/contract.d
+	for d in $(BASE_CONTRACTDIR)/*; do [ "$${d##*/}" = panel ] || ln -s "$$d" base/build/contract.d/; done
+	ln -s $(CURDIR)/contract.d/panel base/build/contract.d/panel
+	PATH=$(CURDIR)/store/build:$$PATH OMX_CONTRACT_PATH=$(CURDIR)/base/build/contract.d node dist/bin/omx-panel.mjs base --in base/inputs --out base/build/panel.sqlite
+
+# omx-panel-descriptions: the base, the one file
+install-base:
+	install -D -m 0644 base/build/panel.sqlite $(DESTDIR)$(DATADIR)/omx/panel/panel.sqlite
+
 install-store:
 	$(MAKE) -C store install PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR) MANDIR=$(MANDIR)
 
 install-renderer:
 	$(MAKE) -C renderer install WINDOW=0 PREFIX=$(PREFIX) LIBDIR=$(LIBDIR) INCLUDEDIR=$(INCLUDEDIR) BINDIR=$(BINDIR) DATADIR=$(DATADIR)
 	rm -f $(DESTDIR)$(LIBDIR)/libomx-panel-render.a $(DESTDIR)$(BINDIR)/omx-panel-render
+
+# The Python shapes as the package omx_panel (omx_panel.shapes.<name>, docs/shapes.md): the files share/omx-panel/ holds,
+# installed under PYTHONDIR, where this python3 keeps pure modules under PREFIX; a package build names its own (the spec's
+# python3_sitelib, Debian's dist-packages)
+PYTHONDIR = $(shell python3 -c 'import sysconfig; print(sysconfig.get_path("purelib", vars={"base": "$(PREFIX)"}))')
+
+install-python:
+	install -d $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes
+	install -m 0644 python/omx_panel/__init__.py $(DESTDIR)$(PYTHONDIR)/omx_panel/__init__.py
+	install -m 0644 python/omx_panel/shapes/__init__.py $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes/__init__.py
+	for f in share/omx-panel/omx_contract_*_shape.py; do n=$$(basename "$$f" _shape.py | sed 's/^omx_contract_//'); install -m 0644 "$$f" $(DESTDIR)$(PYTHONDIR)/omx_panel/shapes/$$n.py || exit 1; done
 
 # The panel and gestures domains (docs/contract-domains.md), as they are, by omx-contract's one domain installer: the loader
 # reads $(CONTRACTDIR)/panel/panel.json and its catalogs/, and $(CONTRACTDIR)/gestures/gestures.json.
@@ -143,12 +208,12 @@ install: build install-contract
 	install -m 0644 man/omx-panel.1 $(DESTDIR)$(MANDIR)/man1/
 	install -m 0644 man/omx-modgui-sync.1 $(DESTDIR)$(MANDIR)/man1/
 	install -m 0644 man/omx-complement-sync.1 $(DESTDIR)$(MANDIR)/man1/
+	install -m 0644 man/omx-panel-sync.1 $(DESTDIR)$(MANDIR)/man1/
 	install -m 0755 bin/omx-modgui-sync $(DESTDIR)$(BINDIR)/
 	install -m 0755 bin/omx-complement-sync $(DESTDIR)$(BINDIR)/
+	install -m 0755 bin/omx-panel-sync $(DESTDIR)$(BINDIR)/
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
-	install -m 0644 systemd/omx-modgui-sync.service $(DESTDIR)$(UNITDIR)/
-	install -m 0644 systemd/omx-complement-sync.service $(DESTDIR)$(UNITDIR)/
+	install -m 0644 systemd/omx-panel-sync.service $(DESTDIR)$(UNITDIR)/
 	install -d $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d
-	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-modgui-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
-	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-complement-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
+	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-panel-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
 	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/

@@ -27,6 +27,30 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .RB "| " \-\-layout ]
 .br
 .B omx-panel
+.B describe
+.B \-\-stored
+.I answer.json
+.B \-\-format
+.BR lv2 | clap
+.RB [ \-\-skin
+.IR file ]
+.RB [ \-\-remote
+.IR file ]
+.RB [ \-\-pages
+.RB [ \-\-per\-page
+.IR N ]]
+.br
+.B omx-panel
+.B describe
+.B \-\-plugin
+.I target
+.RB [ \-\-descriptor
+.IR file ]
+.RB [ \-\-sha256
+.IR hex ]
+.B \-\-store
+.br
+.B omx-panel
 .B vocabulary
 .RI [ package / name ]...
 .br
@@ -44,6 +68,46 @@ slots (eight when left out) by the one cut every surface uses, the skin applied 
 file's declared pages, as given, replacing the derived ones; with
 .B \-\-layout
 the layout the description was derived from, the family's displays included, which is what the panel renderer draws.
+.PP
+.B omx-panel describe \-\-stored
+.I answer.json
+prints the same output cut from a descriptions-store entry instead of a descriptor:
+.I answer.json
+is what
+.B omx-panel-store get \-\-json
+printed for a key of the
+.B \-\-format
+given, and the skin, the remote pages and the pages are applied to it as above, so a derived entry prints what
+.B describe \-\-descriptor
+prints and an edited one prints the edit. It reads no descriptor:
+.BR \-\-descriptor ,
+.BR \-\-panel ,
+.BR \-\-ns ,
+.B \-\-plugin
+and
+.B \-\-layout
+beside it are usage errors (an entry holds no layout, so a drawn view is still derived from the descriptor). A refused
+entry prints its code and its sentence and exits 1.
+.PP
+.B omx-panel describe \-\-plugin
+.I target
+.B \-\-store
+prints one plugin's entry in the descriptions store, as
+.B omx-panel-store get
+answers it.
+.I target
+is
+.BI lv2: uri
+or
+.BI clap: path # id\fR.
+The store is asked first, by the binary's SHA-256 (or
+.BR \-\-sha256 )
+and the plugin's source as installed; an entry any layer holds is printed and nothing is written. Otherwise the
+descriptor (the one given, else the installed declaration, else the newest in DESCRIPTOR_DIRS, else one
+.B plugin-hostd-probe describe
+makes) is described with the port groups the LV2 complement infers for that plugin, and the entry is written to the
+layer of the effective uid (the system layer as root, the user layer otherwise) and printed. One plugin, never a scan.
+LV2_PATH is the LV2 search list (else /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2).
 .PP
 .B omx-panel validate
 reads each skin given, a

@@ -34,6 +34,18 @@ the role's name, with no other role drawn in its place. A knob's pointer is draw
 stroke in `--curve-stroke`, neither in `--accent`. The geometry and text sizes are
 `tools/look/geometry.json`, which `tools/modgui-gen.mjs` reads too. The renderer types no colour and no size.
 
+A look that names a style (`style`, one of its `looks`) is worn whole, as the MOD GUI's face wears it (#123): the enclosure
+(`--enclosure`, where `--body-bg` names it) with the body's radius, the head plate (`--head-bg`) inset by `--head-inset`,
+the head's rule and lamp (`--head-rule`, `--led-on-bg`), the screws in the foot's corners (`--screws`, `--screws-slot`), a
+plate under each section (`--section-bg`), the keys and the screens (`--key-bg`, `--key-pressed-bg`, `--screen-bg`), the
+scribble strip, the curve's line and each text's ink (`--t-brand`, `--t-label`, `--t-section`, `--t-control`, `--t-value`,
+`--t-key`, `--t-screen`, `--t-screen-dim`), and the knob the style names (`--knob`). A token is read by the face's rule: the
+first `#rrggbb` its text names, a colour role in braces read from the roles, `none` for a thing not drawn; a gradient is
+its first colour, as on the face. A style short of a token the face wears is refused by the token's name. The enclosure is
+the first of the style's list: a description names no plugin to choose another by. A look that names no style is worn as
+the roles give it. Under the vintage style the panel is the MOD GUI's vintage face, pixel for pixel
+(`renderer/test/vintage-face.test.mjs`); a fader is drawn flat in every style, as the face draws it.
+
 A meter fills along the foot of its frame to its reading. A display and an xy pad show a frame and their text
 for now; an xy pad gets its own drawing when a description carries what it needs (a pair of controls).
 
@@ -45,15 +57,16 @@ the group model's served matrix (`servedMatrix`, "The served matrix") exactly as
 `{ orientation, title, heads, rows, cells, count? }`. The renderer READS it and recomputes nothing: no group, no row order, no
 head row, no caption place, no transposition. `heads` are the instances and edges in drawing order, each `{ label, on, edge }`
 (`on` its on/off control as `{ symbol, sense }`, nothing else, or null; `edge` the EQ filter's name for a high-pass, shelf or
-low-pass, else null); `rows` are the parameters in the owner's order (freq, gain with the high-pass's and low-pass's slope on
-that row, q, type, the rest), then the head row, always the last, `{ label: 'On' | '', head: true }`; `cells[row][head]` is a
+low-pass, else null); `rows` are the head row, always the first, `{ label: 'On' | '', head: true }`, then the parameters in the owner's
+order (freq, gain with the high-pass's and low-pass's slope on that row, q, type, the rest), a row whose cell holds a
+parameter other than the row's carrying `labels` (one per head, null where the row's label holds); `cells[row][head]` is a
 control's symbol or null. The section is titled by `title`. It draws, in the section's box: the curve rows, then the section's
 other controls (those no cell names) flowed in rows of `rowControls` as any section's, then the matrix. In `columns` each head
 is a column, left to right, and each row a row; in `rows` each head is a row and each row a column. Every cell, the head row's
-among them, is placed as a cell: the control of that row at that head, named by the row's label (a head-row control by its
-head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
+among them, is placed as a cell: the control of that row at that head, named by the row's label, or by the row's `labels` entry for that head where
+it has one (a head-row control by its head's label), drawn ONCE, there. A head-row cell that is null is the head's caption: its label, in that cell's name place, in a
 row of its own (a matrix whose heads have no on/off, omx-delay's taps, has a caption row, and no caption overprints a row of
-controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the last, or a head
+controls). A head row whose cells differ from the heads' `on`, a second head row, a head row that is not the first, or a head
 whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
 as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
 does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
@@ -75,7 +88,7 @@ message, as `bars` is. A section with no `matrix`, and a description with none, 
 The tests draw each repeated-group fixture (omx-eq8, the eq-marks EQ, the multiband compressor) from `omx-panel describe
 --layout`, as a host does: no fixture carries a matrix of its own making, and no tool grafts one onto a layout. The fixtures whose face draws a curve need omx-dsp's TypeScript twin (`@openmixer/omx-dsp`); without it those
 tests FAIL, naming the twin, and never skip, and CI's renderer job installs it. The tests that read only rectangles (HPF first
-and LPF last, the count's close-up, the head row last) need no twin and run everywhere.
+and LPF last, the count's close-up, the head row first) need no twin and run everywhere.
 
 The layout reads the role vocabulary ([panel-layout.md](panel-layout.md), "Meanings and roles"): with none, no role plays a
 meaning, omx-eq8 derives no curve, and its goldens would be drawn without one. So the renderer's tests read the vocabulary as
@@ -134,6 +147,7 @@ const char *omx_panel_word_name(omx_panel_word_t word);
 uint32_t omx_panel_view_count(const omx_panel_view_t *view);
 int32_t omx_panel_view_find(const omx_panel_view_t *view, const char *symbol);
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
+void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 bool omx_panel_view_set_value(omx_panel_view_t *view, uint32_t index, double fraction, const char *text);
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count,
                                const char *text);
@@ -144,10 +158,12 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, u
 
 void omx_panel_view_natural_size(const omx_panel_view_t *view, uint32_t *width, uint32_t *height);
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
+bool omx_panel_view_draw_dirty(omx_panel_view_t *view, const omx_panel_buffer_t *buffer,
+                               omx_panel_rect_t *rects, size_t cap, size_t *count);
 ```
 
 A view is made from four inputs held in memory: the description, the look, the geometry and the font
-bytes. `create_from_files` reads them from a description file and omx-panel's tools directory (the
+bytes. `create_from_data` reads the description from memory (a plugin's own, generated into its binary) and the rest the same way; `create_from_files` reads them from a description file and omx-panel's tools directory (the
 installed `share/omx-panel/tools`, or the source tree's `tools/`). Nothing else is read from disk, so a
 plugin can embed the four and draw with no file at all.
 
@@ -170,6 +186,12 @@ what a compositor blends) or straight. The panel is drawn with straight alpha an
 each channel times its alpha rounded to the nearest. A PNG holds straight alpha, so the command asks for
 straight when it writes one: the conversion is at the edge, never inside the drawing.
 
+A face has its head (the maker, the plugin's name, the accent rule and dot, `headH` of the geometry tall) unless the host
+calls `omx_panel_view_set_head(view, false)`: then there is none, the sections start at `pad` from the top and the face is
+`sectionTop - pad` shorter, so a host drawing one control per view (Zynthian's stock controller under the vintage look,
+Open-Mixer/zynthian-ui#70) gets the control, its label and its value and no empty head (#94). The command's state file
+says the same with `"head": false`. *Test: `renderer/test/headless.test.mjs`, held to a golden image.*
+
 `omx_panel_view_control_rect` gives a control's cell in a buffer of a given size and scale: what a pointer
 event will be hit-tested against.
 
@@ -178,6 +200,55 @@ A control a declared panel shows only for certain values of another (the descrip
 control's integer value: its come-up value (`visibleWhen.default`) until the host gives one with
 `omx_panel_view_set_integer`. A hidden control takes no cell, is not drawn and has no rect; a section it
 leaves with none takes no space, so the panel is drawn exactly as one without them.
+
+## Dirty rectangles
+
+A drag moves one control, and redrawing the whole panel for it costs 14 to 25 ms at 1024 x 416 on a Raspberry Pi 5 (measured with
+0.13.7), more than one display frame. `omx_panel_view_draw_dirty` draws into the buffer the last draw went into and repaints only
+what changed, then names the rectangles it repainted, so the host converts and blits only those.
+
+- **What marks a rectangle.** The view remembers, for every element of the panel (the head, each section, each control's cell, each
+  display, the meters band, each meter in it), the box it filled and a signature of every value its drawing reads: a control's reading
+  and text, a selector's option, a meter's bar and marker, a display's points, stems, marks and spectrum, the title. An element whose
+  signature or box changed is repainted, and its old box too where it moved (a control a governing value hid, the one that took its
+  place). One changed control reports its cell and nothing else; nothing changed reports none.
+- **The bleed.** A rectangle is the element's box grown by what its pixels can reach beyond it (anti-aliased edges, a glyph's overhang,
+  a mark's letter above its disc): 4 logical px, 8 for a display (`BLEED`, `BLEED_DISPLAY` in `view.c`). The same number decides which
+  elements a repaint reaches, so a pixel an element drew is always repainted with it.
+- **A repaint is a full draw of that rectangle.** Each rectangle is cleared to transparent and the panel drawn into it through a clip, the
+  elements that cannot reach it skipped, the others cut by the clip, the colours premultiplied at the end as a full draw does. Every byte
+  outside the rectangles is left as the last draw left it, and the buffer equals a full draw of the same state byte for byte
+  (`renderer/test/dirty.test.mjs`).
+- **A full draw stands** for the first frame, a buffer that is not the last draw's (another address, size, stride, scale or pixel format),
+  a resize, and a panel whose overall size changed (a governing value that grew or shrank it): the whole buffer is drawn and reported as
+  one rectangle. The look is read when the view is made, so it never changes under one. `omx_panel_view_draw` always draws the whole
+  buffer, and a host that did not keep the last draw's bytes calls it.
+- **A mark is held to the plot.** A mark whose frequency or depth is off the axes sits on the plot's edge, so a display draws at most the
+  letter over a mark's disc above its frame and `BLEED_DISPLAY` covers it.
+- **Short of memory** the view draws the whole buffer and reports it as one rectangle: the layout is the only allocation a dirty draw
+  makes, and what the view keeps to compare is taken once, when a draw is remembered (`renderer/test/dirty_alloc.c` fails each in turn).
+- **More changes than rectangles.** Up to `cap` rectangles are written; past that the pair whose covering rectangle adds the least area is
+  merged until `cap` remain, so a change is never dropped. Rectangles that meet are merged first.
+
+`omx-panel-render --steps <script.json> --steps-out <dir>` is the test's front door: the view is drawn in full, then each state object of
+the script is applied and drawn dirty into the same buffer; per step it writes the buffer before, after, and a full draw of the same state
+by a view made anew, and prints the step's rectangles.
+
+### Frame budget
+
+One drag frame at 1024 x 416 on the Raspberry Pi 5, covering the input, the draw, the conversion and the blit, has a p99 of at most
+16.7 ms, one frame of a 60 Hz display. The figure is declared once, in `schema/frame-budget.json`, and a host's measurement reads it
+from there instead of carrying its own (zynthian-ui's `tests/pi/blit_per_frame_on_the_pi.py`).
+
+`make -C renderer bench DESC=<layout.json> [CONTROL=<symbol>]` (`renderer/bench/dirty_frame.c`) times the renderer's share of a drag frame: one
+control moved 1000 times, each frame drawn in full and dirty into buffers of the same 1024 x 416 px, p50, p99 and max of each, and the end
+buffers held equal. The budget's p99 also covers the host's conversion and blit, which this does not time.
+
+| where | draw | p50 | p99 | max |
+|---|---|---|---|---|
+| x86_64, Fedora 44 container, `-O2`, the ZamComp panel, `thr` moved: 6720 of 425984 px | full | 3.52 ms | 3.57 ms | 4.91 ms |
+| | dirty | 0.217 ms | 0.234 ms | 0.275 ms |
+| Raspberry Pi 5 | | owed: the Pi's lock (`/root/pi-busy`) was held when this was written | | |
 
 ## Meters
 
@@ -191,13 +262,35 @@ at or above 0.32.2, checked by the build), the meter's range standing for the sc
 copied into the source, and the tests hold the drawn marker to omx-dsp's golden fall vectors. Until a reading is given only
 the frame stands, which is what the MOD GUI face draws.
 
+A meter whose description says `clip: true` has a clip word, drawn as a lamp at its frame's top right (`meterLamp`, 8 px square
+in `tools/look/geometry.json`, 6 px in from the right and 4 px down; the caption is kept clear of it): dark (the frame's body)
+until a clip, lit in the meter red while the word is. The word is omx-dsp's view law, `omx_meter_view_clip` and
+`omx_meter_view_clip_clear`: `omx_panel_view_set_clip(view, index, clip)` gives a draw tick's clip (whether the source saw one
+since the last tick), the word stays lit across ticks until `omx_panel_view_clear_clip(view, index)` (the operator's gesture, or
+a reset), and `omx_panel_view_meter_clip(view, index)` reads it. A meter whose description declares no clip word has no lamp
+and its word is never lit, whatever its source says. The tests hold the lamp to omx-dsp's clip vector tick by tick
+(`renderer/test/meter-clip.test.mjs`).
+
+A meter whose description says `held: false` (its plugin holds nothing between reads) says so in its caption, after the range:
+the description's word `words.unheld`. The band's title is `words.meters`. Both are the panel's own words (PANEL_LABELS,
+docs/panel-layout.md "Words"), served by the description with their keys: the renderer spells neither, and a description that
+draws one without serving it is refused by name.
+
 `renderer/test/meter-surfaces.mjs` draws one recorded stream (`test/fixtures/meters/meters.stream.json`, 80 ticks at about
 20 Hz) on three surfaces and measures each from its pixels: the renderer; the MOD GUI's own template and stylesheet in
 Chromium, each frame given a bar and a marker through omx-dsp's TypeScript twin (the MOD GUI has no live meter yet); and a Tk
 canvas through a Python copy of the law read against omx-dsp's vectors. Every bar end, marker and frame edge is held within
 1 px of the renderer's in the browser and 2 px in Tk (`xvfb-run -a node renderer/test/meter-surfaces.mjs`; CI's
-`meter-surfaces` job). The command's state takes
-`"meters": {"<symbol>": [{"value", "elapsed"}, ...]}`, one entry for each draw tick.
+`meter-surfaces` job). The stream's ticks carry clips and clears too: each surface lights its lamps by the clip word (the
+browser's lamp the MOD GUI template's own, its `omx-clip-lit` class set; Tk's through a Python copy read against omx-dsp's clip
+vector), and at every tick each meter's lamp must be lit or dark exactly as the renderer's, its four edges within the same 1 and
+2 px; the loudness meter, which has no clip word, reports clips and lights nothing on any surface. `--look vintage` runs the
+same stream in the look every bundle wears by default (CI's second step): the MOD GUI there shows its needle dials, so the browser
+leg holds each dial's clip lamp (docs/modgui.md, "The clip lamp on a dial") to the renderer's, lit or dark at every tick and its
+edges within 1 px of its face's place, counts one lamp on each dial whose meter has a clip word and none on the others, and has no
+bar, marker or frame to compare; the renderer and Tk draw their frames as in every look. The command's state takes
+`"meters": {"<symbol>": [{"value", "elapsed", "clip", "clear"}, ...]}`, one entry for each draw tick: `clear` true clears the
+clip word first, then `clip` true is a clip since the last tick; a `clip` or `clear` that is not true or false is refused.
 
 ## Input
 
@@ -236,7 +329,7 @@ gesture drew.
 
 `omx-panel-render --input <script.json>` runs a script of events through a view and prints what the renderer answered
 (the header of `renderer/src/cli.c` has the script's words). `renderer/test/input.test.mjs` runs the scripted gestures
-of the 7.5 fixtures (`test/fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
+of the 7.5 fixtures (`fixtures/gestures/scripts.json`) through it, retargeted onto the renderer's own cells, and
 holds the values within one declared step of `tools/gestures.mjs`, reset and tap exact, the words, the counts and the
 begin and end equal; each guard has its sabotage arm there.
 
@@ -257,7 +350,7 @@ script of events, replays it through a fresh engine and answers as JSON what `ru
 `renderer/test/shared.test.mjs`. `tools/gestures.mjs` stays the JavaScript reference until it becomes the loader of this
 unit's WebAssembly build.
 
-`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`test/fixtures/gestures/scripts.json`, the package's
+`renderer/test/gesture-c.test.mjs` runs the 20 shipped scripts (`fixtures/gestures/scripts.json`, the package's
 `./gestures/scripts.json`) through the C unit, through `renderer/test/gesture_driver.c`, and holds every answer EQUAL to
 `tools/gestures.mjs`'s: value, every gesture with its words and times, the undo ids, what was selected, every refusal with
 its code and words. So do 117 rules of `docs/panel-gestures.md` and 4500 seeded random controls and scripts.
@@ -304,6 +397,25 @@ equal to `modgui-gen.mjs`'s face at three scales and to the committed MOD GUI sc
 images can then come from the renderer, and `tools/raster.mjs`'s shapes and `modgui-gen.mjs`'s drawing go
 away.
 
+### The rules both languages apply
+
+Helpers that exist in the JavaScript tools and again in the C renderer split in two (#76). A helper that encodes a RULE,
+a number both sides must agree on, is held by a shared vector, one JSON file both suites read; pure mechanics stay per
+language and are held by the drawing itself.
+
+| Rule | JavaScript | C | Held by |
+|---|---|---|---|
+| The visible columns (docs/group-model.md L7) | `visibleColumns` (tools/group-model.mjs) | `omx_panel_view_visible_columns` | `test/fixtures/group-model/visible-columns.json` |
+| The drawn heads under a count (L6: every edge, the first `count` instances) | `drawnHeads` | `visible_heads` (view.c) | the same vector, its `count` entries, set as a host sets it (the state's `integers`) |
+| A governed control shown at a value (docs/panel-layout.md "Visibility": the mask's bit, 0..63) | `visibilityMask`, `isVisible` (tools/panel-description.mjs) | `shown` (view.c) | `test/fixtures/rules/visible-when.json` |
+| Every gesture word, timing and refusal (docs/panel-gestures.md) | `runGesture` (tools/gestures.mjs) | `omx_gesture_run` (gesture.c) | `renderer/test/gesture-c.test.mjs`: the shipped scripts, the rules and a seeded fuzz, each answer equal |
+
+Mechanics with no number of their own (a rectangle's arithmetic, the grid of a section, cutting a label to its cell) stay
+per language: the C rasteriser is the MOD GUI generator's carried operation for operation, and `renderer/test/parity.test.mjs`
+holds the two faces equal pixel for pixel, so a mechanic that drifts is red there. Each vector's readers are sabotage-checked:
+a C `shown` that reads bit 64, a `visible_heads` or `drawnHeads` that keeps one instance past the count, a `visibilityMask`
+that sets the bit after each value, each turns its vector red.
+
 ### The window
 
 `renderer/include/omx_panel_window.h`, built with `WINDOW=1`:
@@ -331,8 +443,11 @@ a switch, a meter's fill) must be in the same place within 1 px and of about the
 the cell must cover the same extent within 2 px. Block by block, the image must have the same mean colour,
 within 20 in a channel for 97 in 100 blocks.
 
-Next: `clap.gui` (embedded when the host gives a parent, floating otherwise; X11 first, Wayland when there
-is a desktop to prove it on), and redrawing only what changed.
+A window takes the pointer, the wheel and the keys the gesture vocabulary reads: `omx_panel_window_set_input` hands each, in the panel's
+logical px, to a function the caller gives (a left press, move and release; a scroll step; Backspace and the arrows), and the window
+redraws after it. The binding of those events to a plugin's parameters is the ui library's (`docs/plugin-ui.md`).
+
+Next: Wayland when there is a desktop to prove it on, and redrawing only what changed.
 
 ## Dependencies
 
@@ -351,6 +466,14 @@ Neither Fedora nor Debian packages pugl or NanoVG. The OpenMixer channel builds 
 as RPM and DEB, for both architectures. The library itself needs only cJSON, omx-contract's headers, omx-dsp's
 meter view header and libm. All of these licences can be combined with this repository's GPL-3.0-or-later. The font, Inter, is
 under the SIL Open Font Licence, as the MOD GUI already ships it (`tools/fonts/Inter-LICENSE.txt`).
+
+**Ruled 2026-11-24 (#185, #186, #187).** pugl and NanoVG are channel layers with floors, never `pinned-rpms`: each is
+published by the channel from Open-Mixer/.github's packaging (`packaging/pugl`, `packaging/nanovg`), built inside-out before
+omx-panel (the release chain's order gains the two rows ahead of omx-panel's), and read here by floor, `pugl-devel >=
+0.5.9^20261102` and `nanovg-devel >= 0^20260219`, the versions those specs build. The `renderer-window` job installs them from
+the channel the day the channel serves them, and its `pinned-rpms` step goes. `libomx-panel-ui` is a binary package of
+omx-panel's own spec (`libomx-panel-ui` and `libomx-panel-ui-devel`, header `omx_panel_ui.h`), BuildRequires on those two
+floors, its own floor the plugin adapters declare; it is packaged with the library it ships (PR #184).
 
 ## Building and testing
 

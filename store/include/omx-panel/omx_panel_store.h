@@ -25,7 +25,7 @@ extern "C" {
 
 /** The version of the derivation's rules, raised by every change that moves describe's or the inference's output for
  *  the same input (3.6). Held here, once; the golden test of test/rules-golden.test.mjs reads this line. */
-#define OMX_PANEL_RULES_VERSION 4
+#define OMX_PANEL_RULES_VERSION 5
 
 /** A status: 0, OMX_PANEL_STORE_NO_ENTRY, or a refusal (omx_panel_store_code() names it). A loader refusal is a
  *  positive status above OMX_PANEL_STORE_LOADER_BASE: the loader's own value plus the base. */
@@ -37,7 +37,6 @@ enum {
     OMX_PANEL_STORE_NOT_A_STORE = 4,
     OMX_PANEL_STORE_SCHEMA_MISMATCH = 5,
     OMX_PANEL_STORE_SCHEMA_OTHER = 6,
-    OMX_PANEL_STORE_DOMAIN_TOO_OLD = 7,
     OMX_PANEL_STORE_WORD_UNKNOWN = 8,
     OMX_PANEL_STORE_HOT_JOURNAL = 9,
     OMX_PANEL_STORE_BUSY = 10,

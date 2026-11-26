@@ -101,14 +101,16 @@ typedef struct {
   int *cell;
   int count_ctl;        /* the control that says how many instances run, -1 for none */
   int64_t count;        /* its value: the description's default until the host gives one */
-  int head_row;         /* the head row, always the last: its cells are the heads' on/off, a null cell the head's caption */
+  int head_row;         /* the head row, always the first: its cells are the heads' on/off, a null cell the head's caption */
 } matrix;
 
 typedef struct {
-  char *symbol, *label, *unit;
+  char *symbol, *label, *unit; /* unit: the caption's spelling, the description's unitText (its x-symbol), else its unit */
   double min, max;
   int gain_reduction; /* the bar grows from the top of the range toward its foot */
   int in_band;        /* drawn in the meters band */
+  int clip;           /* the description's `clip`: the meter has a clip word, drawn as a lamp; a meter without one never lights */
+  int held;           /* the description's `held`: the plugin keeps its value between reads; an unheld meter's caption says so */
   int has;            /* a reading was given; until then the frame stands */
   double fill;        /* the last reading's fraction of the range, 0..1 */
   double marker;      /* the marker's fraction, omx_meter_view_step()'s */
@@ -117,7 +119,7 @@ typedef struct {
 
 typedef struct {
   double pad, headH, sectionTop, sectionGap, sectionPad, sectionTitleH, cellW, cellH, knob, knobTop, switchW, switchH,
-      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, scribbleW, scribbleH;
+      switchTop, selectorW, selectorH, selectorTop, faderW, faderCap, radius, sectionRadius, curveH, curveGap, meterH, meterGap, meterLamp, scribbleW, scribbleH, screw, screwInset;
 } geometry;
 
 typedef struct {
@@ -125,9 +127,18 @@ typedef struct {
 } textsizes;
 
 typedef struct {
-  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk,
-      deltaBoost, deltaCut;
+  omx_rgb surface, section, body, rim, ink, inkDim, accent, pointer, curve, meterGreen, meterAmber, meterRed, scribbleBg, scribbleInk, deltaBoost, deltaCut;
+  /* what the look's style (looks[style] of look.json) sets over the roles, as the MOD GUI face wears it (tools/modgui-gen.mjs
+   * faceColours): the enclosure, the head plate, the head's rule and lamp, the screens, a pressed key, the screws, and each text's ink */
+  omx_rgb enclosure, head, rule, lamp, screen, pressed, screws, screwSlot, tBrand, tLabel, tSection, tControl, tValue, tKey, tScreen, tScreenDim;
 } palette;
+
+/* The plates of the look's style: which are drawn (a token that says `none` draws nothing), the body's corner radius (below 0: the
+ * geometry's) and the head plate's inset from the body's top and sides. */
+typedef struct {
+  int head, rule, sections, screws;
+  double radius, insetTop, insetSide;
+} plates;
 
 struct omx_panel_view {
   char **sections, **section_keys;
@@ -141,14 +152,18 @@ struct omx_panel_view {
   matrix *matrices;
   size_t nmatrices;
   char *brand, *name;
+  bool headless; /* omx_panel_view_set_head(view, false): no head, the sections start at `pad` */
+  char *word_meters, *word_unheld; /* the description's `words` a surface draws of its own (PANEL_LABELS): NULL when not served */
   int row_controls;
   geometry g;
   textsizes t;
   palette col;
+  plates plates;
   omx_scene *knob_scene; /* the knob the look's style names (`--knob` of looks[style]): a drawing of the look, or NULL for the flat knob */
   omx_font *font;
   struct omx_input *in; /* input.c: the gesture declaration and the interaction state; NULL until a surface is set */
   char *gestures_json;  /* schema/gestures.json as given, parsed when the first surface is set */
+  struct omx_redraw *rd; /* view.c: what the last draw into a buffer drew, to say what the next must repaint; NULL until one */
 };
 
 

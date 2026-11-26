@@ -11,6 +11,7 @@
 #include "omx_panel_render.h"
 
 #include <cjson/cJSON.h>
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,6 +63,124 @@ static int look_colour(cJSON *flat, cJSON *tok, const char *name, omx_rgb *out, 
   return 0;
 }
 
+/* The first `#rrggbb` in `s` (the MOD GUI face's rule, tools/modgui-gen.mjs hexOf): six hex digits after a `#`. */
+static int first_hex(const char *s, omx_rgb *out) {
+  for (const char *p = s ? strchr(s, '#') : NULL; p; p = strchr(p + 1, '#')) {
+    char hex[8] = {0};
+    size_t k = 0;
+    while (k < 6 && isxdigit((unsigned char)p[1 + k])) k++;
+    if (k < 6) continue;
+    memcpy(hex, p, 7);
+    return hex_colour(hex, out);
+  }
+  return 0;
+}
+
+/* The colour a token of the look's style wears: the first `#rrggbb` its text names once each colour role in braces (`{--accent}`) is
+ * read in `tok` and `{--enclosure}` as `enclosure`; the surface role when it names none (`none`, an rgba() alone). 0, naming the
+ * token, when the style does not set it. */
+static int style_colour(cJSON *entry, cJSON *tok, const char *name, const omx_rgb *enclosure, const omx_rgb *surface, omx_rgb *out, char *err,
+                        size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, name));
+  if (!s) {
+    fail(err, n, "look: the style does not set %s%s", name, NULL);
+    return 0;
+  }
+  for (const char *p = s; *p; p++) {
+    if (*p == '#') {
+      char hex[8] = {0};
+      size_t k = 0;
+      while (k < 6 && isxdigit((unsigned char)p[1 + k])) k++;
+      if (k == 6) {
+        memcpy(hex, p, 7);
+        return hex_colour(hex, out);
+      }
+    } else if (*p == '{' && p[1] == '-' && p[2] == '-') {
+      const char *end = strchr(p, '}');
+      char role[48];
+      if (!end || (size_t)(end - p) > sizeof role) continue;
+      snprintf(role, sizeof role, "%.*s", (int)(end - p - 1), p + 1);
+      if (strcmp(role, "--enclosure") == 0) {
+        if (enclosure) {
+          *out = *enclosure;
+          return 1;
+        }
+      } else if (first_hex(cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(tok, role)), out)) {
+        return 1;
+      }
+      p = end;
+    }
+  }
+  *out = *surface;
+  return 1;
+}
+
+/* Whether a token of the style draws its thing: 1, 0 for `none`, -1 (naming it) when the style does not set it. */
+static int style_draws(cJSON *entry, const char *name, char *err, size_t n) {
+  const char *s = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, name));
+  if (!s) {
+    fail(err, n, "look: the style does not set %s%s", name, NULL);
+    return -1;
+  }
+  return strcmp(s, "none") != 0;
+}
+
+/* The look's style as the face wears it (omx-panel#123): every plate and ink of looks[style], by the rules of the MOD GUI face
+ * (tools/modgui-gen.mjs renderFace and faceColours), so one look file gives both the same picture. */
+static int read_style(omx_panel_view_t *v, cJSON *entry, cJSON *tok, char *err, size_t n) {
+  palette *c = &v->col;
+  plates *f = &v->plates;
+  const omx_rgb surface = c->surface;
+  omx_rgb enclosure;
+  /* the enclosure: the first of the style's list (the description names no plugin to pick another by) */
+  if (!style_colour(entry, tok, "--enclosure", NULL, &surface, &enclosure, err, n)) return 0;
+  const char *body = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--body-bg"));
+  if (!body) {
+    fail(err, n, "look: the style does not set %s%s", "--body-bg", NULL);
+    return 0;
+  }
+  if (strstr(body, "{--enclosure}")) c->enclosure = enclosure;
+  else if (!style_colour(entry, tok, "--body-bg", &enclosure, &surface, &c->enclosure, err, n)) return 0;
+  struct { const char *name; omx_rgb *to; } want[] = {
+      {"--key-bg", &c->body},          {"--screen-bg", &c->screen},     {"--key-pressed-bg", &c->pressed}, {"--led-on-bg", &c->lamp},
+      {"--t-brand", &c->tBrand},       {"--t-label", &c->tLabel},       {"--t-section", &c->tSection},     {"--t-control", &c->tControl},
+      {"--t-value", &c->tValue},       {"--t-key", &c->tKey},           {"--t-screen", &c->tScreen},       {"--t-screen-dim", &c->tScreenDim},
+      {"--curve-line", &c->curve},     {"--scribble-bg", &c->scribbleBg}, {"--scribble-ink", &c->scribbleInk},
+  };
+  for (size_t i = 0; i < sizeof want / sizeof *want; i++)
+    if (!style_colour(entry, tok, want[i].name, &enclosure, &surface, want[i].to, err, n)) return 0;
+  struct { const char *name; int *draws; omx_rgb *to; } plate[] = {
+      {"--head-bg", &f->head, &c->head}, {"--head-rule", &f->rule, &c->rule}, {"--section-bg", &f->sections, &c->section}, {"--screws", &f->screws, &c->screws},
+  };
+  for (size_t i = 0; i < sizeof plate / sizeof *plate; i++) {
+    int draws = style_draws(entry, plate[i].name, err, n);
+    if (draws < 0) return 0;
+    *plate[i].draws = draws;
+    if (draws && !style_colour(entry, tok, plate[i].name, &enclosure, &surface, plate[i].to, err, n)) return 0;
+  }
+  if (f->screws && !style_colour(entry, tok, "--screws-slot", &enclosure, &surface, &c->screwSlot, err, n)) return 0;
+  /* the body's radius is a number or `none` (the geometry's); the head plate's inset is `none` or its top and side in px */
+  cJSON *radius = cJSON_GetObjectItemCaseSensitive(entry, "--body-radius"), *inset = cJSON_GetObjectItemCaseSensitive(entry, "--head-inset");
+  const char *rs = cJSON_GetStringValue(radius), *is = cJSON_GetStringValue(inset);
+  if (!cJSON_IsNumber(radius) && !rs) {
+    fail(err, n, "look: the style does not set %s%s", "--body-radius", NULL);
+    return 0;
+  }
+  f->radius = cJSON_IsNumber(radius) ? radius->valuedouble : strcmp(rs, "none") == 0 ? -1 : strtod(rs, NULL);
+  if (!is) {
+    fail(err, n, "look: the style does not set %s%s", "--head-inset", NULL);
+    return 0;
+  }
+  f->insetTop = f->insetSide = 0;
+  if (strcmp(is, "none") != 0) {
+    char *end;
+    f->insetTop = strtod(is, &end);
+    while (*end && *end != ' ') end++;
+    f->insetSide = strtod(end, NULL);
+  }
+  return 1;
+}
+
 static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n) {
   cJSON *root = cJSON_Parse(json);
   cJSON *tok = cJSON_GetObjectItemCaseSensitive(root, "tokens");
@@ -94,6 +213,11 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
       return 0;
     }
   }
+  /* a look that names no style is worn as the roles give it: the surface, the accent's rule and lamp, a plate under each section */
+  v->col.enclosure = v->col.surface, v->col.screen = v->col.body, v->col.pressed = v->col.rule = v->col.lamp = v->col.accent;
+  v->col.tBrand = v->col.tSection = v->col.tControl = v->col.tScreenDim = v->col.inkDim;
+  v->col.tLabel = v->col.tValue = v->col.tKey = v->col.tScreen = v->col.ink;
+  v->plates = (plates){0, 1, 1, 0, -1, 0, 0};
   /* the scribble strip's two colours are the console look's (the flat look the roles give): a colour or a role's name in braces */
   cJSON *flat = cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(root, "looks"), "console");
   if (!look_colour(flat, tok, "--scribble-bg", &v->col.scribbleBg, err, n) || !look_colour(flat, tok, "--scribble-ink", &v->col.scribbleInk, err, n)) {
@@ -108,6 +232,10 @@ static int read_look(omx_panel_view_t *v, const char *json, char *err, size_t n)
     const char *knob = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(entry, "--knob"));
     if (!cJSON_IsObject(entry) || !knob) {
       fail(err, n, "look: the style '%s' names no look with a --knob%s", style, NULL);
+      cJSON_Delete(root);
+      return 0;
+    }
+    if (!read_style(v, entry, tok, err, n)) {
       cJSON_Delete(root);
       return 0;
     }
@@ -150,8 +278,9 @@ static int read_geometry(omx_panel_view_t *v, const char *json, char *err, size_
   NUM(g, switchTop, &v->g, "geometry"); NUM(g, selectorW, &v->g, "geometry"); NUM(g, selectorH, &v->g, "geometry");
   NUM(g, selectorTop, &v->g, "geometry"); NUM(g, faderW, &v->g, "geometry"); NUM(g, faderCap, &v->g, "geometry");
   NUM(g, radius, &v->g, "geometry"); NUM(g, sectionRadius, &v->g, "geometry");
+  NUM(g, screw, &v->g, "geometry"); NUM(g, screwInset, &v->g, "geometry");
   NUM(g, curveH, &v->g, "geometry"); NUM(g, curveGap, &v->g, "geometry");
-  NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry");
+  NUM(g, meterH, &v->g, "geometry"); NUM(g, meterGap, &v->g, "geometry"); NUM(g, meterLamp, &v->g, "geometry");
   NUM(g, scribbleW, &v->g, "geometry"); NUM(g, scribbleH, &v->g, "geometry");
   NUM(t, brand, &v->t, "text"); NUM(t, brandBase, &v->t, "text"); NUM(t, title, &v->t, "text");
   NUM(t, titleBase, &v->t, "text"); NUM(t, small, &v->t, "text"); NUM(t, sectionBase, &v->t, "text");
@@ -323,6 +452,8 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
           goto bad;
         }
         m->row_label[r] = dup(lab);
+        /* a cell holding a parameter other than the row's is named by the row's `labels` (omx-panel#122) */
+        cJSON *labels = cJSON_GetObjectItemCaseSensitive(row, "labels");
         size_t k = 0;
         int is_head = cJSON_IsTrue(head);
         if (is_head) {
@@ -344,16 +475,17 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
             }
           }
           if (!cJSON_IsNull(c)) {
-            PLACE(sym, is_head ? m->heads[k].label : lab, m->cell[r * m->nheads + k]);
+            const char *own = cJSON_GetStringValue(cJSON_GetArrayItem(labels, (int)k));
+            PLACE(sym, is_head ? m->heads[k].label : own ? own : lab, m->cell[r * m->nheads + k]);
             if (is_head) m->heads[k].on = m->cell[r * m->nheads + k];
           }
           k++;
         }
       }
       #undef PLACE
-      /* the served matrix always ends with its head row (docs/group-model.md L3) */
-      if (m->head_row < 0 || m->head_row != (int)m->nrows - 1) {
-        fail(err, n, "description: a matrix's head row is missing or is not its last row%s%s", NULL, NULL);
+      /* the served matrix always opens with its head row (docs/group-model.md L3, omx-panel#121) */
+      if (m->head_row != 0) {
+        fail(err, n, "description: a matrix's head row is missing or is not its first row%s%s", NULL, NULL);
         goto bad;
       }
       if (cnt && !cJSON_IsNull(cnt)) {
@@ -383,20 +515,42 @@ static int read_description(omx_panel_view_t *v, const char *json, char *err, si
       const char *sym = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "symbol"));
       const char *label = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "label"));
       const char *unit = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unit"));
+      /* the caption shows the unit as a person reads it, its x-symbol (percent is %): describe's unitText, the id when absent */
+      const char *unit_text = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "unitText"));
       const char *kind = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(it, "kind"));
       cJSON *mn = cJSON_GetObjectItemCaseSensitive(it, "min"), *mx = cJSON_GetObjectItemCaseSensitive(it, "max");
       if (!sym || !label || !unit || !kind || !cJSON_IsNumber(mn) || !cJSON_IsNumber(mx) || !(mx->valuedouble > mn->valuedouble)) {
         fail(err, n, "description: meter '%s' lacks a label, a unit, a kind or a range%s", sym ? sym : "?", NULL);
         goto bad;
       }
-      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit);
+      m->symbol = dup(sym), m->label = dup(label), m->unit = dup(unit_text ? unit_text : unit);
       m->min = mn->valuedouble, m->max = mx->valuedouble, m->gain_reduction = strcmp(kind, "gain-reduction") == 0;
+      /* the clip word and the hold are the description's facts (contract 7.9): a meter that does not say clip: true has no clip
+       * word and never lights one; one that does not say held: true is unheld */
+      m->clip = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "clip"));
+      m->held = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(it, "held"));
       m->in_band = 1;
       for (size_t k = 0; k < v->ncontrols; k++)
         if (strcmp(v->controls[k].symbol, sym) == 0) m->in_band = 0;
       v->nband += (size_t)m->in_band;
     }
   }
+  /* the words a surface draws of its own (`words`, the panel domain's PANEL_LABELS, each { labelKey, label }): the meters band's
+   * title and an unheld meter's word. One the panel draws and the description does not serve is refused by name, never spelled
+   * here (omx-panel#13) */
+  cJSON *words = cJSON_GetObjectItemCaseSensitive(root, "words");
+  const char *w_meters = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(words, "meters"), "label"));
+  const char *w_unheld = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(cJSON_GetObjectItemCaseSensitive(words, "unheld"), "label"));
+  if (v->nband > 0 && !w_meters) {
+    fail(err, n, "description: the meters band is drawn and words.meters (PANEL_LABELS panel.label.meters) is not served%s%s", "", NULL);
+    goto bad;
+  }
+  for (size_t k = 0; k < v->nmeters; k++)
+    if (v->meters[k].in_band && !v->meters[k].held && !w_unheld) {
+      fail(err, n, "description: meter '%s' is unheld and words.unheld (PANEL_LABELS panel.label.unheld) is not served%s", v->meters[k].symbol, "");
+      goto bad;
+    }
+  v->word_meters = w_meters ? dup(w_meters) : NULL, v->word_unheld = w_unheld ? dup(w_unheld) : NULL;
   /* the displays: each on a section, its axis (a PANEL_DISPLAY_AXES word the description serves) the curve's axes, its basis the
    * caption. The axis is read, never inferred from the kind: a display without one, or with another word, is refused by name */
   cJSON *dis = cJSON_GetObjectItemCaseSensitive(root, "displays");
@@ -476,14 +630,16 @@ static char *slurp(const char *path, size_t *size) {
   return buf;
 }
 
-omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+/* The description as text and the look, geometry, font and gestures from `data_dir`: what create_from_files reads, for a host that holds
+ * the description in memory (a plugin's own, generated into its binary). */
+omx_panel_view_t *omx_panel_view_create_from_data(const char *desc, const char *data_dir, char *err, size_t n) {
   char look_path[4096], geom_path[4096], font_path[4096], gest_path[4096];
   snprintf(look_path, sizeof look_path, "%s/look.json", data_dir);
   snprintf(geom_path, sizeof geom_path, "%s/look/geometry.json", data_dir);
   omx_panel_view_t *v = NULL;
   size_t font_size = 0;
-  char *desc = slurp(description_path, NULL), *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
-  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); goto out; }
+  char *look = slurp(look_path, NULL), *geom = slurp(geom_path, NULL), *font = NULL, *gest = NULL;
+  if (!desc) { fail(err, n, "no description%s%s", NULL, NULL); goto out; }
   if (!look) { fail(err, n, "cannot read %s%s", look_path, NULL); goto out; }
   if (!geom) { fail(err, n, "cannot read %s%s", geom_path, NULL); goto out; }
   {
@@ -511,13 +667,24 @@ omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path,
   omx_panel_sources_t s = {desc, look, geom, (const uint8_t *)font, font_size, gest};
   v = omx_panel_view_create(&s, err, n);
 out:
-  free(desc), free(look), free(geom), free(font), free(gest);
+  free(look), free(geom), free(font), free(gest);
   return v;
 }
+
+omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err, size_t n) {
+  char *desc = slurp(description_path, NULL);
+  if (!desc) { fail(err, n, "cannot read %s%s", description_path, NULL); return NULL; }
+  omx_panel_view_t *v = omx_panel_view_create_from_data(desc, data_dir, err, n);
+  free(desc);
+  return v;
+}
+
+static void redraw_free(omx_panel_view_t *v);
 
 void omx_panel_view_destroy(omx_panel_view_t *v) {
   if (!v) return;
   omx_input_free(v->in);
+  redraw_free(v);
   omx_scene_free(v->knob_scene);
   free(v->gestures_json);
   for (size_t i = 0; i < v->nsections; i++) free(v->sections[i]), free(v->section_keys ? v->section_keys[i] : NULL);
@@ -536,7 +703,7 @@ void omx_panel_view_destroy(omx_panel_view_t *v) {
     free(v->matrices[k].heads), free(v->matrices[k].row_label), free(v->matrices[k].cell);
   }
   free(v->matrices);
-  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name);
+  free(v->sections), free(v->controls), free(v->displays), free(v->brand), free(v->name), free(v->word_meters), free(v->word_unheld);
   omx_font_free(v->font);
   free(v);
 }
@@ -567,6 +734,25 @@ bool omx_panel_view_set_meter(omx_panel_view_t *v, uint32_t index, double value,
   return true;
 }
 
+/* The clip word is omx-dsp's view law (omx_meter_view_clip, omx_meter_view_clip_clear): a clip lights it and it stays lit until
+ * cleared. A meter whose description has no clip word is given none: what its source says never reaches the view. */
+bool omx_panel_view_set_clip(omx_panel_view_t *v, uint32_t index, bool clip) {
+  if (!v || index >= v->nmeters) return false;
+  meter *m = &v->meters[index];
+  if (m->clip) omx_meter_view_clip(&m->view, clip);
+  return true;
+}
+
+bool omx_panel_view_clear_clip(omx_panel_view_t *v, uint32_t index) {
+  if (!v || index >= v->nmeters) return false;
+  omx_meter_view_clip_clear(&v->meters[index].view);
+  return true;
+}
+
+bool omx_panel_view_meter_clip(const omx_panel_view_t *v, uint32_t index) {
+  return v && index < v->nmeters && v->meters[index].clip && v->meters[index].view.clip;
+}
+
 uint32_t omx_panel_view_count(const omx_panel_view_t *v) { return v ? (uint32_t)v->ncontrols : 0; }
 
 const char *omx_panel_word_name(omx_panel_word_t word) {
@@ -589,6 +775,10 @@ void omx_panel_view_set_title(omx_panel_view_t *v, const char *brand, const char
   if (!v) return;
   free(v->brand), free(v->name);
   v->brand = dup(brand), v->name = dup(name);
+}
+
+void omx_panel_view_set_head(omx_panel_view_t *v, bool shown) {
+  if (v) v->headless = !shown;
 }
 
 bool omx_panel_view_set_value(omx_panel_view_t *v, uint32_t i, double fraction, const char *text) {
@@ -803,6 +993,7 @@ typedef struct {
   char *drawn;       /* one per section: 0 for a section whose every control is hidden, which takes no space */
   double *mtop;      /* one per section: where its matrix starts below the section's top, -1 for a section with none */
   box meters;        /* the meters band, below the sections; h is 0 when no meter stands in it */
+  int ok;            /* 0: the layout could not be allocated, and nothing else of it is set */
 } laid;
 
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
@@ -810,7 +1001,11 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
   laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
             calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}};
+            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}, 1};
+  if (!L.sections || !L.cx || !L.cy || !L.drawn || !L.curves || !L.mtop) {
+    free(L.sections), free(L.cx), free(L.cy), free(L.drawn), free(L.curves), free(L.mtop);
+    return (laid){0};
+  }
   for (size_t s = 0; s < v->nsections; s++) L.mtop[s] = -1;
   for (size_t k = 0; k < v->ndisplays; k++)
     if (v->displays[k].section >= 0) L.curves[v->displays[k].section]++;
@@ -834,7 +1029,9 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   }
   if (most > (size_t)per_row) most = (size_t)per_row;
   if (across_most > most) most = across_most; /* a matrix is never wrapped */
-  double section_w = most * g->cellW + 2 * g->sectionPad, y = g->sectionTop;
+  /* the sections start below the head, or at the top of a face without one */
+  double top0 = v->headless ? g->pad : g->sectionTop;
+  double section_w = most * g->cellW + 2 * g->sectionPad, y = top0;
   double last = -1;
   for (size_t s = 0; s < v->nsections; s++) {
     if (!L.drawn[s]) continue;
@@ -875,7 +1072,7 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     last = top + h;
   }
   L.w = section_w + 2 * g->pad;
-  L.h = last >= 0 ? last + g->pad : g->sectionTop + g->pad;
+  L.h = last >= 0 ? last + g->pad : top0 + g->pad;
   return L;
 }
 
@@ -884,6 +1081,7 @@ static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), fre
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;
   laid L = lay_out(v, v->row_controls);
+  if (!L.ok) return;
   if (w) *w = (uint32_t)ceil(L.w);
   if (h) *h = (uint32_t)ceil(L.h);
   lay_free(&L);
@@ -932,7 +1130,7 @@ static void draw_display(const omx_draw *d, double x, double y, double w, double
 }
 
 static void draw_switch(const omx_draw *d, double x, double y, double w, double h, int on, const palette *col) {
-  d->round_rect(d->ctx, x, y, w, h, h / 2, on ? col->accent : col->body);
+  d->round_rect(d->ctx, x, y, w, h, h / 2, on ? col->pressed : col->body);
   double r = h / 2 - h * 0.15;
   d->disc(d->ctx, on ? x + w - h / 2 : x + h / 2, y + h / 2, r, on ? col->ink : col->inkDim);
 }
@@ -955,6 +1153,10 @@ static void text(const omx_draw *d, omx_font *f, const char *s, int upper, doubl
   d->text(d->ctx, f, cps, n, x, y, px, rgb, align);
   free(cps);
 }
+
+/* A mark is held inside the plot: a band whose frequency or depth lies off the axes sits on the plot's edge, so what a display draws never
+ * leaves its frame by more than the letter over the disc (BLEED_DISPLAY). */
+static double hold(double v, double lo, double hi) { return v < lo ? lo : v > hi ? hi : v; }
 
 /* A colour `a` of the way from `under` to `rgb`: a stroke laid at an alpha over the plot's body. */
 static omx_rgb over(omx_rgb under, omx_rgb rgb, double a) {
@@ -989,7 +1191,7 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
     if (g > lo + c->spec_grid * 1e-9 && k > 0) {
       char label[24];
       snprintf(label, sizeof label, "%g", fabs(g) < 1e-9 ? 0.0 : g);
-      text(d, font, label, 0, iw, ix + 3 * s, y - 2 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+      text(d, font, label, 0, iw, ix + 3 * s, y - 2 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
     }
   }
   static const double stop_t[4] = {0, 0.18, 0.5, 1};
@@ -1029,10 +1231,10 @@ static void draw_analyser(const omx_draw *d, omx_font *font, const textsizes *T,
   for (size_t k = 1; k < c->n; k++)
     d->segment(d->ctx, AX(c->x[k - 1]), AY(mid + c->y[k - 1]), AX(c->x[k]), AY(mid + c->y[k]), fmax(0.75, 0.75 * s), col->curve);
   for (size_t k = 0; c->n >= 2 && k < c->nmarks; k++) {
-    double qx = AX(c->mark_freq[k]), qy = AY(mid + c->mark_depth[k]);
+    double qx = hold(AX(c->mark_freq[k]), ix, ix + iw), qy = AY(mid + c->mark_depth[k]);
     char one[2] = {c->mark_letter[k], 0};
-    d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
-    text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+    d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
+    text(d, font, one, 0, iw, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
   }
 #undef AX
 #undef AY
@@ -1067,12 +1269,12 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
   for (size_t k = 0; k < c->nstems; k++) {
     if (!(c->stem_y[k] > lo)) continue; /* a stem at or below the floor is not there */
     double qx = ix + (c->stem_x[k] / xmax) * iw, qy = iy + ih - ((c->stem_y[k] - lo) / (hi - lo)) * ih;
-    d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->body, col->accent, c->stem_shade[k]));
+    d->segment(d->ctx, qx, iy + ih, qx, qy, fmax(1, 1.25 * s), towards(col->screen, col->accent, c->stem_shade[k]));
     if (c->stem_letter[k] != ' ') {
       /* the letter's baseline sits 3 px over the stem's top; a stem at the ceiling would put it over the frame, so it is
        * held to the frame's top (the text is baseline-aligned: the glyph occupies the size above the baseline) */
       char one[2] = {c->stem_letter[k], 0};
-      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      text(d, font, one, 0, w, qx, fmax(qy - 3 * s, iy + T->small * s), T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
     }
   }
 }
@@ -1084,7 +1286,7 @@ static void draw_time(const omx_draw *d, omx_font *font, const textsizes *T, con
 static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, const display *c, double x, double y, double w, double h, double s,
                        const palette *col) {
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
-  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->screen);
   double ix = x + 5 * s, iy = y + 5 * s, iw = w - 10 * s, ih = h - 10 * s - 12 * s;
   if (c->nspec)
     draw_analyser(d, font, T, c, ix, iy, iw, ih, s, col);
@@ -1114,13 +1316,13 @@ static void draw_curve(const omx_draw *d, omx_font *font, const textsizes *T, co
     /* the marks, on the log axis at the band's own depth: a disc and its planter's letter above */
     for (size_t k = 0; k < c->nmarks; k++) {
       double u = (log10(c->mark_freq[k]) - x0) / (x1 - x0);
-      double qx = ix + u * iw, qy = iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih;
+      double qx = hold(ix + u * iw, ix, ix + iw), qy = hold(iy + ih - ((c->mark_depth[k] - lo) / (hi - lo)) * ih, iy, iy + ih);
       char one[2] = {c->mark_letter[k], 0};
-      d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->ink);
-      text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+      d->disc(d->ctx, qx, qy, fmax(2, 2.5 * s), col->tScreen);
+      text(d, font, one, 0, w, qx, qy - 5 * s, T->small * s, col->tScreen, OMX_ALIGN_CENTRE);
     }
   }
-  text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  text(d, font, c->basis, 0, w - 12 * s, x + 6 * s, y + h - 5 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
 }
 
 /* The layout a box of width x height device px at `scale` gets, and the scale it is drawn at: the controls a row that
@@ -1131,6 +1333,10 @@ static laid place(const omx_panel_view_t *v, uint32_t width, uint32_t height, do
   double k = -1;
   for (int per_row = v->row_controls; per_row >= 1; per_row--) {
     laid T = lay_out(v, per_row);
+    if (!T.ok) {
+      lay_free(&L);
+      return (laid){0};
+    }
     double kx = omx_round(T.w * scale) <= width ? 1 : width / (T.w * scale);
     double ky = omx_round(T.h * scale) <= height ? 1 : height / (T.h * scale);
     if (fmin(kx, ky) > k) {
@@ -1148,6 +1354,7 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *v, uint32_t width, uint
   if (!v || index >= v->ncontrols || !shown(&v->controls[index]) || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   const box *sec = &L.sections[v->controls[index].section];
   rect[0] = (sec->x + L.cx[index]) * s, rect[1] = (sec->y + L.cy[index]) * s;
   rect[2] = v->g.cellW * s, rect[3] = v->g.cellH * s;
@@ -1159,6 +1366,7 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
   if (!v || !width || !height || !(scale > 0)) return false;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
   for (size_t i = 0; i < v->ncontrols; i++) {
     shown_out[i] = shown(&v->controls[i]);
     if (!shown_out[i]) continue;
@@ -1171,45 +1379,86 @@ bool omx_view_cells(const omx_panel_view_t *v, uint32_t width, uint32_t height, 
 
 /* A meter of the band: the frame with its caption (the label and the range with its unit), the bar along the foot, and the
  * peak marker over it. Until a reading is given only the frame and the caption stand, as the MOD GUI draws it. */
-static void draw_meter(const omx_draw *d, omx_font *font, const textsizes *T, const meter *m, double x, double y, double w, double h, double s,
-                       const palette *col) {
+static void draw_meter(const omx_draw *d, omx_font *font, const geometry *g, const textsizes *T, const meter *m, const char *unheld, double x, double y,
+                       double w, double h, double s, const palette *col) {
   d->round_rect(d->ctx, x, y, w, h, fmin(4, h / 4), col->rim);
-  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->body);
-  char cap[256];
-  snprintf(cap, sizeof cap, "%s  %g to %g %s", m->label, m->min, m->max, m->unit);
-  text(d, font, cap, 0, w - 12 * s, x + 6 * s, y + 12 * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+  d->round_rect(d->ctx, x + 1, y + 1, w - 2, h - 2, fmin(3, h / 4), col->screen);
+  /* the caption: the label, the range and its unit, and the panel's word for a meter whose plugin holds nothing between reads */
+  char cap[320];
+  snprintf(cap, sizeof cap, "%s  %g to %g %s%s%s", m->label, m->min, m->max, m->unit, m->held ? "" : "  ", m->held ? "" : unheld);
+  /* a meter with a clip word wears its lamp at the frame's top right, the caption kept clear of it: lit (the meter red) while the
+   * word is, dark (the frame's body) until a clip and after a clear */
+  double lamp = g->meterLamp * s;
+  text(d, font, cap, 0, w - 12 * s - (m->clip ? lamp + 4 * s : 0), x + 6 * s, y + 12 * s, T->small * s, col->tScreenDim, OMX_ALIGN_LEFT);
+  if (m->clip) {
+    double lx = x + w - 6 * s - lamp, ly = y + 4 * s;
+    d->round_rect(d->ctx, lx, ly, lamp, lamp, 2 * s, col->rim);
+    d->round_rect(d->ctx, lx + s, ly + s, lamp - 2 * s, lamp - 2 * s, s, m->view.clip ? col->meterRed : col->screen);
+  }
   if (!m->has) return;
   double inner = w - 4 * s, f = m->fill, mk = m->marker;
   if (f > 0) d->round_rect(d->ctx, x + 2 * s, y + h - 6 * s, inner * f, 4 * s, 0, col->accent);
-  d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->ink);
+  d->round_rect(d->ctx, x + 2 * s + fmax(0, inner * mk - 2 * s), y + h - 7 * s, 2 * s, 6 * s, 0, col->tScreen);
 }
 
-void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
+/* How far a widget's own pixels can reach beyond the cell, the frame or the band they are laid in (anti-aliased edges, a glyph's overhang,
+ * a mark's letter above its disc), in logical px. A repaint clip reaches this far into the elements it is tested against, and the
+ * rectangle a changed element reports is grown by the same: one number for both, so a pixel the element drew is always repainted. */
+#define BLEED 4
+#define BLEED_DISPLAY 10
+
+/* Whether the box (device px) can reach into the clip (x0, y0, x1, y1, device px) from `bleed` px away; NULL clip is the whole buffer. */
+static int reaches(const int *clip, double x, double y, double w, double h, double bleed) {
+  return !clip || (x - bleed < clip[2] && x + w + bleed > clip[0] && y - bleed < clip[3] && y + h + bleed > clip[1]);
+}
+
+bool omx_panel_view_paint_clip(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d, const int *clip) {
   const geometry *g = &v->g;
   const textsizes *T = &v->t;
   const palette *col = &v->col;
   omx_font *font = v->font;
   double s;
   laid L = place(v, width, height, scale, &s);
+  if (!L.ok) return false;
 
-  d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, g->radius * s, col->rim);
-  d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (g->radius - 1) * s, col->surface);
-  d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->accent);
-  d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->accent);
-  double head_w = (L.w - 2 * g->pad - 24) * s;
-  text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->inkDim, OMX_ALIGN_LEFT);
-  text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->ink, OMX_ALIGN_LEFT);
+  /* the body is the style's enclosure, with its screws in the foot's corners; a style with a head plate sets it over the top */
+  const plates *f = &v->plates;
+  double radius = f->radius < 0 ? g->radius : f->radius;
+  d->round_rect(d->ctx, 0, 0, L.w * s, L.h * s, radius * s, col->rim);
+  d->round_rect(d->ctx, s, s, (L.w - 2) * s, (L.h - 2) * s, (radius - 1) * s, col->enclosure);
+  if (f->screws) {
+    double r = g->screw / 2, cy = L.h - g->screwInset - r;
+    double at[2] = {g->screwInset + r, L.w - g->screwInset - r};
+    for (int k = 0; k < 2; k++) {
+      d->disc(d->ctx, at[k] * s, cy * s, r * s, col->screws);
+      d->segment(d->ctx, (at[k] - r * 0.7) * s, (cy + r * 0.7) * s, (at[k] + r * 0.7) * s, (cy - r * 0.7) * s, fmax(0.6, 0.8 * s), col->screwSlot);
+    }
+  }
+  if (!v->headless) {
+    if (f->head)
+      d->round_rect(d->ctx, (1 + f->insetSide) * s, (1 + f->insetTop) * s, (L.w - 2 - 2 * f->insetSide) * s, (g->headH - 1 - f->insetTop) * s,
+                    (f->insetSide ? 4 : radius - 1) * s, col->head);
+    if (f->rule) d->round_rect(d->ctx, s, (g->headH - 2) * s, (L.w - 2) * s, 2 * s, 0, col->rule);
+    d->disc(d->ctx, (L.w - g->pad - 10) * s, (g->headH / 2) * s, 5 * s, col->lamp);
+    double head_w = (L.w - 2 * g->pad - 24) * s;
+    if (reaches(clip, 0, 0, L.w * s, g->headH * s, BLEED * s)) {
+      text(d, font, v->brand, 1, head_w, g->pad * s, T->brandBase * s, T->brand * s, col->tBrand, OMX_ALIGN_LEFT);
+      text(d, font, v->name, 0, head_w, g->pad * s, T->titleBase * s, T->title * s, col->tLabel, OMX_ALIGN_LEFT);
+    }
+  }
   for (size_t si = 0; si < v->nsections; si++) {
     if (!L.drawn[si]) continue;
     box sec = L.sections[si];
-    d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
+    if (!reaches(clip, sec.x * s, sec.y * s, sec.w * s, sec.h * s, BLEED * s)) continue;
+    if (f->sections) d->round_rect(d->ctx, sec.x * s, sec.y * s, sec.w * s, sec.h * s, g->sectionRadius * s, col->section);
     text(d, font, v->sections[si], 1, (sec.w - 2 * g->sectionPad) * s, (sec.x + g->sectionPad) * s, (sec.y + T->sectionBase) * s,
-         T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+         T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t m = 0; m < v->ndisplays; m++) {
       if (v->displays[m].section != (int)si) continue;
-      draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s,
-                 (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
+      double cy = (sec.y + g->sectionTitleH + row++ * (g->curveH + g->curveGap)) * s;
+      if (!reaches(clip, (sec.x + g->sectionPad) * s, cy, (sec.w - 2 * g->sectionPad) * s, g->curveH * s, BLEED_DISPLAY * s)) continue;
+      draw_curve(d, font, T, &v->displays[m], (sec.x + g->sectionPad) * s, cy, (sec.w - 2 * g->sectionPad) * s, g->curveH * s, s, col);
     }
     /* a head-row cell with no control is its head's caption: the head's label in that cell's name place, a row of its own */
     const matrix *mx = matrix_of_section(v, si);
@@ -1229,6 +1478,7 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       const control *k = &v->controls[i];
       if (k->section != (int)si || !shown(k)) continue;
       double x = sec.x + L.cx[i], y = sec.y + L.cy[i];
+      if (!reaches(clip, x * s, y * s, g->cellW * s, g->cellH * s, BLEED * s)) continue;
       int reading = 0;
       switch (k->bar ? W_FADER : k->w) {
       case W_SWITCH:
@@ -1251,31 +1501,37 @@ void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t he
       double mid = (x + g->cellW / 2) * s, w = (g->cellW - 4) * s;
       /* a selector's and a display's label stands under its control; every other label sits on its value strip (geometry.json) */
       int strip = !reading && (k->bar || k->w != W_SELECTOR);
-      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->inkDim, OMX_ALIGN_CENTRE);
+      text(d, font, k->bar ? k->bar : k->label, 0, w, mid, (y + (strip ? T->nameBaseStrip : T->nameBase)) * s, T->small * s, col->tControl, OMX_ALIGN_CENTRE);
       if (!k->bar && k->w == W_SELECTOR)
         text(d, font, k->text, 0, (g->selectorW - 8) * s, mid, (y + g->selectorTop + g->selectorH / 2 + T->small * 0.36) * s,
-             T->small * s, col->ink, OMX_ALIGN_CENTRE);
+             T->small * s, col->tKey, OMX_ALIGN_CENTRE);
       else if (strip) {
         /* the scribble strip: a recessed well the value is set in */
         double sw = g->scribbleW * s;
         d->round_rect(d->ctx, mid - sw / 2, (y + g->cellH - g->scribbleH) * s, sw, g->scribbleH * s, 3 * s, col->scribbleBg);
         text(d, font, k->text, 0, sw - 4 * s, mid, (y + T->valueBase) * s, T->small * s, col->scribbleInk, OMX_ALIGN_CENTRE);
       } else if (k->text[0])
-        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->ink, OMX_ALIGN_CENTRE);
+        text(d, font, k->text, 0, w, mid, (y + T->readingBase) * s, T->small * s, col->tValue, OMX_ALIGN_CENTRE);
     }
   }
-  if (v->nband) {
+  if (v->nband && reaches(clip, L.meters.x * s, L.meters.y * s, L.meters.w * s, L.meters.h * s, BLEED * s)) {
     box b = L.meters;
-    d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
-    text(d, font, "Meters", 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->inkDim, OMX_ALIGN_LEFT);
+    if (f->sections) d->round_rect(d->ctx, b.x * s, b.y * s, b.w * s, b.h * s, g->sectionRadius * s, col->section);
+    text(d, font, v->word_meters, 1, (b.w - 2 * g->sectionPad) * s, (b.x + g->sectionPad) * s, (b.y + T->sectionBase) * s, T->small * s, col->tSection, OMX_ALIGN_LEFT);
     int row = 0;
     for (size_t k = 0; k < v->nmeters; k++) {
       if (!v->meters[k].in_band) continue;
-      draw_meter(d, font, T, &v->meters[k], (b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s,
-                 (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
+      double my = (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s;
+      if (!reaches(clip, (b.x + g->sectionPad) * s, my, (b.w - 2 * g->sectionPad) * s, g->meterH * s, BLEED * s)) continue;
+      draw_meter(d, font, g, T, &v->meters[k], v->word_unheld, (b.x + g->sectionPad) * s, my, (b.w - 2 * g->sectionPad) * s, g->meterH * s, s, col);
     }
   }
   lay_free(&L);
+  return true;
+}
+
+void omx_panel_view_paint(const omx_panel_view_t *v, uint32_t width, uint32_t height, double scale, const omx_draw *d) {
+  omx_panel_view_paint_clip(v, width, height, scale, d, NULL);
 }
 
 omx_font *omx_panel_view_font(const omx_panel_view_t *v) { return v ? v->font : NULL; }
@@ -1297,22 +1553,292 @@ static void cpu_text(void *c, omx_font *f, const uint32_t *cps, size_t n, double
   omx_draw_text(c, f, cps, n, x, y, px, rgb, a);
 }
 
-bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
-  if (!v || !b || !b->pixels || !b->width || !b->height || b->stride < (uint64_t)b->width * 4 || !(b->scale > 0) ||
-      (unsigned)b->format > OMX_PANEL_PIXEL_BGRA8_STRAIGHT)
-    return false;
-  for (uint32_t y = 0; y < b->height; y++) memset(b->pixels + (size_t)y * b->stride, 0, (size_t)b->width * 4);
-  int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
-  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra};
-  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_strip, cpu_text, cpu_scene};
-  omx_panel_view_paint(v, b->width, b->height, b->scale, &d);
-  /* drawn with straight alpha; a premultiplied buffer gets each colour times its alpha, rounded to the nearest */
-  if (b->format == OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED)
-    for (uint32_t y = 0; y < b->height; y++) {
-      uint8_t *p = b->pixels + (size_t)y * b->stride;
-      for (uint32_t x = 0; x < b->width; x++, p += 4)
-        if (p[3] != 255)
-          for (int k = 0; k < 3; k++) p[k] = (uint8_t)((p[k] * p[3] + 127) / 255);
+/* ------------------------------------------------------------------------------- what the last draw drew
+ * A draw into a buffer remembers, for each element of the panel (the head, each section, each control's cell, each display, the meters
+ * band and each meter in it), the box it filled and a signature of every value its drawing reads. The next draw into the same buffer
+ * compares them: an element whose box or signature changed is repainted (its old box too, where it moved), and nothing else is. */
+
+typedef struct {
+  double x, y, w, h; /* device px; w is 0 for an element not drawn */
+  double bleed;      /* how far its pixels reach beyond the box */
+  uint64_t sig;
+} elem;
+
+struct omx_redraw {
+  uint8_t *pixels;
+  uint32_t width, height, stride;
+  double scale;
+  int format;
+  double lw, lh, s; /* the panel's size at the last draw */
+  size_t n;
+  elem *el, *now; /* the last draw's elements, and room for the next draw's: one block, swapped each draw */
+  void *bx;       /* room for the boxes a draw collects (2 * n): in the same block */
+  void *block;
+};
+
+static uint64_t mix(uint64_t h, const void *p, size_t n) {
+  const uint8_t *b = p;
+  for (size_t i = 0; i < n; i++) h = (h ^ b[i]) * 1099511628211ull;
+  return h;
+}
+static uint64_t mix_str(uint64_t h, const char *t) { return mix(mix(h, t ? t : "", t ? strlen(t) + 1 : 1), "\0", 1); }
+static uint64_t mix_num(uint64_t h, double d) { return mix(h, &d, sizeof d); }
+static uint64_t mix_arr(uint64_t h, const double *a, size_t n) {
+  h = mix(h, &n, sizeof n);
+  return a && n ? mix(h, a, n * sizeof *a) : h;
+}
+
+static uint64_t sig_control(const control *k) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix(h, &k->w, sizeof k->w);
+  h = mix_str(h, k->label), h = mix_str(h, k->bar), h = mix_str(h, k->text);
+  h = mix_num(h, k->fraction);
+  h = mix(h, &k->at, sizeof k->at), h = mix(h, &k->count, sizeof k->count);
+  return h;
+}
+static uint64_t sig_display(const display *c) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix_str(h, c->basis);
+  h = mix(h, &c->log_x, sizeof c->log_x), h = mix(h, &c->symmetric, sizeof c->symmetric), h = mix(h, &c->time_x, sizeof c->time_x);
+  h = mix_arr(h, c->x, c->n), h = mix_arr(h, c->y, c->n);
+  h = mix_arr(h, c->stem_x, c->nstems), h = mix_arr(h, c->stem_y, c->nstems), h = mix_arr(h, c->stem_shade, c->nstems);
+  h = mix(h, c->stem_letter ? c->stem_letter : "", c->stem_letter ? c->nstems : 0);
+  h = mix_arr(h, c->mark_freq, c->nmarks), h = mix_arr(h, c->mark_depth, c->nmarks);
+  h = mix(h, c->mark_letter ? c->mark_letter : "", c->mark_letter ? c->nmarks : 0);
+  h = mix_arr(h, c->spec_hz, c->nspec), h = mix_arr(h, c->spec_pre, c->nspec), h = mix_arr(h, c->spec_post, c->nspec);
+  h = mix_arr(h, c->spec_peak, c->nspec), h = mix(h, &c->spec_mode, sizeof c->spec_mode), h = mix(h, &c->spec_delta, sizeof c->spec_delta);
+  h = mix_num(h, c->spec_min), h = mix_num(h, c->spec_max), h = mix_num(h, c->spec_grid);
+  return h;
+}
+static uint64_t sig_meter(const meter *m) {
+  uint64_t h = 14695981039346656037ull;
+  h = mix_str(h, m->label), h = mix_str(h, m->unit);
+  h = mix_num(h, m->min), h = mix_num(h, m->max), h = mix(h, &m->has, sizeof m->has);
+  h = mix_num(h, m->fill), h = mix_num(h, m->marker);
+  return h;
+}
+
+/* The elements of the panel as it would be drawn now at scale s, in a fixed order: the head, the sections, the controls, the displays, the
+ * meters band, the meters. */
+static size_t elem_count(const omx_panel_view_t *v) { return 2 + v->nsections + v->ncontrols + v->ndisplays + v->nmeters; }
+
+static void elements(const omx_panel_view_t *v, const laid *L, double s, elem *out) {
+  const geometry *g = &v->g;
+  size_t at = 0;
+  uint64_t head = mix_str(mix_str(14695981039346656037ull, v->brand), v->name);
+  out[at++] = (elem){0, 0, L->w * s, g->headH * s, BLEED * s, head};
+  for (size_t si = 0; si < v->nsections; si++) {
+    box b = L->sections[si];
+    out[at++] = L->drawn[si] ? (elem){b.x * s, b.y * s, b.w * s, b.h * s, BLEED * s, mix_str(14695981039346656037ull, v->sections[si])}
+                             : (elem){0, 0, 0, 0, 0, 0};
+  }
+  size_t ctl0 = at;
+  at += v->ncontrols;
+  size_t disp0 = at;
+  at += v->ndisplays;
+  elem *band = &out[at++];
+  size_t met0 = at;
+  at += v->nmeters;
+  for (size_t i = 0; i < v->ncontrols; i++) {
+    const control *k = &v->controls[i];
+    if (!shown(k) || !L->drawn[k->section]) {
+      out[ctl0 + i] = (elem){0, 0, 0, 0, 0, 0};
+      continue;
     }
+    box sec = L->sections[k->section];
+    out[ctl0 + i] = (elem){(sec.x + L->cx[i]) * s, (sec.y + L->cy[i]) * s, g->cellW * s, g->cellH * s, BLEED * s, sig_control(k)};
+  }
+  for (size_t si = 0; si < v->nsections; si++) {
+    int row = 0;
+    for (size_t m = 0; m < v->ndisplays; m++) {
+      if (v->displays[m].section != (int)si) continue;
+      box sec = L->sections[si];
+      out[disp0 + m] = L->drawn[si] ? (elem){(sec.x + g->sectionPad) * s, (sec.y + g->sectionTitleH + row * (g->curveH + g->curveGap)) * s,
+                                             (sec.w - 2 * g->sectionPad) * s, g->curveH * s, BLEED_DISPLAY * s, sig_display(&v->displays[m])}
+                                    : (elem){0, 0, 0, 0, 0, 0};
+      row++;
+    }
+  }
+  for (size_t m = 0; m < v->ndisplays; m++)
+    if (v->displays[m].section < 0) out[disp0 + m] = (elem){0, 0, 0, 0, 0, 0};
+  *band = v->nband ? (elem){L->meters.x * s, L->meters.y * s, L->meters.w * s, L->meters.h * s, BLEED * s, mix(14695981039346656037ull, &v->nband, sizeof v->nband)}
+                   : (elem){0, 0, 0, 0, 0, 0};
+  int row = 0;
+  for (size_t k = 0; k < v->nmeters; k++) {
+    if (!v->meters[k].in_band) {
+      out[met0 + k] = (elem){0, 0, 0, 0, 0, 0};
+      continue;
+    }
+    box b = L->meters;
+    out[met0 + k] = (elem){(b.x + g->sectionPad) * s, (b.y + g->sectionTitleH + row++ * (g->meterH + g->meterGap)) * s, (b.w - 2 * g->sectionPad) * s,
+                           g->meterH * s, BLEED * s, sig_meter(&v->meters[k])};
+  }
+}
+
+static void premultiply(const omx_panel_buffer_t *b, const omx_panel_rect_t *r) {
+  if (b->format != OMX_PANEL_PIXEL_RGBA8_PREMULTIPLIED && b->format != OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED) return;
+  for (uint32_t y = r->y; y < r->y + r->height; y++) {
+    uint8_t *p = b->pixels + (size_t)y * b->stride + (size_t)r->x * 4;
+    for (uint32_t x = 0; x < r->width; x++, p += 4)
+      if (p[3] != 255)
+        for (int k = 0; k < 3; k++) p[k] = (uint8_t)((p[k] * p[3] + 127) / 255);
+  }
+}
+
+/* Clear a rectangle to transparent and draw the panel into it, as a full draw draws that part: drawn with straight alpha, then a
+ * premultiplied buffer gets each colour times its alpha, rounded to the nearest. */
+static bool paint_rect(const omx_panel_view_t *v, const omx_panel_buffer_t *b, const omx_panel_rect_t *r, int whole) {
+  for (uint32_t y = r->y; y < r->y + r->height; y++) memset(b->pixels + (size_t)y * b->stride + (size_t)r->x * 4, 0, (size_t)r->width * 4);
+  int bgra = b->format == OMX_PANEL_PIXEL_BGRA8_PREMULTIPLIED || b->format == OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
+  omx_canvas cv = {b->pixels, (int)b->width, (int)b->height, b->stride, bgra, (int)r->x, (int)r->y, (int)(r->x + r->width), (int)(r->y + r->height)};
+  const omx_draw d = {&cv, cpu_round_rect, cpu_disc, cpu_segment, cpu_fill_under, cpu_strip, cpu_text, cpu_scene};
+  int clip[4] = {cv.cx0, cv.cy0, cv.cx1, cv.cy1};
+  if (!omx_panel_view_paint_clip(v, b->width, b->height, b->scale, &d, whole ? NULL : clip)) return false;
+  premultiply(b, r);
+  return true;
+}
+
+static bool valid_buffer(const omx_panel_buffer_t *b) {
+  return b && b->pixels && b->width && b->height && b->stride >= (uint64_t)b->width * 4 && b->scale > 0 &&
+         (unsigned)b->format <= OMX_PANEL_PIXEL_BGRA8_STRAIGHT;
+}
+
+/* Forget what the buffer holds: the next draw into it is a whole one. */
+static void redraw_free(omx_panel_view_t *v) {
+  if (v->rd) free(v->rd->block), free(v->rd);
+  v->rd = NULL;
+}
+
+typedef struct { int x0, y0, x1, y1; } ibox;
+
+/* Remember what is now on the buffer: its identity, the panel's size and every element. The memory it needs is taken here, once, so a
+ * draw into the same buffer allocates nothing of its own; short of memory the view forgets, and the next draw is a whole one. */
+static void remember(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
+  size_t n = elem_count(v);
+  double s;
+  laid L = place(v, b->width, b->height, b->scale, &s);
+  struct omx_redraw *r = L.ok ? calloc(1, sizeof *r) : NULL;
+  if (r) r->block = malloc(2 * n * sizeof(elem) + 2 * n * sizeof(ibox));
+  if (!r || !r->block) {
+    if (r) free(r);
+    redraw_free(v);
+    lay_free(&L);
+    return;
+  }
+  redraw_free(v);
+  v->rd = r;
+  r->n = n, r->el = r->block, r->now = r->el + n, r->bx = r->now + n;
+  elements(v, &L, s, r->el);
+  r->pixels = b->pixels, r->width = b->width, r->height = b->height, r->stride = b->stride, r->scale = b->scale, r->format = (int)b->format;
+  r->lw = L.w, r->lh = L.h, r->s = s;
+  lay_free(&L);
+}
+
+bool omx_panel_view_draw(omx_panel_view_t *v, const omx_panel_buffer_t *b) {
+  if (!v || !valid_buffer(b)) return false;
+  omx_panel_rect_t all = {0, 0, b->width, b->height};
+  if (!paint_rect(v, b, &all, 1)) {
+    redraw_free(v); /* the buffer was cleared and not drawn: it holds no draw to repaint over */
+    return false;
+  }
+  remember(v, b);
+  return true;
+}
+
+
+static int boxes_meet(const ibox *a, const ibox *b) { return a->x0 < b->x1 && b->x0 < a->x1 && a->y0 < b->y1 && b->y0 < a->y1; }
+static void box_cover(ibox *a, const ibox *b) {
+  if (b->x0 < a->x0) a->x0 = b->x0;
+  if (b->y0 < a->y0) a->y0 = b->y0;
+  if (b->x1 > a->x1) a->x1 = b->x1;
+  if (b->y1 > a->y1) a->y1 = b->y1;
+}
+static long box_area(const ibox *a) { return (long)(a->x1 - a->x0) * (a->y1 - a->y0); }
+
+/* Merge boxes that meet, until none do. */
+static size_t merge_meeting(ibox *bx, size_t n) {
+  for (int again = 1; again;) {
+    again = 0;
+    for (size_t i = 0; i < n && !again; i++)
+      for (size_t j = i + 1; j < n; j++)
+        if (boxes_meet(&bx[i], &bx[j])) {
+          box_cover(&bx[i], &bx[j]);
+          bx[j] = bx[--n];
+          again = 1;
+          break;
+        }
+  }
+  return n;
+}
+
+/* Merge boxes that meet; then, past `cap`, the pair that grows the covering area least (and what that makes meet) until `cap` remain. */
+static size_t merge_boxes(ibox *bx, size_t n, size_t cap) {
+  n = merge_meeting(bx, n);
+  while (n > cap) {
+    size_t bi = 0, bj = 1;
+    long best = -1;
+    for (size_t i = 0; i < n; i++)
+      for (size_t j = i + 1; j < n; j++) {
+        ibox u = bx[i];
+        box_cover(&u, &bx[j]);
+        long grow = box_area(&u) - box_area(&bx[i]) - box_area(&bx[j]);
+        if (best < 0 || grow < best) best = grow, bi = i, bj = j;
+      }
+    box_cover(&bx[bi], &bx[bj]);
+    bx[bj] = bx[--n];
+    n = merge_meeting(bx, n);
+  }
+  return n;
+}
+
+static void add_box(ibox *bx, size_t *n, const elem *e, const omx_panel_buffer_t *b) {
+  if (!(e->w > 0) || !(e->h > 0)) return;
+  ibox r = {(int)floor(e->x - e->bleed), (int)floor(e->y - e->bleed), (int)ceil(e->x + e->w + e->bleed), (int)ceil(e->y + e->h + e->bleed)};
+  if (r.x0 < 0) r.x0 = 0;
+  if (r.y0 < 0) r.y0 = 0;
+  if (r.x1 > (int)b->width) r.x1 = (int)b->width;
+  if (r.y1 > (int)b->height) r.y1 = (int)b->height;
+  if (r.x1 > r.x0 && r.y1 > r.y0) bx[(*n)++] = r;
+}
+
+bool omx_panel_view_draw_dirty(omx_panel_view_t *v, const omx_panel_buffer_t *b, omx_panel_rect_t *rects, size_t cap, size_t *count) {
+  if (!v || !valid_buffer(b) || !rects || !count || !cap) return false;
+  struct omx_redraw *r = v->rd;
+  double s;
+  laid L = place(v, b->width, b->height, b->scale, &s);
+  /* a full draw stands for a layout that could not be made (short of memory), as for the cases the header names */
+  int full = !L.ok || !r || r->n != elem_count(v) || r->pixels != b->pixels || r->width != b->width || r->height != b->height ||
+             r->stride != b->stride || r->scale != b->scale || r->format != (int)b->format || r->lw != L.w || r->lh != L.h || r->s != s;
+  if (full) {
+    lay_free(&L);
+    if (!omx_panel_view_draw(v, b)) return false;
+    rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+    *count = 1;
+    return true;
+  }
+  size_t n = r->n;
+  elem *now = r->now;
+  ibox *bx = r->bx;
+  elements(v, &L, s, now);
+  lay_free(&L);
+  size_t nb = 0;
+  for (size_t i = 0; i < n; i++)
+    if (now[i].sig != r->el[i].sig || now[i].x != r->el[i].x || now[i].y != r->el[i].y || now[i].w != r->el[i].w || now[i].h != r->el[i].h) {
+      add_box(bx, &nb, &r->el[i], b);
+      add_box(bx, &nb, &now[i], b);
+    }
+  nb = merge_boxes(bx, nb, cap);
+  for (size_t i = 0; i < nb; i++) {
+    rects[i] = (omx_panel_rect_t){(uint32_t)bx[i].x0, (uint32_t)bx[i].y0, (uint32_t)(bx[i].x1 - bx[i].x0), (uint32_t)(bx[i].y1 - bx[i].y0)};
+    if (!paint_rect(v, b, &rects[i], 0)) { /* cannot happen after place() answered, but a repaint that did not finish is made whole */
+      redraw_free(v);
+      if (!omx_panel_view_draw(v, b)) return false;
+      rects[0] = (omx_panel_rect_t){0, 0, b->width, b->height};
+      *count = 1;
+      return true;
+    }
+  }
+  r->now = r->el, r->el = now;
+  *count = nb;
   return true;
 }

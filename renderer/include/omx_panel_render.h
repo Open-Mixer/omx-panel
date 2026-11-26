@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
- *
- * omx_panel_render.h — the panel renderer: one C library that draws a panel description (what
+ */
+/**
+ * @file omx_panel_render.h
+ * @brief The panel renderer: one C library that draws a panel description (what
  * `omx-panel layout` writes, tools/panel-description.mjs) in the omx look, into a plain CPU pixel
  * buffer. Every surface that shows a plugin's panel draws through it: a plugin window (the buffer is
  * blitted into it), a host-embedded inline view at the size the host gives, and a buffer another
@@ -74,6 +76,9 @@ omx_panel_view_t *omx_panel_view_create(const omx_panel_sources_t *sources, char
 omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err,
                                                    size_t err_size);
 
+/** The same with the description in memory (`description_json`, `omx-panel layout`'s output): a plugin that carries its own. */
+omx_panel_view_t *omx_panel_view_create_from_data(const char *description_json, const char *data_dir, char *err, size_t err_size);
+
 void omx_panel_view_destroy(omx_panel_view_t *view);
 
 /** The controls, in the description's order: their count, and the index of the one named `symbol`
@@ -85,6 +90,9 @@ const char *omx_panel_view_symbol(const omx_panel_view_t *view, uint32_t index);
 
 /** The head: the maker and the plugin's name, both UTF-8. NULL leaves one empty. */
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
+/** Whether the face has its head (the maker, the name, the accent rule and dot, `headH` tall): true, the default, or false,
+ * where the sections start at the top of the face (`pad`), so a one-control face is the control, its label and its value. */
+void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 
 /** A control's current reading: `fraction` its place along its travel (0 the minimum, 1 the
  * maximum, clamped), `text` what its plugin shows for the value (NULL for none). A switch is on from
@@ -103,6 +111,18 @@ int32_t omx_panel_view_meter_find(const omx_panel_view_t *view, const char *symb
  * copied), silence included. Until a reading is set the frame and its caption stand. False for an index past the meters, or a value
  * or elapsed time that is not finite (or is negative). */
 bool omx_panel_view_set_meter(omx_panel_view_t *view, uint32_t index, double value, double elapsed);
+
+/** A meter's clip at a draw tick: `clip` whether its source reported a clip since the last tick. The clip word is omx-dsp's view law
+ * (omx_meter_view_clip of <omxdsp/mix/omx_meter_view.h>): a clip lights it and it stays lit across ticks until
+ * omx_panel_view_clear_clip(). A meter whose description does not say `clip: true` has no clip word and never lights one, whatever
+ * its source says. A meter of the band with a clip word draws it as a lamp at its frame's top right. False for an index past the
+ * meters. */
+bool omx_panel_view_set_clip(omx_panel_view_t *view, uint32_t index, bool clip);
+/** Clear meter `index`'s clip word (omx_meter_view_clip_clear: the operator's gesture, or a reset). False for an index past the
+ * meters. */
+bool omx_panel_view_clear_clip(omx_panel_view_t *view, uint32_t index);
+/** Whether meter `index`'s clip word is lit; false for a meter without one, or an index past the meters. */
+bool omx_panel_view_meter_clip(const omx_panel_view_t *view, uint32_t index);
 
 /** A selector's reading: option `at` of `count`, and its label. */
 bool omx_panel_view_set_choice(omx_panel_view_t *view, uint32_t index, uint32_t at, uint32_t count, const char *text);
@@ -182,6 +202,28 @@ bool omx_panel_view_control_rect(const omx_panel_view_t *view, uint32_t width, u
  * the top-left corner. False, drawing nothing, for a buffer that is not one (no pixels, a zero
  * size, a stride under four bytes a pixel, a scale that is not positive, a format that is not one). */
 bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffer);
+
+/** A rectangle of a buffer, in device px: `width` x `height` from (`x`, `y`) at the buffer's top-left. */
+typedef struct omx_panel_rect {
+  uint32_t x, y, width, height;
+} omx_panel_rect_t;
+
+/** Draw only what changed since the last draw into this buffer, and say where. The buffer must be the one the last draw of this
+ * view went into, still holding that draw: the view repaints the rectangles it reports (each cleared to transparent and drawn again, as
+ * a full draw draws them) and leaves every other byte as it is, so the pixels equal a full draw of the same state.
+ * What marks a rectangle is a change of what the view would draw there: a control's reading or text, a meter's bar or marker, a
+ * display's points, stems, marks or spectrum, the title, a governing value that shows or hides a control (the cell that moved or
+ * went, as it was and as it is). One changed control reports its own cell and nothing else; nothing changed reports none.
+ *
+ * A full draw stands for the first frame, a buffer that is not the last draw's (another address, size, stride, scale or pixel
+ * format), a resize, and a panel whose overall size changed: the whole buffer is then drawn and reported as one rectangle. A host
+ * that did not keep the last draw's bytes calls omx_panel_view_draw, which always draws the whole buffer.
+ *
+ * Up to `cap` rectangles are written to `rects` (cap >= 1); a draw with more changes than that reports their covering rectangles
+ * (merged, never dropped). `*count` is how many were written. False, drawing nothing, for a buffer omx_panel_view_draw refuses, a
+ * NULL `rects` or `count`, or a `cap` of 0. */
+bool omx_panel_view_draw_dirty(omx_panel_view_t *view, const omx_panel_buffer_t *buffer, omx_panel_rect_t *rects, size_t cap,
+                               size_t *count);
 
 /* ------------------------------------------------------------------------------------------------- input
  * One gesture vocabulary (one-panel spec 7.8, docs/panel-gestures.md, schema/gestures.json): the renderer maps a pointer, a wheel,

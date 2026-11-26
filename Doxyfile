@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+# The C API reference of the panel renderer (libomx-panel-render and its window), over its installed headers. The
+# documentation gate is Open-Mixer/.github's doc-gate (ci.yml, job docs): every warning doxygen writes is a row of
+# docs/doxygen-baseline.txt, which only shrinks, under the doxygen docs/doxygen-version.txt pins. `make docs-site`
+# renders the same Doxyfile for the published reference.
+PROJECT_NAME           = libomx-panel-render
+PROJECT_BRIEF          = "The panel renderer: a panel description drawn in the omx look, its window and its gestures"
+OUTPUT_DIRECTORY       = build/doxygen
+INPUT                  = renderer/include
+FILE_PATTERNS          = *.h
+RECURSIVE              = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = NO
+WARN_FORMAT            = "$file:$line: $text"
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+SEARCHENGINE           = NO
+HAVE_DOT               = NO

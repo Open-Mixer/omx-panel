@@ -4,18 +4,21 @@
 """A host that is not JavaScript reads what omx-panel owns from what omx-panel ships (#23), as zynthian-ui does in
 Python: the gesture word names through the C library's omx_panel_word_name, in schema/gestures.json's order, and the
 compare document's format, slots and ring bound through `omx-panel compare describe`, the values tools/compare.mjs
-holds. Nothing of either is restated here: the words are read from gestures.json, the compare values from the module.
+holds. Nothing of either is restated here: the words are the generated omx_panel.shapes.gestures.Word (#52: the module
+python3-omx-panel installs, rendered from shapes/gestures.schema.json), the compare values from the module.
 
   OMX_PANEL_RENDER_LIB  the shared library (default this tree's renderer/build/libomx-panel-render.so.1)
   OMX_PANEL             the command (default node bin/omx-panel.mjs of this tree)
 Set both to an installed package's to read that package.
 """
 import ctypes
+import importlib.util
 import json
 import os
 import shlex
 import subprocess
 import sys
+import typing
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,9 +26,23 @@ LIB = os.environ.get("OMX_PANEL_RENDER_LIB") or os.path.join(ROOT, "renderer", "
 CMD = shlex.split(os.environ.get("OMX_PANEL") or "node %s" % shlex.quote(os.path.join(ROOT, "bin", "omx-panel.mjs")))
 
 
+def gestures_shape():
+    """omx_panel.shapes.gestures as python3-omx-panel installs it, else the file of this tree that it is installed from"""
+    try:
+        from omx_panel.shapes import gestures
+        return gestures
+    except ImportError:
+        sys.dont_write_bytecode = True  # the committed render is not a place to leave a cache
+        path = os.path.join(ROOT, "share", "omx-panel", "omx_contract_gestures_shape.py")
+        spec = importlib.util.spec_from_file_location("omx_panel_shapes_gestures", path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        return module
+
+
 def declared_words():
-    with open(os.path.join(ROOT, "schema", "gestures.json")) as f:
-        return list(json.load(f)["words"])
+    return list(typing.get_args(gestures_shape().Word))
 
 
 def compare_module():

@@ -1,8 +1,5 @@
 {
   "$schema": "https://openmixer.org/schema/omx-contract/v3/omx-contract.schema.json",
-  "requires": {
-    "omx-contract-schema": ">= 3.4.0"
-  },
   "origin": "scanned",
   "plugin": {
     "format": "lv2",
@@ -117,7 +114,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": -100.0
       },
@@ -133,7 +130,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -181,7 +178,7 @@
       "travel": {
         "min": 0.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -793,7 +790,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": -100.0
       },
@@ -933,7 +930,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": -100.0
       },
@@ -949,7 +946,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": -100.0
       },
@@ -1089,7 +1086,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -1105,7 +1102,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -1245,7 +1242,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": -100.0
       },
@@ -1261,7 +1258,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },
@@ -1401,7 +1398,7 @@
       "travel": {
         "min": -100.0,
         "max": 100.0,
-        "unit": "%",
+        "unit": "percent",
         "scale": "linear",
         "default": 100.0
       },

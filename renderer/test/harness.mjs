@@ -21,7 +21,7 @@ export const TOOLS = join(ROOT, 'tools');
 /** A copy of the tools directory whose look.json names the console style: the renderer draws the knob the style's `--knob` names (the
  * vintage scene by default, omx-panel#123), and the goldens and the parity checks are held to the flat console knob, so they pin it
  * here, explicitly. A real copy, not links: a test that rewrites a file of the directory must not write through to the tree. */
-function pinnedData(style = 'console') {
+export function pinnedData(style = 'console') {
   // the gesture declaration is schema/gestures.json, found beside the tools directory (view.c): the copy keeps that layout
   const base = mkdtempSync(join(tmpdir(), 'omx-panel-data-'));
   const dir = join(base, 'tools');
@@ -72,6 +72,9 @@ export const FIXTURES = [
   { name: 'mbc', served: true, descriptor: 'test/fixtures/group-model/mbc.descriptor.json', stem: 'mbc' },
   // a repeated group whose heads have no on/off (four delay taps): each head's caption in a row of its own, the last
   { name: 'taps', served: true, descriptor: 'test/fixtures/group-model/taps.descriptor.json', stem: 'taps' },
+  // the real omx-delay as `omx-panel describe --layout` serves it, the face's time_response display included (#77): drawn
+  // as the layout's omx-delay is, so it is held to that fixture's golden images (`goldenOf`), never to copies of them
+  { name: 'omx-delay-served', served: true, descriptor: 'test/fixtures/omx-delay/omx-delay.descriptor.json', panel: 'test/fixtures/omx-delay/omx-delay.panel.json', stem: 'omx-delay', goldenOf: 'omx-delay' },
   { name: 'zamcomp', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', stem: 'ZamComp' },
   { name: 'zamcomp-panel', descriptor: 'examples/worked-example/zamcomp/zamcomp.descriptor.json', panel: 'examples/worked-example/zamcomp/zamcomp.panel.json', stem: 'ZamComp' },
 ];
