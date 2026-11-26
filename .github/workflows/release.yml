@@ -106,6 +106,23 @@ jobs:
       # channel's packages, not the registry's: a devel run's are staged and not on npm (npm publishes from a tag only)
       - run: npm ci
       - run: make link-packaged PREFIX=/usr DATADIR=/usr/share
+      # the shape renders' tests (test/shapes.test.mjs) run their generators under CI, so the proof has them as ci.yml does:
+      # omx-contract's tree at ci.yml's pin (OMX_CONTRACT_SHAPES_REF there; both move together) and the pinned venv
+      - name: The shape generators (docs/shapes.md), at omx-contract's pins
+        env:
+          OMX_CONTRACT_SHAPES_REF: 608ce65cb73aa9d7fe0ed4a39363c237200305f1
+        run: |
+          set -euo pipefail
+          dnf install -y --setopt=install_weak_deps=False python3-pip
+          tree="$RUNNER_TEMP/omx-contract-shapes"
+          git init -q "$tree"
+          git -C "$tree" fetch -q --depth 1 https://github.com/Open-Mixer/omx-contract.git "$OMX_CONTRACT_SHAPES_REF"
+          git -C "$tree" checkout -q FETCH_HEAD
+          (cd "$tree" && npm ci --no-audit --no-fund)
+          python3 -m venv "$RUNNER_TEMP/shapes-venv"
+          "$RUNNER_TEMP/shapes-venv/bin/pip" install -q -r "$tree/tools/shapes-requirements.txt"
+          echo "OMX_CONTRACT_TREE=$tree" >> "$GITHUB_ENV"
+          echo "OMX_DATAMODEL_CODEGEN=$RUNNER_TEMP/shapes-venv/bin/datamodel-codegen" >> "$GITHUB_ENV"
       - name: The tag names the package version
         if: github.ref_type == 'tag'
         env:
