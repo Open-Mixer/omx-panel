@@ -592,6 +592,12 @@ jobs:
           # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
           devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
       - uses: actions/checkout@v4
+      # the build runs in the checkout, as the release's build-deb.sh does (it sets the same): the base's built_from is git's
+      # HEAD there, and git refuses a checkout another user owns, the safe.directory actions/checkout sets lasting its own
+      # step only ("built-from-unknown: base/BUILT_FROM.txt holds no commit ($Format:%H$) and base/inputs is not in a git
+      # checkout", run 46040290184)
+      - name: The checkout is a git directory this job may read
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       # every Build-Depends of debian/control (the nocheck profile, as the build below), from the channel: a list kept here
       # by hand lacked omx-dsp-wasm and omx-contract, whose trees the build links ("link-packaged: no omx-dsp at
       # /usr/share/omx-dsp", run 46033243694)
