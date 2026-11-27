@@ -8,7 +8,7 @@
 %{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.17.0
+Version: 0.17.1
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -349,6 +349,10 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.1-1
+- The installed package.json names the installed tree: every export target
+  and the bin exist after make install (#272).
+
 * Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
 - Chain 3: V23d P2, a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED
   holds its id (omx-contract-data 3.22.0); the #170 consumers, coef is the plain

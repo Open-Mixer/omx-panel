@@ -1,3 +1,10 @@
+omx-panel (0.17.1) unstable; urgency=medium
+
+  * The installed package.json names the installed tree: every export
+    target and the bin exist after make install (#272).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 27 Nov 2026 12:00:00 +0100
+
 omx-panel (0.17.0) unstable; urgency=medium
 
   * Chain 3: V23d P2, a unit is served when omx-contract's
