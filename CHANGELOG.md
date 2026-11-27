@@ -232,6 +232,8 @@
 
 - 0.16.1: the v0.16.0 release run built no package. rpmbuild's %check runs `make test` in the release tarball, which has no .git, and the guard against plugin-hostd's LV2 table ran `git grep`; it now reads the files itself (#207). The deb build's installed tools check ran the staged lv2-complement, modgui-gen and modgui-import, which refused to load: a build host has no omx-panel-contract installed. `tools/installed-tools-check.sh` now takes the build's staged contract directory as a second argument, and debian/rules and %check pass it (#208). Floors unchanged.
 
+- 0.17.3: a served panel's display kind is the number omx-clap-scan prints (omx-clap-core keeps no panel words), read as its `PANEL_DISPLAY_KINDS` word and a display source as its `PANEL_DISPLAY_SOURCES` word (#286); a number the item lacks is refused by name. describe refused every family display of the omx-plugins 0.21.1 CLAPs (`a family display of kind 1 has no section graph here`), so the Pi drew no curve. Floors unchanged.
+
 - 0.17.2: the installed `package.json` names the installed tree (#272): every export target and the bin exist after `make install`, so a consumer linking `node_modules/@openmixer/omx-panel` to `/usr/share/omx-panel` resolves `@openmixer/omx-panel/store-entry`. Floors unchanged.
 
 - 0.17.1: the RPMs are built for Fedora aarch64 as well as x86_64 (the release matrix is Open-Mixer/.github's shared releases and architectures, with no list of this repository's own), published by the devel release of the full matrix with every change merged to devel since 0.17.0. Floors are generated at build from the versions the build root installed.

@@ -8,7 +8,7 @@
 %{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.17.2
+Version: 0.17.3
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -349,6 +349,11 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.3-1
+- A served display's kind is the number omx-clap-scan prints, read as its
+  PANEL_DISPLAY_KINDS word, so the family displays of the omx-plugins 0.21.1
+  CLAPs are drawn (#286).
+
 * Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.2-1
 - The installed package.json names the installed tree: every export target
   and the bin exist after make install (#272).

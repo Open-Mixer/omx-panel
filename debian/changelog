@@ -1,3 +1,11 @@
+omx-panel (0.17.3) unstable; urgency=medium
+
+  * A served display's kind is the number omx-clap-scan prints, read as its
+    PANEL_DISPLAY_KINDS word, so the family displays of the omx-plugins
+    0.21.1 CLAPs are drawn (#286).
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Fri, 27 Nov 2026 14:29:28 +0100
+
 omx-panel (0.17.2) unstable; urgency=medium
 
   * The installed package.json names the installed tree: every export
