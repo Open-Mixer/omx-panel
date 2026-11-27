@@ -4,9 +4,10 @@
  * The generators read the store, and `omx-panel-sync` is one pass with no systemd (docs/descriptions-store.md section 6
  * and lane 4). Through the real commands over a world of two installed LV2 plugins: a user-layer entry whose groups are
  * not what the rules infer makes the complement write the stored groups; with no store installed the complement infers
- * as before and says so; the pass derives each installed plugin once, prunes the entries of plugins no longer installed
- * from the layer it writes and touches no other, runs both generators and never runs systemctl (one on PATH records any
- * call and fails).
+ * as before and says so; the pass derives each installed plugin once, LV2 and CLAP (the CLAP plugins as omx-clap-scan
+ * lists them: a stand-in on PATH), prunes the entries of plugins no longer installed from the layer it writes and touches
+ * no other, runs both generators and never runs systemctl (one on PATH records any call and fails). With no
+ * omx-clap-scan the CLAP keys are neither described nor pruned.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -15,8 +16,27 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { readPluginPorts } from '../../dist/tools/group-infer.mjs';
 import { pluginTriples, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
-import { CMD, entry, hex, mkStore, panelVersion, ROOT, run, snapshot } from './helpers.mjs';
-import { DELAY, keysOf, sha256, sourceOf, storeEnv, TRIPLE, world } from './plugin-world.mjs';
+import { pass } from '../../dist/tools/panel-sync.mjs';
+import { CMD, DatabaseSync, entry, hex, mkStore, panelVersion, ROOT, run, snapshot } from './helpers.mjs';
+import { clapFile, DELAY, fakeClapScan, FIXTURES, keysOf, sha256, sourceOf, storeEnv, TRIPLE, world } from './plugin-world.mjs';
+
+/** A CLAP id no installed declaration names, so its descriptor is the scan's in DESCRIPTOR_DIRS. */
+const CLAP_ID = 'org.example.fixture-comp';
+
+/** The world's CLAP plugin: a file on its CLAP search list, and the descriptor a scan wrote for it. */
+function withClap(w) {
+  const d = JSON.parse(readFileSync(join(FIXTURES, 'descriptors', 'scanned-clap-omx-comp.json'), 'utf8'));
+  writeFileSync(join(w.scans, 'fixture-comp.json'), JSON.stringify({ ...d, plugin: { ...d.plugin, id: CLAP_ID } }));
+  return clapFile(join(w.d, 'clap'), 'fixture-comp', CLAP_ID);
+}
+
+/** The number of controls the layer at `path` stores for a key. */
+function controlsOf(path, { sha256: sha, format, uri }) {
+  const db = new DatabaseSync(path, { readOnly: true });
+  const n = db.prepare('SELECT count(*) AS n FROM description_control JOIN plugin USING (plugin_id) WHERE sha256 = ? AND format = ? AND uri = ?').get(sha, format, uri).n;
+  db.close();
+  return n;
+}
 
 const unprivileged = process.geteuid() !== 0;
 if (!unprivileged) process.stderr.write('panel-sync.test.mjs: skipping: run as root, the writer writes the system layer\n');
@@ -42,6 +62,7 @@ function bin(w) {
   symlinkSync(join(ROOT, 'bin', 'omx-panel-sync'), join(dir, 'omx-panel-sync'));
   script('systemctl', `#!/bin/sh\necho "systemctl $*" >> '${join(w.d, 'systemctl.log')}'\nexit 99\n`);
   script('omx-modgui-sync', `#!/bin/sh\necho "omx-modgui-sync $*" >> '${join(w.d, 'modgui.log')}'\n`);
+  fakeClapScan(dir);
   return dir;
 }
 
@@ -49,7 +70,7 @@ function bin(w) {
 function env(w, { store = true } = {}) {
   const modgui = join(w.d, 'modgui');
   const path = [bin(w), '/usr/bin', '/bin'].join(':');
-  const e = storeEnv(w, { PATH: path, MODGUI_DIR: modgui, STATE_DIR: join(w.d, 'state'), LV2_PATH: `${modgui}:${w.lv2}` });
+  const e = storeEnv(w, { PATH: path, MODGUI_DIR: modgui, STATE_DIR: join(w.d, 'state'), LV2_PATH: `${modgui}:${w.lv2}`, CLAP_PATH: join(w.d, 'clap') });
   if (!store) e.PATH = path.split(':').map((d, i) => (i === 0 ? noStore(d) : d)).join(':');
   return e;
 }
@@ -119,12 +140,14 @@ test('omx-panel-store list prints the keys of the layer of the effective uid, on
 
 test('omx-panel-sync: one pass, each installed plugin derived once, stale entries pruned from its own layer only, no systemctl', OPTS, (t) => {
   const w = world(t);
+  const clap = withClap(w);
   const panel = panelVersion(w.places.contract);
-  // the user layer: a plugin gone, an old binary of delayorama, a CLAP key the pass does not enumerate
+  // the user layer: a plugin gone, an old binary of delayorama, a CLAP plugin gone, an old binary of the installed CLAP one
   const gone = entry({ uri: 'urn:test:gone', sha: hex('d') });
   const oldDelay = entry({ uri: DELAY, sha: hex('e') });
-  const clap = entry({ uri: 'org.example.clap', format: 'clap', sha: hex('9') });
-  mkStore(w.places.user, { layer: 2, panel, entries: [gone, oldDelay, clap] });
+  const goneClap = entry({ uri: 'org.example.clap', format: 'clap', sha: hex('9') });
+  const oldClap = entry({ uri: CLAP_ID, format: 'clap', sha: hex('8') });
+  mkStore(w.places.user, { layer: 2, panel, entries: [gone, oldDelay, goneClap, oldClap] });
   mkStore(w.places.system, { layer: 1, panel, entries: [entry({ uri: 'urn:test:gone', sha: hex('d') })] });
   const system = snapshot(w.places.system);
   const base = snapshot(w.places.base);
@@ -132,15 +155,43 @@ test('omx-panel-sync: one pass, each installed plugin derived once, stale entrie
   const r = sh(join(e.PATH.split(':')[0], 'omx-panel-sync'), [], e);
   assert.equal(r.status, 0, r.stderr + r.stdout);
   assert.equal(existsSync(join(w.d, 'systemctl.log')), false, `systemctl ran: ${existsSync(join(w.d, 'systemctl.log')) ? readFileSync(join(w.d, 'systemctl.log'), 'utf8') : ''}`);
+  const clapKey = { sha256: sha256(clap.path), format: 'clap', uri: CLAP_ID };
   assert.deepEqual(keysOf(w.places.user), [
     { sha256: sha256(w.delay.binary), format: 'lv2', uri: DELAY },
     { sha256: sha256(w.triple.binary), format: 'lv2', uri: TRIPLE },
-    { sha256: hex('9'), format: 'clap', uri: 'org.example.clap' },
-  ].sort((a, b) => (a.uri < b.uri ? -1 : 1)), 'both installed plugins stored, the gone and the old pruned, the CLAP key kept');
+    clapKey,
+  ].sort((a, b) => (a.uri < b.uri ? -1 : 1)), 'every installed plugin stored, LV2 and CLAP; the gone and the old pruned, of both formats');
+  assert.ok(controlsOf(w.places.user, clapKey) > 0, 'the CLAP entry is a description with controls');
   assert.deepEqual(snapshot(w.places.system), system, 'the system layer is not touched');
   assert.deepEqual(snapshot(w.places.base), base, 'the base is not touched');
   assert.equal(readFileSync(join(w.d, 'modgui.log'), 'utf8'), 'omx-modgui-sync \n', 'the MOD GUI generator ran once');
   assert.ok(Object.keys(writtenGroups(w, TRIPLE)).length > 0, 'the complement ran');
+});
+
+test('the pass with no omx-clap-scan: no CLAP plugin described and no CLAP key pruned, and it says so', OPTS, (t) => {
+  const w = world(t);
+  withClap(w);
+  const panel = panelVersion(w.places.contract);
+  const goneClap = entry({ uri: 'org.example.clap', format: 'clap', sha: hex('9') });
+  mkStore(w.places.user, { layer: 2, panel, entries: [goneClap] });
+  const lines = [];
+  // PATH holds the store's command and nothing else: no scanner
+  const r = pass({ lv2Path: w.lv2, clapPath: join(w.d, 'clap'), env: storeEnv(w), log: (l) => lines.push(l) });
+  assert.equal(r.failed, 0, lines.join('\n'));
+  assert.match(lines.join('\n'), /no omx-clap-scan on PATH/);
+  assert.deepEqual(keysOf(w.places.user).filter((k) => k.format === 'clap'), [{ sha256: hex('9'), format: 'clap', uri: 'org.example.clap' }], 'the CLAP key is kept, none added');
+  assert.equal(keysOf(w.places.user).filter((k) => k.format === 'lv2').length, 2, 'the LV2 plugins are still stored');
+});
+
+test('the pass sabotaged: a CLAP plugin the scan lists but no descriptor names is counted, never stored as a description', OPTS, (t) => {
+  const w = world(t);
+  clapFile(join(w.d, 'clap'), 'nameless', 'org.example.nameless');
+  const lines = [];
+  fakeClapScan(join(w.d, 'scanbin'));
+  const e = { ...storeEnv(w), PATH: `${join(w.d, 'scanbin')}:${dirname(CMD)}` };
+  const r = pass({ lv2Path: w.lv2, clapPath: join(w.d, 'clap'), env: e, log: (l) => lines.push(l) });
+  assert.equal(r.noDescriptor, 1, lines.join('\n'));
+  assert.equal(keysOf(w.places.user).some((k) => k.uri === 'org.example.nameless'), false);
 });
 
 test('omx-panel-sync names a step that failed and exits 1', OPTS, (t) => {

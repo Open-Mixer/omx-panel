@@ -1,0 +1,871 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.geq",
+    "format": "clap",
+    "uri": "urn:openmixer:geq",
+    "name": "omx geq",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The console's 31-band graphic EQ: one fader per ISO third-octave band from 20 Hz to 20 kHz, each cutting or boosting by up to 15 dB.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "band01",
+      "name": "20 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "band02",
+      "name": "25 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "band03",
+      "name": "31.5 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "band04",
+      "name": "40 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "band05",
+      "name": "50 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "band06",
+      "name": "63 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "band07",
+      "name": "80 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "band08",
+      "name": "100 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "band09",
+      "name": "125 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "band10",
+      "name": "160 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "band11",
+      "name": "200 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "band12",
+      "name": "250 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "band13",
+      "name": "315 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "band14",
+      "name": "400 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "band15",
+      "name": "500 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "band16",
+      "name": "630 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "band17",
+      "name": "800 Hz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "band18",
+      "name": "1 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "band19",
+      "name": "1.25 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "band20",
+      "name": "1.6 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "symbol": "band21",
+      "name": "2 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "symbol": "band22",
+      "name": "2.5 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "symbol": "band23",
+      "name": "3.15 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "symbol": "band24",
+      "name": "4 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "symbol": "band25",
+      "name": "5 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "symbol": "band26",
+      "name": "6.3 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "symbol": "band27",
+      "name": "8 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "symbol": "band28",
+      "name": "10 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "symbol": "band29",
+      "name": "12.5 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "symbol": "band30",
+      "name": "16 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "symbol": "band31",
+      "name": "20 kHz",
+      "kind": "travel",
+      "travel": {
+        "min": -15,
+        "max": 15,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Geq"
+      ],
+      "meaning": "gain",
+      "response": "peaking",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/geq.json#GEQ_BAND_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_EQUALIZER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:EQPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-geq/omx_geq_clap.c#clap_entry"
+  }
+}

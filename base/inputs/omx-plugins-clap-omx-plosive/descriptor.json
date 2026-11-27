@@ -1,0 +1,290 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.plosive",
+    "format": "clap",
+    "uri": "urn:openmixer:plosive",
+    "name": "omx plosive",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "Softens the p pops and hard t and k consonants of a voice, cutting each only while it bursts.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "consonantDb",
+      "name": "Consonant Cut",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 6,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_CONSONANT_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "sensitivityDb",
+      "name": "Consonant Sensitivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 30,
+        "step": 0,
+        "unit": "dB",
+        "default": 16,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_SENSITIVITY_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "recoveryMs",
+      "name": "Consonant Recovery",
+      "kind": "travel",
+      "travel": {
+        "min": 2,
+        "max": 50,
+        "step": 0,
+        "unit": "ms",
+        "default": 8,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_RECOVERY_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "bandHz",
+      "name": "Consonant Band",
+      "kind": "travel",
+      "travel": {
+        "min": 1000,
+        "max": 12000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 4000,
+        "scale": "log"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_BAND_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "bandWidthOct",
+      "name": "Consonant Band Width",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 4,
+        "step": 0,
+        "unit": "oct",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "width",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_BAND_WIDTH_OCT_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "popDb",
+      "name": "Pop Cut",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 12,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_POP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "popSensitivityDb",
+      "name": "Pop Sensitivity",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 30,
+        "step": 0,
+        "unit": "dB",
+        "default": 16,
+        "scale": "linear"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_POP_SENSITIVITY_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "popRecoveryMs",
+      "name": "Pop Recovery",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 200,
+        "step": 1,
+        "unit": "ms",
+        "default": 40,
+        "scale": "stepped"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_POP_RECOVERY_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "popHz",
+      "name": "Pop Corner",
+      "kind": "travel",
+      "travel": {
+        "min": 60,
+        "max": 300,
+        "step": 1,
+        "unit": "Hz",
+        "default": 150,
+        "scale": "log"
+      },
+      "group": [
+        "Plosive"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/plosive.json#PLOSIVE_POP_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_DEESSER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:DynamicsPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-plosive/omx_plosive_clap.c#clap_entry"
+  }
+}

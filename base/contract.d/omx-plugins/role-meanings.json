@@ -1,0 +1,270 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "OMX_PLUGINS_ROLE_MEANINGS": {
+    "kind": "roleMeanings",
+    "since": "0.19.3",
+    "doc": "The meaning each role of our declared panels plays: every role of every panel family, a word of the contract's closed list (PARAM_MEANINGS), never unknown, since every control a role binds is an authored control's (omx-contract docs/descriptors.md \"Meanings\").",
+    "roles": {
+      "algorithm": {
+        "role": "algorithm",
+        "meaning": "algorithm"
+      },
+      "amount": {
+        "role": "amount",
+        "meaning": "amount"
+      },
+      "attack": {
+        "role": "attack",
+        "meaning": "attack"
+      },
+      "bandFreq": {
+        "role": "band_freq",
+        "meaning": "frequency"
+      },
+      "bandGain": {
+        "role": "band_gain",
+        "meaning": "gain"
+      },
+      "bandOn": {
+        "role": "band_on",
+        "meaning": "enabled"
+      },
+      "bandQ": {
+        "role": "band_q",
+        "meaning": "q"
+      },
+      "bandType": {
+        "role": "band_type",
+        "meaning": "type"
+      },
+      "bassMono": {
+        "role": "bass_mono",
+        "meaning": "enabled"
+      },
+      "bassMonoFreq": {
+        "role": "bass_mono_freq",
+        "meaning": "frequency"
+      },
+      "ceiling": {
+        "role": "ceiling",
+        "meaning": "ceiling"
+      },
+      "cutoff": {
+        "role": "cutoff",
+        "meaning": "cutoffFrequency"
+      },
+      "damping": {
+        "role": "damping",
+        "meaning": "damping"
+      },
+      "decay": {
+        "role": "decay",
+        "meaning": "decay"
+      },
+      "depth": {
+        "role": "depth",
+        "meaning": "depth"
+      },
+      "division": {
+        "role": "division",
+        "meaning": "division"
+      },
+      "drive": {
+        "role": "drive",
+        "meaning": "drive"
+      },
+      "feedback": {
+        "role": "feedback",
+        "meaning": "feedback"
+      },
+      "filterType": {
+        "role": "filter_type",
+        "meaning": "type"
+      },
+      "fine": {
+        "role": "fine",
+        "meaning": "fine"
+      },
+      "frequency": {
+        "role": "frequency",
+        "meaning": "frequency"
+      },
+      "gain": {
+        "role": "gain",
+        "meaning": "gain"
+      },
+      "highCut": {
+        "role": "high_cut",
+        "meaning": "highCut"
+      },
+      "hold": {
+        "role": "hold",
+        "meaning": "hold"
+      },
+      "hpfFreq": {
+        "role": "hpf_freq",
+        "meaning": "lowCut"
+      },
+      "hpfOn": {
+        "role": "hpf_on",
+        "meaning": "enabled"
+      },
+      "hpfSlope": {
+        "role": "hpf_slope",
+        "meaning": "slope"
+      },
+      "hysteresis": {
+        "role": "hysteresis",
+        "meaning": "hysteresis"
+      },
+      "keyListen": {
+        "role": "key_listen",
+        "meaning": "listen"
+      },
+      "knee": {
+        "role": "knee",
+        "meaning": "knee"
+      },
+      "kneeEnd": {
+        "role": "knee_end",
+        "meaning": "knee"
+      },
+      "kneeStart": {
+        "role": "knee_start",
+        "meaning": "knee"
+      },
+      "listen": {
+        "role": "listen",
+        "meaning": "listen"
+      },
+      "lookahead": {
+        "role": "lookahead",
+        "meaning": "lookahead"
+      },
+      "lowCut": {
+        "role": "low_cut",
+        "meaning": "lowCut"
+      },
+      "lpfFreq": {
+        "role": "lpf_freq",
+        "meaning": "highCut"
+      },
+      "lpfOn": {
+        "role": "lpf_on",
+        "meaning": "enabled"
+      },
+      "lpfSlope": {
+        "role": "lpf_slope",
+        "meaning": "slope"
+      },
+      "makeup": {
+        "role": "makeup",
+        "meaning": "makeup"
+      },
+      "mix": {
+        "role": "mix",
+        "meaning": "wetDryRatio"
+      },
+      "mode": {
+        "role": "mode",
+        "meaning": "mode"
+      },
+      "model": {
+        "role": "model",
+        "meaning": "model"
+      },
+      "output": {
+        "role": "output",
+        "meaning": "output"
+      },
+      "pingpong": {
+        "role": "pingpong",
+        "meaning": "pingpong"
+      },
+      "predelay": {
+        "role": "predelay",
+        "meaning": "predelay"
+      },
+      "pseudo": {
+        "role": "pseudo",
+        "meaning": "algorithm"
+      },
+      "pseudoTime": {
+        "role": "pseudo_time",
+        "meaning": "delay"
+      },
+      "range": {
+        "role": "range",
+        "meaning": "range"
+      },
+      "rate": {
+        "role": "rate",
+        "meaning": "rate"
+      },
+      "ratio": {
+        "role": "ratio",
+        "meaning": "ratio"
+      },
+      "release": {
+        "role": "release",
+        "meaning": "release"
+      },
+      "resonance": {
+        "role": "resonance",
+        "meaning": "resonance"
+      },
+      "shape": {
+        "role": "shape",
+        "meaning": "shape"
+      },
+      "shift": {
+        "role": "shift",
+        "meaning": "shift"
+      },
+      "size": {
+        "role": "size",
+        "meaning": "size"
+      },
+      "slope": {
+        "role": "slope",
+        "meaning": "slope"
+      },
+      "softness": {
+        "role": "softness",
+        "meaning": "knee"
+      },
+      "speed": {
+        "role": "speed",
+        "meaning": "rate"
+      },
+      "spread": {
+        "role": "spread",
+        "meaning": "spread"
+      },
+      "sync": {
+        "role": "sync",
+        "meaning": "sync"
+      },
+      "threshold": {
+        "role": "threshold",
+        "meaning": "threshold"
+      },
+      "time": {
+        "role": "time",
+        "meaning": "delay"
+      },
+      "tone": {
+        "role": "tone",
+        "meaning": "tone"
+      },
+      "voices": {
+        "role": "voices",
+        "meaning": "number"
+      },
+      "width": {
+        "role": "width",
+        "meaning": "width"
+      }
+    }
+  }
+}

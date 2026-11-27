@@ -7,7 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { readPluginPorts } from '../../dist/tools/group-infer.mjs';
 import { pluginTriples, readInstalledBundle } from '../../dist/tools/lv2-complement.mjs';
@@ -80,3 +80,26 @@ export const storeEnv = (w, extra = {}) => ({
   OMX_PANEL_STORE_BASE: w.places.base, OMX_PANEL_STORE_SYSTEM: w.places.system, OMX_PANEL_STORE_USER: w.places.user, OMX_CONTRACT_PATH: w.places.contract,
   ...extra,
 });
+
+/**
+ * An `omx-clap-scan` stand-in in `binDir`: `--json <dir>...` answers each `*.clap` file of each directory with the one
+ * plugin id written beside it (`<file>.id`), in the scanner's form ({ files: [{ path, plugins: [{ id }] }] }).
+ */
+export function fakeClapScan(binDir) {
+  mkdirSync(binDir, { recursive: true });
+  const file = join(binDir, 'omx-clap-scan');
+  writeFileSync(file, '#!/bin/sh\n[ "$1" = --json ] || exit 2\nshift\nprintf \'{"scanner":"fixture","files":[\'\nsep=\n'
+    + 'for d in "$@"; do for f in "$d"/*.clap; do [ -e "$f" ] || continue; read -r id < "$f.id"\n'
+    + '  printf \'%s{"path":"%s","plugins":[{"id":"%s"}]}\' "$sep" "$f" "$id"; sep=,\ndone; done\nprintf \']}\\n\'\n');
+  chmodSync(file, 0o755);
+  return file;
+}
+
+/** An installed CLAP plugin: `<dir>/<name>.clap` (bytes of its own) holding the one plugin `id`, as fakeClapScan reads it. */
+export function clapFile(dir, name, id) {
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${name}.clap`);
+  writeFileSync(path, `the ${name} CLAP binary\n`);
+  writeFileSync(`${path}.id`, `${id}\n`);
+  return { path, id };
+}

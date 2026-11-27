@@ -157,14 +157,20 @@ store-check: build store
 # The descriptions store's base (docs/descriptions-store.md 6, lane 5): base/inputs/ derived by omx-panel base and written
 # by the store's command (built by make store) into base/build/panel.sqlite. The word checks read one contract directory:
 # base/build/contract.d holds the installed domains (BASE_CONTRACTDIR, omx-contract's contractdir: plugin-db's among
-# them) with this tree's panel domain in place of an installed one.
+# them) with this tree's panel domain in place of an installed one, and each set package's domain files kept under
+# base/contract.d/ (the vocabulary its declarations were derived against) in place of an installed one. The base is held to each reference set under
+# base/sets/ (BASE_SETS): every plugin a set lists has a description with controls in it, or the build fails and no
+# file is left. base/inputs/ and base/sets/ are written together by omx-panel base-inputs, from the set as installed
+# (the base workflow, .github/workflows/base.yml).
+BASE_SETS ?= $(sort $(wildcard base/sets/*.json))
 BASE_CONTRACTDIR ?= $(shell pkg-config --variable=contractdir omx-contract 2>/dev/null)
 base: build store
 	rm -rf base/build
 	mkdir -p base/build/contract.d
-	for d in $(BASE_CONTRACTDIR)/*; do [ "$${d##*/}" = panel ] || ln -s "$$d" base/build/contract.d/; done
+	for d in $(BASE_CONTRACTDIR)/*; do [ "$${d##*/}" = panel ] || [ -e "base/contract.d/$${d##*/}" ] || ln -s "$$d" base/build/contract.d/; done
+	for d in base/contract.d/*; do [ ! -d "$$d" ] || ln -s "$(CURDIR)/$$d" base/build/contract.d/; done
 	ln -s $(CURDIR)/contract.d/panel base/build/contract.d/panel
-	PATH=$(CURDIR)/store/build:$$PATH OMX_CONTRACT_PATH=$(CURDIR)/base/build/contract.d node dist/bin/omx-panel.mjs base --in base/inputs --out base/build/panel.sqlite
+	PATH=$(CURDIR)/store/build:$$PATH OMX_CONTRACT_PATH=$(CURDIR)/base/build/contract.d node dist/bin/omx-panel.mjs base --in base/inputs --out base/build/panel.sqlite $(BASE_SETS:%=--set %)
 
 # omx-panel-descriptions: the base, the one file
 install-base:
@@ -225,7 +231,7 @@ install: build install-contract
 	install -m 0755 bin/omx-complement-sync $(DESTDIR)$(BINDIR)/
 	install -m 0755 bin/omx-panel-sync $(DESTDIR)$(BINDIR)/
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(SYSCONFDIR)/omx
-	install -m 0644 systemd/omx-panel-sync.service $(DESTDIR)$(UNITDIR)/
+	install -m 0644 systemd/omx-panel-sync.service systemd/omx-panel-sync.path systemd/omx-panel-sync.timer $(DESTDIR)$(UNITDIR)/
 	install -d $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d
 	install -m 0644 systemd/plugin-qualify-sync.service.d/omx-panel-sync.conf $(DESTDIR)$(UNITDIR)/plugin-qualify-sync.service.d/
 	install -m 0644 etc/omx/modgui-sync.conf $(DESTDIR)$(SYSCONFDIR)/omx/

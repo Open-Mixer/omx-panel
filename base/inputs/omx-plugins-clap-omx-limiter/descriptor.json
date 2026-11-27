@@ -1,0 +1,162 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.limiter",
+    "format": "clap",
+    "uri": "urn:openmixer:limiter",
+    "name": "omx limiter",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The precision limiter: a look-ahead, true-peak, stereo-linked brickwall.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "ceilingDb",
+      "name": "Ceiling",
+      "kind": "travel",
+      "travel": {
+        "min": -12,
+        "max": 0,
+        "step": 0,
+        "unit": "dBFS",
+        "default": -1,
+        "scale": "linear"
+      },
+      "group": [
+        "Limiter"
+      ],
+      "meaning": "ceiling",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/limiter.json#LIMITER_LIMITS.ceilingDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "lookaheadMs",
+      "name": "Lookahead",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 5,
+        "step": 0,
+        "unit": "ms",
+        "default": 1.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Limiter"
+      ],
+      "meaning": "lookahead",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/limiter.json#LIMITER_LIMITS.lookaheadMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "releaseMs",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 1000,
+        "step": 1,
+        "unit": "ms",
+        "default": 50,
+        "scale": "stepped"
+      },
+      "group": [
+        "Limiter"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/limiter.json#LIMITER_LIMITS.releaseMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "limiterGr",
+      "name": "Gain reduction",
+      "doc": "The limiter's gain reduction, in dB with CLAP's sign: 0 while it reduces nothing, negative the reduction it applies. The display range runs down to LIMITER_LIMITS.ceilingDb.min: on a signal at or below 0 dBFS the limiter pulls the peak down to its ceiling at most, and the ceiling is at least its minimum.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -12,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/limiter.json#readouts[gainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_LIMITER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:LimiterPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-limiter/omx_limiter_clap.c#clap_entry"
+  }
+}

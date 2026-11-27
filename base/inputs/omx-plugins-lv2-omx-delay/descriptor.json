@@ -1,0 +1,798 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.delay",
+    "format": "clap",
+    "uri": "urn:openmixer:delay",
+    "name": "omx delay",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The OpenMixer console's stereo delay: one time, free or synced to the host's tempo, feedback through a tone filter, ping-pong, read taps, a tape or analog colour, a wet/dry mix and a duck under the input.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "fxDelayTime",
+      "name": "Time",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 300,
+        "scale": "stepped"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#FX_DELAY_TIME_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "fxDelayFeedback",
+      "name": "Feedback",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 0.99,
+        "step": 0,
+        "unit": "none",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "feedback",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#FX_DELAY_FEEDBACK_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "tone",
+      "name": "Tone",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "tone",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TONE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "mix",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.3,
+        "scale": "linear"
+      },
+      "group": [
+        "Delay"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_MIX_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "pingpong",
+      "name": "Pingpong",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Delay"
+      ],
+      "meaning": "pingpong",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_PINGPONGS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "fxDelayTaps",
+      "name": "Taps",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "unit": "none",
+        "default": 1,
+        "scale": "stepped"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "number",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#FX_DELAY_TAPS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "tap0Gain",
+      "name": "Tap 1 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap0Gain",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "tap0Pan",
+      "name": "Tap 1 Pan",
+      "kind": "travel",
+      "travel": {
+        "min": -1,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "balance",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap0Pan",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "tap1Factor",
+      "name": "Tap 2 Time",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "labels": [
+        "1/4",
+        "1/3",
+        "3/8",
+        "1/2",
+        "2/3",
+        "3/4",
+        "1",
+        "4/3",
+        "3/2",
+        "2",
+        "3"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "default": "3",
+      "group": [
+        "Taps"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP1_FACTORS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "tap1Gain",
+      "name": "Tap 2 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.7,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap1Gain",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "tap1Pan",
+      "name": "Tap 2 Pan",
+      "kind": "travel",
+      "travel": {
+        "min": -1,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": -0.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "balance",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap1Pan",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "tap2Factor",
+      "name": "Tap 3 Time",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "labels": [
+        "1/4",
+        "1/3",
+        "3/8",
+        "1/2",
+        "2/3",
+        "3/4",
+        "1",
+        "4/3",
+        "3/2",
+        "2",
+        "3"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "default": "5",
+      "group": [
+        "Taps"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP2_FACTORS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "tap2Gain",
+      "name": "Tap 3 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap2Gain",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "tap2Pan",
+      "name": "Tap 3 Pan",
+      "kind": "travel",
+      "travel": {
+        "min": -1,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "balance",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap2Pan",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "tap3Factor",
+      "name": "Tap 4 Time",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+      ],
+      "labels": [
+        "1/4",
+        "1/3",
+        "3/8",
+        "1/2",
+        "2/3",
+        "3/4",
+        "1",
+        "4/3",
+        "3/2",
+        "2",
+        "3"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "default": "8",
+      "group": [
+        "Taps"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP3_FACTORS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "tap3Gain",
+      "name": "Tap 4 Gain",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0.35,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "gain",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap3Gain",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "tap3Pan",
+      "name": "Tap 4 Pan",
+      "kind": "travel",
+      "travel": {
+        "min": -1,
+        "max": 1,
+        "step": 0,
+        "unit": "none",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Taps"
+      ],
+      "meaning": "balance",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_TAP_LIMITS.tap3Pan",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "sync",
+      "name": "Sync",
+      "doc": "Free: the Time control. Tempo: the Division at the host's tempo (the CLAP transport's tempo, the LV2 time:Position's time:beatsPerMinute on the Control port). While the host hands no tempo the delay keeps the Time control, as at Free.",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Free",
+        "Tempo"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "Tempo"
+      ],
+      "meaning": "sync",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_SYNCS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "division",
+      "name": "Division",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17"
+      ],
+      "labels": [
+        "1/1",
+        "1/1 dotted",
+        "1/1 triplet",
+        "1/2",
+        "1/2 dotted",
+        "1/2 triplet",
+        "1/4",
+        "1/4 dotted",
+        "1/4 triplet",
+        "1/8",
+        "1/8 dotted",
+        "1/8 triplet",
+        "1/16",
+        "1/16 dotted",
+        "1/16 triplet",
+        "1/32",
+        "1/32 dotted",
+        "1/32 triplet"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "default": "6",
+      "group": [
+        "Tempo"
+      ],
+      "meaning": "division",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_DIVISIONS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "mode",
+      "name": "Mode",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Digital",
+        "Tape",
+        "Analog"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Delay"
+      ],
+      "meaning": "model",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_MODES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "symbol": "duckDb",
+      "name": "Duck",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_DUCK_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "symbol": "duckThresholdDb",
+      "name": "Duck Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -30,
+        "scale": "stepped"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_DUCK_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "symbol": "duckReleaseMs",
+      "name": "Duck Release",
+      "kind": "travel",
+      "travel": {
+        "min": 20,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 250,
+        "scale": "stepped"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/delay.json#DELAY_DUCK_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "tempo": true,
+    "extensions": {
+      "optional": [
+        "urid:map",
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_DELAY",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:DelayPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-delay/omx_delay_clap.c#clap_entry"
+  }
+}

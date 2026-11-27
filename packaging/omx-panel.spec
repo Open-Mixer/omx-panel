@@ -188,15 +188,15 @@ OMX_PANEL_SHAPES=packaged OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contrac
 # and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
 tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_dir}
 
-# the unit follows its preset on a first install (enabled), is disabled on erase, and an upgrade starts nothing
+# the units follow their preset on a first install (enabled), are disabled on erase, and an upgrade starts nothing
 %post
-%{?systemd_post:%systemd_post omx-panel-sync.service}
+%{?systemd_post:%systemd_post omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %preun
-%{?systemd_preun:%systemd_preun omx-panel-sync.service}
+%{?systemd_preun:%systemd_preun omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %postun
-%{?systemd_postun:%systemd_postun omx-panel-sync.service}
+%{?systemd_postun:%systemd_postun omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %files
 %license LICENSE
@@ -209,8 +209,11 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 %{_mandir}/man1/omx-modgui-sync.1*
 %{_mandir}/man1/omx-complement-sync.1*
 %{_mandir}/man1/omx-panel-sync.1*
-# the one pass's unit, enabled by default by the preset; nothing depends on it (`systemctl disable omx-panel-sync` is the choice)
+# the one pass's unit, its path watch and its timer, enabled by default by the preset; nothing depends on them
+# (`systemctl disable omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer` is the choice)
 %{_unitdir}/omx-panel-sync.service
+%{_unitdir}/omx-panel-sync.path
+%{_unitdir}/omx-panel-sync.timer
 %{_presetdir}/80-omx-panel.preset
 %dir %{_unitdir}/plugin-qualify-sync.service.d/
 %{_unitdir}/plugin-qualify-sync.service.d/omx-panel-sync.conf
