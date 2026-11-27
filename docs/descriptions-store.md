@@ -459,13 +459,28 @@ Ruled with lane 4 (2026-11-24), the generators and the pass:
   once; then the prune; then `omx-complement-sync` and `omx-modgui-sync`, each from `PATH`. Exit 0 when every step
   did, 1 naming each step that did not. It never runs `systemctl`.
 - **The prune.** `omx-panel-store list` prints the keys of the layer of the effective uid (`sha256`, `format`, `uri`,
-  tab-separated, one per line). The pass removes from that layer each `lv2` key that is not installed now: no bundle on
-  `LV2_PATH` declares the URI, or its binary's SHA-256 is another. No other layer is opened for writing. CLAP keys are
-  not pruned until the pass enumerates CLAP plugins (it does not in this lane).
+  tab-separated, one per line). The pass removes from that layer each key that is not installed now: for `lv2`, no
+  bundle on `LV2_PATH` declares the URI, or its binary's SHA-256 is another; for `clap`, as below. No other layer is
+  opened for writing.
+- **CLAP plugins are enumerated too** (owner order 2026-11-27, superseding "CLAP keys are not pruned until the pass
+  enumerates CLAP plugins"). After the LV2 plugins, the pass lists the CLAP plugins with `omx-clap-scan --json` over the
+  directories of `CLAP_PATH` that exist (unset: `~/.clap`, `/usr/lib64/clap`, `/usr/lib/clap`, the scanner's own list):
+  each plugin id by the first file holding it, keyed by that file's SHA-256. Each gets
+  `omx-panel describe --plugin clap:<path>#<id> --store` once (its descriptor found in the call's order: the installed
+  declaration, the descriptor directories, `plugin-hostd-probe describe`); a `clap` key whose id no file holds now, or
+  whose file's SHA-256 is another, is pruned. With no `omx-clap-scan` on `PATH` (or no JSON from it) nothing can be said
+  of what is installed: no CLAP plugin is described and no `clap` key is pruned, and the pass says so once.
 - **One unit.** `omx-panel-sync.service` replaces `omx-modgui-sync.service` and `omx-complement-sync.service`, and one
   drop-in `plugin-qualify-sync.service.d/omx-panel-sync.conf` replaces their two (no old name kept: development has
   no compatibility machinery). It is enabled by default where systemd exists: the RPM's preset
   `80-omx-panel.preset` and `%systemd_post`, the DEB's `dh_installsystemd` enabling it. Nothing depends on it.
+- **The pass has triggers of its own** (owner order 2026-11-27). The drop-in queues the pass only after a SUCCESSFUL
+  plugin-qualify sync, so a failed or absent one left a host's panels empty. Two units start `omx-panel-sync.service`
+  whatever plugin-qualify does: `omx-panel-sync.path` (`PathChanged=` on `/usr/lib64/lv2`, `/usr/lib/lv2`,
+  `/usr/local/lib/lv2` and the same three `clap` directories: a plugin installed or removed changes its directory) and
+  `omx-panel-sync.timer` (daily, `Persistent=true`, for what no directory watch sees: a file replaced inside a bundle, a
+  user's own directories, a pass that failed). Both are enabled by default as the service is (the preset, the RPM's
+  scriptlets for all three, the DEB's `dh_installsystemd`), and nothing depends on them.
 
 ### Generated files: shipped key-gated for known sets, generated locally otherwise
 
@@ -551,7 +566,33 @@ Ruled with lane 5 (2026-11-24), the builder and the package:
 - **`built_from`** is `base/BUILT_FROM.txt` when it holds 40 hex digits (`$Format:%H$`, substituted by `git archive` through
   `export-subst`), else `git rev-parse HEAD` of the inputs' tree, else the build is refused `built-from-unknown`.
 - **This lane ships `base/inputs/` empty.** An empty base is a base: the store opens, and the generators and plugin-hostd
-  read it. The reference sets' inputs arrive with their sets (lanes 15 and 16).
+  read it. The reference sets' inputs arrive with their sets (lanes 15 and 16). Superseded for the package by the next
+  ruling: the store still opens an empty base, but the package is no longer built from one.
+
+Ruled by the owner (2026-11-27), the base is real: a default install comes up with panels.
+
+- **The reference set `omx-plugins`, both formats.** `omx-panel base-inputs --set <name> --declarations
+  <contractdir>/<package>/plugins --base base [--lv2-path L] [--clap-path C]` writes a set's inputs from the set as
+  installed: for each declaration (its `plugin.uri` the LV2 URI, its `plugin.id` the CLAP id when its format is `clap`),
+  one input per installed format, `base/inputs/<set>-<format>-<name>/`, the key the installed binary's SHA-256 (the
+  LV2 bundle's `lv2:binary`; the CLAP file `omx-clap-scan` finds holding the id), `descriptor.json` the declaration's
+  bytes (so a CLAP entry's `source` is the one a host computes from the same installed declaration) and, for LV2,
+  `bundle/` the bundle's `.ttl` files. It writes `base/sets/<set>.json` (`{ set, versions, plugins: [{ name, lv2?, clap? }] }`)
+  and `base/contract.d/<package>/`, the package's own domain files beside its declarations (its role meanings among
+  them): the vocabulary the descriptions were derived against, linked into the build's contract directory in place of
+  an installed one, so the package build, which installs nothing of omx-plugins, derives what a host with it installed
+  derives. A set's earlier inputs are removed first; a declared plugin installed in neither format is refused.
+- **The base is held to its sets.** `omx-panel base --in <inputs> --out <file> --set <set.json>...` (`make base` passes
+  every `base/sets/*.json`) answers each listed key from the built file alone and refuses the build
+  `base-incomplete`, naming each key with no input, no entry, a refused entry or no controls, and leaves no file. A set
+  that names nothing is refused. `omx-panel base --in <inputs> --check <file> --set <set.json>...` is the same check over
+  a built file, a package's.
+- **Made in CI, from the channel.** omx-panel builds with nothing of omx-plugins, so the inputs are committed, and the
+  base workflow (`.github/workflows/base.yml`, dispatched) is where they are made: it installs the channel's
+  `omx-plugins-lv2`, `omx-plugins-clap`, `omx-plugins-contract` and `omx-clap-host`, runs `base-inputs`, builds the base
+  held to the set, uploads what it wrote, and is red when that is not what is committed. The keys are binaries' hashes:
+  a rebuilt omx-plugins is read from the base once its inputs are written again; until then each host derives its
+  entries, as for any plugin the base lacks.
 - **The package** `omx-panel-descriptions` (RPM `BuildArch: noarch`, DEB `Architecture: all`) holds
   `/usr/share/omx/panel/panel.sqlite` and nothing else; `omx-panel-store` recommends it.
 
