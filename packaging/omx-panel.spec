@@ -356,6 +356,9 @@ English source sentence.
 - A served display's kind is the number omx-clap-scan prints, read as its
   PANEL_DISPLAY_KINDS word, so the family displays of the omx-plugins 0.21.1
   CLAPs are drawn (#286).
+- omx-panel-descriptions carries a prebuilt base for the 34 omx-plugins, LV2
+  and CLAP; omx-panel sync lists CLAP plugins, and its pass runs on its own
+  path watch and timer (#284).
 
 * Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.2-1
 - The installed package.json names the installed tree: every export target
