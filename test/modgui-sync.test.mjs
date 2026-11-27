@@ -229,11 +229,35 @@ test('one unit for the one pass, enabled by default where systemd exists, the ol
   assert.match(readFileSync(join(ROOT, 'systemd/80-omx-panel.preset'), 'utf8'), /^enable omx-panel-sync\.service$/m, 'the preset enables it');
   const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
   assert.match(spec, /^%\{_presetdir\}\/80-omx-panel\.preset$/m, 'the rpm ships the preset');
-  assert.match(spec, /^%\{\?systemd_post:%systemd_post omx-panel-sync\.service\}$/m, 'the rpm applies it on install');
+  for (const step of ['post', 'preun', 'postun']) {
+    assert.match(spec, new RegExp(`^%\\{\\?systemd_${step}:%systemd_${step} omx-panel-sync\\.service omx-panel-sync\\.path omx-panel-sync\\.timer\\}$`, 'm'), `the rpm's %${step} applies the preset to the unit and its two triggers`);
+  }
   const rules = readFileSync(join(ROOT, 'debian/rules'), 'utf8');
   assert.match(rules, /^\tdh_installsystemd --no-start --no-stop-on-upgrade$/m, 'the DEB enables it and starts nothing');
   const make = readFileSync(join(ROOT, 'Makefile'), 'utf8');
   for (const f of ['bin/omx-panel-sync', 'man/omx-panel-sync.1', 'systemd/omx-panel-sync.service']) assert.ok(make.includes(f), `make install ships ${f}`);
+});
+
+test('the pass has triggers of its own, so a failed plugin-qualify sync leaves no host without its panels', () => {
+  const path = readFileSync(join(ROOT, 'systemd/omx-panel-sync.path'), 'utf8');
+  const watched = [...path.matchAll(/^PathChanged=(.*)$/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(watched, ['/usr/lib/clap', '/usr/lib/lv2', '/usr/lib64/clap', '/usr/lib64/lv2', '/usr/local/lib/clap', '/usr/local/lib/lv2'], 'every system plugin directory, LV2 and CLAP');
+  assert.match(path, /^Unit=omx-panel-sync\.service$/m);
+  assert.match(path, /^WantedBy=paths\.target$/m);
+  const timer = readFileSync(join(ROOT, 'systemd/omx-panel-sync.timer'), 'utf8');
+  assert.match(timer, /^OnCalendar=daily$/m);
+  assert.match(timer, /^Persistent=true$/m, 'a day missed while off runs at the next boot');
+  assert.match(timer, /^Unit=omx-panel-sync\.service$/m);
+  assert.match(timer, /^WantedBy=timers\.target$/m);
+  for (const u of [path, timer]) assert.doesNotMatch(u, /^(After|Requires|BindsTo|Wants|PartOf|Requisite)=.*plugin-qualify/m, 'neither waits on plugin-qualify');
+  const preset = readFileSync(join(ROOT, 'systemd/80-omx-panel.preset'), 'utf8');
+  for (const u of ['service', 'path', 'timer']) assert.match(preset, new RegExp(`^enable omx-panel-sync\\.${u}$`, 'm'), `the preset enables the ${u}`);
+  const spec = readFileSync(join(ROOT, 'packaging/omx-panel.spec'), 'utf8');
+  const make = readFileSync(join(ROOT, 'Makefile'), 'utf8');
+  for (const u of ['path', 'timer']) {
+    assert.match(spec, new RegExp(`^%\\{_unitdir\\}/omx-panel-sync\\.${u}$`, 'm'), `the rpm ships the ${u}`);
+    assert.ok(make.includes(`systemd/omx-panel-sync.${u}`), `make install ships the ${u}`);
+  }
 });
 
 test('the one pass\'s unit runs after plugin-qualify-sync, under limits, and there is no apt hook', () => {

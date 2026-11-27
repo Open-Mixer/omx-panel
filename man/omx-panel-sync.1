@@ -1,6 +1,6 @@
 .\" SPDX-License-Identifier: GPL-3.0-or-later
 .\" Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
-.TH OMX-PANEL-SYNC 1 "2026-11-24" "omx-panel" "User Commands"
+.TH OMX-PANEL-SYNC 1 "2026-11-27" "omx-panel" "User Commands"
 .SH NAME
 omx-panel-sync \- the one sync pass: descriptions stored, then port groups and MOD GUIs from the store
 .SH SYNOPSIS
@@ -9,10 +9,12 @@ omx-panel-sync \- the one sync pass: descriptions stored, then port groups and M
 .B omx-panel-sync
 runs the omx-panel sync in one pass. First
 .B omx-panel sync
-gives each LV2 plugin on LV2_PATH its entry in the descriptions store, once: read when a layer holds it, else derived
-and written to the layer of the effective uid (the system layer as root, the user layer otherwise); then that layer
-loses the entries of plugins no longer installed (another binary, or a URI no bundle declares). No other layer is
-written. Then
+gives each LV2 plugin on LV2_PATH, and each CLAP plugin
+.B omx-clap-scan
+finds on CLAP_PATH, its entry in the descriptions store, once: read when a layer holds it, else derived and written to
+the layer of the effective uid (the system layer as root, the user layer otherwise); then that layer loses the entries
+of plugins no longer installed (another binary, or a URI or CLAP id no installed plugin declares). No other layer is
+written. With no omx-clap-scan on PATH no CLAP plugin is described and no CLAP entry is pruned. Then
 .BR omx-complement-sync (1)
 and
 .BR omx-modgui-sync (1)
@@ -22,7 +24,8 @@ It never runs systemctl: run by hand it does the whole work, and the unit is a b
 .SH ENVIRONMENT
 LV2_PATH, MODGUI_DIR, STATE_DIR and DESCRIPTOR_DIRS, as
 .BR omx-complement-sync (1)
-reads them; LV2_PATH unset is MODGUI_DIR first, then /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2.
+reads them; LV2_PATH unset is MODGUI_DIR first, then /usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2. CLAP_PATH, the
+CLAP search list; unset, ~/.clap:/usr/lib64/clap:/usr/lib/clap, as omx-clap-scan reads it.
 .SH FILES
 .TP
 .I /etc/omx/modgui-sync.conf
@@ -32,6 +35,14 @@ KEY=value lines for the variables above, read by the unit
 runs the pass once; enabled by default where systemd exists (80-omx-panel.preset; the DEB enables it), it runs at boot
 and each time plugin-qualify-sync finishes (a drop-in, plugin-qualify-sync.service.d/omx-panel-sync.conf, queues it
 from ExecStartPost when the unit is enabled). Nothing depends on it: systemctl disable omx-panel-sync turns it off.
+.TP
+.I omx-panel-sync.path
+starts the pass when a system plugin directory changes (/usr/lib64/lv2, /usr/lib/lv2, /usr/local/lib/lv2 and the same
+three for clap), whether plugin-qualify-sync ran, failed or is not installed; enabled by default.
+.TP
+.I omx-panel-sync.timer
+starts the pass daily (a missed day at the next boot), so a change no directory watch sees, or a pass that failed, is
+caught up; enabled by default.
 .SH EXIT STATUS
 .TP
 .B 0

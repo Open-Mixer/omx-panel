@@ -3,16 +3,17 @@
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #******************************************************************************
 # The one sync pass (docs/descriptions-store.md section 6): each installed LV2
-# plugin's description and port groups stored once, the layer this user writes
-# pruned of plugins no longer installed, then the generators from the store.
+# and CLAP plugin's description (an LV2 plugin's with its port groups) stored
+# once, the layer this user writes pruned of plugins no longer installed, then
+# the generators from the store.
 #
 #   omx-panel-sync
 #
-# 1. `omx-panel sync`: each LV2 plugin on LV2_PATH gets its entry in the
-#    descriptions store (read, else derived and written to the layer of the
-#    effective uid: the system layer as root, the user layer otherwise), and that
-#    layer loses the entries of plugins no longer installed. No other layer is
-#    written.
+# 1. `omx-panel sync`: each LV2 plugin on LV2_PATH and each CLAP plugin
+#    omx-clap-scan finds on CLAP_PATH gets its entry in the descriptions store
+#    (read, else derived and written to the layer of the effective uid: the
+#    system layer as root, the user layer otherwise), and that layer loses the
+#    entries of plugins no longer installed. No other layer is written.
 # 2. omx-complement-sync, then omx-modgui-sync, each as run alone, each reading
 #    the store the first step filled.
 #
@@ -22,8 +23,9 @@
 #
 # Where it looks and writes: the generators' variables (the environment, or the
 # unit's EnvironmentFile=/etc/omx/modgui-sync.conf): LV2_PATH, MODGUI_DIR,
-# STATE_DIR, DESCRIPTOR_DIRS. LV2_PATH unset is MODGUI_DIR first, then
-# plugin-hostd's list, as omx-complement-sync reads it.
+# STATE_DIR, DESCRIPTOR_DIRS, and CLAP_PATH. LV2_PATH unset is MODGUI_DIR
+# first, then plugin-hostd's list, as omx-complement-sync reads it; CLAP_PATH
+# unset is ~/.clap, /usr/lib64/clap and /usr/lib/clap, as omx-clap-scan reads it.
 #******************************************************************************
 
 if [ "$#" -ne 0 ]; then
