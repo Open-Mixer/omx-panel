@@ -1,0 +1,401 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.keyed-gate",
+    "format": "clap",
+    "uri": "urn:openmixer:keyed-gate",
+    "name": "omx keyed-gate",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The OpenMixer console's channel gate with an external key: the stereo signal is gated while the detector listens to the sidechain input the host routes to it, or to the signal itself with the key unconnected or set to Self. One gain drives both legs. An attack under 0.5 ms engages 4x detector oversampling, which adds 72 frames of latency, reported to the host. The DSP is omx-dsp's <omxdsp/fx/omx_gate_instance.h>, the console's own gate.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "key_external",
+      "name": "Key",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Self",
+        "Sidechain"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "1",
+      "group": [
+        "Key"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_KEY_SOURCES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "threshold",
+      "name": "Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -80,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -40,
+        "scale": "linear"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/primitives/gate-continuous-travels.json#GATE_CONTINUOUS_TRAVELS.thresholdDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "ratio",
+      "name": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 100,
+        "step": 0,
+        "unit": "ratio",
+        "default": 16,
+        "scale": "log"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/primitives/gate-continuous-travels.json#GATE_CONTINUOUS_TRAVELS.ratio",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "range",
+      "name": "Range",
+      "kind": "travel",
+      "travel": {
+        "min": -90,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -90,
+        "scale": "linear"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/primitives/gate-continuous-travels.json#GATE_CONTINUOUS_TRAVELS.rangeDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "attack",
+      "name": "Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 500,
+        "step": 0,
+        "unit": "ms",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_LIMITS.attackMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "release",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 5000,
+        "step": 0,
+        "unit": "ms",
+        "default": 100,
+        "scale": "linear"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/primitives/gate-continuous-travels.json#GATE_CONTINUOUS_TRAVELS.releaseMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "knee_start",
+      "name": "Knee Start",
+      "kind": "travel",
+      "travel": {
+        "min": -80,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -43,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "knee",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_LIMITS.kneeStartDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "knee_end",
+      "name": "Knee End",
+      "kind": "travel",
+      "travel": {
+        "min": -80,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -37,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "knee",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_LIMITS.kneeEndDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "hold",
+      "name": "Hold",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 10,
+        "scale": "stepped"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "hold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_LIMITS.holdMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "hysteresis",
+      "name": "Hysteresis",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 3,
+        "scale": "linear"
+      },
+      "group": [
+        "Gate"
+      ],
+      "meaning": "hysteresis",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_LIMITS.hysteresisDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "key_hp",
+      "name": "Key High-pass",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "lowCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_KEY_LIMITS.hpHz",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "key_lp",
+      "name": "Key Low-pass",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "highCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#GATE_KEY_LIMITS.lpHz",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 1,
+      "name": "key",
+      "kind": "audio",
+      "direction": "in",
+      "role": "sidechain",
+      "channels": 1,
+      "layout": "mono"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "gateGr",
+      "name": "Gain reduction",
+      "doc": "The gate's gain reduction, in dB with CLAP's sign: 0 while it reduces nothing, negative the reduction it applies. The display range runs down to GATE_LIMITS.rangeDb.min: the gate attenuates by its range at most.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -90,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/gate.json#readouts[gainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_GATE",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:GatePlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-keyed-gate/omx_gate_clap.c#clap_entry"
+  }
+}

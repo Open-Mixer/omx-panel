@@ -1,0 +1,678 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.comp",
+    "format": "clap",
+    "uri": "urn:openmixer:comp",
+    "name": "omx comp",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The console's compressor: threshold, ratio and knee set how hard it holds the level down, attack and release how fast, with makeup gain and a dry/wet mix. Kind picks the RMS detector (Compressor) or the peak detector (Limiter), and detector oversampling can run the control path at 4x; detector topology has it hear the input (feedforward) or its own output (feedback). Its detector can listen to a key routed to its sidechain input instead, through a high-pass, a low-pass and a tilt, on the louder leg, the mid or the side, with a hold; key listen puts what the detector hears on the output, and duck holds the reduction to a set depth. The DSP is omx-dsp's <omxdsp/fx/omx_comp_instance.h>, the console's own compressor.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "thresholdDb",
+      "name": "Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -18,
+        "scale": "stepped"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.thresholdDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "ratio",
+      "name": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 4,
+        "scale": "linear"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.ratio",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "kneeDb",
+      "name": "Knee",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 6,
+        "scale": "linear"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "knee",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.kneeDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "attackMs",
+      "name": "Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.attackMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "releaseMs",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 200,
+        "scale": "stepped"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.releaseMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "makeupDb",
+      "name": "Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.makeupDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "mixPct",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "percent",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.mixPct",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "kind",
+      "name": "Kind",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Compressor",
+        "Limiter"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "Comp"
+      ],
+      "meaning": "type",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KINDS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "detectorOversampling",
+      "name": "Detector Oversampling",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Auto",
+        "Off",
+        "4x"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Comp"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#DETECTOR_OVERSAMPLINGS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "detectorTopology",
+      "name": "Detector Topology",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Feedforward",
+        "Feedback"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "Comp"
+      ],
+      "meaning": "type",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#DETECTOR_TOPOLOGY",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "keySource",
+      "name": "Key Source",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Self",
+        "Sidechain"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "Key"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_SOURCES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "keyHpHz",
+      "name": "Key HP",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "lowCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_HP_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "keyLpHz",
+      "name": "Key LP",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "highCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_LP_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "keyTiltDb",
+      "name": "Key Tilt",
+      "kind": "travel",
+      "travel": {
+        "min": -6,
+        "max": 6,
+        "step": 0,
+        "unit": "dBPerOct",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "tone",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_TILT_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "keyListen",
+      "name": "Key Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Key"
+      ],
+      "meaning": "listen",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_LISTENS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "holdMs",
+      "name": "Hold",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Comp"
+      ],
+      "meaning": "hold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_HOLD_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "detectLink",
+      "name": "Detect Link",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "labels": [
+        "Linked",
+        "Mid",
+        "Side",
+        "Max"
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": "0",
+      "group": [
+        "Key"
+      ],
+      "meaning": "link",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_DETECT_LINKS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "duck",
+      "name": "Duck",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Duck"
+      ],
+      "meaning": "enabled",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_DUCKS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "rangeDb",
+      "name": "Duck Range",
+      "kind": "travel",
+      "travel": {
+        "min": -40,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -12,
+        "scale": "stepped"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_RANGE_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "releaseMode",
+      "name": "Release Mode",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1",
+        "2"
+      ],
+      "labels": [
+        "Fixed",
+        "Opto",
+        "Auto"
+      ],
+      "values": [
+        0,
+        1,
+        2
+      ],
+      "default": "0",
+      "group": [
+        "Comp"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_RELEASE_MODES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 1,
+      "name": "key",
+      "kind": "audio",
+      "direction": "in",
+      "role": "sidechain",
+      "channels": 1,
+      "layout": "mono"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "compGr",
+      "name": "Gain reduction",
+      "doc": "The compressor's gain reduction, in dB with CLAP's sign: 0 while it reduces nothing, negative the reduction it applies. The display range runs down to COMP_LIMITS.thresholdDb.min: on a signal at or below 0 dBFS the reduction (x - T)(1 - 1/R) never exceeds -T, and T is at least the threshold's minimum.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#readouts[gainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "compIn",
+      "name": "Input level",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 6,
+      "scale": "linear",
+      "measurement": "peak",
+      "held": true,
+      "clip": true,
+      "source": {
+        "impl": "plugins/omx-comp/omx_comp_clap.c#clap_entry"
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "compOut",
+      "name": "Output level",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 6,
+      "scale": "linear",
+      "measurement": "peak",
+      "held": true,
+      "clip": true,
+      "source": {
+        "impl": "plugins/omx-comp/omx_comp_clap.c#clap_entry"
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "compKey",
+      "name": "Key level",
+      "doc": "The level the compressor's detector reads now, dBFS: the key after its filter, tilt and fold while one is set, the programme's louder leg otherwise. The display range is the threshold's travel, so the meter and the threshold share one axis.",
+      "kind": "level",
+      "channels": 1,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "held": true,
+      "clip": false,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#readouts[keyLevelDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_COMPRESSOR",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:CompressorPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-comp/omx_comp_clap.c#clap_entry"
+  }
+}

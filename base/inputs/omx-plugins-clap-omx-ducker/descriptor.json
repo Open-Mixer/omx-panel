@@ -1,0 +1,317 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.ducker",
+    "format": "clap",
+    "uri": "urn:openmixer:ducker",
+    "name": "omx ducker",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "Pulls the programme down while a key is heard, music under a voice, by a set depth with attack, hold and release, the console ducker.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "thresholdDb",
+      "name": "Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -18,
+        "scale": "stepped"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.thresholdDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "rangeDb",
+      "name": "Depth",
+      "kind": "travel",
+      "travel": {
+        "min": -40,
+        "max": 0,
+        "step": 1,
+        "unit": "dB",
+        "default": -12,
+        "scale": "stepped"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_RANGE_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "attackMs",
+      "name": "Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 100,
+        "step": 0,
+        "unit": "ms",
+        "default": 5,
+        "scale": "linear"
+      },
+      "group": [
+        "Timing"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.attackMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "holdMs",
+      "name": "Hold",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Timing"
+      ],
+      "meaning": "hold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_HOLD_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "releaseMs",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 3000,
+        "step": 1,
+        "unit": "ms",
+        "default": 200,
+        "scale": "stepped"
+      },
+      "group": [
+        "Timing"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.releaseMs",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "ratio",
+      "name": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 4,
+        "scale": "linear"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.ratio",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "kneeDb",
+      "name": "Knee",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 6,
+        "scale": "linear"
+      },
+      "group": [
+        "Duck"
+      ],
+      "meaning": "knee",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_LIMITS.kneeDb",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "keyHpHz",
+      "name": "Key High-Pass",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 2000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "lowCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_HP_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "keyLpHz",
+      "name": "Key Low-Pass",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 20000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "Key"
+      ],
+      "meaning": "highCut",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_LP_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "keyListen",
+      "name": "Key Listen",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Key"
+      ],
+      "meaning": "listen",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/comp.json#COMP_KEY_LISTENS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 1,
+      "name": "key",
+      "kind": "audio",
+      "direction": "in",
+      "role": "sidechain",
+      "channels": 1,
+      "layout": "mono"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_COMPRESSOR",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:CompressorPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-ducker/omx_ducker_clap.c#clap_entry"
+  }
+}

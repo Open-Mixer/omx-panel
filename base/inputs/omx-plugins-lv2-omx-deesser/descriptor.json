@@ -1,0 +1,326 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.deesser",
+    "format": "clap",
+    "uri": "urn:openmixer:deesser",
+    "name": "omx deesser",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The console's de-esser: a detector on a band around the sibilance drives the compressor's gain computer, and the reduction lands on that band alone or on the whole signal.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "deessFreq",
+      "name": "Freq",
+      "kind": "travel",
+      "travel": {
+        "min": 2000,
+        "max": 16000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 7000,
+        "scale": "log"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_FREQ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "deessWidth",
+      "name": "Width",
+      "kind": "travel",
+      "travel": {
+        "min": 0.25,
+        "max": 4,
+        "step": 0,
+        "unit": "oct",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "width",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_WIDTH_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "deessThreshold",
+      "name": "Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -30,
+        "scale": "linear"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_THRESHOLD_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "deessRatio",
+      "name": "Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 4,
+        "scale": "linear"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "deessRange",
+      "name": "Range",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -12,
+        "scale": "linear"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_RANGE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "deessAttack",
+      "name": "Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 50,
+        "step": 0,
+        "unit": "ms",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_ATTACK_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "deessRelease",
+      "name": "Release",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 500,
+        "step": 1,
+        "unit": "ms",
+        "default": 60,
+        "scale": "stepped"
+      },
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_RELEASE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "deessMode",
+      "name": "Mode",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Split",
+        "Wideband"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "De-esser"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#DEESS_MODES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "deessGr",
+      "name": "Gain reduction",
+      "doc": "The de-esser's gain reduction, in dB with CLAP's sign: 0 while it reduces nothing, negative the reduction it applies. The display range runs down to DEESS_RANGE_RANGE.min: the de-esser reduces by its range at most.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -24,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/deesser.json#readouts[gainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "deessIn",
+      "name": "Input level",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 6,
+      "scale": "linear",
+      "measurement": "peak",
+      "held": true,
+      "clip": true,
+      "source": {
+        "impl": "plugins/omx-deesser/omx_deesser_clap.c#clap_entry"
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "deessOut",
+      "name": "Output level",
+      "kind": "level",
+      "channels": 2,
+      "unit": "dBFS",
+      "min": -60,
+      "max": 6,
+      "scale": "linear",
+      "measurement": "peak",
+      "held": true,
+      "clip": true,
+      "source": {
+        "impl": "plugins/omx-deesser/omx_deesser_clap.c#clap_entry"
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_DEESSER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:DynamicsPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-deesser/omx_deesser_clap.c#clap_entry"
+  }
+}

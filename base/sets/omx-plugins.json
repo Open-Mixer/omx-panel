@@ -1,0 +1,178 @@
+{
+  "set": "omx-plugins",
+  "versions": [
+    "0.21.0"
+  ],
+  "plugins": [
+    {
+      "name": "omx-balancer",
+      "lv2": "urn:openmixer:balancer",
+      "clap": "org.openmixer.balancer"
+    },
+    {
+      "name": "omx-chorus",
+      "lv2": "urn:openmixer:chorus",
+      "clap": "org.openmixer.chorus"
+    },
+    {
+      "name": "omx-clipper",
+      "lv2": "urn:openmixer:clipper",
+      "clap": "org.openmixer.clipper"
+    },
+    {
+      "name": "omx-comp",
+      "lv2": "urn:openmixer:comp",
+      "clap": "org.openmixer.comp"
+    },
+    {
+      "name": "omx-deesser",
+      "lv2": "urn:openmixer:deesser",
+      "clap": "org.openmixer.deesser"
+    },
+    {
+      "name": "omx-delay",
+      "lv2": "urn:openmixer:delay",
+      "clap": "org.openmixer.delay"
+    },
+    {
+      "name": "omx-doubler",
+      "lv2": "urn:openmixer:doubler",
+      "clap": "org.openmixer.doubler"
+    },
+    {
+      "name": "omx-drive",
+      "lv2": "urn:openmixer:drive",
+      "clap": "org.openmixer.drive"
+    },
+    {
+      "name": "omx-ducker",
+      "lv2": "urn:openmixer:ducker",
+      "clap": "org.openmixer.ducker"
+    },
+    {
+      "name": "omx-dyneq",
+      "lv2": "urn:openmixer:dyneq",
+      "clap": "org.openmixer.dyneq"
+    },
+    {
+      "name": "omx-eq16",
+      "lv2": "urn:openmixer:eq16",
+      "clap": "org.openmixer.eq16"
+    },
+    {
+      "name": "omx-eq32",
+      "lv2": "urn:openmixer:eq32",
+      "clap": "org.openmixer.eq32"
+    },
+    {
+      "name": "omx-eq8",
+      "lv2": "urn:openmixer:eq8",
+      "clap": "org.openmixer.eq8"
+    },
+    {
+      "name": "omx-flanger",
+      "lv2": "urn:openmixer:flanger",
+      "clap": "org.openmixer.flanger"
+    },
+    {
+      "name": "omx-geq",
+      "lv2": "urn:openmixer:geq",
+      "clap": "org.openmixer.geq"
+    },
+    {
+      "name": "omx-glue",
+      "lv2": "urn:openmixer:glue",
+      "clap": "org.openmixer.glue"
+    },
+    {
+      "name": "omx-keyed-gate",
+      "lv2": "urn:openmixer:keyed-gate",
+      "clap": "org.openmixer.keyed-gate"
+    },
+    {
+      "name": "omx-limiter",
+      "lv2": "urn:openmixer:limiter",
+      "clap": "org.openmixer.limiter"
+    },
+    {
+      "name": "omx-loudlevel",
+      "lv2": "urn:openmixer:loudlevel",
+      "clap": "org.openmixer.loudlevel"
+    },
+    {
+      "name": "omx-multiband",
+      "lv2": "urn:openmixer:multiband",
+      "clap": "org.openmixer.multiband"
+    },
+    {
+      "name": "omx-phaser",
+      "lv2": "urn:openmixer:phaser",
+      "clap": "org.openmixer.phaser"
+    },
+    {
+      "name": "omx-pitch",
+      "lv2": "urn:openmixer:pitch",
+      "clap": "org.openmixer.pitch"
+    },
+    {
+      "name": "omx-plosive",
+      "lv2": "urn:openmixer:plosive",
+      "clap": "org.openmixer.plosive"
+    },
+    {
+      "name": "omx-reverb",
+      "lv2": "urn:openmixer:reverb",
+      "clap": "org.openmixer.reverb"
+    },
+    {
+      "name": "omx-rotary",
+      "lv2": "urn:openmixer:rotary",
+      "clap": "org.openmixer.rotary"
+    },
+    {
+      "name": "omx-spring",
+      "lv2": "urn:openmixer:spring",
+      "clap": "org.openmixer.spring"
+    },
+    {
+      "name": "omx-strip",
+      "lv2": "urn:openmixer:strip",
+      "clap": "org.openmixer.strip"
+    },
+    {
+      "name": "omx-suboct",
+      "lv2": "urn:openmixer:suboct",
+      "clap": "org.openmixer.suboct"
+    },
+    {
+      "name": "omx-tone",
+      "lv2": "urn:openmixer:tone",
+      "clap": "org.openmixer.tone"
+    },
+    {
+      "name": "omx-transient",
+      "lv2": "urn:openmixer:transient",
+      "clap": "org.openmixer.transient"
+    },
+    {
+      "name": "omx-tremolo",
+      "lv2": "urn:openmixer:tremolo",
+      "clap": "org.openmixer.tremolo"
+    },
+    {
+      "name": "omx-trim",
+      "lv2": "urn:openmixer:trim",
+      "clap": "org.openmixer.trim"
+    },
+    {
+      "name": "omx-upward",
+      "lv2": "urn:openmixer:upward",
+      "clap": "org.openmixer.upward"
+    },
+    {
+      "name": "omx-width",
+      "lv2": "urn:openmixer:width",
+      "clap": "org.openmixer.width"
+    }
+  ]
+}
