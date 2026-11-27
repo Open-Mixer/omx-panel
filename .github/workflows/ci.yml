@@ -41,7 +41,8 @@ jobs:
       - uses: Open-Mixer/.github/.github/actions/wave-deps@openmixer-v1
       - name: Install the vocabulary the suite reads
         run: |
-          dnf install -y --setopt=install_weak_deps=False omx-contract-data
+          # omx-dsp's curve module (omx-dsp-wasm): the tree links it in place of the registry's copy (make link-packaged)
+          dnf install -y --setopt=install_weak_deps=False omx-contract-data omx-dsp-wasm
           # the panel domain's checks: omx-contract (validate, fmt), its domain installer (omx-contract-devel) and the C
           # loader's omx-domain command (libomx-domain-devel), from the release that has all three
           dnf install -y --setopt=install_weak_deps=False omx-contract omx-contract-devel libomx-domain-devel
@@ -74,6 +75,11 @@ jobs:
       - id: handback-install
         name: Install the build and the validator's dependency
         run: npm ci
+      # npm ci installs the build's tools; the twins the suite reads (omx-dsp's curve, omx-contract) are then linked to the
+      # channel's packages, not the registry's: a devel run's are staged and not on npm (npm publishes from a tag only), as
+      # release.yml's proof and the packages' builds link them
+      - name: The twins the suite reads are the channel's
+        run: make link-packaged PREFIX=/usr DATADIR=/usr/share
       # the shapes' two generators are omx-contract's, at the commit of its shapes facility (omx-contract#69): its tree with
       # `npm ci` (json-schema-to-typescript at its exact pin) and a venv holding datamodel-code-generator at its exact pin
       - id: handback-shapes-tool
@@ -149,6 +155,8 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
+          # the twins the tree links in place of the registry's copies (make link-packaged): omx-dsp's curve and omx-contract
+          dnf install -y --setopt=install_weak_deps=False omx-dsp-wasm omx-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
           dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
@@ -171,7 +179,7 @@ jobs:
           esac
       - uses: actions/checkout@v4
       - name: The tree the tests read
-        run: npm ci && make
+        run: npm ci && make link-packaged PREFIX=/usr DATADIR=/usr/share && make
       - name: The renderer, and its golden images and parity with the MOD GUI face
         run: make renderer-check
 
@@ -197,11 +205,13 @@ jobs:
       - name: Install omx-contract's C domain loader and the vocabulary describe reads (the rules golden runs it)
         run: |
           dnf install -y --setopt=install_weak_deps=False libomx-domain-devel omx-contract-data
+          # the twins the tree links in place of the registry's copies (make link-packaged): omx-dsp's curve and omx-contract
+          dnf install -y --setopt=install_weak_deps=False omx-dsp-wasm omx-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
           dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       - uses: actions/checkout@v4
       - name: The tree the golden of the rules version reads
-        run: npm ci && make
+        run: npm ci && make link-packaged PREFIX=/usr DATADIR=/usr/share && make
       - name: The store, its tests, its sabotage arms and the Python door
         run: make store-check
 
@@ -227,6 +237,8 @@ jobs:
       - name: Install omx-contract's C headers, omx-dsp's meter view and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
+          # the twins the tree links in place of the registry's copies (make link-packaged): omx-dsp's curve and omx-contract
+          dnf install -y --setopt=install_weak_deps=False omx-dsp-wasm omx-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
           dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
@@ -249,8 +261,8 @@ jobs:
           esac
       - uses: actions/checkout@v4
       - name: The tree and the renderer
-        run: npm ci && make && make renderer
-      # omx-dsp is a dependency of package.json (npm ci installs it); the browser driver is the one extra, not saved
+        run: npm ci && make link-packaged PREFIX=/usr DATADIR=/usr/share && make && make renderer
+      # omx-dsp is the channel's (omx-dsp-wasm, linked above); the browser driver is the one extra, not saved
       - name: The browser driver
         run: npm i --no-save --no-audit --no-fund playwright-core@1.57.0
       # the role vocabulary the layout reads, this tree's stand-in, as make renderer-check names it (docs/renderer.md)
@@ -292,6 +304,8 @@ jobs:
       - name: Install omx-contract's C headers and the vocabulary the layout reads
         run: |
           dnf install -y --setopt=install_weak_deps=False omx-contract-devel omx-contract-data omx-dsp-devel omx-dsp-contract
+          # the twins the tree links in place of the registry's copies (make link-packaged): omx-dsp's curve and omx-contract
+          dnf install -y --setopt=install_weak_deps=False omx-dsp-wasm omx-contract
           # plugin-db's lv2 domain: the layout reads a unit's LV2 term from its LV2_UNIT_IDS (tools/vocabulary.mjs lv2UnitTerms)
           dnf install -y --setopt=install_weak_deps=False plugin-db-contract
       # an ordinary run builds against the channel: name where each omx package came from, refuse one from staging (D25,
@@ -318,7 +332,7 @@ jobs:
           names: pugl nanovg
       - uses: actions/checkout@v4
       - name: The tree the tests read
-        run: npm ci && make
+        run: npm ci && make link-packaged PREFIX=/usr DATADIR=/usr/share && make
       - name: The renderer with its window, every test run under Xvfb
         env:
           OMX_PANEL_WINDOW_REQUIRED: '1'
