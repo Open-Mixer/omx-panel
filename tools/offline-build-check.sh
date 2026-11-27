@@ -2,40 +2,42 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
 #
-# tools/offline-build-check.sh <rpm | deb>: the package builds from the vendored tarball with no network. The tools go
-# into the image with the network on, then the build runs with --network=none. The plain archive is built the same way
-# first and has to fail, which proves the network is off and that the vendored modules are what made the difference.
+# tools/offline-build-check.sh <rpm | deb>: the package builds from the vendored tarball with no network. Run as root on
+# a machine (a CI container) that already holds the build dependencies, installed from the channel the job reads with
+# `dnf builddep packaging/omx-panel.spec` or `apt-get build-dep ./`, as ci.yml's offline jobs do: the vendored tarball is
+# made with the network on, then each build runs in a network namespace of its own (unshare --net, which needs
+# CAP_SYS_ADMIN: a container started with --cap-add=SYS_ADMIN). The plain archive is built the same way first and has to
+# fail, which proves the network is off and that the vendored modules are what made the difference. The build checks its
+# dependencies (no --nodeps, no -d): one the machine lacks is red here, never built around.
 #
-#   CONTAINER=podman IMAGE=debian:trixie tools/offline-build-check.sh deb
+#   tools/offline-build-check.sh rpm
 set -euo pipefail
 kind=${1:?usage: offline-build-check.sh <rpm | deb>}
-engine=${CONTAINER:-docker}
 cd "$(dirname "$0")/.."
 version=$(node -p "require('./package.json').version")
 work=$(mktemp -d)
-tools=omx-panel-offline-$kind
-trap 'rm -rf "$work"; "$engine" rm -f "$tools" >/dev/null 2>&1 || true; "$engine" rmi -f "$tools" >/dev/null 2>&1 || true' EXIT
+trap 'rm -rf "$work"' EXIT
 tools/vendored-source.sh "$work" >/dev/null
 git archive --format=tar.gz --prefix="omx-panel-$version/" -o "$work/omx-panel-$version-plain.tar.gz" HEAD
 
 case "$kind" in
   rpm)
-    image=${IMAGE:-fedora:45}
-    install='dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm && dnf install -y -q --setopt=install_weak_deps=False rpm-build make sed nodejs npm systemd-rpm-macros gcc cjson-devel "sqlite-devel >= 3.38.0" omx-contract-devel libomx-domain-devel omx-dsp-devel'
-    build='mkdir -p ~/rpmbuild/SOURCES && cp "$1" ~/rpmbuild/SOURCES/omx-panel-$2.tar.gz && tar -xzOf "$1" omx-panel-$2/packaging/omx-panel.spec >/tmp/omx-panel.spec && rpmbuild -bb --nocheck --nodeps /tmp/omx-panel.spec'
+    build='rm -rf "$3/rpmbuild" && mkdir -p "$3/rpmbuild/SOURCES" && cp "$1" "$3/rpmbuild/SOURCES/omx-panel-$2.tar.gz" && tar -xzOf "$1" omx-panel-$2/packaging/omx-panel.spec >"$3/omx-panel.spec" && rpmbuild -bb --nocheck --define "_topdir $3/rpmbuild" "$3/omx-panel.spec"'
     ;;
   deb)
-    image=${IMAGE:-debian:trixie}
-    install='apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates && curl -fsSLo /tmp/r.deb https://www.openmixer.org/deb/openmixer-release.deb && apt-get install -y -qq /tmp/r.deb && apt-get update -qq && apt-get install -y -qq --no-install-recommends dpkg-dev debhelper build-essential nodejs npm make pkgconf libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev'
-    build='mkdir -p /b && tar -xzf "$1" -C /b && cd /b/omx-panel-$2 && DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -d'
+    build='rm -rf "$3/b" && mkdir -p "$3/b" && tar -xzf "$1" -C "$3/b" && cd "$3/b/omx-panel-$2" && DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck'
     ;;
   *) echo "usage: offline-build-check.sh <rpm | deb>" >&2; exit 2 ;;
 esac
 
-"$engine" rm -f "$tools" >/dev/null 2>&1 || true
-"$engine" run --name "$tools" "$image" bash -c "$install" >/dev/null
-"$engine" commit "$tools" "$tools" >/dev/null
-offline() { "$engine" run --rm --network=none --security-opt label=disable -e npm_config_fetch_retries=0 -v "$work:/w:ro" "$tools" bash -euc "$build" sh "/w/$1" "$version"; }
+# the namespace is proved before it is trusted: inside it no interface but lo exists
+unshare --net true 2>/dev/null || { echo "FAIL unshare --net is refused here: run as root with CAP_SYS_ADMIN (a container started with --cap-add=SYS_ADMIN)" >&2; exit 2; }
+# (/proc/net/dev is the namespace's own; /sys/class/net is the mount's, the host's)
+links=$(unshare --net sh -c "tail -n +3 /proc/net/dev | cut -d: -f1 | tr -d ' '")
+[ "$links" = lo ] || { echo "FAIL the network namespace holds more than lo: ${links//$'\n'/ }" >&2; exit 2; }
+# an empty npm cache of its own: the one vendored-source.sh just filled on this machine would serve the plain archive's
+# npm ci with no network, and the plain build would pass (it did, the first time this ran in the job's own container)
+offline() { mkdir -p "$work/npm-cache-$1"; npm_config_cache="$work/npm-cache-$1" npm_config_fetch_retries=0 unshare --net bash -euc "$build" sh "$work/$1" "$version" "$work"; }
 
 if offline "omx-panel-$version-plain.tar.gz" >"$work/plain.log" 2>&1; then
   echo "FAIL the plain archive built with no network: the check proves nothing" >&2

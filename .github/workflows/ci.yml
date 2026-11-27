@@ -372,49 +372,55 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # the build runs in the job's own container, so the channel it reads is the one add-openmixer adds (a wave's devel
+    # channel and staging above the real one), as in every other job: a container started by hand read the real channel
+    # alone, where a wave's build dependencies are not (plugin-db-contract, run 46033243694)
+    container:
+      image: fedora:45
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: Install the build tools
+        run: dnf install -y --setopt=install_weak_deps=False git rpm-build dnf5-plugins cpio binutils
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+        with:
+          # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
+          devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
           mkdir -p src
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       # every BuildRequires of the spec, from the channel, and rpmbuild checks them (no --nodeps)
       - name: The RPM (fedora:45)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
-            dnf install -y -q https://www.openmixer.org/rpm/openmixer-release.noarch.rpm
-            dnf install -y -q --setopt=install_weak_deps=False rpm-build dnf5-plugins
-            dnf builddep -y -q --setopt=install_weak_deps=False packaging/omx-panel.spec
-            mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
-            rpmbuild -bb --nocheck packaging/omx-panel.spec
-            cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
-              ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-descriptions-[0-9]*.rpm out/'
+          dnf builddep -y --setopt=install_weak_deps=False packaging/omx-panel.spec
+          mkdir -p ~/rpmbuild/SOURCES out && cp src/*.tar.gz ~/rpmbuild/SOURCES/
+          rpmbuild -bb --nocheck packaging/omx-panel.spec
+          cp ~/rpmbuild/RPMS/*/omx-panel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-render-[0-9]*.rpm \
+            ~/rpmbuild/RPMS/*/omx-panel-render-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-contract-[0-9]*.rpm \
+            ~/rpmbuild/RPMS/*/omx-panel-store-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-store-devel-[0-9]*.rpm ~/rpmbuild/RPMS/*/omx-panel-descriptions-[0-9]*.rpm out/
       # the renderer's library package carries libomx-panel-render.so.1 with its SONAME and C API (tools/render-package-check.sh)
       - name: The renderer's library in its RPMs
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
-            dnf install -y -q cpio binutils
-            tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm'
+        run: tools/render-package-check.sh --self-test out/omx-panel-render-[0-9]*.rpm out/omx-panel-[0-9]*.rpm
       # omx-dsp is omx-dsp-wasm's: the RPM carries the one link node_modules/@openmixer/omx-dsp and no file under it
       - name: No copy of omx-dsp in the RPM
         run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -uo pipefail -c '
-            rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
-            list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
-            grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
-            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
-            req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
-            grep -qx "omx-dsp-wasm" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm in: $(tr "\n" " " <<< "$req")"; exit 1; }
-            echo "PASS rpm: omx-dsp linked, not copied, required"'
+          rpm=$(ls out/omx-panel-[0-9]*.rpm); echo "rpm: $rpm"
+          list=$(rpm -qlp "$rpm") || { echo "FAIL rpm -qlp $rpm"; exit 1; }
+          grep -qx /usr/share/omx-panel/node_modules/@openmixer/omx-dsp <<< "$list" || { echo "FAIL rpm: no omx-dsp link"; exit 1; }
+          if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL rpm: a copy of omx-dsp"; exit 1; fi
+          req=$(rpm -qp --requires "$rpm") || { echo "FAIL rpm -qp --requires $rpm"; exit 1; }
+          grep -qx "omx-dsp-wasm" <<< "$req" || { echo "FAIL rpm: no Requires omx-dsp-wasm in: $(tr "\n" " " <<< "$req")"; exit 1; }
+          echo "PASS rpm: omx-dsp linked, not copied, required"
       # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
       # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
       - name: The descriptions store in its RPMs
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w fedora:45 bash -euo pipefail -c '
-            dnf install -y -q cpio binutils
-            tools/store-package-check.sh --self-test out/omx-panel-store-[0-9]*.rpm out/omx-panel-store-devel-[0-9]*.rpm'
+        run: tools/store-package-check.sh --self-test out/omx-panel-store-[0-9]*.rpm out/omx-panel-store-devel-[0-9]*.rpm
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-rpm
@@ -433,55 +439,59 @@ jobs:
       fail-fast: false
       matrix:
         cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    # the build runs in the job's own container (the cell's image), so the channel it reads is the one add-openmixer adds, as
+    # in every other job: a container started by hand read the real channel alone, and apt-get build-dep could not satisfy a
+    # wave's build dependencies there ("held broken packages", run 46033243694)
+    container:
+      image: ${{ matrix.cell.image }}
+    defaults:
+      run:
+        shell: bash
     env:
-      IMAGE: ${{ matrix.cell.image }}
+      DEBIAN_FRONTEND: noninteractive
     steps:
+      - name: Install the build tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ca-certificates curl git dpkg-dev build-essential binutils
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+        with:
+          # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
+          devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
       - uses: actions/checkout@v4
       - name: The source tarball the spec names
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           v=$(sed -n 's/^Version: *//p' packaging/omx-panel.spec)
           mkdir -p src out
           git archive --format=tar.gz --prefix="omx-panel-$v/" -o "src/omx-panel-$v.tar.gz" HEAD
       - name: The DEB (the cell's suite)
         run: |
-          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates
-            curl -fsSLo /tmp/openmixer-release.deb https://www.openmixer.org/deb/openmixer-release.deb
-            apt-get install -y -qq /tmp/openmixer-release.deb && apt-get update -qq
-            apt-get install -y -qq --no-install-recommends dpkg-dev build-essential
-            mkdir -p /b && tar -xzf src/*.tar.gz -C /b && cd /b/omx-panel-*
-            # every Build-Depends of debian/control (the nocheck profile: the suite is the test job'\''s), from the
-            # channel, and dpkg-buildpackage checks them (no -d)
-            apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
-            DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck
-            cp /b/omx-panel_*.deb /b/libomx-panel-render1_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
-              /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /b/omx-panel-descriptions_*.deb /w/out/'
+          mkdir -p /b && tar -xzf src/*.tar.gz -C /b
+          # every Build-Depends of debian/control (the nocheck profile: the suite is the test job's), from the channel, and
+          # dpkg-buildpackage checks them (no -d)
+          (cd /b/omx-panel-* && apt-get build-dep -y -qq --no-install-recommends -P nocheck ./ && DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -us -uc -P nocheck)
+          cp /b/omx-panel_*.deb /b/libomx-panel-render1_*.deb /b/libomx-panel-render-dev_*.deb /b/omx-panel-contract_*_all.deb \
+            /b/libomx-panel-store0_*.deb /b/libomx-panel-store-dev_*.deb /b/omx-panel-store_*.deb /b/omx-panel-descriptions_*.deb out/
       # the renderer's library package carries libomx-panel-render.so.1 with its SONAME and C API, and the check is red
       # on omx-panel, which does not (tools/render-package-check.sh)
       - name: The renderer's library in its packages
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
-            tools/render-package-check.sh --self-test out/libomx-panel-render1_*.deb out/omx-panel_*_all.deb'
+        run: tools/render-package-check.sh --self-test out/libomx-panel-render1_*.deb out/omx-panel_*_all.deb
       # the store's packages carry the library with its SONAME and C API, the command, and the .so link, header,
       # pkg-config file and panel.sql; the check is red with any of them missing (tools/store-package-check.sh)
       - name: The descriptions store in its DEBs
-        run: |
-          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -euo pipefail -c '
-            apt-get update -qq && apt-get install -y -qq --no-install-recommends binutils
-            tools/store-package-check.sh --self-test out/libomx-panel-store0_*.deb out/libomx-panel-store-dev_*.deb out/omx-panel-store_*.deb'
+        run: tools/store-package-check.sh --self-test out/libomx-panel-store0_*.deb out/libomx-panel-store-dev_*.deb out/omx-panel-store_*.deb
       # omx-dsp is omx-dsp-wasm's: the packages carry the one link node_modules/@openmixer/omx-dsp and no file under it
       - name: No copy of omx-dsp in the packages
         run: |
-          docker run --rm -v "$PWD:/w" -w /w "$IMAGE" bash -uo pipefail -c '
-            deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
-            list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
-            grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
-            if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
-            dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
-            grep -qE "(^|, )omx-dsp-wasm(,|$)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm in: $dep"; exit 1; }
-            echo "PASS deb: omx-dsp linked, not copied, a dependency"'
+          deb=$(ls out/omx-panel_*_all.deb); echo "deb: $deb"
+          list=$(dpkg -c "$deb") || { echo "FAIL dpkg -c $deb"; exit 1; }
+          grep -qE "node_modules/@openmixer/omx-dsp -> (/usr/share/omx-dsp|\.\./\.\./\.\./omx-dsp)$" <<< "$list" || { echo "FAIL deb: no omx-dsp link to /usr/share/omx-dsp in: $(grep "@openmixer" <<< "$list")"; exit 1; }
+          if grep "/node_modules/@openmixer/omx-dsp/" <<< "$list"; then echo "FAIL deb: a copy of omx-dsp"; exit 1; fi
+          dep=$(dpkg-deb -f "$deb" Depends) || { echo "FAIL dpkg-deb -f $deb"; exit 1; }
+          grep -qE "(^|, )omx-dsp-wasm(,|$)" <<< "$dep" || { echo "FAIL deb: no Depends omx-dsp-wasm in: $dep"; exit 1; }
+          echo "PASS deb: omx-dsp linked, not copied, a dependency"
       - uses: actions/upload-artifact@v4
         with:
           name: omx-panel-deb-${{ matrix.cell.suite }}-${{ matrix.cell.arch }}
@@ -489,18 +499,36 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # A distribution build has no registry: the vendored tarball builds with --network=none, and the plain archive does not.
+  # A distribution build has no registry: the vendored tarball builds with no network, and the plain archive does not. Each
+  # builds in the job's own container, with the build dependencies installed from the channel add-openmixer adds (a wave's
+  # devel channel and staging above the real one), and tools/offline-build-check.sh cuts the network with a namespace of
+  # its own (unshare --net, so the container has CAP_SYS_ADMIN). A container started by hand read the real channel alone
+  # and installed a list kept by hand that lacked omx-dsp-wasm ("link-packaged: no omx-dsp at /usr/share/omx-dsp", run
+  # 46033243694).
   offline:
     name: build with no network (rpm)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    container:
+      image: fedora:45
+      options: --cap-add=SYS_ADMIN
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Install the build tools
+        run: dnf install -y --setopt=install_weak_deps=False git rpm-build dnf5-plugins nodejs npm util-linux-core
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
         with:
-          node-version: 22
-      - run: tools/offline-build-check.sh rpm
+          # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
+          devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
+      - uses: actions/checkout@v4
+      # every BuildRequires of the spec, from the channel; the offline build checks them (no --nodeps)
+      - name: The build dependencies
+        run: dnf builddep -y --setopt=install_weak_deps=False packaging/omx-panel.spec
+      - name: The vendored tarball builds with no network, the plain archive does not
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          tools/offline-build-check.sh rpm
 
   # the same for the DEB, in each check-matrix cell's Debian image on the runner of its architecture
   offline-deb:
@@ -513,14 +541,30 @@ jobs:
       fail-fast: false
       matrix:
         cell: ${{ fromJSON(needs.checks.outputs.deb) }}
+    container:
+      image: ${{ matrix.cell.image }}
+      options: --cap-add=SYS_ADMIN
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Install the build tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ca-certificates curl git dpkg-dev build-essential nodejs npm
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
         with:
-          node-version: 22
-      - run: tools/offline-build-check.sh deb
-        env:
-          IMAGE: ${{ matrix.cell.image }}
+          # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
+          devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
+      - uses: actions/checkout@v4
+      # every Build-Depends of debian/control (the nocheck profile, as the offline build), from the channel; the offline
+      # build checks them (no -d)
+      - name: The build dependencies
+        run: apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
+      - name: The vendored tarball builds with no network, the plain archive does not
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          tools/offline-build-check.sh deb
 
   # The DEB as the release builds it: built from the checkout in a Debian container of each check-matrix cell and linted
   # with lintian --fail-on error,warning (tools/deb-lint-check.sh). A tag that failed only here left v0.7.0 without
@@ -547,9 +591,12 @@ jobs:
         with:
           # a pull request into devel, or a dispatch off main, in a wave reads that wave's devel channel above staging (Open-Mixer/.github#329)
           devel-channel: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
-      - name: The renderer's and the store's build dependencies
-        run: apt-get install -y -qq --no-install-recommends pkgconf libcjson-dev libsqlite3-dev libomx-contract-dev libomx-domain-dev libomxdsp-dev
       - uses: actions/checkout@v4
+      # every Build-Depends of debian/control (the nocheck profile, as the build below), from the channel: a list kept here
+      # by hand lacked omx-dsp-wasm and omx-contract, whose trees the build links ("link-packaged: no omx-dsp at
+      # /usr/share/omx-dsp", run 46033243694)
+      - name: The build dependencies
+        run: apt-get build-dep -y -qq --no-install-recommends -P nocheck ./
       - name: Build the DEB and lint it
         run: tools/deb-lint-check.sh "$PWD/out-deb"
 
