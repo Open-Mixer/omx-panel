@@ -8,7 +8,7 @@
 %{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.17.1
+Version: 0.17.2
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -349,9 +349,16 @@ English source sentence.
 # END langpacks
 
 %changelog
-* Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.1-1
+* Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.2-1
 - The installed package.json names the installed tree: every export target
   and the bin exist after make install (#272).
+
+* Thu Nov 26 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.1-1
+- The RPMs are built for Fedora aarch64 as well as x86_64: the release
+  matrix is Open-Mixer/.github's shared releases and architectures, with no
+  list of this repository's own.
+- Published by the devel release of the full matrix, with every change
+  merged to devel since 0.17.0.
 
 * Wed Nov 25 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.0-1
 - Chain 3: V23d P2, a unit is served when omx-contract's PARAM_UNITS_CLAP_ENCODED

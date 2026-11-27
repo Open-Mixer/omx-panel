@@ -1,9 +1,19 @@
-omx-panel (0.17.1) unstable; urgency=medium
+omx-panel (0.17.2) unstable; urgency=medium
 
   * The installed package.json names the installed tree: every export
     target and the bin exist after make install (#272).
 
  -- Pau Aliagas <linuxnow@gmail.com>  Fri, 27 Nov 2026 12:00:00 +0100
+
+omx-panel (0.17.1) unstable; urgency=medium
+
+  * The RPMs are built for Fedora aarch64 as well as x86_64: the release
+    matrix is Open-Mixer/.github's shared releases and architectures, with
+    no list of this repository's own.
+  * Published by the devel release of the full matrix, with every change
+    merged to devel since 0.17.0.
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Thu, 26 Nov 2026 23:09:47 +0100
 
 omx-panel (0.17.0) unstable; urgency=medium
 
