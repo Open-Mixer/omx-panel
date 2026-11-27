@@ -62,3 +62,14 @@ test('a requirement on the contract package is satisfied by the one this build m
   assert.match(s, /\[ "\$name" = "\$OWN" \]/, 'a requirement on the contract package is asked of the channel');
   assert.match(s, /install -y -q[^\n]*"\$PKG" "\$CPKG"/, 'omx-panel is not installed with the contract package this build made');
 });
+
+test('a recommendation is installed with this build\'s runtime packages and must leave the package under test installed', () => {
+  // plugin-hostd needs libomx-panel-store; the channel's pins the channel's omx-panel-contract, so taken from the channel
+  // it downgraded omx-panel (run 46040290184: "omx-panel --version says omx-panel 0.17.2, the package is 0.17.3")
+  const s = script();
+  assert.match(s, /for f in "\$\(dirname "\$PKG"\)"\/\*\."\$FORMAT"; do/, 'the build\'s packages beside the package are not gathered');
+  assert.match(s, /\[\[ \$\(pkg_name "\$f"\) =~ \$DEVEL \]\] && continue/, 'a development package would be offered');
+  assert.match(s, /dnf install [^\n]*"\$r" "\$\{siblings\[@\]\}"/, 'the RPM recommendation is not installed with the build\'s packages');
+  assert.match(s, /apt-get install [^\n]*"\$r" "\$\{siblings\[@\]\}"/, 'the DEB recommendation is not installed with the build\'s packages');
+  assert.match(s, /after \$r, \$NAME is/, 'a recommendation that replaces the package under test is not red');
+});
