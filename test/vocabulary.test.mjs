@@ -6,7 +6,7 @@
 // `omx-panel vocabulary` reads each source from where the lookup puts it.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test, { after } from 'node:test';
@@ -83,6 +83,26 @@ test('pkg-config, where omx-contract.pc is installed, names the directories', ()
   assert.deepEqual(lookup('v.contractDirs()', { PKG_CONFIG: fake }), ['/pc/contract.d']);
   assert.equal(lookup('v.contractDataDir()', { PKG_CONFIG: fake }), '/pc/data');
   assert.deepEqual(lookup('v.contractDirs()', { PKG_CONFIG: fake, OMX_CONTRACT_PATH: '/env/a:/env/b' }), ['/env/a', '/env/b'], '$OMX_CONTRACT_PATH comes before pkg-config');
+});
+
+// A console runs `describe` on its main thread, beside the engine's realtime threads, and one `describe` asks these
+// lookups many times. A pkg-config run there forks the console's whole address space: on a live console (2026-11-27) a
+// session save re-derived the chain plugins' panels and those forks held the event loop for ~30 s, meters and analyser
+// frozen. So pkg-config is asked each variable once per process, however often the callers ask.
+test('pkg-config runs once per variable in a process, however often the directories are asked for', () => {
+  const bin = scratch(join(tmpdir(), 'omx-panel-pc-once-'));
+  const runs = join(bin, 'runs');
+  const fake = join(bin, 'pkg-config');
+  writeFileSync(fake, `#!/bin/sh\necho "$1" >> '${runs}'\ncase "$1 $2" in\n  "--variable=contractdir omx-contract") echo /pc/contract.d ;;\n  "--variable=datadir omx-contract") echo /pc/data ;;\n  *) exit 1 ;;\nesac\n`);
+  chmodSync(fake, 0o755);
+  const answers = lookup('[...Array(5)].map(() => [v.contractDirs(), v.panelDomainDirs(), v.contractDataDir(), v.packageDir("x")])', { PKG_CONFIG: fake });
+  assert.equal(answers.length, 5);
+  for (const [dirs, panelDirs, data] of answers) {
+    assert.deepEqual(dirs, ['/pc/contract.d']);
+    assert.equal(panelDirs.at(-1), '/pc/contract.d');
+    assert.equal(data, '/pc/data');
+  }
+  assert.deepEqual(readFileSync(runs, 'utf8').trim().split('\n').sort(), ['--variable=contractdir', '--variable=datadir']);
 });
 
 test('$OMX_CONTRACT_PATH: the first directory that holds a package is the one read', () => {
