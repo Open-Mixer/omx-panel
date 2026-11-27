@@ -35,13 +35,26 @@ import { openDomainAt } from '@openmixer/omx-contract/domain-reader';
 
 const PKG_CONFIG = () => process.env.PKG_CONFIG || 'pkg-config';
 
-/** A pkg-config variable of an installed package, or undefined. */
+/** What pkg-config answered, by tool, package and variable: asked once per process (see {@link pkgVariable}). */
+const pkgAnswers = new Map();
+
+/**
+ * A pkg-config variable of an installed package, or undefined. Asked of pkg-config ONCE per process and held: a console
+ * runs `describe` on the thread beside its engine's realtime threads, every `describe` reads these directories many
+ * times, and each pkg-config run there forks the console's whole address space (a live console's session save held its
+ * event loop ~30 s in those forks, 2026-11-27). A `.pc` that changes under a running process is read by its next start.
+ */
 function pkgVariable(pkg, name) {
+  const key = `${PKG_CONFIG()}\0${pkg}\0${name}`;
+  if (pkgAnswers.has(key)) return pkgAnswers.get(key);
+  let answer;
   try {
-    return execFileSync(PKG_CONFIG(), [`--variable=${name}`, pkg], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || undefined;
+    answer = execFileSync(PKG_CONFIG(), [`--variable=${name}`, pkg], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || undefined;
   } catch {
-    return undefined;
+    answer = undefined;
   }
+  pkgAnswers.set(key, answer);
+  return answer;
 }
 
 /** Where omx-contract-data installs its files and the contract directory, for an install with no omx-contract.pc. */
