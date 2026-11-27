@@ -76,7 +76,12 @@ omx_panel_view_t *omx_panel_view_create(const omx_panel_sources_t *sources, char
 omx_panel_view_t *omx_panel_view_create_from_files(const char *description_path, const char *data_dir, char *err,
                                                    size_t err_size);
 
-/** The same with the description in memory (`description_json`, `omx-panel layout`'s output): a plugin that carries its own. */
+/** The same with the description in memory (`description_json`, `omx-panel layout`'s output): a plugin that carries its own.
+ * @param description_json the panel description, NUL-terminated
+ * @param data_dir omx-panel's tools directory, the look, geometry and font read from it
+ * @param err where the reason is written when no view is made (NUL-terminated, cut to `err_size`)
+ * @param err_size the size of `err`
+ * @return the view, or NULL with the reason in `err` */
 omx_panel_view_t *omx_panel_view_create_from_data(const char *description_json, const char *data_dir, char *err, size_t err_size);
 
 void omx_panel_view_destroy(omx_panel_view_t *view);
@@ -91,7 +96,9 @@ const char *omx_panel_view_symbol(const omx_panel_view_t *view, uint32_t index);
 /** The head: the maker and the plugin's name, both UTF-8. NULL leaves one empty. */
 void omx_panel_view_set_title(omx_panel_view_t *view, const char *brand, const char *name);
 /** Whether the face has its head (the maker, the name, the accent rule and dot, `headH` tall): true, the default, or false,
- * where the sections start at the top of the face (`pad`), so a one-control face is the control, its label and its value. */
+ * where the sections start at the top of the face (`pad`), so a one-control face is the control, its label and its value.
+ * @param view the view
+ * @param shown whether the head is drawn */
 void omx_panel_view_set_head(omx_panel_view_t *view, bool shown);
 
 /** A control's current reading: `fraction` its place along its travel (0 the minimum, 1 the
@@ -115,13 +122,21 @@ bool omx_panel_view_set_meter(omx_panel_view_t *view, uint32_t index, double val
 /** A meter's clip at a draw tick: `clip` whether its source reported a clip since the last tick. The clip word is omx-dsp's view law
  * (omx_meter_view_clip of <omxdsp/mix/omx_meter_view.h>): a clip lights it and it stays lit across ticks until
  * omx_panel_view_clear_clip(). A meter whose description does not say `clip: true` has no clip word and never lights one, whatever
- * its source says. A meter of the band with a clip word draws it as a lamp at its frame's top right. False for an index past the
- * meters. */
+ * its source says. A meter of the band with a clip word draws it as a lamp at its frame's top right.
+ * @param view the view
+ * @param index the meter's index
+ * @param clip whether its source reported a clip since the last tick
+ * @return false for an index past the meters */
 bool omx_panel_view_set_clip(omx_panel_view_t *view, uint32_t index, bool clip);
-/** Clear meter `index`'s clip word (omx_meter_view_clip_clear: the operator's gesture, or a reset). False for an index past the
- * meters. */
+/** Clear meter `index`'s clip word (omx_meter_view_clip_clear: the operator's gesture, or a reset).
+ * @param view the view
+ * @param index the meter's index
+ * @return false for an index past the meters */
 bool omx_panel_view_clear_clip(omx_panel_view_t *view, uint32_t index);
-/** Whether meter `index`'s clip word is lit; false for a meter without one, or an index past the meters. */
+/** Whether meter `index`'s clip word is lit.
+ * @param view the view
+ * @param index the meter's index
+ * @return whether it is lit; false for a meter without one, or an index past the meters */
 bool omx_panel_view_meter_clip(const omx_panel_view_t *view, uint32_t index);
 
 /** A selector's reading: option `at` of `count`, and its label. */
@@ -205,7 +220,10 @@ bool omx_panel_view_draw(omx_panel_view_t *view, const omx_panel_buffer_t *buffe
 
 /** A rectangle of a buffer, in device px: `width` x `height` from (`x`, `y`) at the buffer's top-left. */
 typedef struct omx_panel_rect {
-  uint32_t x, y, width, height;
+  uint32_t x;      /**< the left edge */
+  uint32_t y;      /**< the top edge */
+  uint32_t width;  /**< the width */
+  uint32_t height; /**< the height */
 } omx_panel_rect_t;
 
 /** Draw only what changed since the last draw into this buffer, and say where. The buffer must be the one the last draw of this
@@ -220,8 +238,13 @@ typedef struct omx_panel_rect {
  * that did not keep the last draw's bytes calls omx_panel_view_draw, which always draws the whole buffer.
  *
  * Up to `cap` rectangles are written to `rects` (cap >= 1); a draw with more changes than that reports their covering rectangles
- * (merged, never dropped). `*count` is how many were written. False, drawing nothing, for a buffer omx_panel_view_draw refuses, a
- * NULL `rects` or `count`, or a `cap` of 0. */
+ * (merged, never dropped). `*count` is how many were written.
+ * @param view the view
+ * @param buffer the buffer the last draw of this view went into, still holding it
+ * @param rects where the rectangles drawn again are written
+ * @param cap how many `rects` can hold, at least 1
+ * @param count where how many were written is written
+ * @return false, drawing nothing, for a buffer omx_panel_view_draw refuses, a NULL `rects` or `count`, or a `cap` of 0 */
 bool omx_panel_view_draw_dirty(omx_panel_view_t *view, const omx_panel_buffer_t *buffer, omx_panel_rect_t *rects, size_t cap,
                                size_t *count);
 
