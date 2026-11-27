@@ -201,7 +201,9 @@ install: build install-contract
 	cp -R dist/. $(DESTDIR)$(PKGDIR)/
 	# the panel domain is omx-panel-contract's, read from the contract directory: dist/'s copy is the tree's, never installed
 	rm -rf $(DESTDIR)$(PKGDIR)/contract.d
-	install -m 0644 package.json $(DESTDIR)$(PKGDIR)/
+	# the package.json of that tree: its exports and bin name the installed files, dist/ being the package directory itself
+	node tools/installed-package-json.mjs package.json $(DESTDIR)$(PKGDIR)/package.json
+	chmod 0644 $(DESTDIR)$(PKGDIR)/package.json
 	# the runtime modules only (ajv and what it needs), never the build's
 	for m in $$(npm ls --omit=dev --all --parseable | tail -n +2); do \
 	  rel=$${m#$(CURDIR)/}; [ "$$rel" = node_modules/@openmixer/omx-dsp ] && continue; install -d $(DESTDIR)$(PKGDIR)/$$(dirname $$rel); cp -R $$m $(DESTDIR)$(PKGDIR)/$$rel; \

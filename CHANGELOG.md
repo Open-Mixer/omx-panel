@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- The installed package is the node package its `package.json` describes (#272). `make install` copies `dist/` whole into
+  `/usr/share/omx-panel`, but installed the source `package.json`, whose every export and bin named `./dist/...`, a path
+  the RPM and the DEB never carried: a consumer that links `node_modules/@openmixer/omx-panel` to the installed tree
+  (openmixer's server build) stopped at `Cannot find module @openmixer/omx-panel/store-entry`. The installed
+  `package.json` (tools/installed-package-json.mjs) names the installed files, the same export names as the npm package;
+  `test/installed-exports.test.mjs` runs `make install DESTDIR=...` and finds every export target and the bin there.
 - **ABI break: the renderer's library is `libomx-panel-render.so.1`** (#240). The spectrum takes both taps and the console's
   modes: `omx_panel_view_set_spectrum(view, index, hz, pre_db, post_db, peak_db, n, mode, delta, db_min, db_max, grid_db)`,
   `mode` an `omx_panel_tap_mode_t` (`OMX_PANEL_TAP_PRE`, `OMX_PANEL_TAP_POST`, `OMX_PANEL_TAP_BOTH`), a tap the mode does not
@@ -225,6 +231,8 @@
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
 - 0.16.1: the v0.16.0 release run built no package. rpmbuild's %check runs `make test` in the release tarball, which has no .git, and the guard against plugin-hostd's LV2 table ran `git grep`; it now reads the files itself (#207). The deb build's installed tools check ran the staged lv2-complement, modgui-gen and modgui-import, which refused to load: a build host has no omx-panel-contract installed. `tools/installed-tools-check.sh` now takes the build's staged contract directory as a second argument, and debian/rules and %check pass it (#208). Floors unchanged.
+
+- 0.17.2: the installed `package.json` names the installed tree (#272): every export target and the bin exist after `make install`, so a consumer linking `node_modules/@openmixer/omx-panel` to `/usr/share/omx-panel` resolves `@openmixer/omx-panel/store-entry`. Floors unchanged.
 
 - 0.17.1: the RPMs are built for Fedora aarch64 as well as x86_64 (the release matrix is Open-Mixer/.github's shared releases and architectures, with no list of this repository's own), published by the devel release of the full matrix with every change merged to devel since 0.17.0. Floors are generated at build from the versions the build root installed.
 
