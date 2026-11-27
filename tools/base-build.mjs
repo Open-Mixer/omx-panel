@@ -32,7 +32,9 @@ export function builtFrom(inDir, env = process.env) {
   const git = spawnSync('git', ['-C', inDir, 'rev-parse', 'HEAD'], { encoding: 'utf8', env });
   const head = git.status === 0 ? git.stdout.trim() : '';
   if (COMMIT.test(head)) return head;
-  throw new PluginRefusal(`built-from-unknown: ${file} holds no commit (${stated || 'absent'}) and ${inDir} is not in a git checkout`, 'built-from-unknown');
+  // git's own word: "not a git repository" and "dubious ownership" (a checkout another user owns) read alike otherwise
+  const said = (git.error?.message ?? git.stderr ?? '').trim().split('\n')[0];
+  throw new PluginRefusal(`built-from-unknown: ${file} holds no commit (${stated || 'absent'}) and ${inDir} is not in a git checkout${said ? ` (git: ${said})` : ''}`, 'built-from-unknown');
 }
 
 const byteOrder = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
