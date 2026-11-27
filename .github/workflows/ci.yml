@@ -53,14 +53,17 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          # a wave's run builds against its devel channel and staging beneath it (Open-Mixer/.github#329)
+          WAVE: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           # a pull request into devel builds against the staging channel (devel -> staging -> prod,
           # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
-          case $EVENT:$BASE in
-            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
-            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          case ${WAVE:+wave}:$EVENT:$BASE in
+            wave:*) echo "a run of the wave $WAVE: a package from its devel channel or staging is expected here" ;;
+            :pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep -E 'staging|devel' /tmp/from-repo; then echo "a package above came from staging or a devel channel: an ordinary run builds against the channel"; exit 1; fi ;;
           esac
       - name: Install the real MOD bundles the importer proof reads
         # caps-lv2 (Audinux) carries mod-caps-CEO.lv2 and the other caps modguis: the importer's proof on a real
@@ -154,14 +157,17 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          # a wave's run builds against its devel channel and staging beneath it (Open-Mixer/.github#329)
+          WAVE: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           # a pull request into devel builds against the staging channel (devel -> staging -> prod,
           # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
-          case $EVENT:$BASE in
-            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
-            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          case ${WAVE:+wave}:$EVENT:$BASE in
+            wave:*) echo "a run of the wave $WAVE: a package from its devel channel or staging is expected here" ;;
+            :pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep -E 'staging|devel' /tmp/from-repo; then echo "a package above came from staging or a devel channel: an ordinary run builds against the channel"; exit 1; fi ;;
           esac
       - uses: actions/checkout@v4
       - name: The tree the tests read
@@ -229,14 +235,17 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          # a wave's run builds against its devel channel and staging beneath it (Open-Mixer/.github#329)
+          WAVE: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           # a pull request into devel builds against the staging channel (devel -> staging -> prod,
           # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
-          case $EVENT:$BASE in
-            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
-            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          case ${WAVE:+wave}:$EVENT:$BASE in
+            wave:*) echo "a run of the wave $WAVE: a package from its devel channel or staging is expected here" ;;
+            :pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep -E 'staging|devel' /tmp/from-repo; then echo "a package above came from staging or a devel channel: an ordinary run builds against the channel"; exit 1; fi ;;
           esac
       - uses: actions/checkout@v4
       - name: The tree and the renderer
@@ -291,14 +300,17 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          # a wave's run builds against its devel channel and staging beneath it (Open-Mixer/.github#329)
+          WAVE: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           # a pull request into devel builds against the staging channel (devel -> staging -> prod,
           # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
-          case $EVENT:$BASE in
-            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
-            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          case ${WAVE:+wave}:$EVENT:$BASE in
+            wave:*) echo "a run of the wave $WAVE: a package from its devel channel or staging is expected here" ;;
+            :pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep -E 'staging|devel' /tmp/from-repo; then echo "a package above came from staging or a devel channel: an ordinary run builds against the channel"; exit 1; fi ;;
           esac
       - name: pugl and nanovg, from their packaging
         uses: Open-Mixer/.github/.github/actions/pinned-rpms@openmixer-v1
@@ -584,14 +596,17 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.base_ref }}
+          # a wave's run builds against its devel channel and staging beneath it (Open-Mixer/.github#329)
+          WAVE: ${{ ((startsWith(github.event_name, 'pull_request') && github.base_ref == 'devel') || (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main')) && vars.OMX_DEVEL_CHANNEL || '' }}
         run: |
           set -euo pipefail
           dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-*' 'plugin-*' | tee /tmp/from-repo
           # a pull request into devel builds against the staging channel (devel -> staging -> prod,
           # Open-Mixer/.github add-openmixer): there a package from staging is expected; elsewhere refused
-          case $EVENT:$BASE in
-            pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
-            *) if grep staging /tmp/from-repo; then echo "a package above came from the staging channel: an ordinary run builds against the channel"; exit 1; fi ;;
+          case ${WAVE:+wave}:$EVENT:$BASE in
+            wave:*) echo "a run of the wave $WAVE: a package from its devel channel or staging is expected here" ;;
+            :pull_request*:devel) echo "a pull request into devel: a package from the staging channel is expected here" ;;
+            *) if grep -E 'staging|devel' /tmp/from-repo; then echo "a package above came from staging or a devel channel: an ordinary run builds against the channel"; exit 1; fi ;;
           esac
       - uses: Open-Mixer/.github/.github/actions/langpacks@openmixer-v1
         with:
