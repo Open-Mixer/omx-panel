@@ -22,14 +22,29 @@
  *                and is not read: describe computes its own over what it lays out
  *
  * A table the scan refused (`{ refused, count, max }`), a `panel` of null (a plugin that serves none) and a parameter id
- * no control of the descriptor has are refused by name.
+ * no control of the descriptor has are refused by name. A display's kind and source are the numbers the scan prints,
+ * the x-codes of PANEL_DISPLAY_KINDS and PANEL_DISPLAY_SOURCES (a word is read as it is).
  */
+
+import { panelWords } from './vocabulary.mjs';
 
 /** Whether `x` is a served panel: the probe's file, or the scan's `panel` object (a fingerprint and control rows by paramId). */
 export function isServedPanel(x) {
   if (!x || typeof x !== 'object') return false;
   if ('plugin' in x && 'panel' in x) return x.panel === null || isServedPanel(x.panel);
   return 'fingerprint' in x && Array.isArray(x.controls) && x.controls.every((c) => c && typeof c === 'object' && 'paramId' in c);
+}
+
+/**
+ * A served display's kind or source as this package's word: omx-clap-scan prints the number (omx-clap-core keeps no
+ * panel words, the vocabulary sorting pass), which is the word's x-code in the panel domain's `item`; a scan that prints
+ * the word is read as it is. A number the item has no word for is refused by name.
+ */
+function servedWord(item, value, where, what) {
+  if (typeof value === 'string') return value;
+  const word = Number.isInteger(value) ? panelWords(item)[value] : undefined;
+  if (word === undefined) throw new Error(`${where}: a ${what} ${value}, which is no word of ${item}`);
+  return word;
 }
 
 /** A family display's section graph, by the family the panel states. */
@@ -83,9 +98,10 @@ export function declaredFromServed(x, descriptor, { where = 'served panel', keyO
     if (Array.isArray(syms) && syms.some((s) => s === undefined)) throw new Error(`${where}: the ${role} role's indices have a gap`);
   }
   for (const d of displays) {
-    if (d.source !== 'family') continue;
-    const graph = GRAPH_OF_DISPLAY[d.kind]?.(family);
-    if (!graph) throw new Error(`${where}: a family display of kind ${d.kind} has no section graph here`);
+    if (servedWord('PANEL_DISPLAY_SOURCES', d.source, where, 'display source') !== 'family') continue;
+    const kind = servedWord('PANEL_DISPLAY_KINDS', d.kind, where, 'family display of kind');
+    const graph = GRAPH_OF_DISPLAY[kind]?.(family);
+    if (!graph) throw new Error(`${where}: a family display of kind ${kind} has no section graph here`);
     const s = out[d.section];
     if (!s) throw new Error(`${where}: a display names section ${d.section}, which the served sections table does not have`);
     s.graph = graph;
