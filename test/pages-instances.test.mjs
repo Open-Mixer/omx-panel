@@ -70,7 +70,7 @@ test('omx-eq8 at 4: a band is longer than a page, so its first four places are i
   // the place past the page, every band's type, is one row of the aligned matrix: four bands a screen, band j on encoder j
   assert.deepEqual(pages.filter((p) => p.name.startsWith('Bands: Type')).map((p) => [p.name, p.symbols]), [
     ['Bands: Type', ['b1_type', 'b2_type', 'b3_type', 'b4_type']],
-    ['Bands: Type 2', ['b5_type', 'b6_type', 'b7_type', 'b8_type']],
+    ['Bands: Type 2/2', ['b5_type', 'b6_type', 'b7_type', 'b8_type']],
   ]);
 });
 

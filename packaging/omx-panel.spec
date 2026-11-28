@@ -8,7 +8,7 @@
 %{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.17.3
+Version: 0.17.4
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -39,12 +39,14 @@ BuildRequires: omx-dsp-wasm
 # /usr/lib/omx-contract
 Requires: omx-contract
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
-# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
-# does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
-# runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
-Recommends: python3-lilv
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; omx-modgui-sync loads the runtime library,
+# lilv-libs, by its soname instead (omx-panel#293), so the package needs python3-lilv and lilv-libs and never lilv-devel
+# (tools/runtime-install-check.sh: no development package at runtime).
+Requires: python3-lilv
+Requires: lilv-libs
 Recommends: plugin-hostd
-# %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
+# %%check runs omx-modgui-sync over a bundle; the tests' own `import lilv` probe and the #293 proof (liblilv-0.so hidden
+# in a namespace) need lilv-devel's liblilv-0.so to be there
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros
@@ -352,6 +354,16 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Sat Nov 28 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.4-1
+- panel-layout, pagesOf: a page is named by the declared section and group
+  labels (Gate, Gate 2/3, EQ: EQ 1), declared pages run on as one numbered
+  run
+- panel-layout, pagesOf: one Easy page, the plugin's own declared Easy page
+  when it declares one; a skin's easy still wins
+- ci: the add-openmixer steps read the wave's devel channel and its base
+- debian: python3-lilv is a recommendation again, as in the RPM; Debian is
+  trixie only
+
 * Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.3-1
 - A served display's kind is the number omx-clap-scan prints, read as its
   PANEL_DISPLAY_KINDS word, so the family displays of the omx-plugins 0.21.1

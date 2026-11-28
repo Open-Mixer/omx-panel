@@ -276,11 +276,20 @@ Every surface pages a plugin's controls from the one description, cut at its own
 emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch and the Mackie 8, CLAP remote-controls 8;
 `perPage` left out is eight) and a surface declares nothing else. The sequence:
 
-1. **The Easy controls first**, on pages of their own named `Easy`, `Easy 2` (the description's `easy`; a skin's `easy` wins,
-   see [skin-package.md](skin-package.md)). A symbol of no control is no slot.
+1. **The Easy controls first**, on pages of their own named `Easy`, `Easy 2/2` (the description's `easy`; a skin's `easy` wins,
+   see [skin-package.md](skin-package.md)). A symbol of no control is no slot. **One Easy, the plugin's own when it declares
+   one**: a declared remote-controls page named `Easy` (step 2) is the Easy page, cut in this place, and the description's
+   `easy` is not cut beside it. A scan keeps no meanings, so the rule's `easy` of a scanned descriptor is not the list the
+   plugin declared (omx-strip's Easy page holds Trim, HPF Freq, HPF Slope and LPF Freq; its scan's rule took the first four
+   controls in order), and a surface showed two Easy pages. A skin's `easy` still wins: the plugin's Easy page is not cut then.
 2. **Then the plugin's declared remote-controls pages, as given**, when the host that has the instance reports them (`remote`:
    `[{ name, ids }]`, a slot a control's id or `null`). They replace the derived pages and are not edited, so an Easy control may
-   also sit on its remote page; a slot of no control is blank. The served description carries none.
+   also sit on its remote page; a slot of no control is blank. A declared page that holds exactly the Easy controls is the
+   Easy page the cut already made (a plugin whose remote-controls pages are this cut at eight declares one): it is not cut
+   twice. A declared page wider than the surface runs on under its own name, `Gate`, `Gate 2/2`;
+   declared pages that are this cut at eight carry its numbers (`Gate`, `Gate 2/2`), which a narrower surface takes off
+   and numbers again over the whole run (`Gate`, `Gate 2/3`, `Gate 3/3` at four). The served description
+   carries none.
 3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
    every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
    its own, never mixed with its neighbour. **A repeated group is cut by instance**: where a section carries a group-model
@@ -290,7 +299,14 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
    blank. An instance longer than the page keeps its first `perPage` places, and each place past them is a row of the
    aligned matrix, after the instances: that parameter of `perPage` instances a screen (`Bands: Type`, `Bands: Type 2`).
    A control with no group is its own. A derived page holds a control once, so the Easy
-   controls are not repeated: in an instance, the slot of a control the Easy pages took stays, blank. A section of several pages names each page by the controls it holds (`Band: Freq - Q`).
+   controls are not repeated: in an instance, the slot of a control the Easy pages took stays, blank. **A page is named by the labels the description declares, never by the controls it holds**: a page
+   of one group is `<section>: <group>` (`EQ: EQ 2`, an instance `Bands: Band 3`, a matrix row `Bands: Type`), a page of
+   several groups `<section>: <first group> – <last group>` (`Bands: Band 1 – Band 2`), a page of the section's own
+   controls alone `<section>` (`Gate`); the section's own controls beside a group leave the group's name. A name a section repeats is numbered from
+   its second page as the page's place among them, `Gate 2/2`, `Bands: Type 2/2`, counted over the pages the governing
+   values could show, so a name does not move with the values (a page they leave empty is not cut, its number kept). A
+   group names a page only where its section holds several: a section all of one group (a `Gate` group in the `Gate`
+   section) is named by the section alone.
 
 Every page carries `perPage` slots, a short page's last ones `null`. **No screen has zero visible items**: a page whose
 every slot is blank (its controls on the Easy pages, hidden by the values, or a declared page naming none) is not cut. Below two encoders a bar group (the Bars section)
@@ -345,7 +361,7 @@ the controls the come-up values show.
 A face can set any control that is not a reading, a trigger or a bypass. The list is a view of the panel, so it stays out of
 the canonical serialisation and the fingerprint.
 
-The pages put the Easy controls first (see Pages), on pages named `Easy`, `Easy 2`, with no control on two derived pages. With
+The pages put the Easy controls first (see Pages), on pages named `Easy`, `Easy 2/2`, with no control on two derived pages. With
 `omx-panel layout --pages --easy-first` a scanned descriptor takes the `easy` of the descriptor the plugin's package installed
 under the same plugin id, as a scan has nothing to read one from. `omx-panel modgui --easy-first` draws the Easy controls as a
 MOD GUI's first section and lists them as `modgui:port`.

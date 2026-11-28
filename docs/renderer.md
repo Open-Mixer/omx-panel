@@ -468,7 +468,7 @@ draws every plugin's documentation picture this way.
 
 ## Dependencies
 
-| What | Used for | Fedora 44 | Debian (bookworm, trixie) | Licence |
+| What | Used for | Fedora 45 | Debian trixie | Licence |
 |---|---|---|---|---|
 | cJSON | reading the description, the look and the geometry | `cjson-devel` | `libcjson-dev` | MIT |
 | omx-contract's C headers | the standard widget names | `omx-contract-devel` | `libomx-contract-dev` | GPL-3.0-or-later |

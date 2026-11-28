@@ -9,7 +9,7 @@
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
-#   3. each recommendation (plugin-hostd, python3-lilv), installed after it, adds none either, and leaves the package
+#   3. each recommendation (plugin-hostd), installed after it, adds none either, and leaves the package
 #      under test installed: it is installed with this build's other runtime packages beside $1, so a recommendation
 #      that needs one of them (plugin-hostd needs libomx-panel-store, whose channel copy pins the channel's
 #      omx-panel-contract) takes this build's and never downgrades omx-panel to the channel's;

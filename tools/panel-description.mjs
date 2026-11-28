@@ -580,7 +580,7 @@ export const PAGE_SIZE = 8;
  * slot, blank: the slots do not move with the governing values. No screen has zero visible items: a page whose every slot
  * is blank (hidden, taken by the Easy pages, or an empty cell) is not cut. Below two encoders a group is plain controls (one a page).
  */
-export function pagesOf(x, { perPage, remote, values = {} } = {}) {
+export function pagesOf(x, { perPage, remote, values = {}, easyDeclared = false } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
   const blank = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
@@ -589,6 +589,8 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const pad = (ids) => {
     const out = ids.map(slot);
     while (out.length < size) out.push(null);
+    // whether the page holds a control at all, whatever the values: a page the values empty keeps its number (numbered)
+    Object.defineProperty(out, HOLDS, { value: ids.some((id) => id !== null && id !== undefined && known.has(id)) });
     return out;
   };
   const easy = (x.easy ?? []).filter((symbol) => x.controls.some((c) => c.symbol === symbol));
@@ -597,18 +599,37 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
   const easyPages = [];
   for (let k = 0; k < easy.length; k += size) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
-    easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: k === 0 ? EASY_PAGE : `${EASY_PAGE} ${k / size + 1}`, ids: pad(ids) });
+    easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: EASY_PAGE, ids: pad(ids) });
   }
+  // a declared page wider than the surface runs on under its name; a plugin that declares this cut at eight numbered
+  // its own run-on pages (`Gate`, `Gate 2/2`), so the number is taken off before the pages are numbered at this width
+  const base = (name) => String(name ?? '').replace(/ \d+\/\d+$/, '');
+  const cut = (r) => {
+    const name = base(r.name);
+    const pages = [];
+    for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: name, ids: pad(r.ids.slice(k, k + size)) });
+    return pages;
+  };
   if (Array.isArray(remote) && remote.length > 0) {
-    const declared = remote.flatMap((r) => {
-      const name = String(r.name ?? '');
-      const pages = [];
-      for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: k === 0 ? name : `${name} ${k / size + 1}`, ids: pad(r.ids.slice(k, k + size)) });
-      return pages;
-    });
-    return shown([...easyPages, ...declared]);
+    // the plugin's own declared Easy page (a remote page named Easy) IS the Easy page: one Easy, the plugin's, in the
+    // Easy place, and the description's easy is not cut beside it (a scan keeps no meanings, so the rule's easy is not the
+    // one the plugin declared). An easy list a skin declares wins, and the plugin's Easy page is not cut then.
+    const ownEasy = remote.filter((r) => base(r.name) === EASY_PAGE);
+    if (ownEasy.length > 0) {
+      const easyRun = easyDeclared ? easyPages : ownEasy.flatMap(cut);
+      return numbered(easyRun).concat(numbered(remote.filter((r) => base(r.name) !== EASY_PAGE).flatMap(cut)));
+    }
+    // a declared page holding exactly the Easy controls is the Easy page already cut (a plugin whose remote-controls pages
+    // are this cut at eight declares one): not cut twice
+    const easyIds = new Set(easy.map((symbol) => x.controls.find((c) => c.symbol === symbol).param));
+    const isEasy = (r) => {
+      const ids = new Set(r.ids.filter((id) => id !== null && id !== undefined));
+      return easyIds.size > 0 && ids.size === easyIds.size && [...ids].every((id) => easyIds.has(id));
+    };
+    const declared = remote.filter((r) => !isEasy(r)).flatMap(cut);
+    return numbered(easyPages).concat(numbered(declared));
   }
-  return shown([...easyPages, ...x.sections.flatMap((s, section) => {
+  return [...numbered(easyPages), ...x.sections.flatMap((s, section) => {
     // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
     // after it stay where every other instance has them, and the blanks an instance would end on are left off
     const taken = (c) => c.param === null || easy.includes(c.symbol);
@@ -647,19 +668,35 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       if (run.length > size || alone) flush();
     }
     flush();
-    // a page of one repeated-group instance is named by it (`Band 3`; below two encoders a continuation `Band 3 2`)
-    const seen = new Map();
-    return pages.map((p, k) => {
-      const held = p.length > 1 ? `${p[0].label} - ${p[p.length - 1].label}` : p[0].label;
-      const instance = p[0][INSTANCE];
-      if (instance !== undefined && p.every((c) => c[INSTANCE] === instance)) {
-        const n = (seen.get(instance) ?? 0) + 1;
-        seen.set(instance, n);
-        return { section, sectionName: s.label, pageName: `${s.label}: ${n === 1 ? instance : `${instance} ${n}`}`, ids: pad(p.map((c) => c.param)) };
-      }
-      return { section, sectionName: s.label, pageName: pages.length === 1 && rowPages.length === 0 ? s.label : `${s.label}: ${held}`, ids: pad(p.map((c) => c.param)) };
-    }).concat(rowPages.map(({ row, run, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${run === 0 ? row : `${row} ${run + 1}`}`, ids: pad(controls.map((c) => c.param)) })));
-  })]);
+    // a page is named by the labels the description declares: <section>: <group> for a page of one group (an instance of
+    // a repeated group, `Bands: Band 3`), <section> for the section's own controls or several groups; a matrix row
+    // <section>: <row>. A repeated name is numbered from its second page (numbered).
+    const labelOf = (c) => (c[INSTANCE] !== undefined ? c[INSTANCE] : c[GROUP] ? String(c[GROUP]).split(' / ').pop() : null);
+    // a group names a page only where its section holds several: a section all of one group is named by the section
+    const several = new Set(mine.map(labelOf)).size > 1;
+    const groupOf = (c) => (several && labelOf(c) !== s.label ? labelOf(c) : null);
+    return numbered(pages.map((p) => {
+      const groups = [...new Set(p.map(groupOf).filter((g) => g !== null))];
+      const name = groups.length === 0 ? s.label : groups.length === 1 ? `${s.label}: ${groups[0]}` : `${s.label}: ${groups[0]} – ${groups[groups.length - 1]}`;
+      return { section, sectionName: s.label, pageName: name, ids: pad(p.map((c) => c.param)) };
+    }).concat(rowPages.map(({ row, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${row}`, ids: pad(controls.map((c) => c.param)) }))));
+  })].filter((p) => p.ids.some((id) => id !== null));
+}
+
+const HOLDS = Symbol('holds');
+
+/** Pages of one name numbered from the second: `Gate`, `Gate 2/3`, `Gate 3/3` (docs/panel-layout.md, Pages), over the
+ * pages that hold a control whatever the values; a page holding none (its controls on the Easy pages) is not cut. */
+function numbered(input) {
+  const pages = input.filter((p) => p.ids[HOLDS] !== false);
+  const count = new Map();
+  for (const p of pages) count.set(p.pageName, (count.get(p.pageName) ?? 0) + 1);
+  const seen = new Map();
+  return pages.map((p) => {
+    const n = (seen.get(p.pageName) ?? 0) + 1;
+    seen.set(p.pageName, n);
+    return n === 1 ? p : { ...p, pageName: `${p.pageName} ${n}/${count.get(p.pageName)}` };
+  }).filter((p) => p.ids.some((id) => id !== null));
 }
 
 /** The shortest decimal that round-trips to the same binary64, -0 written 0. */

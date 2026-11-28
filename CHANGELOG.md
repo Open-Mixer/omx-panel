@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- omx-modgui-sync runs with the runtime lilv alone (#293). python3-lilv's lilv.py opens `liblilv-0.so`, the name only
+  the development package ships (Debian trixie 0.24.26, Fedora 45 0.28.0-3), so on a host without liblilv-dev or
+  lilv-devel `import lilv` failed and the sync stopped at "python3-lilv is not installed". It now imports lilv with the
+  runtime library's soname, `liblilv-0.so.0`, and the package depends on python3-lilv and liblilv-0-0 (RPM: lilv-libs),
+  never on a -dev package. `test/modgui-sync.test.mjs` hides `liblilv-0.so` in a private mount namespace and runs it.
 - A panel of seven sections or more is drawn as tall as its sections. The layout gave its per-section curve-row counts
   (ints) the one-byte-per-section array and the drawn flags the int one, so from the seventh section each count was read
   past its allocation: omx-reverb (seven sections) drew 8404 px tall, its De-ess section 21000 px below Duck, and a
@@ -241,6 +246,10 @@
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
 - 0.16.1: the v0.16.0 release run built no package. rpmbuild's %check runs `make test` in the release tarball, which has no .git, and the guard against plugin-hostd's LV2 table ran `git grep`; it now reads the files itself (#207). The deb build's installed tools check ran the staged lv2-complement, modgui-gen and modgui-import, which refused to load: a build host has no omx-panel-contract installed. `tools/installed-tools-check.sh` now takes the build's staged contract directory as a second argument, and debian/rules and %check pass it (#208). Floors unchanged.
+
+- 0.17.4: a page is named by the plugin's declared section and group labels (Gate, Gate 2/3, EQ: EQ 1; a page of several
+  groups by its first and last group), declared pages run on as one numbered run, and the plugin's own declared Easy page
+  is the one Easy page (#296, #298). The deb recommends python3-lilv again, as the RPM does; Debian is trixie only.
 
 - 0.17.3: a served panel's display kind is the number omx-clap-scan prints (omx-clap-core keeps no panel words), read as its `PANEL_DISPLAY_KINDS` word and a display source as its `PANEL_DISPLAY_SOURCES` word (#286); a number the item lacks is refused by name. describe refused every family display of the omx-plugins 0.21.1 CLAPs (`a family display of kind 1 has no section graph here`), so the Pi drew no curve. omx-panel-descriptions carries a prebuilt base for the 34 omx-plugins in both formats, LV2 and CLAP; omx-panel sync lists CLAP plugins, and its pass runs on `omx-panel-sync.path` and `omx-panel-sync.timer` of its own (#284). Floors unchanged.
 
