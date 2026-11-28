@@ -122,9 +122,9 @@ test('the Easy page comes first, no control twice, and the declared list moves n
   assert.deepEqual([...all].sort((a, b) => a - b), [0, 1, 2, 3, 4]);
 });
 
-test('at two controls a page: more than two Easy controls run on to "Easy 2"', () => {
+test('at two controls a page: more than two Easy controls run on to "Easy 2/2"', () => {
   const l = panelLayout({ ...delay, easy: ['time', 'tone', 'feedback', 'pingpong'] });
-  assert.deepEqual(pagesOf(l, { perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [2, 1]], ['Easy 2', [3, 0]]]);
+  assert.deepEqual(pagesOf(l, { perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [2, 1]], ['Easy 2/2', [3, 0]]]);
 });
 
 test('the command prints the pages, Easy first', () => {

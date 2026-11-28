@@ -19,15 +19,15 @@ test('five controls at N=8: one page, named for the section, as the default make
   assert.deepEqual(pagesOf(x), eight);
 });
 
-test('five controls at N=4: pages of four, named by the controls they hold', () => {
+test('five controls at N=4: pages of four, named by the section, the second numbered', () => {
   const pages = pagesOf(band(), { perPage: 4 });
   assert.deepEqual(pages.map((p) => p.ids), [[1, 2, 3, 4], [5, null, null, null]]);
-  assert.deepEqual(names(pages), ['Band: Freq - Type', 'Band: On']);
+  assert.deepEqual(names(pages), ['Band', 'Band 2/2']);
 });
 
-test('the width left out is eight, and a section of several pages names each page by the controls it holds', () => {
+test('the width left out is eight, and a section of several pages numbers each page after the first', () => {
   const x = { sections: [{ label: 'S' }], controls: Array.from({ length: 10 }, (_, i) => control(i, `c${i}`)) };
-  assert.deepEqual(names(pagesOf(x)), ['S: c0 - c7', 'S: c8 - c9']);
+  assert.deepEqual(names(pagesOf(x)), ['S', 'S 2/2']);
   assert.deepEqual(pagesOf(x).map((p) => p.ids.length), [8, 8]);
 });
 
@@ -113,7 +113,7 @@ test('the Easy controls come first, always, in the list order, and a derived pag
     assert.equal(new Set(flat(pages)).size, flat(pages).length, `no control twice at ${perPage}`);
     assert.deepEqual([...flat(pages)].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6]);
   }
-  assert.deepEqual(pagesOf({ ...x, easy: ['s1', 's2', 's3'] }, { perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [1, 2]], ['Easy 2', [3, null]]]);
+  assert.deepEqual(pagesOf({ ...x, easy: ['s1', 's2', 's3'] }, { perPage: 2 }).slice(0, 2).map((p) => [p.pageName, p.ids]), [['Easy', [1, 2]], ['Easy 2/2', [3, null]]]);
   assert.deepEqual(flat(pagesOf({ ...x, easy: ['nope'] }, { perPage: 8 })), [1, 2, 3, 4, 5, 6], 'a symbol of no control is no slot');
 });
 test('a hidden Easy control keeps its slot on the Easy page, blank', () => {
@@ -150,5 +150,5 @@ test('a remote slot hidden, read-only or empty is blank; a remote page wider tha
   const x = bandsX(1);
   x.controls[0] = hidden(x.controls[0]);
   assert.deepEqual(pagesOf(x, { perPage: 4, remote: [{ name: 'R', ids: [1, 2, 99, null] }] })[0].ids, [null, 2, null, null]);
-  assert.deepEqual(pagesOf(x, { perPage: 2, remote: [{ name: 'R', ids: [2, 3, 2] }] }).map((p) => [p.pageName, p.ids]), [['R', [2, 3]], ['R 2', [2, null]]]);
+  assert.deepEqual(pagesOf(x, { perPage: 2, remote: [{ name: 'R', ids: [2, 3, 2] }] }).map((p) => [p.pageName, p.ids]), [['R', [2, 3]], ['R 2/2', [2, null]]]);
 });
