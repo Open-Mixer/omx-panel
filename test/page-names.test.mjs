@@ -23,12 +23,20 @@ const names = (pages) => pages.map((p) => p.pageName);
 
 test('at 8: a section of one group is named by its section, its second page numbered', () => {
   const pages = pagesOf(strip(), { perPage: 8 });
-  assert.deepEqual(names(pages), ['Gate', 'Gate 2/2', 'EQ', 'EQ: EQ 2']);
+  assert.deepEqual(names(pages), ['Gate', 'Gate 2/2', 'EQ: EQ 1', 'EQ: EQ 2']);
 });
 
 test('at 4: a page of one group is <section>: <group>, and a repeated name is numbered from its second page', () => {
   const pages = pagesOf(strip(), { perPage: 4 });
   assert.deepEqual(names(pages), ['Gate', 'Gate 2/3', 'Gate 3/3', 'EQ', 'EQ: EQ 1', 'EQ: EQ 1 2/2', 'EQ: EQ 2', 'EQ: EQ 2 2/2']);
+});
+
+test('a page of several groups is named by its first and last group', () => {
+  const x = strip();
+  // the two bands' frequency, gain and switch: six controls, two groups, one page of eight
+  x.controls = x.controls.filter((c) => c.section === 1 && c.param >= 40 && !/ (Type|Q)$/.test(c.label));
+  const pages = pagesOf(x, { perPage: 8 });
+  assert.deepEqual(names(pages), ['EQ: EQ 1 – EQ 2']);
 });
 
 test('no page name repeats a group word or holds a control range', () => {

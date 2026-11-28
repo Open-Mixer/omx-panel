@@ -664,9 +664,9 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     const several = new Set(mine.map(labelOf)).size > 1;
     const groupOf = (c) => (several && labelOf(c) !== s.label ? labelOf(c) : null);
     return numbered(pages.map((p) => {
-      const group = groupOf(p[0]);
-      const one = group !== null && p.every((c) => groupOf(c) === group);
-      return { section, sectionName: s.label, pageName: one ? `${s.label}: ${group}` : s.label, ids: pad(p.map((c) => c.param)) };
+      const groups = [...new Set(p.map(groupOf).filter((g) => g !== null))];
+      const name = groups.length === 0 ? s.label : groups.length === 1 ? `${s.label}: ${groups[0]}` : `${s.label}: ${groups[0]} – ${groups[groups.length - 1]}`;
+      return { section, sectionName: s.label, pageName: name, ids: pad(p.map((c) => c.param)) };
     }).concat(rowPages.map(({ row, controls }) => ({ section, sectionName: s.label, pageName: `${s.label}: ${row}`, ids: pad(controls.map((c) => c.param)) }))));
   })].filter((p) => p.ids.some((id) => id !== null));
 }
