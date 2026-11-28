@@ -58,7 +58,8 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	tools/installed-tools-check.sh $(CURDIR)/debian/omx-panel/usr/share/omx-panel $(CURDIR)/debian/tmp/usr/share/omx-contract/contract.d
 endif
 
-# the one pass's unit is enabled by default where systemd exists (docs/descriptions-store.md 14, 5) and never started
-# by the package: it runs at boot and after each plugin-qualify sync; an upgrade has nothing of ours to stop
+# the one pass's unit, its path watch and its timer are enabled by default where systemd exists (docs/descriptions-store.md
+# 14, 5) and never started by the package: the pass runs at boot, after each plugin-qualify sync, when a plugin directory
+# changes and daily; an upgrade has nothing of ours to stop
 override_dh_installsystemd:
 	dh_installsystemd --no-start --no-stop-on-upgrade

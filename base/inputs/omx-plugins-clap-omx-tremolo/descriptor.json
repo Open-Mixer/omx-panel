@@ -1,0 +1,170 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.tremolo",
+    "format": "clap",
+    "uri": "urn:openmixer:tremolo",
+    "name": "omx tremolo",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The console's tremolo and auto-pan: one oscillator turned into a level change on both legs, or into a left-right pan.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "rateHz",
+      "name": "Rate",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 20,
+        "step": 0,
+        "unit": "Hz",
+        "default": 4,
+        "scale": "log"
+      },
+      "group": [
+        "Tremolo"
+      ],
+      "meaning": "rate",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tremolo.json#TREMOLO_RATE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "depth",
+      "name": "Depth",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 0,
+        "unit": "percent",
+        "default": 50,
+        "scale": "linear"
+      },
+      "group": [
+        "Tremolo"
+      ],
+      "meaning": "depth",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tremolo.json#TREMOLO_DEPTH_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "mix",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 0,
+        "unit": "percent",
+        "default": 100,
+        "scale": "linear"
+      },
+      "group": [
+        "Tremolo"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tremolo.json#TREMOLO_MIX_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "mode",
+      "name": "Mode",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Tremolo",
+        "Pan"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "0",
+      "group": [
+        "Tremolo"
+      ],
+      "meaning": "mode",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tremolo.json#TREMOLO_MODES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_TREMOLO",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ModulatorPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-tremolo/omx_tremolo_clap.c#clap_entry"
+  }
+}

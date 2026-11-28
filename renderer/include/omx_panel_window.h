@@ -48,6 +48,10 @@ void omx_panel_window_idle(omx_panel_window_t *window);
  * omx_panel_view_input takes it: a left-button press, move and release are DOWN, MOVE and UP of pointer 0 (a mouse), a scroll step is
  * a WHEEL notch, and Backspace and the arrows are KEYs. The window redraws after the call. Called from `omx_panel_window_idle`. */
 typedef void (*omx_panel_window_input_fn)(void *user, const omx_panel_event_t *event);
+/** Send the window's pointer, wheel and key events to `input`, with `user`; NULL sends them nowhere.
+ * @param window the window
+ * @param input what each event is handed to, or NULL
+ * @param user handed back to `input` */
 void omx_panel_window_set_input(omx_panel_window_t *window, omx_panel_window_input_fn input, void *user);
 
 /** The window's next frame, read back into `buffer` (its size must be the window's) in the buffer's format: a picture

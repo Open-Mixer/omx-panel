@@ -1,0 +1,1158 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.multiband",
+    "format": "clap",
+    "uri": "urn:openmixer:multiband",
+    "name": "omx multiband",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "A multiband compressor: two to five bands split by Linkwitz-Riley crossovers, each band its own compressor with threshold, ratio, attack, release, make-up, solo and bypass, then a mix and an output gain, for in-ear mixes, vocals and playback buses.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "bands",
+      "name": "Bands",
+      "kind": "choice",
+      "ids": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "labels": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "values": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "default": "3",
+      "group": [
+        "Split"
+      ],
+      "meaning": "number",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BANDS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "xoverHz1",
+      "name": "Crossover 1",
+      "kind": "travel",
+      "travel": {
+        "min": 40,
+        "max": 16000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 200,
+        "scale": "log"
+      },
+      "group": [
+        "Split"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_XOVER_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "xoverHz2",
+      "name": "Crossover 2",
+      "kind": "travel",
+      "travel": {
+        "min": 40,
+        "max": 16000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 2000,
+        "scale": "log"
+      },
+      "group": [
+        "Split"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_XOVER_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "xoverHz3",
+      "name": "Crossover 3",
+      "kind": "travel",
+      "travel": {
+        "min": 40,
+        "max": 16000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 5000,
+        "scale": "log"
+      },
+      "group": [
+        "Split"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_XOVER_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "xoverHz4",
+      "name": "Crossover 4",
+      "kind": "travel",
+      "travel": {
+        "min": 40,
+        "max": 16000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 6400,
+        "scale": "log"
+      },
+      "group": [
+        "Split"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_XOVER_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "thresholdDb1",
+      "name": "Band 1 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -20,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "thresholdDb2",
+      "name": "Band 2 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -20,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "symbol": "thresholdDb3",
+      "name": "Band 3 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -20,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "symbol": "thresholdDb4",
+      "name": "Band 4 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -20,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "symbol": "thresholdDb5",
+      "name": "Band 5 Threshold",
+      "kind": "travel",
+      "travel": {
+        "min": -60,
+        "max": 0,
+        "step": 0,
+        "unit": "dB",
+        "default": -20,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_THRESHOLD_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "symbol": "ratio1",
+      "name": "Band 1 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "symbol": "ratio2",
+      "name": "Band 2 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "symbol": "ratio3",
+      "name": "Band 3 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "symbol": "ratio4",
+      "name": "Band 4 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "symbol": "ratio5",
+      "name": "Band 5 Ratio",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 20,
+        "step": 0,
+        "unit": "ratio",
+        "default": 2,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "ratio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RATIO_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "symbol": "attackMs1",
+      "name": "Band 1 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 200,
+        "step": 0,
+        "unit": "ms",
+        "default": 10,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_ATTACK_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "symbol": "attackMs2",
+      "name": "Band 2 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 200,
+        "step": 0,
+        "unit": "ms",
+        "default": 10,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_ATTACK_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "symbol": "attackMs3",
+      "name": "Band 3 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 200,
+        "step": 0,
+        "unit": "ms",
+        "default": 10,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_ATTACK_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "symbol": "attackMs4",
+      "name": "Band 4 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 200,
+        "step": 0,
+        "unit": "ms",
+        "default": 10,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_ATTACK_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "symbol": "attackMs5",
+      "name": "Band 5 Attack",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 200,
+        "step": 0,
+        "unit": "ms",
+        "default": 10,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "attack",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_ATTACK_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "symbol": "releaseMs1",
+      "name": "Band 1 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 150,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "symbol": "releaseMs2",
+      "name": "Band 2 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 150,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "symbol": "releaseMs3",
+      "name": "Band 3 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 150,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "symbol": "releaseMs4",
+      "name": "Band 4 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 150,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "symbol": "releaseMs5",
+      "name": "Band 5 Release",
+      "kind": "travel",
+      "travel": {
+        "min": 10,
+        "max": 2000,
+        "step": 1,
+        "unit": "ms",
+        "default": 150,
+        "scale": "stepped"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "release",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_RELEASE_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "symbol": "makeupDb1",
+      "name": "Band 1 Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MAKEUP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "symbol": "makeupDb2",
+      "name": "Band 2 Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MAKEUP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "symbol": "makeupDb3",
+      "name": "Band 3 Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MAKEUP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "symbol": "makeupDb4",
+      "name": "Band 4 Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MAKEUP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "symbol": "makeupDb5",
+      "name": "Band 5 Makeup",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "makeup",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MAKEUP_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "symbol": "solo1",
+      "name": "Band 1 Solo",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "solo",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_SOLOS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "symbol": "solo2",
+      "name": "Band 2 Solo",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "solo",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_SOLOS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "symbol": "solo3",
+      "name": "Band 3 Solo",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "solo",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_SOLOS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 33,
+      "symbol": "solo4",
+      "name": "Band 4 Solo",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "solo",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_SOLOS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 34,
+      "symbol": "solo5",
+      "name": "Band 5 Solo",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "solo",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_SOLOS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "symbol": "bandBypass1",
+      "name": "Band 1 Bypass",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 1"
+      ],
+      "meaning": "bypass",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BAND_BYPASSES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "symbol": "bandBypass2",
+      "name": "Band 2 Bypass",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 2"
+      ],
+      "meaning": "bypass",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BAND_BYPASSES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "symbol": "bandBypass3",
+      "name": "Band 3 Bypass",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 3"
+      ],
+      "meaning": "bypass",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BAND_BYPASSES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "symbol": "bandBypass4",
+      "name": "Band 4 Bypass",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 4"
+      ],
+      "meaning": "bypass",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BAND_BYPASSES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "symbol": "bandBypass5",
+      "name": "Band 5 Bypass",
+      "kind": "toggle",
+      "default": false,
+      "group": [
+        "Band 5"
+      ],
+      "meaning": "bypass",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_BAND_BYPASSES",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "symbol": "mixPct",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "percent",
+        "default": 100,
+        "scale": "stepped"
+      },
+      "group": [
+        "Output"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_MIX_PCT_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "symbol": "outputDb",
+      "name": "Output",
+      "kind": "travel",
+      "travel": {
+        "min": -24,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Output"
+      ],
+      "meaning": "output",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#MBCOMP_OUTPUT_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "meters": [
+    {
+      "id": 0,
+      "symbol": "band1Gr",
+      "name": "Band 1 gain reduction",
+      "doc": "Band 1's gain reduction, dB with CLAP's sign: the band's gain computer re-run on its RMS level after the last block (omx_mbcomp_band_gr_db), make-up excluded; 0 while it reduces nothing, is bypassed or is past the band count.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#readouts[band1GainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "band2Gr",
+      "name": "Band 2 gain reduction",
+      "doc": "Band 2's gain reduction, dB with CLAP's sign: the band's gain computer re-run on its RMS level after the last block (omx_mbcomp_band_gr_db), make-up excluded; 0 while it reduces nothing, is bypassed or is past the band count.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#readouts[band2GainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "band3Gr",
+      "name": "Band 3 gain reduction",
+      "doc": "Band 3's gain reduction, dB with CLAP's sign: the band's gain computer re-run on its RMS level after the last block (omx_mbcomp_band_gr_db), make-up excluded; 0 while it reduces nothing, is bypassed or is past the band count.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#readouts[band3GainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "band4Gr",
+      "name": "Band 4 gain reduction",
+      "doc": "Band 4's gain reduction, dB with CLAP's sign: the band's gain computer re-run on its RMS level after the last block (omx_mbcomp_band_gr_db), make-up excluded; 0 while it reduces nothing, is bypassed or is past the band count.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#readouts[band4GainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "band5Gr",
+      "name": "Band 5 gain reduction",
+      "doc": "Band 5's gain reduction, dB with CLAP's sign: the band's gain computer re-run on its RMS level after the last block (omx_mbcomp_band_gr_db), make-up excluded; 0 while it reduces nothing, is bypassed or is past the band count.",
+      "kind": "gain-reduction",
+      "channels": 1,
+      "unit": "dB",
+      "min": -60,
+      "max": 0,
+      "scale": "linear",
+      "measurement": "gain-reduction",
+      "held": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/mbcomp.json#readouts[band5GainReductionDb]",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_COMPRESSOR",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:CompressorPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-multiband/omx_mbcomp_clap.c#clap_entry"
+  }
+}

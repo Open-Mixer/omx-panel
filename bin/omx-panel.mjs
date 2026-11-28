@@ -22,16 +22,26 @@
  *                                                        store, printed as the store's get answers it; derived, with the LV2
  *                                                        groups the complement infers, and written to the layer of the
  *                                                        effective uid only when no layer holds it
- *   sync [--lv2-path <list>]                             tools/panel-sync.mjs: the store half of omx-panel-sync, one pass:
- *                                                        each installed LV2 plugin's entry once, then the layer of the
- *                                                        effective uid pruned of plugins no longer installed
- *   base --in <inputs> --out <file>                      tools/base-build.mjs: the descriptions store's base from the inputs
+ *   sync [--lv2-path <list>] [--clap-path <list>]        tools/panel-sync.mjs: the store half of omx-panel-sync, one pass:
+ *                                                        each installed LV2 and CLAP plugin's entry once, then the layer
+ *                                                        of the effective uid pruned of plugins no longer installed
+ *   base --in <inputs> (--out <file> [--set <set.json>]... | --check <file> --set <set.json>...)
+ *                                                        tools/base-build.mjs: the descriptions store's base from the inputs
  *                                                        directory (key.json, descriptor.json, an LV2 bundle/ each),
- *                                                        written by omx-panel-store build
+ *                                                        written by omx-panel-store build and held to its reference sets:
+ *                                                        each set plugin with a description with controls; --check holds
+ *                                                        a built base to them
+ *   base-inputs --set <name> --declarations <dir> --base <dir> [--lv2-path <list>] [--clap-path <list>]
+ *                                                        tools/base-inputs.mjs: a reference set's inputs and set file, from
+ *                                                        its declarations and its plugins as installed
  *   compare switch|copy --to <A..D>, compare undo|redo   tools/compare.mjs over stdin and stdout: { doc, ring, captures, values }
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
+ *   picture --descriptor <file> [--panel <file>] --png <out.png> [--stem <name>] [--scale S] [--style <style>]
+ *                                                        tools/panel-picture.mjs: a PNG of the panel drawn from the descriptor
+ *                                                        and the declared panel alone, every control at its default, by the
+ *                                                        renderer (omx-panel-render)
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
  *   gui-stage --set <file> --descriptors <dir> --package <name> --out <dir>   tools/gui-stage.mjs: a known set's GUI files, key-gated
  *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
@@ -64,11 +74,13 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel describe --descriptor <file> [--panel <file>] [--skin <skin.json>] [--ns <namespace>] [--remote <file>] [--pages [--per-page N] | --layout]\n'
   + '       omx-panel describe --stored <answer.json> --format <lv2|clap> [--skin <skin.json>] [--remote <file>] [--pages [--per-page N]]\n'
   + '       omx-panel describe --plugin <target> [--descriptor <file>] [--sha256 <hex>] --store   (lv2:<uri> or clap:<path>#<id>)\n'
-  + '       omx-panel sync [--lv2-path <list>]   (the store half of omx-panel-sync)\n'
-  + '       omx-panel base --in <inputs> --out <file>   (the descriptions store\'s base)\n'
+  + '       omx-panel sync [--lv2-path <list>] [--clap-path <list>]   (the store half of omx-panel-sync)\n'
+  + '       omx-panel base --in <inputs> (--out <file> [--set <set.json>]... | --check <file> --set <set.json>...)   (the descriptions store\'s base)\n'
+  + '       omx-panel base-inputs --set <name> --declarations <dir> --base <dir> [--lv2-path <list>] [--clap-path <list>]\n'
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
+  + '       omx-panel picture --descriptor <file> [--panel <file>] --png <out.png> [--stem <name>] [--scale S] [--style <style>]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
   + '       omx-panel look [--check]\n'
@@ -298,38 +310,86 @@ async function describePluginCommand(argv, opt) {
 
 /** The store half of the one pass (docs/descriptions-store.md 6): exit 0, or 1 when the store refused a plugin or a prune. */
 async function syncCommand(argv) {
-  const k = argv.indexOf('--lv2-path');
-  if (argv.length !== (k >= 0 ? 2 : 0) || (k >= 0 && argv[k + 1] === undefined)) {
+  const opt = flagsOf(argv, ['--lv2-path', '--clap-path']);
+  if (!opt) {
     process.stderr.write(USAGE);
     process.exit(2);
   }
-  const { pass } = await import(join(TOOLS, 'panel-sync.mjs'));
+  const { pass, clapDefaultPath } = await import(join(TOOLS, 'panel-sync.mjs'));
   const { LV2_DEFAULT_PATH } = await import(join(TOOLS, 'describe-plugin.mjs'));
-  const r = pass({ lv2Path: k >= 0 ? argv[k + 1] : process.env.LV2_PATH || LV2_DEFAULT_PATH, log: (line) => process.stdout.write(`omx-panel sync: ${line}\n`) });
+  const r = pass({
+    lv2Path: opt['--lv2-path'] ?? (process.env.LV2_PATH || LV2_DEFAULT_PATH),
+    clapPath: opt['--clap-path'] ?? (process.env.CLAP_PATH || clapDefaultPath()),
+    log: (line) => process.stdout.write(`omx-panel sync: ${line}\n`),
+  });
   if (r.store) process.stdout.write(`omx-panel sync: ${r.described} stored or up to date, ${r.noDescriptor} with no descriptor, ${r.pruned} pruned, ${r.failed} failed\n`);
   process.exit(r.failed ? 1 : 0);
 }
 
-/** The descriptions store's base (docs/descriptions-store.md 6): exit 0, 1 with the refusal, 2 on usage. */
-async function baseCommand(argv) {
-  const opt = (flag) => {
-    const k = argv.indexOf(flag);
-    return k >= 0 ? argv[k + 1] : undefined;
-  };
-  if (argv.length !== 4 || !opt('--in') || !opt('--out')) {
-    process.stderr.write(USAGE);
-    process.exit(2);
+/** Flags of a command, each given once unless it is in `repeated`; null on a usage error. */
+function flagsOf(argv, allowed, repeated = []) {
+  const opt = {};
+  for (let i = 0; i < argv.length; i += 2) {
+    const [flag, value] = [argv[i], argv[i + 1]];
+    if (!allowed.includes(flag) || value === undefined) return null;
+    if (repeated.includes(flag)) (opt[flag] ??= []).push(value);
+    else if (flag in opt) return null;
+    else opt[flag] = value;
   }
-  const { buildBase } = await import(join(TOOLS, 'base-build.mjs'));
+  return opt;
+}
+
+/** Runs `fn`, reporting a PluginRefusal as `omx-panel: <message>` and exit 1. */
+async function refusing(fn) {
   const { PluginRefusal } = await import(join(TOOLS, 'describe-plugin.mjs'));
   try {
-    const r = buildBase({ inDir: opt('--in'), out: opt('--out') });
-    process.stdout.write(`omx-panel base: ${r.entries} entries into ${opt('--out')}, built from ${r.builtFrom}\n`);
+    await fn();
   } catch (err) {
     if (!(err instanceof PluginRefusal)) throw err;
     process.stderr.write(`omx-panel: ${err.message}\n`);
     process.exit(1);
   }
+}
+
+/** The descriptions store's base (docs/descriptions-store.md 6): built (held to its sets), or a built one checked. Exit 0, 1 with the refusal, 2 on usage. */
+async function baseCommand(argv) {
+  const opt = flagsOf(argv, ['--in', '--out', '--set', '--check'], ['--set']);
+  const sets = opt?.['--set'] ?? [];
+  if (!opt || !opt['--in'] || !!opt['--out'] === !!opt['--check'] || (opt['--check'] && sets.length === 0)) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { buildBase, checkBase } = await import(join(TOOLS, 'base-build.mjs'));
+  await refusing(() => {
+    if (opt['--check']) {
+      const r = checkBase({ base: opt['--check'], inDir: opt['--in'], sets });
+      process.stdout.write(`omx-panel base: ${opt['--check']} holds a description with controls for each of the sets' ${r.held} keys\n`);
+      return;
+    }
+    const r = buildBase({ inDir: opt['--in'], out: opt['--out'], sets });
+    const held = r.held === undefined ? '' : `, each of the sets' ${r.held} keys with a description with controls`;
+    process.stdout.write(`omx-panel base: ${r.entries} entries into ${opt['--out']}, built from ${r.builtFrom}${held}\n`);
+  });
+}
+
+/** A reference set's inputs to the base, from the set as installed (docs/descriptions-store.md 6). Exit 0, 1, 2 on usage. */
+async function baseInputsCommand(argv) {
+  const opt = flagsOf(argv, ['--set', '--declarations', '--base', '--lv2-path', '--clap-path']);
+  if (!opt || !opt['--set'] || !opt['--declarations'] || !opt['--base']) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  const { writeInputs } = await import(join(TOOLS, 'base-inputs.mjs'));
+  const { clapDefaultPath } = await import(join(TOOLS, 'panel-sync.mjs'));
+  const { LV2_DEFAULT_PATH } = await import(join(TOOLS, 'describe-plugin.mjs'));
+  await refusing(() => {
+    const r = writeInputs({
+      set: opt['--set'], declarationsDir: opt['--declarations'], base: opt['--base'],
+      lv2Path: opt['--lv2-path'] ?? (process.env.LV2_PATH || LV2_DEFAULT_PATH),
+      clapPath: opt['--clap-path'] ?? (process.env.CLAP_PATH || clapDefaultPath()),
+    });
+    process.stdout.write(`omx-panel base-inputs: ${r.plugins} plugins, ${r.inputs} inputs; the set is ${r.set}\n`);
+  });
 }
 
 /** One step of Compare for a host that is not JavaScript (docs/compare.md): JSON in, JSON out, no state between runs. */
@@ -405,7 +465,9 @@ else if (command === 'describe') await describeCommand(args);
 else if (command === 'compare') await compare(args);
 else if (command === 'sync') await syncCommand(args);
 else if (command === 'base') await baseCommand(args);
+else if (command === 'base-inputs') await baseInputsCommand(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
+else if (command === 'picture') tool('panel-picture.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'gui-stage') tool('gui-stage.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');

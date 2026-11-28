@@ -81,6 +81,7 @@ export const FIXTURES = [
 
 export const modgui = await import(join(ROOT, 'dist', 'tools', 'modgui-gen.mjs'));
 const { renderFace, layout, loadLook, resolvePanel } = modgui;
+const { defaultState } = await import(join(ROOT, 'dist', 'tools', 'panel-picture.mjs'));
 
 /** The fixture as the MOD GUI generator resolves it: its sections with each control's travel and default. */
 export function resolved(fx) {
@@ -113,28 +114,14 @@ export function descriptionFile(fx, dir) {
 }
 
 /** The host's side, in a file: the title, and every control at its default with the text the MOD GUI face shows;
- * `readings` gives some controls (a meter's level) a reading of their own. */
+ * `readings` gives some controls (a meter's level) a reading of their own. The state is `omx-panel picture`'s own
+ * (tools/panel-picture.mjs defaultState), so a picture and a golden image are drawn from the same host side. */
 export function stateFile(fx, dir, readings = {}) {
-  const p = resolved(fx);
-  const values = { ...readings };
-  for (const k of p.sections.flatMap((s) => s.controls)) {
-    if (k.widget === 'display' || k.symbol in values) continue;
-    const text = modgui.valueText(k);
-    if (k.widget === 'selector') values[k.symbol] = { at: Math.max(0, k.options.findIndex((o) => o.value === k.def)), count: k.options.length, text };
-    else if (k.widget === 'switch') values[k.symbol] = { fraction: k.def >= 0.5 ? 1 : 0, text };
-    else values[k.symbol] = { fraction: modgui.travelFraction(k, k.def), text };
-  }
-  // the points and marks the MOD GUI's static curve was drawn from, handed to the renderer as a host would
-  const curves = {}, marks = {}, stems = {};
-  let at = 0;
-  for (const sec of p.sections) for (const dsp of sec.displays) {
-    if (dsp.curve?.stems?.length) stems[at] = dsp.curve.stems.map((t) => ({ x: t.x, y: t.y, shade: t.shade, letter: modgui.LEG_LETTER[t.leg] ?? ' ' }));
-    if (dsp.curve?.points?.length) curves[at] = { x: dsp.curve.points.map((q) => q.x), y: dsp.curve.points.map((q) => q.y) };
-    if (dsp.curve?.marks?.length) marks[at] = dsp.curve.marks.map((m) => ({ freq: m.freq, depth: m.depthDb, letter: modgui.ORIGIN_LETTER[m.origin] }));
-    at++;
-  }
+  requireTwin(fx);
+  const descriptor = JSON.parse(readFileSync(join(ROOT, fx.descriptor), 'utf8'));
+  const panel = fx.panel ? JSON.parse(readFileSync(join(ROOT, fx.panel), 'utf8')) : undefined;
   const file = join(dir, `${fx.name}.state.json`);
-  writeFileSync(file, JSON.stringify({ brand: p.brand, name: p.name ?? p.stem, values, curves, marks, stems }, null, 2));
+  writeFileSync(file, JSON.stringify(defaultState(descriptor, { panel, stem: fx.stem, readings }), null, 2));
   return file;
 }
 

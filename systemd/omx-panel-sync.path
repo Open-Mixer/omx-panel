@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+[Unit]
+Description=Run the omx-panel sync pass when a plugin directory changes
+
+[Path]
+# A plugin installed or removed changes one of the system's plugin directories (an LV2 bundle or a CLAP file is an entry
+# of its directory), and the pass follows it whether plugin-qualify's sync ran, failed or is not installed
+# (docs/descriptions-store.md section 6). A directory that does not exist is watched from the nearest one that does.
+# Changes while a pass runs start no second one: the service is a oneshot, and the next change after it starts it again.
+PathChanged=/usr/lib64/lv2
+PathChanged=/usr/lib/lv2
+PathChanged=/usr/local/lib/lv2
+PathChanged=/usr/lib64/clap
+PathChanged=/usr/lib/clap
+PathChanged=/usr/local/lib/clap
+Unit=omx-panel-sync.service
+
+[Install]
+WantedBy=paths.target

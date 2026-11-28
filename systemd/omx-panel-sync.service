@@ -10,8 +10,10 @@ ConditionPathExists=/usr/bin/omx-panel-sync
 # A batch convenience over a direct call: omx-panel-sync does the whole work run by hand, and nothing depends on this
 # unit (docs/descriptions-store.md section 10). Enabled by default where systemd exists (80-omx-panel.preset; the DEB
 # enables it), it runs at boot and each time plugin-qualify-sync finishes (plugin-qualify-sync.service.d/omx-panel-sync.conf
-# queues it from ExecStartPost), so a plugin installed, upgraded or removed is followed by its entry, groups and GUI.
-# `systemctl disable omx-panel-sync` turns it off. The directories are set in /etc/omx/modgui-sync.conf.
+# queues it from ExecStartPost), so a plugin installed, upgraded or removed is followed by its entry, groups and GUI. Its
+# own triggers run it whatever plugin-qualify's sync did: omx-panel-sync.path when a plugin directory changes, and
+# omx-panel-sync.timer daily. `systemctl disable omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer` turns
+# it off. The directories are set in /etc/omx/modgui-sync.conf.
 Type=oneshot
 EnvironmentFile=-/etc/omx/modgui-sync.conf
 ExecStart=/usr/bin/omx-panel-sync

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "scanned",
+  "plugin": {"id": "org.openmixer.comp", "format": "clap", "name": "omx comp", "vendor": "openmixer", "version": "0.21.1", "doc": "The console's compressor: threshold, ratio and knee set how hard it holds the level down, attack and release how fast, with makeup gain and a dry/wet mix. Kind picks the RMS detector (Compressor) or the peak detector (Limiter), and detector oversampling can run the control path at 4x; detector topology has it hear the input (feedforward) or its own output (feedback). Its detector can listen to a key routed to its sidechain input instead, through a high-pass, a low-pass and a tilt, on the louder leg, the mid or the side, with a hold; key listen puts what the detector hears on the output, and duck holds the reduction to a set depth. The DSP is omx-dsp's <omxdsp/fx/omx_comp_instance.h>, the console's own compressor.", "features": ["audio-effect"]},
+  "controls": [
+    {"id": 0, "name": "Threshold", "symbol": "thresholdDb", "kind": "travel", "travel": {"min": -60, "max": 0, "unit": "dB", "default": -18, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "threshold", "automatable": true},
+    {"id": 1, "name": "Ratio", "symbol": "ratio", "kind": "travel", "travel": {"min": 1, "max": 20, "unit": "ratio", "default": 4, "scale": "linear"}, "group": ["Comp"], "meaning": "ratio", "automatable": true},
+    {"id": 2, "name": "Knee", "symbol": "kneeDb", "kind": "travel", "travel": {"min": 0, "max": 24, "unit": "dB", "default": 6, "scale": "linear"}, "group": ["Comp"], "meaning": "knee", "automatable": true},
+    {"id": 3, "name": "Attack", "symbol": "attackMs", "kind": "travel", "travel": {"min": 0.10000000149011612, "max": 100, "unit": "ms", "default": 5, "scale": "linear"}, "group": ["Comp"], "meaning": "attack", "automatable": true},
+    {"id": 4, "name": "Release", "symbol": "releaseMs", "kind": "travel", "travel": {"min": 5, "max": 3000, "unit": "ms", "default": 200, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "release", "automatable": true},
+    {"id": 5, "name": "Makeup", "symbol": "makeupDb", "kind": "travel", "travel": {"min": 0, "max": 24, "unit": "dB", "default": 0, "scale": "linear"}, "group": ["Comp"], "meaning": "makeup", "automatable": true},
+    {"id": 6, "name": "Mix", "symbol": "mixPct", "kind": "travel", "travel": {"min": 0, "max": 100, "unit": "percent", "default": 100, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "wetDryRatio", "automatable": true},
+    {"id": 7, "name": "Kind", "symbol": "kind", "kind": "toggle", "default": false, "group": ["Comp"], "meaning": "unknown", "automatable": true},
+    {"id": 8, "name": "Detector Oversampling", "symbol": "detectorOversampling", "kind": "travel", "travel": {"min": 0, "max": 2, "unit": "none", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "unknown", "automatable": true},
+    {"id": 9, "name": "Detector Topology", "symbol": "detectorTopology", "kind": "toggle", "default": false, "group": ["Comp"], "meaning": "unknown", "automatable": true},
+    {"id": 10, "name": "Key Source", "symbol": "keySource", "kind": "toggle", "default": false, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 11, "name": "Key HP", "symbol": "keyHpHz", "kind": "travel", "travel": {"min": 0, "max": 2000, "unit": "Hz", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 12, "name": "Key LP", "symbol": "keyLpHz", "kind": "travel", "travel": {"min": 0, "max": 20000, "unit": "Hz", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 13, "name": "Key Tilt", "symbol": "keyTiltDb", "kind": "travel", "travel": {"min": -6, "max": 6, "unit": "dBPerOct", "default": 0, "scale": "linear"}, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 14, "name": "Key Listen", "symbol": "keyListen", "kind": "toggle", "default": false, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 15, "name": "Hold", "symbol": "holdMs", "kind": "travel", "travel": {"min": 0, "max": 2000, "unit": "ms", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "unknown", "automatable": true},
+    {"id": 16, "name": "Detect Link", "symbol": "detectLink", "kind": "travel", "travel": {"min": 0, "max": 3, "unit": "none", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Key"], "meaning": "unknown", "automatable": true},
+    {"id": 17, "name": "Duck", "symbol": "duck", "kind": "toggle", "default": false, "group": ["Duck"], "meaning": "unknown", "automatable": true},
+    {"id": 18, "name": "Duck Range", "symbol": "rangeDb", "kind": "travel", "travel": {"min": -40, "max": 0, "unit": "dB", "default": -12, "step": 1, "scale": "stepped"}, "group": ["Duck"], "meaning": "unknown", "automatable": true},
+    {"id": 19, "name": "Release Mode", "symbol": "releaseMode", "kind": "travel", "travel": {"min": 0, "max": 2, "unit": "none", "default": 0, "step": 1, "scale": "stepped"}, "group": ["Comp"], "meaning": "unknown", "automatable": true},
+    {"id": 2147418112, "name": "Bypass", "symbol": "bypass", "kind": "toggle", "default": false, "meaning": "bypass", "automatable": true}
+  ],
+  "ports": [
+    {"id": 0, "name": "in", "kind": "audio", "direction": "in", "role": "main", "channels": 2, "layout": "stereo"},
+    {"id": 1, "name": "key", "kind": "audio", "direction": "in", "role": "aux", "channels": 1, "layout": "mono"},
+    {"id": 0, "name": "out", "kind": "audio", "direction": "out", "role": "main", "channels": 2, "layout": "stereo"}
+  ],
+  "meters": [
+    {"id": 0, "symbol": "compGr", "kind": "gain-reduction", "channels": 1, "unit": "dB", "min": -60, "max": 0, "scale": "unknown"},
+    {"id": 1, "symbol": "compIn", "kind": "level", "channels": 2, "unit": "dBFS", "min": -60, "max": 6, "scale": "unknown"},
+    {"id": 2, "symbol": "compOut", "kind": "level", "channels": 2, "unit": "dBFS", "min": -60, "max": 6, "scale": "unknown"},
+    {"id": 3, "symbol": "compKey", "kind": "level", "channels": 1, "unit": "dBFS", "min": -60, "max": 0, "scale": "unknown"}
+  ],
+  "latency": {"reports": true},
+  "source": {"from": "omx-comp.clap#clap_entry"},
+  "extensions": {"clap": {
+    "clap_plugin_descriptor.url": "https://github.com/Open-Mixer/omx-plugins",
+    "clap_plugin_descriptor.features": ["CLAP_PLUGIN_FEATURE_COMPRESSOR", "CLAP_PLUGIN_FEATURE_STEREO"],
+    "clap_plugin.get_extension": ["CLAP_EXT_AUDIO_PORTS", "CLAP_EXT_PARAMS", "CLAP_EXT_PRESET_LOAD", "CLAP_EXT_PRESET_LOAD_COMPAT", "CLAP_EXT_REMOTE_CONTROLS", "CLAP_EXT_STATE", "CLAP_EXT_TRACK_INFO", "org.openmixer.declaration/1", "org.openmixer.param-contract/1", "org.openmixer.panel-description/1", "org.openmixer.resource-hints.draft/0"],
+    "omx_clap_plugin_param_contract_ext.version": "6",
+    "omx_clap_plugin_param_contract_ext.fingerprint": "2e6421f6270613736ddddcf7bcf7061a4c746e015e1127312bda8e56ca21c691",
+    "meter:0/clap_meter_info.flags": ["CLAP_METER_IS_COHERENT", "OMX_CLAP_METER_IS_HELD"],
+    "meter:1/clap_meter_info.flags": ["CLAP_METER_IS_COHERENT", "OMX_CLAP_METER_IS_HELD", "OMX_CLAP_METER_HAS_CLIP"],
+    "meter:2/clap_meter_info.flags": ["CLAP_METER_IS_COHERENT", "OMX_CLAP_METER_IS_HELD", "OMX_CLAP_METER_HAS_CLIP"],
+    "meter:3/clap_meter_info.flags": ["CLAP_METER_IS_COHERENT", "OMX_CLAP_METER_IS_HELD"],
+    "audio_in:0/clap_audio_port_info.in_place_pair": "0",
+    "audio_out:0/clap_audio_port_info.in_place_pair": "0",
+    "clap_plugin_latency.get": "0"
+  }}
+}

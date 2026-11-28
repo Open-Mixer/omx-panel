@@ -69,7 +69,7 @@ export function storeCommand(args, { input, env } = {}) {
 }
 
 /** The installed bundle declaring `uri`, the first on the search list. */
-function bundleOf(uri, lv2Path) {
+export function bundleOf(uri, lv2Path) {
   for (const dir of installedBundles(lv2Path)) {
     let b;
     try {

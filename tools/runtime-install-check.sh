@@ -9,7 +9,10 @@
 #   1. the package's own Requires/Recommends (Depends/Recommends) name no -devel (-dev) package;
 #   2. installed with weak dependencies off (install_weak_deps=False, --no-install-recommends), the transaction adds no
 #      -devel (-dev) package;
-#   3. omx-plugins-contract, the one recommendation, installed after it, adds none either;
+#   3. each recommendation (plugin-hostd, python3-lilv), installed after it, adds none either, and leaves the package
+#      under test installed: it is installed with this build's other runtime packages beside $1, so a recommendation
+#      that needs one of them (plugin-hostd needs libomx-panel-store, whose channel copy pins the channel's
+#      omx-panel-contract) takes this build's and never downgrades omx-panel to the channel's;
 #   4. `omx-panel vocabulary` reads the meanings, the standard units and the served units (omx-contract's param domain) from
 #      /usr/share/omx-contract, with no omx-contract.pc and no variable set;
 #   5. omx-dsp's loadCurve answers one curve through the package's node_modules/@openmixer/omx-dsp link;
@@ -152,16 +155,34 @@ stand_in() {
 }
 for m in "${missing[@]}"; do stand_in "$m"; done
 
-# 3. the recommendation, on its own
+# 3. each recommendation, with this build's other runtime packages
+# The channel holds this build's siblings only at the version before it, each pinned to that version's omx-panel-contract,
+# so a recommendation that needs one (plugin-hostd: libomx-panel-store) took the channel's and the resolver replaced the
+# package under test with the channel's omx-panel (run 46040290184: "omx-panel --version says omx-panel 0.17.2, the
+# package is 0.17.3"; apt: "libomx-panel-store0=0.17.2 Depends omx-panel-contract (= 0.17.2)"). They are this build's
+# packages, offered as omx-panel-contract is to omx-panel; a development one is never offered.
+pkg_name() { case "$FORMAT" in rpm) rpm -qp --qf '%{NAME}' "$1" ;; deb) dpkg-deb -f "$1" Package ;; esac; }
+pkg_ver() { case "$FORMAT" in rpm) rpm -qp --qf '%{VERSION}-%{RELEASE}' "$1" ;; deb) dpkg-deb -f "$1" Version ;; esac; }
+held_ver() { case "$FORMAT" in rpm) rpm -q --qf '%{VERSION}-%{RELEASE}' "$1" 2>/dev/null ;; deb) dpkg-query -W -f '${Version}' "$1" 2>/dev/null ;; esac || true; }
+NAME=$(pkg_name "$PKG") VER=$(pkg_ver "$PKG")
+siblings=()
+for f in "$(dirname "$PKG")"/*."$FORMAT"; do
+  { [ "$f" -ef "$PKG" ] || [ "$f" -ef "$CPKG" ]; } && continue
+  [[ $(pkg_name "$f") =~ $DEVEL ]] && continue
+  siblings+=("$f")
+done
 # a rich RPM recommendation, (name >= a with name < b), is read by its name
 for r in $(echo "$weak" | awk '{print $1}' | sed 's/^(//'); do
   before=$(installed)
   if published "$r"; then
     listed "$r" && fail "$r is published: remove it from NOT_YET_PUBLISHED"
-    if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$r" >/dev/null 2>&1
-    else apt-get install -y -q --no-install-recommends "$r" >/dev/null; fi
+    if [ "$FORMAT" = rpm ]; then dnf install -y -q --setopt=install_weak_deps=False "$r" "${siblings[@]}" >/dev/null 2>&1
+    else apt-get install -y -q --no-install-recommends "$r" "${siblings[@]}" >/dev/null; fi
     bad=$(comm -13 <(echo "$before") <(installed) | grep -E -- "$DEVEL" || true)
     [ -z "$bad" ] && pass "$FORMAT: $r adds no development package" || fail "$FORMAT: $r adds $(echo $bad)"
+    have=$(held_ver "$NAME")
+    [ "$have" = "$VER" ] && pass "$FORMAT: $r leaves $NAME $VER, the package under test, installed" \
+      || fail "$FORMAT: after $r, $NAME is ${have:-not installed}, not $VER, the package under test"
   elif listed "$r"; then
     stand_in "$r"
   else

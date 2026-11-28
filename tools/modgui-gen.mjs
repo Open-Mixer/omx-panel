@@ -33,7 +33,7 @@ import { parseFont } from './font.mjs';
 import { barsOf } from './bars.mjs';
 import { LOOK_JSON, LOOK_TOKENS, NOT_COLOURS } from './look.mjs';
 import { easyOf } from './easy.mjs';
-import { controlsOfDescriptor, drawnHeads, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
+import { controlsOfDescriptor, drawnHeads, drawnLines, inferGroupModel, mergedSections, placeMatrix, servedMatrix } from './group-model.mjs';
 import { unitToken as unitTokenOf, basisOf, BarsRefused, NoControls, DISPLAY_OF_GRAPH, EASY_PAGE, keyOf, panelLayout, visibilityRules } from './panel-description.mjs';
 import { canvas, disc, drawText, encodePng, fitText, rgbOf, roundRect, segment, textWidth } from './raster.mjs';
 import { drawingOf, paintScene, renderSvgFilm, sceneAt } from './svg-knob.mjs';
@@ -501,21 +501,24 @@ function matrixCells(s, top) {
   const by = new Map(s.controls.map((k) => [k.symbol, k]));
   // a head whose every control the come-up values hide takes no column (an edge keeps its head)
   const heads = drawnHeads(mx).filter((h) => mx.heads[h].edge || mx.rows.some((r, li) => by.get(mx.cells[li][h])?.shown !== false && mx.cells[li][h]));
-  const at = (col, li) => (mx.orientation === 'columns'
-    ? { x: g.sectionPad + col * g.cellW, y: top + li * g.cellH }
-    : { x: g.sectionPad + li * g.cellW, y: top + col * g.cellH });
+  // a row empty at every drawn head takes no row, and the rows after it close up (L6: omx-delay's Time row at one tap)
+  const lines = drawnLines(mx, heads);
+  const at = (col, line) => (mx.orientation === 'columns'
+    ? { x: g.sectionPad + col * g.cellW, y: top + line * g.cellH }
+    : { x: g.sectionPad + line * g.cellW, y: top + col * g.cellH });
   const controls = [];
   const captions = [];
-  heads.forEach((h, col) => mx.rows.forEach((r, li) => {
+  heads.forEach((h, col) => lines.forEach((li, line) => {
+    const r = mx.rows[li];
     const sym = mx.cells[li][h];
-    if (sym) controls.push({ ...by.get(sym), ...at(col, li), mxdy: at(col, li).y - top });
-    else if (r.head) captions.push({ text: mx.heads[h].label, ...at(col, li), mxdy: at(col, li).y - top });
+    if (sym) controls.push({ ...by.get(sym), ...at(col, line), mxdy: at(col, line).y - top });
+    else if (r.head) captions.push({ text: mx.heads[h].label, ...at(col, line), mxdy: at(col, line).y - top });
   }));
   // the controls of a head left out stay on the face, hidden by the rule that hides them, where they take no room
   const kept = new Set(heads);
   drawnHeads(mx).forEach((h) => { if (!kept.has(h)) mx.rows.forEach((r, li) => { const sym = mx.cells[li][h]; if (sym) controls.push({ ...by.get(sym), x: g.sectionPad, y: top }); }); });
-  const across = mx.orientation === 'columns' ? heads.length : mx.rows.length;
-  const down = mx.orientation === 'columns' ? mx.rows.length : heads.length;
+  const across = mx.orientation === 'columns' ? heads.length : lines.length;
+  const down = mx.orientation === 'columns' ? lines.length : heads.length;
   return { controls, captions, across, down };
 }
 

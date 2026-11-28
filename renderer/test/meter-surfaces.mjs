@@ -80,12 +80,14 @@ const ACCENT = rgb('--accent'), INK = rgb('--ink'), RIM = rgb('--border-strong')
 const near = (a, b, d) => a.every((v, k) => Math.abs(v - b[k]) <= d);
 
 /** One meter in one image: the bar's last accent pixel (null for no bar) on the bar's row, the marker's first ink pixel on the row
- * under the bar, in panel px; `under` when the bar reaches the marker, which covers its end (that bar end is not compared). The rows are the renderer's: the bar 4 px tall 6 px above the frame's foot, the marker 6 px tall. */
+ * under the bar, in panel px; `under` when the bar reaches the marker, which covers its end (that bar end is not compared). The rows are the renderer's: the bar 4 px tall 6 px above the frame's foot, the marker 6 px tall.
+ * Both are drawn inside the frame's border, so only the inside is read: outside it is the section, which a look may paint in a
+ * colour the measure reads as ink (the vintage enclosure, #e9dfc7, put the renderer's marker at the frame's left every tick). */
 function measure(img, m, face = m) {
-  const barRow = m.y + m.h - 4, markRow = m.y + m.h - 2;
+  const barRow = m.y + m.h - 4, markRow = m.y + m.h - 2, from = m.x + m.border, to = m.x + m.w - m.border;
   let bar = null, marker = null;
-  for (let x = m.x - 2; x < m.x + m.w + 2; x++) if (along(pixel(img, x, barRow), ACCENT) >= 0.5) bar = x;
-  for (let x = m.x - 2; x < m.x + m.w + 2 && marker === null; x++) if (along(pixel(img, x, markRow), INK) >= 0.5) marker = x;
+  for (let x = from; x < to; x++) if (along(pixel(img, x, barRow), ACCENT) >= 0.5) bar = x;
+  for (let x = from; x < to && marker === null; x++) if (along(pixel(img, x, markRow), INK) >= 0.5) marker = x;
   // a bar that runs into the marker has no end of its own to see: the marker is drawn over it
   return { bar, marker, under: bar !== null && marker !== null && bar >= marker - 2, lit: lampLit(img, face) };
 }

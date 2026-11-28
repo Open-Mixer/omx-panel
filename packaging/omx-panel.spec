@@ -8,7 +8,7 @@
 %{!?python3_sitelib:%global python3_sitelib %(python3 -c 'import sysconfig; print(sysconfig.get_path("purelib"))')}
 
 Name: omx-panel
-Version: 0.17.2
+Version: 0.17.3
 Release: 1%{?dist}
 License: GPL-3.0-or-later
 Summary: Panels for LV2 and CLAP plugins, generated from what each plugin declares
@@ -188,15 +188,15 @@ OMX_PANEL_SHAPES=packaged OMX_CONTRACT_CLI=/usr/lib/omx-contract/bin/omx-contrac
 # and the panel domain they open at load is the one this build staged for omx-panel-contract (none is installed here)
 tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{omx_contract_dir}
 
-# the unit follows its preset on a first install (enabled), is disabled on erase, and an upgrade starts nothing
+# the units follow their preset on a first install (enabled), are disabled on erase, and an upgrade starts nothing
 %post
-%{?systemd_post:%systemd_post omx-panel-sync.service}
+%{?systemd_post:%systemd_post omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %preun
-%{?systemd_preun:%systemd_preun omx-panel-sync.service}
+%{?systemd_preun:%systemd_preun omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %postun
-%{?systemd_postun:%systemd_postun omx-panel-sync.service}
+%{?systemd_postun:%systemd_postun omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer}
 
 %files
 %license LICENSE
@@ -209,8 +209,11 @@ tools/installed-tools-check.sh %{buildroot}%{_datadir}/omx-panel %{buildroot}%{o
 %{_mandir}/man1/omx-modgui-sync.1*
 %{_mandir}/man1/omx-complement-sync.1*
 %{_mandir}/man1/omx-panel-sync.1*
-# the one pass's unit, enabled by default by the preset; nothing depends on it (`systemctl disable omx-panel-sync` is the choice)
+# the one pass's unit, its path watch and its timer, enabled by default by the preset; nothing depends on them
+# (`systemctl disable omx-panel-sync.service omx-panel-sync.path omx-panel-sync.timer` is the choice)
 %{_unitdir}/omx-panel-sync.service
+%{_unitdir}/omx-panel-sync.path
+%{_unitdir}/omx-panel-sync.timer
 %{_presetdir}/80-omx-panel.preset
 %dir %{_unitdir}/plugin-qualify-sync.service.d/
 %{_unitdir}/plugin-qualify-sync.service.d/omx-panel-sync.conf
@@ -349,6 +352,14 @@ English source sentence.
 # END langpacks
 
 %changelog
+* Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.3-1
+- A served display's kind is the number omx-clap-scan prints, read as its
+  PANEL_DISPLAY_KINDS word, so the family displays of the omx-plugins 0.21.1
+  CLAPs are drawn (#286).
+- omx-panel-descriptions carries a prebuilt base for the 34 omx-plugins, LV2
+  and CLAP; omx-panel sync lists CLAP plugins, and its pass runs on its own
+  path watch and timer (#284).
+
 * Fri Nov 27 2026 Pau Aliagas <linuxnow@gmail.com> - 0.17.2-1
 - The installed package.json names the installed tree: every export target
   and the bin exist after make install (#272).

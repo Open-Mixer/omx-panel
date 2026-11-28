@@ -75,4 +75,6 @@ renderer/                         the panel renderer, C: the library, its comman
 The RPM and DEB builds run `npm ci` unless `node_modules` is already in the source tree. A distribution build (mock,
 pbuilder, koji) has no registry, so each release also carries `omx-panel-<version>-vendored.tar.gz`: the same source
 with `node_modules` inside. For the RPM, use it as `Source0`, named `omx-panel-<version>.tar.gz`. `tools/vendored-source.sh`
-makes it from a checkout, and `tools/offline-build-check.sh <rpm | deb>` builds it in a container with `--network=none`.
+makes it from a checkout, and `tools/offline-build-check.sh <rpm | deb>`, run as root where the build dependencies are
+installed (a container started with `--cap-add=SYS_ADMIN`, as CI's offline jobs are), builds it in a network namespace of
+its own (`unshare --net`), after proving the plain archive does not build there.

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+[Unit]
+Description=Run the omx-panel sync pass daily
+
+[Timer]
+# The pass's own schedule (docs/descriptions-store.md section 6): a change no path watch sees (a file replaced inside a
+# bundle, a user's ~/.lv2 or ~/.clap) or a pass that failed is caught up within a day, whatever plugin-qualify's sync
+# did. A day missed while the machine was off runs at the next boot.
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+Unit=omx-panel-sync.service
+
+[Install]
+WantedBy=timers.target

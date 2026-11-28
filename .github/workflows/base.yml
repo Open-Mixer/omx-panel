@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Pau Aliagas <linuxnow@gmail.com>
+name: base
+
+# The descriptions store's base from the plugins the channel serves (docs/descriptions-store.md section 6, "The base is
+# built centrally"). omx-panel builds with nothing of omx-plugins, so its package build reads the inputs committed under
+# base/; this workflow is where they are made: it installs the channel's omx-plugins in both formats, writes the set's
+# inputs with `omx-panel base-inputs`, builds the base held to the set (`make base`: every omx-plugin, LV2 and CLAP,
+# with a description with controls), and is red when what it wrote is not what is committed. The inputs it wrote are
+# its artifact: committed, they are the next omx-panel-descriptions. It runs the suite nowhere and is dispatched only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  base:
+    runs-on: ${{ github.event.repository.private && 'arc-freemixer' || vars.OMX_RUNNER || 'ubuntu-latest' }}
+    container:
+      image: fedora:45
+    steps:
+      - name: Install the compiler, SQLite, cJSON and node
+        run: |
+          dnf install -y --setopt=install_weak_deps=False git make gcc pkgconf-pkg-config sqlite-devel cjson-devel nodejs npm dnf5-plugins
+      - name: Add the OpenMixer repository
+        uses: Open-Mixer/.github/.github/actions/add-openmixer@openmixer-v1
+      - name: Install the vocabulary, and the set as the channel serves it
+        run: |
+          dnf install -y --setopt=install_weak_deps=False libomx-domain-devel omx-contract omx-contract-devel omx-contract-data plugin-db-contract
+          # the set: its LV2 bundles, its CLAP files and its declarations; omx-clap-scan (omx-clap-host) lists the CLAP ids
+          dnf install -y --setopt=install_weak_deps=False omx-plugins-lv2 omx-plugins-clap omx-plugins-contract omx-clap-host
+          dnf repoquery --installed --qf '%{name} %{version} %{from_repo}\n' 'omx-plugins*' 'omx-clap-host'
+      - uses: actions/checkout@v4
+      - name: The checkout is a git directory this job may read
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: The tree and the store's command
+        run: npm ci && make build store
+      - name: The set's inputs from the installed set
+        run: |
+          set -euo pipefail
+          contractdir=$(pkg-config --variable=contractdir omx-contract)
+          node dist/bin/omx-panel.mjs base-inputs --set omx-plugins --declarations "$contractdir/omx-plugins/plugins" --base base
+      - name: The base, held to the set
+        run: make base
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: base-inputs
+          path: |
+            base/inputs/
+            base/sets/
+            base/contract.d/
+            base/build/panel.sqlite
+      - name: The committed inputs are the channel's
+        run: |
+          set -euo pipefail
+          git add -N base
+          if ! git diff --quiet --stat -- base; then
+            git diff --stat -- base
+            echo "the committed base inputs are not the channel's set: commit the artifact base-inputs (base/inputs, base/sets, base/contract.d)"
+            exit 1
+          fi

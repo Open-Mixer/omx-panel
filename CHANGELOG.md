@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+- A panel of seven sections or more is drawn as tall as its sections. The layout gave its per-section curve-row counts
+  (ints) the one-byte-per-section array and the drawn flags the int one, so from the seventh section each count was read
+  past its allocation: omx-reverb (seven sections) drew 8404 px tall, its De-ess section 21000 px below Duck, and a
+  description of nine sections could hang the command. `renderer/test/many-sections.test.mjs` holds 1 to 16 one-knob
+  sections to the same step.
+- `omx-panel picture` draws a plugin's panel from its descriptor and declared panel alone into a PNG
+  (`tools/panel-picture.mjs`, docs/renderer.md "A picture of a panel"): the served layout, every control at its declared
+  default, drawn by `omx-panel-render`. The renderer tests' host side is the same function (`defaultState`), and
+  `renderer/test/picture.test.mjs` holds the picture to the renderer's own drawing, the same bytes for one declaration
+  and another picture for a changed one. omx-plugins draws its documentation pictures with it.
 - The installed package is the node package its `package.json` describes (#272). `make install` copies `dist/` whole into
   `/usr/share/omx-panel`, but installed the source `package.json`, whose every export and bin named `./dist/...`, a path
   the RPM and the DEB never carried: a consumer that links `node_modules/@openmixer/omx-panel` to the installed tree
@@ -231,6 +241,8 @@
   docs/group-model.md, L7 and P1; `test/eq-band-matrix.test.mjs`.
 
 - 0.16.1: the v0.16.0 release run built no package. rpmbuild's %check runs `make test` in the release tarball, which has no .git, and the guard against plugin-hostd's LV2 table ran `git grep`; it now reads the files itself (#207). The deb build's installed tools check ran the staged lv2-complement, modgui-gen and modgui-import, which refused to load: a build host has no omx-panel-contract installed. `tools/installed-tools-check.sh` now takes the build's staged contract directory as a second argument, and debian/rules and %check pass it (#208). Floors unchanged.
+
+- 0.17.3: a served panel's display kind is the number omx-clap-scan prints (omx-clap-core keeps no panel words), read as its `PANEL_DISPLAY_KINDS` word and a display source as its `PANEL_DISPLAY_SOURCES` word (#286); a number the item lacks is refused by name. describe refused every family display of the omx-plugins 0.21.1 CLAPs (`a family display of kind 1 has no section graph here`), so the Pi drew no curve. omx-panel-descriptions carries a prebuilt base for the 34 omx-plugins in both formats, LV2 and CLAP; omx-panel sync lists CLAP plugins, and its pass runs on `omx-panel-sync.path` and `omx-panel-sync.timer` of its own (#284). Floors unchanged.
 
 - 0.17.2: the installed `package.json` names the installed tree (#272): every export target and the bin exist after `make install`, so a consumer linking `node_modules/@openmixer/omx-panel` to `/usr/share/omx-panel` resolves `@openmixer/omx-panel/store-entry`. Floors unchanged.
 

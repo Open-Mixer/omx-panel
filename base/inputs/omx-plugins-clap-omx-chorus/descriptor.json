@@ -1,0 +1,190 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.chorus",
+    "format": "clap",
+    "uri": "urn:openmixer:chorus",
+    "name": "omx chorus",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "The console's chorus: up to four voices read one modulated delay line, the right leg's sweep offset by the spread, mixed with the dry signal.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "spread",
+      "name": "Spread",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 0.5,
+        "step": 0,
+        "unit": "none",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Chorus"
+      ],
+      "meaning": "spread",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/chorus.json#CHORUS_SPREAD_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "rate",
+      "name": "Rate",
+      "kind": "travel",
+      "travel": {
+        "min": 0.05,
+        "max": 8,
+        "step": 0,
+        "unit": "Hz",
+        "default": 0.6,
+        "scale": "log"
+      },
+      "group": [
+        "Chorus"
+      ],
+      "meaning": "rate",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/chorus.json#CHORUS_RATE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "depth",
+      "name": "Depth",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 12,
+        "step": 0,
+        "unit": "ms",
+        "default": 4,
+        "scale": "linear"
+      },
+      "group": [
+        "Chorus"
+      ],
+      "meaning": "depth",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/chorus.json#CHORUS_DEPTH_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "voices",
+      "name": "Voices",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "unit": "none",
+        "default": 3,
+        "scale": "stepped"
+      },
+      "group": [
+        "Chorus"
+      ],
+      "meaning": "number",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/chorus.json#CHORUS_VOICES_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "mix",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 0,
+        "unit": "percent",
+        "default": 35,
+        "scale": "linear"
+      },
+      "group": [
+        "Chorus"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/chorus.json#CHORUS_MIX_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_CHORUS",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ChorusPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-chorus/omx_chorus_clap.c#clap_entry"
+  }
+}

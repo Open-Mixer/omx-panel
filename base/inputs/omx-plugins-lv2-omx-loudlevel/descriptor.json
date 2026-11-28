@@ -1,0 +1,195 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.loudlevel",
+    "format": "clap",
+    "uri": "urn:openmixer:loudlevel",
+    "name": "omx loudlevel",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "Holds a signal at a loudness target by moving its gain slowly, with a gate so pauses are left alone.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "targetLufs",
+      "name": "Target",
+      "kind": "travel",
+      "travel": {
+        "min": -40,
+        "max": -6,
+        "step": 0,
+        "unit": "dB",
+        "default": -23,
+        "scale": "linear"
+      },
+      "group": [
+        "Loudlevel"
+      ],
+      "meaning": "output",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/loudlevel.json#LOUDLEVEL_TARGET_LUFS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "rangeDb",
+      "name": "Range",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 24,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Loudlevel"
+      ],
+      "meaning": "range",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/loudlevel.json#LOUDLEVEL_RANGE_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "speedDbPerS",
+      "name": "Speed",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 6,
+        "step": 0,
+        "unit": "dBPerS",
+        "default": 1,
+        "scale": "linear"
+      },
+      "group": [
+        "Loudlevel"
+      ],
+      "meaning": "rate",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/loudlevel.json#LOUDLEVEL_SPEED_DB_PER_S_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "gateLufs",
+      "name": "Gate",
+      "kind": "travel",
+      "travel": {
+        "min": -70,
+        "max": -30,
+        "step": 1,
+        "unit": "dB",
+        "default": -50,
+        "scale": "stepped"
+      },
+      "group": [
+        "Loudlevel"
+      ],
+      "meaning": "threshold",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/loudlevel.json#LOUDLEVEL_GATE_LUFS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "window",
+      "name": "Window",
+      "kind": "choice",
+      "ids": [
+        "0",
+        "1"
+      ],
+      "labels": [
+        "Momentary",
+        "Short-term"
+      ],
+      "values": [
+        0,
+        1
+      ],
+      "default": "1",
+      "group": [
+        "Loudlevel"
+      ],
+      "meaning": "window",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/loudlevel.json#LOUDLEVEL_WINDOWS",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_UTILITY",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:UtilityPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-loudlevel/omx_loudlevel_clap.c#clap_entry"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.tone",
+    "format": "clap",
+    "uri": "urn:openmixer:tone",
+    "name": "omx tone",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "Tilts the whole tone darker or brighter about a pivot, and sweeps a resonant DJ filter from a low-pass through open to a high-pass with one knob.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "tiltDb",
+      "name": "Tilt",
+      "kind": "travel",
+      "travel": {
+        "min": -6,
+        "max": 6,
+        "step": 0,
+        "unit": "dB",
+        "default": 0,
+        "scale": "linear"
+      },
+      "group": [
+        "Tilt"
+      ],
+      "meaning": "tone",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tone.json#TONE_TILT_DB_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "pivotHz",
+      "name": "Pivot",
+      "kind": "travel",
+      "travel": {
+        "min": 200,
+        "max": 5000,
+        "step": 1,
+        "unit": "Hz",
+        "default": 1000,
+        "scale": "log"
+      },
+      "group": [
+        "Tilt"
+      ],
+      "meaning": "frequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tone.json#TONE_PIVOT_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "filter",
+      "name": "DJ Filter",
+      "kind": "travel",
+      "travel": {
+        "min": -100,
+        "max": 100,
+        "step": 1,
+        "unit": "none",
+        "default": 0,
+        "scale": "stepped"
+      },
+      "group": [
+        "DJ Filter"
+      ],
+      "meaning": "cutoffFrequency",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tone.json#TONE_FILTER_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "resonance",
+      "name": "Resonance",
+      "kind": "travel",
+      "travel": {
+        "min": 0.5,
+        "max": 4,
+        "step": 0,
+        "unit": "none",
+        "default": 0.71,
+        "scale": "linear"
+      },
+      "group": [
+        "DJ Filter"
+      ],
+      "meaning": "resonance",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/tone.json#TONE_RESONANCE_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "CLAP_PLUGIN_FEATURE_FILTER",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:FilterPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-tone/omx_tone_clap.c#clap_entry"
+  }
+}

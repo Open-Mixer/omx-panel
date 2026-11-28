@@ -244,3 +244,58 @@ test('heads with no on/off: their captions have a row of their own, the first, a
   const r = rects(descriptionFile(TAPS, scratch()));
   assert.ok(r.length > 0);
 });
+
+// L6, a row empty at every drawn head (docs/group-model.md): omx-delay's Taps serve a Time row whose cell at tap 1 is null (its
+// time is the delay's), so at the come-up count of 1 the row has no cell and takes no row; at 2 it has one and comes back.
+const DELAY = { name: 'delay-taps', served: true, descriptor: 'test/fixtures/group-model/omx-plugins/omx-delay.descriptor.json', stem: 'omx-delay' };
+
+/** The panel's natural size and each control's cell, by symbol (null: hidden), the count set as a host sets it when given. */
+function drawnAt(file, count) {
+  const doc = JSON.parse(readFileSync(file, 'utf8'));
+  const args = ['--description', file, '--data', DATA, '--rects'];
+  if (count !== undefined) {
+    const state = join(dirname(file), `count-${count}.state.json`);
+    writeFileSync(state, JSON.stringify({ values: {}, integers: { [matrixOf(doc).count.symbol]: count } }));
+    args.push('--state', state);
+  }
+  const [head, ...lines] = execFileSync(CLI, args, { encoding: 'utf8' }).trim().split('\n');
+  const cells = new Map(lines.map((l, i) => [doc.controls[i].symbol, l.split(' ').map(Number)]).map(([s, r]) => [s, Number.isNaN(r[0]) ? null : r]));
+  return { size: head.split(' ').map(Number), cells, doc };
+}
+
+test('L6: a row empty at every drawn head takes no row: omx-delay at one tap is as tall as its matrix without the Time row', () => {
+  const file = descriptionFile(DELAY, scratch());
+  const at1 = drawnAt(file);
+  const mx = matrixOf(at1.doc);
+  const time = mx.rows.findIndex((r) => r.label === 'Time');
+  assert.ok(time > 0 && mx.count?.default === 1, 'the served Taps matrix has its Time row and the count at 1');
+  assert.ok(drawnHeads(mx).every((h) => mx.cells[time][h] === null), 'tap 1 has no Time cell');
+  // the same description with the Time row and its controls taken out: what the face must look like at one tap
+  const cut = JSON.parse(readFileSync(file, 'utf8'));
+  const cmx = matrixOf(cut);
+  const gone = new Set(cmx.cells[time].filter(Boolean));
+  cmx.rows.splice(time, 1);
+  cmx.cells.splice(time, 1);
+  cut.controls = cut.controls.filter((k) => !gone.has(k.symbol));
+  const fileCut = join(dirname(file), 'cut.layout.json');
+  writeFileSync(fileCut, JSON.stringify(cut));
+  const without = drawnAt(fileCut);
+  assert.deepEqual(at1.size, without.size, 'no empty row of cells under Pan');
+  for (const [sym, r] of without.cells) assert.deepEqual(at1.cells.get(sym), r, sym);
+});
+
+test('L6: the empty row comes back when a head that has a cell in it is drawn: omx-delay at two taps is one row taller', () => {
+  const file = descriptionFile(DELAY, scratch());
+  const at1 = drawnAt(file, 1), at2 = drawnAt(file, 2);
+  assert.equal(at2.size[1], at1.size[1] + cellH);
+  assert.equal(at2.cells.get('tap1Factor')[1], at2.cells.get('tap1Pan')[1] + cellH, 'Time is the row after Pan');
+  assert.equal(at1.cells.get('tap1Factor'), null);
+});
+
+test('L6: the MOD GUI face closes the Taps section on its last drawn row, Pan, at one tap', () => {
+  const face = modgui.layout(resolved(DELAY));
+  const s = face.sections.find((x) => x.matrix);
+  const pan = s.controls.find((k) => k.symbol === 'tap0Pan');
+  assert.ok(!s.controls.some((k) => k.symbol === 'tap1Factor'), 'tap 2 is not on the face');
+  assert.equal(s.h, pan.y + cellH + (geometry.geometry ?? geometry).sectionPad / 2, 'the section ends a half pad under Pan');
+});

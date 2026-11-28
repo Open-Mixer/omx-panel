@@ -942,6 +942,19 @@ static size_t visible_heads(const matrix *m, int *map) {
   return drawn;
 }
 
+/* Which rows (lines) of a matrix are drawn at the heads `hmap` keeps (visible_heads): the head row, and every row with a cell at a
+ * drawn head; a row empty at every drawn head is closed up (docs/group-model.md L6, drawnLines: omx-delay's Time row at one tap).
+ * lmap[r] is the row's place among the drawn ones, -1 for a row closed up; the number drawn is returned. */
+static size_t visible_lines(const matrix *m, const int *hmap, int *lmap) {
+  size_t drawn = 0;
+  for (size_t r = 0; r < m->nrows; r++) {
+    int keep = (int)r == m->head_row;
+    for (size_t h = 0; !keep && h < m->nheads; h++) keep = hmap[h] >= 0 && m->cell[r * m->nheads + h] >= 0;
+    lmap[r] = keep ? (int)drawn++ : -1;
+  }
+  return drawn;
+}
+
 /* Close up the heads beyond each matrix's count: their controls are cut, as a control the values hide is. */
 static void apply_counts(omx_panel_view_t *v) {
   for (size_t k = 0; k < v->nmatrices; k++) {
@@ -975,9 +988,10 @@ static void grid_at(const geometry *g, const matrix *m, double top, int head, in
 uint32_t omx_panel_view_visible_columns(const omx_panel_view_t *v, uint32_t width, double scale) {
   if (!v || !v->nmatrices || !(scale > 0)) return 0;
   const matrix *m = &v->matrices[0];
-  int *map = malloc((m->nheads ? m->nheads : 1) * sizeof *map);
-  size_t columns = m->columns ? visible_heads(m, map) : m->nrows;
-  free(map);
+  int *map = malloc((m->nheads ? m->nheads : 1) * sizeof *map), *lmap = malloc((m->nrows ? m->nrows : 1) * sizeof *lmap);
+  if (!map || !lmap) return free(map), free(lmap), 0;
+  size_t nv = visible_heads(m, map), columns = m->columns ? nv : visible_lines(m, map, lmap);
+  free(map), free(lmap);
   double fit = floor((double)width / (v->g.cellW * scale));
   size_t n = fit < 1 ? 1 : (size_t)fit;
   return (uint32_t)(n < columns ? n : columns);
@@ -996,12 +1010,15 @@ typedef struct {
   int ok;            /* 0: the layout could not be allocated, and nothing else of it is set */
 } laid;
 
+static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn), free(L->curves), free(L->mtop); }
+
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
 static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
-  laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
-            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}, 1};
+  /* each array by its field's name and element size: a positional list once gave `curves` (int) the byte array */
+  size_t ns = v->nsections ? v->nsections : 1, nc = v->ncontrols ? v->ncontrols : 1;
+  laid L = {.sections = calloc(ns, sizeof *L.sections), .cx = calloc(nc, sizeof *L.cx), .cy = calloc(nc, sizeof *L.cy),
+            .curves = calloc(ns, sizeof *L.curves), .drawn = calloc(ns, sizeof *L.drawn), .mtop = calloc(ns, sizeof *L.mtop), .ok = 1};
   if (!L.sections || !L.cx || !L.cy || !L.drawn || !L.curves || !L.mtop) {
     free(L.sections), free(L.cx), free(L.cy), free(L.drawn), free(L.curves), free(L.mtop);
     return (laid){0};
@@ -1018,10 +1035,14 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
       if (v->controls[i].section == (int)s && !v->controls[i].placed) all++, k += shown(&v->controls[i]);
     L.drawn[s] = k > 0 || all == 0 || mx != NULL;
     if (mx) {
-      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
-      size_t nv = visible_heads(mx, map);
-      free(map);
-      size_t across = mx->columns ? nv : mx->nrows;
+      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map), *lmap = malloc((mx->nrows ? mx->nrows : 1) * sizeof *lmap);
+      if (!map || !lmap) {
+        free(map), free(lmap), lay_free(&L);
+        return (laid){0};
+      }
+      size_t nv = visible_heads(mx, map), nl = visible_lines(mx, map, lmap);
+      free(map), free(lmap);
+      size_t across = mx->columns ? nv : nl;
       if (across > across_most) across_most = across;
     }
     if (k > most) most = k;
@@ -1046,20 +1067,24 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
     double h = top + g->sectionPad / 2;
     const matrix *mx = matrix_of_section(v, s);
     if (mx) {
-      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map);
-      size_t nv = visible_heads(mx, map);
+      int *map = malloc((mx->nheads ? mx->nheads : 1) * sizeof *map), *lmap = malloc((mx->nrows ? mx->nrows : 1) * sizeof *lmap);
+      if (!map || !lmap) {
+        free(map), free(lmap), lay_free(&L);
+        return (laid){0};
+      }
+      size_t nv = visible_heads(mx, map), nl = visible_lines(mx, map, lmap);
       for (size_t k = 0; k < mx->nheads; k++) {
         if (map[k] < 0) continue;
-        /* every cell, the head row's among them, where the served rows put it */
+        /* every cell, the head row's among them, at its drawn row: a row empty at every drawn head is closed up (L6) */
         for (size_t r = 0; r < mx->nrows; r++)
           if (mx->cell[r * mx->nheads + k] >= 0) {
             int c = mx->cell[r * mx->nheads + k];
-            grid_at(g, mx, top, map[k], (int)r, &L.cx[c], &L.cy[c]);
+            grid_at(g, mx, top, map[k], lmap[r], &L.cx[c], &L.cy[c]);
           }
       }
-      free(map);
+      free(map), free(lmap);
       L.mtop[s] = top;
-      h = top + (double)(mx->columns ? mx->nrows : nv) * g->cellH + g->sectionPad / 2;
+      h = top + (double)(mx->columns ? nl : nv) * g->cellH + g->sectionPad / 2;
     }
     L.sections[s] = (box){g->pad, y, section_w, h};
     last = y + h;
@@ -1075,8 +1100,6 @@ static laid lay_out(const omx_panel_view_t *v, int per_row) {
   L.h = last >= 0 ? last + g->pad : top0 + g->pad;
   return L;
 }
-
-static void lay_free(laid *L) { free(L->sections), free(L->cx), free(L->cy), free(L->drawn), free(L->curves), free(L->mtop); }
 
 void omx_panel_view_natural_size(const omx_panel_view_t *v, uint32_t *w, uint32_t *h) {
   if (!v) return;

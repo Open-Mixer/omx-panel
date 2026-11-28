@@ -1,0 +1,240 @@
+{
+  "$schema": "https://openmixer.org/schema/omx-contract/v0/omx-contract.schema.json",
+  "origin": "authored",
+  "plugin": {
+    "id": "org.openmixer.doubler",
+    "format": "clap",
+    "uri": "urn:openmixer:doubler",
+    "name": "omx doubler",
+    "vendor": "openmixer",
+    "version": "0.21.0",
+    "doc": "Doubles a voice or an instrument with up to four slightly delayed, detuned and drifting copies spread across the stereo field, the double-tracked sound without a second take.",
+    "features": [
+      "audio-effect"
+    ]
+  },
+  "controls": [
+    {
+      "id": 0,
+      "symbol": "voices",
+      "name": "Voices",
+      "kind": "travel",
+      "travel": {
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "unit": "none",
+        "default": 2,
+        "scale": "stepped"
+      },
+      "group": [
+        "Voices"
+      ],
+      "meaning": "number",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_VOICES_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "symbol": "delayMs",
+      "name": "Delay",
+      "kind": "travel",
+      "travel": {
+        "min": 5,
+        "max": 40,
+        "step": 0,
+        "unit": "ms",
+        "default": 12,
+        "scale": "linear"
+      },
+      "group": [
+        "Voices"
+      ],
+      "meaning": "delay",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_DELAY_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "symbol": "detuneCents",
+      "name": "Detune",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 25,
+        "step": 0,
+        "unit": "cents",
+        "default": 8,
+        "scale": "linear"
+      },
+      "group": [
+        "Voices"
+      ],
+      "meaning": "shift",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_DETUNE_CENTS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "symbol": "modRateHz",
+      "name": "Drift Rate",
+      "kind": "travel",
+      "travel": {
+        "min": 0.1,
+        "max": 2,
+        "step": 0,
+        "unit": "Hz",
+        "default": 0.6,
+        "scale": "log"
+      },
+      "group": [
+        "Drift"
+      ],
+      "meaning": "rate",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_MOD_RATE_HZ_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "symbol": "modDepthMs",
+      "name": "Drift Depth",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 3,
+        "step": 0,
+        "unit": "ms",
+        "default": 0.5,
+        "scale": "linear"
+      },
+      "group": [
+        "Drift"
+      ],
+      "meaning": "depth",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_MOD_DEPTH_MS_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "symbol": "spreadPct",
+      "name": "Spread",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "percent",
+        "default": 60,
+        "scale": "stepped"
+      },
+      "group": [
+        "Output"
+      ],
+      "meaning": "spread",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_SPREAD_PCT_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "symbol": "mixPct",
+      "name": "Mix",
+      "kind": "travel",
+      "travel": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "unit": "percent",
+        "default": 50,
+        "scale": "stepped"
+      },
+      "group": [
+        "Output"
+      ],
+      "meaning": "wetDryRatio",
+      "automatable": true,
+      "source": {
+        "from": {
+          "link": "data/kernels/doubler.json#DOUBLER_MIX_PCT_RANGE",
+          "at": "omx-dsp@0.34.2"
+        }
+      }
+    }
+  ],
+  "ports": [
+    {
+      "id": 0,
+      "name": "in",
+      "kind": "audio",
+      "direction": "in",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    },
+    {
+      "id": 0,
+      "name": "out",
+      "kind": "audio",
+      "direction": "out",
+      "role": "main",
+      "channels": 2,
+      "layout": "stereo"
+    }
+  ],
+  "needs": {
+    "extensions": {
+      "optional": [
+        "lv2:hardRTCapable"
+      ]
+    }
+  },
+  "latency": {
+    "reports": true
+  },
+  "extensions": {
+    "clap": {
+      "clap_plugin_descriptor.features": [
+        "doubler",
+        "CLAP_PLUGIN_FEATURE_STEREO"
+      ]
+    },
+    "lv2": {
+      "rdf:type": [
+        "lv2:Plugin",
+        "lv2:ChorusPlugin"
+      ]
+    }
+  },
+  "source": {
+    "impl": "plugins/omx-doubler/omx_doubler_clap.c#clap_entry"
+  }
+}
