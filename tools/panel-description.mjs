@@ -580,7 +580,7 @@ export const PAGE_SIZE = 8;
  * slot, blank: the slots do not move with the governing values. No screen has zero visible items: a page whose every slot
  * is blank (hidden, taken by the Easy pages, or an empty cell) is not cut. Below two encoders a group is plain controls (one a page).
  */
-export function pagesOf(x, { perPage, remote, values = {} } = {}) {
+export function pagesOf(x, { perPage, remote, values = {}, easyDeclared = false } = {}) {
   const size = perPage ?? PAGE_SIZE;
   if (!Number.isInteger(size) || size < 1) throw new Error(`pages: --per-page must be a whole number of at least 1, not ${perPage}`);
   const blank = new Set(x.controls.filter((c) => !isVisible(c, values)).map((c) => c.param));
@@ -601,7 +601,24 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
     const ids = easy.slice(k, k + size).map((symbol) => x.controls.find((c) => c.symbol === symbol).param);
     easyPages.push({ section: null, sectionName: EASY_PAGE, pageName: EASY_PAGE, ids: pad(ids) });
   }
+  // a declared page wider than the surface runs on under its name; a plugin that declares this cut at eight numbered
+  // its own run-on pages (`Gate`, `Gate 2/2`), so the number is taken off before the pages are numbered at this width
+  const base = (name) => String(name ?? '').replace(/ \d+\/\d+$/, '');
+  const cut = (r) => {
+    const name = base(r.name);
+    const pages = [];
+    for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: name, ids: pad(r.ids.slice(k, k + size)) });
+    return pages;
+  };
   if (Array.isArray(remote) && remote.length > 0) {
+    // the plugin's own declared Easy page (a remote page named Easy) IS the Easy page: one Easy, the plugin's, in the
+    // Easy place, and the description's easy is not cut beside it (a scan keeps no meanings, so the rule's easy is not the
+    // one the plugin declared). An easy list a skin declares wins, and the plugin's Easy page is not cut then.
+    const ownEasy = remote.filter((r) => base(r.name) === EASY_PAGE);
+    if (ownEasy.length > 0) {
+      const easyRun = easyDeclared ? easyPages : ownEasy.flatMap(cut);
+      return numbered(easyRun).concat(numbered(remote.filter((r) => base(r.name) !== EASY_PAGE).flatMap(cut)));
+    }
     // a declared page holding exactly the Easy controls is the Easy page already cut (a plugin whose remote-controls pages
     // are this cut at eight declares one): not cut twice
     const easyIds = new Set(easy.map((symbol) => x.controls.find((c) => c.symbol === symbol).param));
@@ -609,15 +626,7 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       const ids = new Set(r.ids.filter((id) => id !== null && id !== undefined));
       return easyIds.size > 0 && ids.size === easyIds.size && [...ids].every((id) => easyIds.has(id));
     };
-    // a declared page wider than the surface runs on under its name; a plugin that declares this cut at eight numbered
-    // its own run-on pages (`Gate`, `Gate 2/2`), so the number is taken off before the pages are numbered at this width
-    const base = (name) => name.replace(/ \d+\/\d+$/, '');
-    const declared = remote.filter((r) => !isEasy(r)).flatMap((r) => {
-      const name = base(String(r.name ?? ''));
-      const pages = [];
-      for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: name, ids: pad(r.ids.slice(k, k + size)) });
-      return pages;
-    });
+    const declared = remote.filter((r) => !isEasy(r)).flatMap(cut);
     return numbered(easyPages).concat(numbered(declared));
   }
   return [...numbered(easyPages), ...x.sections.flatMap((s, section) => {

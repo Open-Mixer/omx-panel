@@ -382,7 +382,7 @@ function finish(stored, { skin, perPage, remote }) {
   }
   const servedOf = new Map(stored.controls.map((c) => [c.key, c.symbol]));
   const grouped = withMatrices(description, stored, servedOf);
-  description = { ...grouped.description, pages: pagesOfDescription(grouped.description, stored, { perPage, remote }) };
+  description = { ...grouped.description, pages: pagesOfDescription(grouped.description, stored, { perPage, remote, easyDeclared: Boolean(skin?.easy) }) };
   return { description, refusals, steps: grouped.steps };
 }
 
@@ -468,7 +468,7 @@ function textOnlyLayout(descriptor) {
 }
 
 /** The page cut over a description (a skin's sections and order included): a surface slot drives a number, never a path or a text. */
-function pagesOfDescription(description, stored, { perPage, remote }) {
+function pagesOfDescription(description, stored, { perPage, remote, easyDeclared }) {
   const idOf = new Map(stored.controls.map((c) => [c.symbol, c.id]));
   const groupOf = new Map(stored.controls.map((c) => [c.symbol, c.group_key]));
   const default_ = (symbol) => description.params.find((p) => p.symbol === symbol)?.default ?? 0;
@@ -482,7 +482,7 @@ function pagesOfDescription(description, stored, { perPage, remote }) {
       ...(gov ? { visible: idOf.get(gov.param), mask: gov.values.reduce((m, v) => m | (1n << BigInt(v)), 0n), visibleWhen: { symbol: gov.param, default: default_(gov.param) } } : { visible: null, mask: 0n }),
     };
   });
-  return pagesOf({ sections: description.sections, controls: byInstance(description.sections, controls), easy: description.easy }, { perPage, remote });
+  return pagesOf({ sections: description.sections, controls: byInstance(description.sections, controls), easy: description.easy }, { perPage, remote, easyDeclared });
 }
 
 /**
