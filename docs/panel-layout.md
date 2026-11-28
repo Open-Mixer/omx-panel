@@ -282,7 +282,9 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
    `[{ name, ids }]`, a slot a control's id or `null`). They replace the derived pages and are not edited, so an Easy control may
    also sit on its remote page; a slot of no control is blank. A declared page that holds exactly the Easy controls is the
    Easy page the cut already made (a plugin whose remote-controls pages are this cut at eight declares one): it is not cut
-   twice. A declared page wider than the surface runs on under its own name, `Gate`, `Gate 2/2`. The served description
+   twice. A declared page wider than the surface runs on under its own name, `Gate`, `Gate 2/2`;
+   declared pages that are this cut at eight carry its numbers (`Gate`, `Gate 2/2`), which a narrower surface takes off
+   and numbers again over the whole run (`Gate`, `Gate 2/3`, `Gate 3/3` at four). The served description
    carries none.
 3. **Else the sections in their effective order** (a skin's `sections` win), each cut at the width with **a group kept whole at
    every width**: a page ends early rather than split a group, and a group longer than a page is the only one split, on pages of
