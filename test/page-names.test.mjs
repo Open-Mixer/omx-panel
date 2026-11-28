@@ -54,6 +54,12 @@ test('a declared page wider than the surface runs on as name, name 2/N', () => {
   assert.deepEqual(names(pages), ['Gate', 'Gate 2/2', 'Hold']);
 });
 
+test('declared pages already numbered at eight run on at four as one numbered run', () => {
+  const remote = [{ name: 'Gate', ids: [1, 2, 3, 4, 5, 6, 7, 8] }, { name: 'Gate 2/2', ids: [9, 10] }];
+  assert.deepEqual(names(pagesOf(strip(), { perPage: 4, remote })), ['Gate', 'Gate 2/3', 'Gate 3/3']);
+  assert.deepEqual(names(pagesOf(strip(), { perPage: 8, remote })), ['Gate', 'Gate 2/2']);
+});
+
 test('a declared page holding exactly the Easy controls is the Easy page, not cut twice', () => {
   const x = { ...strip(), easy: ['s2', 's3'] };
   const pages = pagesOf(x, { perPage: 4, remote: [{ name: 'Easy', ids: [2, 3, null, null] }, { name: 'Gate', ids: [1, 4] }] });

@@ -609,13 +609,16 @@ export function pagesOf(x, { perPage, remote, values = {} } = {}) {
       const ids = new Set(r.ids.filter((id) => id !== null && id !== undefined));
       return easyIds.size > 0 && ids.size === easyIds.size && [...ids].every((id) => easyIds.has(id));
     };
+    // a declared page wider than the surface runs on under its name; a plugin that declares this cut at eight numbered
+    // its own run-on pages (`Gate`, `Gate 2/2`), so the number is taken off before the pages are numbered at this width
+    const base = (name) => name.replace(/ \d+\/\d+$/, '');
     const declared = remote.filter((r) => !isEasy(r)).flatMap((r) => {
-      const name = String(r.name ?? '');
+      const name = base(String(r.name ?? ''));
       const pages = [];
       for (let k = 0; k < Math.max(1, r.ids.length); k += size) pages.push({ section: null, sectionName: name, pageName: name, ids: pad(r.ids.slice(k, k + size)) });
-      return numbered(pages);
+      return pages;
     });
-    return numbered(easyPages).concat(shown(declared));
+    return numbered(easyPages).concat(numbered(declared));
   }
   return [...numbered(easyPages), ...x.sections.flatMap((s, section) => {
     // an Easy control is on its Easy page alone; in an instance of a repeated group it leaves its slot blank, so the slots
