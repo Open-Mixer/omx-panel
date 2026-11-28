@@ -1,3 +1,16 @@
+omx-panel (0.17.4) unstable; urgency=medium
+
+  * panel-layout, pagesOf: a page is named by the declared section and group
+    labels (Gate, Gate 2/3, EQ: EQ 1), declared pages run on as one numbered
+    run
+  * panel-layout, pagesOf: one Easy page, the plugin's own declared Easy
+    page when it declares one; a skin's easy still wins
+  * ci: the add-openmixer steps read the wave's devel channel and its base
+  * debian: python3-lilv is a recommendation again, as in the RPM; Debian is
+    trixie only
+
+ -- Pau Aliagas <linuxnow@gmail.com>  Sat, 28 Nov 2026 16:15:54 +0100
+
 omx-panel (0.17.3) unstable; urgency=medium
 
   * A served display's kind is the number omx-clap-scan prints, read as its
