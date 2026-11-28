@@ -999,9 +999,10 @@ typedef struct {
 /* Every box of the face, in logical px, with `per_row` controls a row (tools/modgui-gen.mjs layout). */
 static laid lay_out(const omx_panel_view_t *v, int per_row) {
   const geometry *g = &v->g;
-  laid L = {0, 0, calloc(v->nsections ? v->nsections : 1, sizeof(box)), calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)),
-            calloc(v->ncontrols ? v->ncontrols : 1, sizeof(double)), calloc(v->nsections ? v->nsections : 1, 1),
-            calloc(v->nsections ? v->nsections : 1, sizeof(int)), calloc(v->nsections ? v->nsections : 1, sizeof(double)), {0, 0, 0, 0}, 1};
+  /* each array by its field's name and element size: a positional list once gave `curves` (int) the byte array */
+  size_t ns = v->nsections ? v->nsections : 1, nc = v->ncontrols ? v->ncontrols : 1;
+  laid L = {.sections = calloc(ns, sizeof *L.sections), .cx = calloc(nc, sizeof *L.cx), .cy = calloc(nc, sizeof *L.cy),
+            .curves = calloc(ns, sizeof *L.curves), .drawn = calloc(ns, sizeof *L.drawn), .mtop = calloc(ns, sizeof *L.mtop), .ok = 1};
   if (!L.sections || !L.cx || !L.cy || !L.drawn || !L.curves || !L.mtop) {
     free(L.sections), free(L.cx), free(L.cy), free(L.drawn), free(L.curves), free(L.mtop);
     return (laid){0};

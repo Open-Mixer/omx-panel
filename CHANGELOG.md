@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- A panel of seven sections or more is drawn as tall as its sections. The layout gave its per-section curve-row counts
+  (ints) the one-byte-per-section array and the drawn flags the int one, so from the seventh section each count was read
+  past its allocation: omx-reverb (seven sections) drew 8404 px tall, its De-ess section 21000 px below Duck, and a
+  description of nine sections could hang the command. `renderer/test/many-sections.test.mjs` holds 1 to 16 one-knob
+  sections to the same step.
 - `omx-panel picture` draws a plugin's panel from its descriptor and declared panel alone into a PNG
   (`tools/panel-picture.mjs`, docs/renderer.md "A picture of a panel"): the served layout, every control at its declared
   default, drawn by `omx-panel-render`. The renderer tests' host side is the same function (`defaultState`), and
