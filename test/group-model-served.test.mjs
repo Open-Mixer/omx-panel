@@ -167,3 +167,17 @@ test('one section merge: the home is the matrix\'s, a folded or donor section st
   const out = model.mergedSections(placed, sections, { idOf: (s) => s.id, holdsAfter: (s) => holds.has(s.id) });
   assert.deepEqual(out.map((x) => [x.section.id, x.home]), [['in', false], ['b1', true], ['filters', false], ['out', false]]);
 });
+
+test('L6: a row empty at every drawn head is left out: omx-delay\'s Time row at one tap, back at two; the head row always', () => {
+  const mx = served(GROUPED['omx-delay']);
+  const time = mx.rows.findIndex((r) => r.label === 'Time');
+  assert.ok(time > 0 && mx.count?.default === 1);
+  const lines = (count) => model.drawnLines(mx, model.drawnHeads(mx, count)).map((li) => mx.rows[li].label);
+  assert.deepEqual(lines(), ['', 'Gain', 'Pan'], 'tap 1 has no Time cell: no Time row');
+  assert.deepEqual(lines(1), ['', 'Gain', 'Pan']);
+  assert.deepEqual(lines(2), ['', 'Gain', 'Pan', 'Time']);
+  assert.deepEqual(lines(0), [''], 'no tap drawn: the head row alone');
+  // the EQ's rows are all held by some band: none is left out
+  const eq = served(GROUPED['omx-eq8']);
+  assert.equal(model.drawnLines(eq).length, eq.rows.length);
+});

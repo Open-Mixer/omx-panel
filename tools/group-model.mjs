@@ -660,13 +660,23 @@ export function drawnHeads(served, value = served.count?.default) {
 }
 
 /**
+ * L6 on a served matrix's rows: the indices of the rows (lines) a surface draws at the drawn heads `heads` (drawnHeads when
+ * left out): the head row always, and every row with a cell at one of `heads`; a row empty at every drawn head is left out and
+ * leaves no gap (omx-delay's Time row at one tap: tap 1's time is the delay's).
+ */
+export function drawnLines(served, heads = drawnHeads(served)) {
+  return served.rows.flatMap((r, li) => (r.head || heads.some((h) => served.cells[li][h] !== null && served.cells[li][h] !== undefined) ? [li] : []));
+}
+
+/**
  * L7, the visible-column rule, the one every language applies (the C renderer's omx_panel_view_visible_columns answers the
  * same vector, test/fixtures/group-model/visible-columns.json): of a SERVED matrix, how many columns a surface `width` wide
  * shows at `column` each: as many as fit, at least one, at most the columns it is drawn with (the drawn heads in `columns`;
- * the rows, the head row among them, in `rows`).
+ * the rows drawn, the head row among them, in `rows`: drawnLines, L6).
  */
 export function visibleColumns(served, { width, column, count } = {}) {
-  const across = served.orientation === 'columns' ? drawnHeads(served, count).length : served.rows.length;
+  const heads = drawnHeads(served, count);
+  const across = served.orientation === 'columns' ? heads.length : drawnLines(served, heads).length;
   return Math.min(across, Math.max(1, Math.floor(width / column)));
 }
 
