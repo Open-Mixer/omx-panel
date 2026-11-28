@@ -57,6 +57,21 @@ omx-panel \- check a skin package for an OpenMixer plugin panel
 .B omx-panel
 .B descriptors
 .B \-\-installed
+.br
+.B omx-panel
+.B picture
+.B \-\-descriptor
+.I file
+.RB [ \-\-panel
+.IR file ]
+.B \-\-png
+.I out.png
+.RB [ \-\-stem
+.IR name ]
+.RB [ \-\-scale
+.IR S ]
+.RB [ \-\-style
+.IR style ]
 .SH DESCRIPTION
 .B omx-panel describe
 prints the panel description of a descriptor and its refusals as JSON; with
@@ -127,6 +142,18 @@ or, for a source that is not installed,
 .B omx-panel descriptors \-\-installed
 prints the path of each installed plugin descriptor, one per line, found under every contract directory
 whatever contract major is installed.
+.PP
+.B omx-panel picture
+draws a plugin's panel from its descriptor and declared panel alone into a PNG: the layout
+.B describe \-\-layout
+derives, every control at its declared default with the text its face writes, drawn by
+.BR omx-panel-render .
+The same files draw the same bytes; a declaration that changes what is drawn changes the picture. It prints the
+picture's width and height. The renderer is
+.BR OMX_PANEL_RENDER ,
+else the one on the path; the look is the package's, in its default style unless
+.B \-\-style
+names another of its styles.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -146,6 +173,13 @@ has nothing to draw: the descriptor has no visible control (a synth whose parame
 found a bundle of its own stale or out of date (see
 .BR omx-complement-sync (1)).
 .SH ENVIRONMENT
+.TP
+.B OMX_PANEL_RENDER
+the
+.B omx-panel-render
+command
+.B picture
+runs
 .TP
 .B OMX_CONTRACT_PATH
 a

@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- `omx-panel picture` draws a plugin's panel from its descriptor and declared panel alone into a PNG
+  (`tools/panel-picture.mjs`, docs/renderer.md "A picture of a panel"): the served layout, every control at its declared
+  default, drawn by `omx-panel-render`. The renderer tests' host side is the same function (`defaultState`), and
+  `renderer/test/picture.test.mjs` holds the picture to the renderer's own drawing, the same bytes for one declaration
+  and another picture for a changed one. omx-plugins draws its documentation pictures with it.
 - The installed package is the node package its `package.json` describes (#272). `make install` copies `dist/` whole into
   `/usr/share/omx-panel`, but installed the source `package.json`, whose every export and bin named `./dist/...`, a path
   the RPM and the DEB never carried: a consumer that links `node_modules/@openmixer/omx-panel` to the installed tree

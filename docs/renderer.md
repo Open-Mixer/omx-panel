@@ -449,6 +449,22 @@ redraws after it. The binding of those events to a plugin's parameters is the ui
 
 Next: Wayland when there is a desktop to prove it on, and redrawing only what changed.
 
+## A picture of a panel
+
+`omx-panel picture --descriptor <file> [--panel <file>] --png <out.png> [--stem <name>] [--scale S] [--style <style>]`
+(`tools/panel-picture.mjs`) draws a plugin's panel from its declaration alone, for a document that shows it: the layout
+`omx-panel describe --layout` derives from the descriptor and the declared panel, the host's side every control at its
+declared default with the text the MOD GUI face writes for it and the static curves the face draws (`defaultState`, the
+same host side the golden images are drawn with), drawn by this renderer into a PNG. No host runs and nothing is
+screenshotted or drawn by hand. The renderer is `$OMX_PANEL_RENDER`, else `omx-panel-render` on the path; the look is
+`tools/look.json` in its default style unless `--style` names another of its `looks`. It prints `<width> <height>`; a
+descriptor the derivation refuses draws nothing and exits 1, naming the refusal.
+
+The same two files draw the same bytes, and a declaration that changes what is drawn (a section's label, a control taken
+off the panel) draws another picture: `renderer/test/picture.test.mjs` holds both, and holds the picture of the served
+omx-delay to the renderer's own drawing of the same layout and state, pixel for pixel. omx-plugins' `make panel-images`
+draws every plugin's documentation picture this way.
+
 ## Dependencies
 
 | What | Used for | Fedora 44 | Debian (bookworm, trixie) | Licence |

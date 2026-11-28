@@ -38,6 +38,10 @@
  *   compare describe                                       the document's format, its slots and the ring bound, as JSON (#23)
  *                                                        in, { doc, ring, moves, unknown } out
  *   modgui ...                                           tools/modgui-gen.mjs: a plugin's MOD GUI from its descriptor
+ *   picture --descriptor <file> [--panel <file>] --png <out.png> [--stem <name>] [--scale S] [--style <style>]
+ *                                                        tools/panel-picture.mjs: a PNG of the panel drawn from the descriptor
+ *                                                        and the declared panel alone, every control at its default, by the
+ *                                                        renderer (omx-panel-render)
  *   import <bundle.lv2> --out <skins dir> [--plugin <uri>]  tools/modgui-import.mjs: a MOD GUI bundle into a skin package
  *   gui-stage --set <file> --descriptors <dir> --package <name> --out <dir>   tools/gui-stage.mjs: a known set's GUI files, key-gated
  *   complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]
@@ -76,6 +80,7 @@ const USAGE = 'usage: omx-panel validate <skin.json | skin package directory>...
   + '       omx-panel compare (switch | copy) --to <A..D> | undo | redo   (JSON on stdin and stdout)\n'
   + '       omx-panel compare describe   (the format, the slots and the ring bound, as JSON)\n'
   + '       omx-panel modgui (--descriptor <file> | --installed <package>/<name>) [--panel <file>] --out <bundle.lv2> [--easy-first] [--check] [--no-films | --films-only]\n'
+  + '       omx-panel picture --descriptor <file> [--panel <file>] --png <out.png> [--stem <name>] [--scale S] [--style <style>]\n'
   + '       omx-panel import <bundle.lv2> --out <skins dir> [--plugin <uri>]\n'
   + '       omx-panel complement --out <dir> [--lv2-path <list>] [--state <dir>] [--only <bundle.lv2>]... [--dry-run | --check] [--verbose]\n'
   + '       omx-panel look [--check]\n'
@@ -462,6 +467,7 @@ else if (command === 'sync') await syncCommand(args);
 else if (command === 'base') await baseCommand(args);
 else if (command === 'base-inputs') await baseInputsCommand(args);
 else if (command === 'modgui') tool('modgui-gen.mjs');
+else if (command === 'picture') tool('panel-picture.mjs');
 else if (command === 'import') tool('modgui-import.mjs');
 else if (command === 'gui-stage') tool('gui-stage.mjs');
 else if (command === 'complement') tool('lv2-complement.mjs');
