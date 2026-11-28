@@ -70,7 +70,7 @@ controls). A head row whose cells differ from the heads' `on`, a second head row
 whose `on` is not a `{ symbol, sense }` object is refused. A null cell is empty and nothing moves into it. A matrix is as wide
 as its drawn heads (its rows, in `rows`) and never narrower, whatever width a host gives: a smaller buffer scales the panel, it
 does not wrap a matrix. `omx_panel_view_visible_columns(view, width, scale)` is the group model's `visibleColumns` (L7):
-`min(across, max(1, floor(width / (cellW x scale))))`, `across` the drawn heads in `columns` and the served rows (the head row
+`min(across, max(1, floor(width / (cellW x scale))))`, `across` the drawn heads in `columns` and the drawn rows (the head row
 among them) in `rows`, 0 with no matrix; the command's `--visible-columns <width>` prints it, and the test vector
 `test/fixtures/group-model/visible-columns.json` holds it to the JavaScript answer. The EQ is `columns`, its high-pass the
 first column and its low-pass the last: the order is of the drawing, the audio order is the plugin's.
@@ -79,7 +79,8 @@ first column and its low-pass the last: the order is of the drawing, the audio o
 names the control that says how many instances the plugin runs (an EQ's band count); the served matrix carries it only where no
 `visibleWhen` rule already governs the instances. The heads drawn are the group model's `drawnHeads`: every head that has an
 `edge`, and the first `count` of the others, closed up in order: a hidden head's controls take no cell, are not drawn and have
-no rect (as a control `visibleWhen` hides). The value is the control's integer, `default` until the host gives one with
+no rect (as a control `visibleWhen` hides). A row whose cell is null at every drawn head is the group model's empty row (L6,
+`drawnLines`): it takes no row (no column, in `rows`) and the rows after it close up; the head row is always drawn. The value is the control's integer, `default` until the host gives one with
 `omx_panel_view_set_integer`; the control itself is drawn as the selector it is, a control of the section. A hidden control of
 a drawn head keeps its cell empty. A `matrix` that is not an object, names a control that is not there or not in its section,
 places one twice, has a `cells` row of another length than `heads`, or whose `orientation` is neither word is refused by

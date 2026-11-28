@@ -217,13 +217,19 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   and **leaves no gap** (the next column closes up), and the edges (HPF, LPF, shelves) are always drawn. `matrixOf(g,
   { values })` applies it in the library; a surface applies it to the served matrix with `drawnHeads(served, value)` (the
   edges, and the non-edge heads while their place among the instances is below `value`), live as the value moves.
+  **A row the drawn heads leave empty leaves no gap either**: a parameter row whose cell is null at every drawn head is
+  not drawn and the rows after it close up, as the columns do; the head row is always drawn. omx-delay's Time row (tap 1
+  has no time of its own: it is the delay's) is empty at the come-up count of 1 and takes no row, and comes back when a
+  second tap is drawn. A surface applies it with `drawnLines(served, heads)` (the head row, and every row with a cell at
+  one of `heads`, `drawnHeads(served)` when left out), live with the count; in `rows` the lines are the columns.
   **The count control itself is drawn as a selector**: a port that is an enumeration, or a whole number of few points,
   is a selector and never a knob; the count is one whatever its range (`eqBands` 1..32 is a selector of 32 options).
   The MOD GUI face is static: it draws the first `count` instances at the count port's come-up value (omx-strip: 4 of 32;
   omx-delay: 1 of 4), and an instance beyond it is not on the face, its ports not among the pedal's. A plugin whose declared panel already
   governs each instance by a `visibleWhen` rule on the count keeps that live rule instead: its instances stay on the face,
   hidden by the rule. *Tests: "L6: ..."
-  (library); modgui-gen's omx-strip and omx-delay faces.*
+  (library); modgui-gen's omx-strip and omx-delay faces; "L6: a row empty at every drawn head" (library, the face and
+  renderer/test/repeats.test.mjs).*
 
 - **L7, the owner's drawing rule for an EQ, every surface.** An EQ is ONE aligned band matrix, and **the high-pass is its
   first band and the low-pass its last**, with the parametric bands between them in their number order (a low shelf after
@@ -243,7 +249,8 @@ null. A surface draws it as given; none reorders, wraps or transposes it.
   matrix: `visibleColumns(served, { width, column, count })` is `min(across, max(1, floor(width / column)))`, where
   `across` is the number of columns the matrix is drawn with: in `columns` the heads drawn (`drawnHeads`: every edge, and
   the first `count` instances when the matrix has a `count`, `count` defaulting to the served `count.default`, every
-  instance with none), in `rows` the served `rows` (the head row among them: it is a column there). Never one band per
+  instance with none), in `rows` the rows drawn (`drawnLines` at those heads, L6: the head row among them, it is a column
+  there). Never one band per
   screen while more fit; a surface that cannot show them all scrolls whole columns. An encoder surface (Zynthian) shows the
   whole matrix and its encoders edit the **selected column**: `selectedColumn(served, n, { count })` is the drawn head `n`
   clamped to them (one knob picks `n`), its cells in row order (the head row first), an empty cell leaving its encoder idle.
