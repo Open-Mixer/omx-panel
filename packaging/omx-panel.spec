@@ -39,12 +39,14 @@ BuildRequires: omx-dsp-wasm
 # /usr/lib/omx-contract
 Requires: omx-contract
 # omx-modgui-sync lists the LV2 plugins with lilv and scans one with no descriptor with plugin-hostd-probe. Fedora's
-# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; without it `import lilv` fails. The package
-# does not ask for lilv-devel (tools/runtime-install-check.sh: no development package at runtime), so a desk that
-# runs omx-modgui-sync installs it beside python3-lilv; the build and CI do.
-Recommends: python3-lilv
+# python3-lilv loads liblilv-0.so, the name only lilv-devel installs; omx-modgui-sync loads the runtime library,
+# lilv-libs, by its soname instead (omx-panel#293), so the package needs python3-lilv and lilv-libs and never lilv-devel
+# (tools/runtime-install-check.sh: no development package at runtime).
+Requires: python3-lilv
+Requires: lilv-libs
 Recommends: plugin-hostd
-# %%check runs omx-modgui-sync over a bundle (lilv-devel: the liblilv-0.so python3-lilv loads)
+# %%check runs omx-modgui-sync over a bundle; the tests' own `import lilv` probe and the #293 proof (liblilv-0.so hidden
+# in a namespace) need lilv-devel's liblilv-0.so to be there
 BuildRequires: python3-lilv
 BuildRequires: lilv-devel
 BuildRequires: systemd-rpm-macros

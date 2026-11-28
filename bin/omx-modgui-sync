@@ -112,7 +112,18 @@ fi
 for cmd in omx-panel python3; do
 	command -v "$cmd" >/dev/null || { echo "omx-modgui-sync: $cmd is not installed" >&2; exit 1; }
 done
-python3 -I -c 'import lilv' 2>/dev/null || { echo "omx-modgui-sync: python3-lilv is not installed" >&2; exit 1; }
+# A distribution defect, worked around here (omx-panel#293): python3-lilv's lilv.py opens CDLL("liblilv-0.so"), the
+# unversioned name only the development package ships (liblilv-dev, lilv-devel), so with the runtime library alone
+# (liblilv-0-0, lilv-libs) `import lilv` fails. Measured: Debian trixie 0.24.26 and Fedora 45 0.28.0-3. A runtime
+# package never needs a -dev one, so lilv is imported with the runtime library's soname, liblilv-0.so.0, in its place.
+LILV_IMPORT='import ctypes
+_cdll = ctypes.CDLL
+ctypes.CDLL = lambda name, *a, **k: _cdll("liblilv-0.so.0" if name == "liblilv-0.so" else name, *a, **k)
+try:
+    import lilv
+finally:
+    ctypes.CDLL = _cdll'
+python3 -I -c "$LILV_IMPORT" 2>/dev/null || { echo "omx-modgui-sync: python3-lilv is not installed" >&2; exit 1; }
 command -v plugin-hostd-probe >/dev/null || scan=0
 
 # MOD-UI reads bundles from its LV2_PATH only (lilv's default when unset)
@@ -140,7 +151,7 @@ done
 # One line per LV2 plugin: uri, bundle dir, has a MOD GUI outside MODGUI_DIR
 # (1/0), descriptor (installed:<package>/<name>:<path>, file:<path> or -), name.
 plan() {
-	python3 -I - "$MODGUI_DIR" "$DESCRIPTOR_DIRS:$SCAN_DIR" "$installed_list" "$VIEW_DIR" <<'EOF'
+	{ printf '%s\n' "$LILV_IMPORT"; cat; } <<'EOF' | python3 -I - "$MODGUI_DIR" "$DESCRIPTOR_DIRS:$SCAN_DIR" "$installed_list" "$VIEW_DIR"
 import glob, hashlib, json, os, re, sys
 from urllib.parse import unquote, urlparse
 
@@ -148,7 +159,7 @@ modgui_dir, descriptor_dirs, installed_list, view_dir = sys.argv[1:5]
 own = os.path.realpath(modgui_dir)
 os.environ["LV2_PATH"] = ":".join(view_dir if os.path.realpath(p) == own else p
                                   for p in os.environ["LV2_PATH"].split(":") if p)
-import lilv
+# lilv is imported by the lines before this program ($LILV_IMPORT); it reads LV2_PATH at load_all
 
 def lv2_uri(path, formats=("lv2",)):
     try:

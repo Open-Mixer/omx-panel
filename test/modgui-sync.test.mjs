@@ -57,10 +57,12 @@ function rig() {
   const r = { dir, lv2: join(dir, 'lv2'), out: join(dir, 'modgui'), state: join(dir, 'state'), desc: join(dir, 'desc'), bin: join(dir, 'bin') };
   for (const d of [r.lv2, r.out, r.desc, r.bin]) mkdirSync(d, { recursive: true });
   symlinkSync(join(ROOT, 'dist/bin/omx-panel.mjs'), join(r.bin, 'omx-panel'));
-  r.run = (args = ['--no-scan'], lv2path = `${r.lv2}:${r.out}`, extra = {}) => {
+  // wrap: a command the sync runs under (its arguments, then the sync's path and its own)
+  r.run = (args = ['--no-scan'], lv2path = `${r.lv2}:${r.out}`, extra = {}, wrap = []) => {
     const env = { ...process.env, PATH: `${r.bin}:${process.env.PATH}`, LV2_PATH: lv2path, MODGUI_DIR: r.out, STATE_DIR: r.state, DESCRIPTOR_DIRS: r.desc, ...extra };
     if (lv2path === null) delete env.LV2_PATH; // null: the variable is not set
-    return spawnSync(SYNC, args, { encoding: 'utf8', env });
+    return wrap.length ? spawnSync(wrap[0], [...wrap.slice(1), SYNC, ...args], { encoding: 'utf8', env })
+      : spawnSync(SYNC, args, { encoding: 'utf8', env });
   };
   r.bundles = () => readdirSync(r.out).filter((n) => n.endsWith('.lv2'));
   return r;
@@ -171,6 +173,49 @@ test('--dry-run writes nothing', { skip }, () => {
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /would write .*testgain\.lv2 for urn:test:gain/);
   assert.deepEqual(r.bundles(), []);
+});
+
+// omx-panel#293: python3-lilv opens liblilv-0.so, a name only the development package (liblilv-dev, lilv-devel)
+// installs, so on a host with the runtime library alone `import lilv` failed and the sync refused to start. Here that
+// name is hidden in a private mount namespace (unshare -rm) and the sync must still run. The name is a symlink a bind
+// mount would follow onto the runtime library itself, so the library directory is replaced by a directory of links to
+// each of its entries but that one.
+const devSo = lilv ? spawnSync('python3', ['-I', '-c', `import ctypes, os
+ctypes.CDLL("liblilv-0.so.0")
+for line in open("/proc/self/maps"):
+    path = line.split()[-1]
+    if "/liblilv-0.so" in path:
+        print(os.path.join(os.path.dirname(path), "liblilv-0.so"))
+        break`], { encoding: 'utf8' }).stdout.trim() : '';
+const hideDir = mkdtempSync(join(tmpdir(), 'omx-modgui-sync-nodev-'));
+process.on('exit', () => rmSync(hideDir, { recursive: true, force: true }));
+let hideRun = 0;
+/** The command prefix that runs its arguments with liblilv-0.so hidden. */
+const hide = () => {
+  const d = join(hideDir, String(hideRun++));
+  return ['unshare', '-rm', 'sh', '-c', `lib=\${0%/*} all=$1/all links=$1/links; shift
+mkdir -p "$all" "$links" && mount --bind "$lib" "$all" || exit 1
+for f in "$all"/* "$all"/.[!.]*; do if [ -e "$f" ] || [ -L "$f" ]; then ln -s "$f" "$links/" || exit 1; fi; done
+rm "$links/\${0##*/}" && mount --bind "$links" "$lib" && exec "$@"`, devSo, d];
+};
+const hideSkip = skip || ((!devSo || !existsSync(devSo)) && 'no liblilv-0.so to hide')
+  || (spawnSync(hide()[0], [...hide().slice(1), 'true']).status !== 0 && 'unshare -rm cannot replace the library directory here');
+
+test('the sync imports lilv from the runtime library alone, liblilv-0.so hidden (#293)', { skip: hideSkip }, () => {
+  // the hiding landed: python3-lilv's own import fails in that namespace
+  const h = hide();
+  const plain = spawnSync(h[0], [...h.slice(1), 'python3', '-I', '-c', 'import lilv'], { encoding: 'utf8' });
+  assert.notEqual(plain.status, 0, 'import lilv still worked with liblilv-0.so hidden: the test hides nothing');
+  assert.match(plain.stderr, /liblilv-0\.so: cannot open shared object file/);
+  const r = rig();
+  bundle(r.lv2, 'testgain', 'urn:test:gain', 'Test Gain');
+  descriptor(r.desc, 'testgain.json', 'urn:test:gain', 'scanned-lv2-compressor.json', (d) => {
+    d.controls = d.controls.filter((c) => c.id === 'makeup');
+  });
+  const run = r.run(['--dry-run', '--no-scan'], undefined, {}, hide());
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.doesNotMatch(run.stderr, /python3-lilv is not installed/);
+  assert.match(run.stdout, /would write .*testgain\.lv2 for urn:test:gain/);
 });
 
 test('the bundles may share a folder with plugins: a plugin there still gets a GUI, under a name of its own', { skip }, () => {
