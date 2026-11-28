@@ -277,7 +277,11 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
 `perPage` left out is eight) and a surface declares nothing else. The sequence:
 
 1. **The Easy controls first**, on pages of their own named `Easy`, `Easy 2/2` (the description's `easy`; a skin's `easy` wins,
-   see [skin-package.md](skin-package.md)). A symbol of no control is no slot.
+   see [skin-package.md](skin-package.md)). A symbol of no control is no slot. **One Easy, the plugin's own when it declares
+   one**: a declared remote-controls page named `Easy` (step 2) is the Easy page, cut in this place, and the description's
+   `easy` is not cut beside it. A scan keeps no meanings, so the rule's `easy` of a scanned descriptor is not the list the
+   plugin declared (omx-strip's Easy page holds Trim, HPF Freq, HPF Slope and LPF Freq; its scan's rule took the first four
+   controls in order), and a surface showed two Easy pages. A skin's `easy` still wins: the plugin's Easy page is not cut then.
 2. **Then the plugin's declared remote-controls pages, as given**, when the host that has the instance reports them (`remote`:
    `[{ name, ids }]`, a slot a control's id or `null`). They replace the derived pages and are not edited, so an Easy control may
    also sit on its remote page; a slot of no control is blank. A declared page that holds exactly the Easy controls is the
