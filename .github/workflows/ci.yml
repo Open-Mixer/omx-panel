@@ -346,7 +346,7 @@ jobs:
   # The cells the DEB jobs and the runtime install run: check-matrix's answer (ruling D25), each cell with the runner of
   # its own architecture. A Debian container of one architecture cannot install the packages of another: apt picked
   # libomxdsp-dev arm64 on an amd64 runner and dpkg refused it (ci 44563540081). While OMX_RELEASE_MATRIX is quick that
-  # is trixie arm64 and fc45 x86_64; full adds trixie amd64 (bookworm is dropped from the matrix, owner 2026-11-27).
+  # is trixie arm64 and fc45 x86_64; full adds trixie amd64 (Debian is trixie only, owner ruling 2026-11-28).
   checks:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ${{ github.event.repository.private && 'arc-freemixer' || 'ubuntu-latest' }}
