@@ -295,7 +295,8 @@ emitter cuts with it too. The width is the surface's (Zynthian 4, the X-Touch an
    A control with no group is its own. A derived page holds a control once, so the Easy
    controls are not repeated: in an instance, the slot of a control the Easy pages took stays, blank. **A page is named by the labels the description declares, never by the controls it holds**: a page
    of one group is `<section>: <group>` (`EQ: EQ 2`, an instance `Bands: Band 3`, a matrix row `Bands: Type`), a page of
-   the section's own controls or of several groups is `<section>` (`Gate`), and a name a section repeats is numbered from
+   several groups `<section>: <first group> – <last group>` (`Bands: Band 1 – Band 2`), a page of the section's own
+   controls alone `<section>` (`Gate`); the section's own controls beside a group leave the group's name. A name a section repeats is numbered from
    its second page as the page's place among them, `Gate 2/2`, `Bands: Type 2/2`, counted over the pages the governing
    values could show, so a name does not move with the values (a page they leave empty is not cut, its number kept). A
    group names a page only where its section holds several: a section all of one group (a `Gate` group in the `Gate`
