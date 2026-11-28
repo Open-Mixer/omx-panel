@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+- omx-modgui-sync runs with the runtime lilv alone (#293). python3-lilv's lilv.py opens `liblilv-0.so`, the name only
+  the development package ships (Debian trixie 0.24.26, Fedora 45 0.28.0-3), so on a host without liblilv-dev or
+  lilv-devel `import lilv` failed and the sync stopped at "python3-lilv is not installed". It now imports lilv with the
+  runtime library's soname, `liblilv-0.so.0`, and the package depends on python3-lilv and liblilv-0-0 (RPM: lilv-libs),
+  never on a -dev package. `test/modgui-sync.test.mjs` hides `liblilv-0.so` in a private mount namespace and runs it.
 - A panel of seven sections or more is drawn as tall as its sections. The layout gave its per-section curve-row counts
   (ints) the one-byte-per-section array and the drawn flags the int one, so from the seventh section each count was read
   past its allocation: omx-reverb (seven sections) drew 8404 px tall, its De-ess section 21000 px below Duck, and a

@@ -25,9 +25,10 @@ Rules-Requires-Root: no
 Package: omx-panel
 Architecture: all
 Multi-Arch: foreign
-Depends: nodejs (>= 18), omx-contract-data, omx-dsp-wasm, omx-contract, omx-panel-contract (= ${source:Version}), plugin-db-contract, ${misc:Depends}
-# omx-modgui-sync lists the LV2 plugins with lilv
-Recommends: plugin-hostd, python3-lilv
+# omx-modgui-sync lists the LV2 plugins with lilv: python3-lilv and the runtime library it loads, liblilv-0-0, by its
+# soname (python3-lilv's own lilv.py asks for liblilv-0.so, which only liblilv-dev ships: omx-panel#293)
+Depends: nodejs (>= 18), omx-contract-data, omx-dsp-wasm, omx-contract, omx-panel-contract (= ${source:Version}), plugin-db-contract, python3-lilv, liblilv-0-0, ${misc:Depends}
+Recommends: plugin-hostd
 Description: panels for LV2 and CLAP plugins, generated from what each plugin declares
  omx-panel makes panels for LV2 and CLAP plugins from what each plugin
  declares. It lays a panel out from a plugin's descriptor (sections, controls,
